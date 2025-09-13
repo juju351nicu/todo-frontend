@@ -68,8 +68,8 @@ const fetcher = async (requestDatas) => {
   return response;
 };
 /**
- *
  * リクエスト送信の設定情報を取得する
+ * 
  * @param {string} uri リクエストURL
  * @param {?} reqData 送信するリクエストボディのデータ
  * @param {Headers} customHeader カスタムヘッダー
