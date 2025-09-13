@@ -49,17 +49,12 @@ const submit = (() => {
   formData.append("fullName", fullName.value);
   formData.append("email", email.value);
   formData.append("message", message.value);
-  // const payload = {
-  //   "fullName": fullName.value,
-  //   "email": email.value,
-  //   "message": message.value
-  // };
-  // const payload = [
-  //   { key: "fullName", value: fullName.value },
-  //   { key: "email", value: email.value },
-  //   { key: "message", value: message.value }
-  // ];
-  inquiryStore.recieveInquiryInfo(formData);
+  const payload = {
+    "fullName": fullName.value,
+    "email": email.value,
+    "message": message.value
+  };
+  inquiryStore.recieveInquiryInfo(payload);
 });
 </script>
 
