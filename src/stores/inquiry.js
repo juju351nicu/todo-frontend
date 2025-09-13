@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import CONST from "../utils/const.js";
+import Const from "../utils/const.js";
 import Fetcher from "../utils/rest.js";
 
 export const useInquiryStore = defineStore("inquiry", {
@@ -11,7 +11,7 @@ export const useInquiryStore = defineStore("inquiry", {
     recieveInquiryInfo(payload) {
       this.isLoading = true;
       Fetcher.postRequest(
-        CONST.API_PREFIX_PATH.LOCAL_HOST + CONST.REST_PATH.INQUIRY_SEND_MAIL,
+        Const.REST_PATH.INQUIRY_SEND_MAIL,
         payload
       )
         .then((response) => {

@@ -1,4 +1,5 @@
 import Util from "./util.js";
+import Const from "../utils/const.js";
 /**
  * Methodの定数
  */
@@ -33,9 +34,9 @@ const postRequest = (uri, reqestData) => {
 };
 
 /**
- *
- * @param {*} requestDatas
- * @returns
+ * fetch送信する
+ * @param {Object} requestDatas リクエスト送信の設定情報
+ * @returns fetch結果
  */
 const fetcher = async (requestDatas) => {
   const response = await fetch(requestDatas.requestUrl, requestDatas.options);
@@ -77,7 +78,7 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   //     uri = uri.substr(1);
   //   }
   //   const customuri = API_PREFIX + uri;
-  const customuri = uri;
+  const customuri = Const.API_PREFIX_PATH.LOCAL_HOST + uri;
   return {
     requestUrl: customuri,
     options,
