@@ -45,10 +45,6 @@ const email = ref("");
 const message = ref("");
 /** お問い合わせ情報のパラメータを送る */
 const submit = (() => {
-  const formData = new FormData();
-  formData.append("fullName", fullName.value);
-  formData.append("email", email.value);
-  formData.append("message", message.value);
   const payload = {
     "fullName": fullName.value,
     "email": email.value,
