@@ -39,11 +39,6 @@ const postRequest = (uri, reqestData) => {
  */
 const fetcher = async (requestDatas) => {
   const response = await fetch(requestDatas.requestUrl, requestDatas.options);
-  // const response = await fetch(requestDatas.requestUrl, {
-  //   method: requestDatas.options.method,
-  //   headers: requestDatas.options.headers,
-  //   body: requestDatas.options.body,
-  // });
   return response;
 };
 /**
@@ -83,16 +78,6 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   //   }
   //   const customuri = API_PREFIX + uri;
   const customuri = uri;
-  // const response = await fetch(uri,{
-  //   method: 'POST', // HTTPメソッドをPOSTに指定します [1, 5]
-  //   headers: {
-  //     'Content-Type': 'application/json' // 送信するデータの形式を指定します
-  //     // 必要に応じて他のヘッダーも追加します
-  //   },
-  //   body: JSON.stringify(reqData) // 送信するデータをJSON形式に変換してbodyに設定します [2, 5]
-  // });
-
-  // return response;
   return {
     requestUrl: customuri,
     options,
