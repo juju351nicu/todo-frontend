@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import InquiryForm from '../views/InquiryForm.vue';
-import VuetifyList from '../views/VuetifyList.vue';
-import Calendar from '../views/Calendar.vue';
+import InquiryForm from '@/views/InquiryForm.vue';
+import VuetifyList from '@/views/VuetifyList.vue';
+import Calendar from '@/views/Calendar.vue';
 const routes = [
   { path: '/', name: 'vuetify', component: VuetifyList },
   { path: '/inquiry', name: 'inquiry', component: InquiryForm },

@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import Const from "../utils/const.js";
-import Fetcher from "../utils/rest.js";
+import Const from "@/constants/const.js";
+import Fetcher from "@/utils/rest.js";
 
 export const useInquiryStore = defineStore("inquiry", {
   state: () => ({

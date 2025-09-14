@@ -30,9 +30,9 @@
 </template>
 <script setup lang="js">
 import { computed, ref } from "vue";
-import SideMenu from "../components/SideMenu.vue";
-import Loading from "../components/Loading.vue";
-import { useInquiryStore } from "../stores/inquiry";
+import SideMenu from "@/components/SideMenu.vue";
+import Loading from "@/components/Loading.vue";
+import { useInquiryStore } from "@/stores/inquiry";
 
 
 const inquiryStore = useInquiryStore();

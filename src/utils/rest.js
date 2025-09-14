@@ -1,5 +1,5 @@
-import Util from "./util.js";
-import Const from "../utils/const.js";
+import Util from "@/utils/util.js";
+import Const from "@/constants/const.js";
 /**
  * Methodの定数
  */
@@ -70,7 +70,7 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   // HTTPメソッドがPOST・PUTの場合のみリクエストボディを追加する
   if (method === METHOD.POST || method === METHOD.PUT) {
     const body = JSON.stringify(reqData);
-    options = { method, headers , body};
+    options = { method, headers, body };
   } else {
     options = { method, headers };
   }
