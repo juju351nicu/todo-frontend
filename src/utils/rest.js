@@ -24,7 +24,7 @@ const defaultHeader = {
  * @param {Array} reqestData 送信するリクエストボディのデータ
  * @returns fetch結果
  */
-const getRequest = (uri, reqestData) => {
+const getRequest = (uri) => {
   // HttpMeshodに Getを設定する
   const method = METHOD.GET;
   // リクエストデータ作成
@@ -54,7 +54,7 @@ const postRequest = (uri, reqestData) => {
  * @param {Array} reqestData 送信するリクエストボディのデータ
  * @returns fetch結果
  */
-const deleteRequest = (uri, reqestData) => {
+const deleteRequest = (uri) => {
   // HttpMeshodに Getを設定する
   const method = METHOD.DELETE;
   // リクエストデータ作成

@@ -3,8 +3,15 @@ import InquiryForm from '@/views/InquiryForm.vue';
 import VuetifyList from '@/views/VuetifyList.vue';
 import Calendar from '@/views/Calendar.vue';
 import NotFound from '@/views/NotFound.vue';
+import MemberList from '@/views/MemberList.vue';
 const routes = [
   { path: '/', name: 'DashBoard', component: VuetifyList },
+  {
+    /** 会員一覧 */
+    path: "/memberList",
+    name: "memberList",
+    component: MemberList,
+  },
   { path: '/inquiry', name: 'inquiry', component: InquiryForm },
   { path: '/calendar', name: 'calendar', component: Calendar },
   {
