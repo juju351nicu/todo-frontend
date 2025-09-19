@@ -19,6 +19,21 @@ const defaultHeader = {
 };
 
 /**
+ * GET送信の結果
+ * @param {string} uri リクエストURL
+ * @param {Array} reqestData 送信するリクエストボディのデータ
+ * @returns fetch結果
+ */
+const getRequest = (uri, reqestData) => {
+  // HttpMeshodに Getを設定する
+  const method = METHOD.GET;
+  // リクエストデータ作成
+  const requestDatas = createRequestData(uri, null, null, method);
+  // fetch返却
+  return fetcher(requestDatas);
+};
+
+/**
  * POST送信の結果
  * @param {string} uri リクエストURL
  * @param {Array} reqestData 送信するリクエストボディのデータ
@@ -34,6 +49,21 @@ const postRequest = (uri, reqestData) => {
 };
 
 /**
+ * DELETE送信の結果
+ * @param {string} uri リクエストURL
+ * @param {Array} reqestData 送信するリクエストボディのデータ
+ * @returns fetch結果
+ */
+const deleteRequest = (uri, reqestData) => {
+  // HttpMeshodに Getを設定する
+  const method = METHOD.DELETE;
+  // リクエストデータ作成
+  const requestDatas = createRequestData(uri, null, null, method);
+  // fetch返却
+  return fetcher(requestDatas);
+};
+
+/**
  * fetch送信する
  * @param {Object} requestDatas リクエスト送信の設定情報
  * @returns fetch結果
@@ -42,6 +72,7 @@ const fetcher = async (requestDatas) => {
   const response = await fetch(requestDatas.requestUrl, requestDatas.options);
   return response;
 };
+
 /**
  * リクエスト送信の設定情報を取得する
  *
@@ -85,5 +116,7 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   };
 };
 export default {
+  getRequest,
   postRequest,
+  deleteRequest
 };

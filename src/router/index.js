@@ -2,10 +2,17 @@ import { createRouter, createWebHistory } from 'vue-router';
 import InquiryForm from '@/views/InquiryForm.vue';
 import VuetifyList from '@/views/VuetifyList.vue';
 import Calendar from '@/views/Calendar.vue';
+import NotFound from '@/views/NotFound.vue';
 const routes = [
-  { path: '/', name: 'vuetify', component: VuetifyList },
+  { path: '/', name: 'DashBoard', component: VuetifyList },
   { path: '/inquiry', name: 'inquiry', component: InquiryForm },
   { path: '/calendar', name: 'calendar', component: Calendar },
+  {
+    /** 存在しないURLにアクセスした場合 */
+    path: "/:pathMatch(.*)*",
+    name: "NotFound",
+    component: NotFound,
+  },
 ];
 
 const router = createRouter({
