@@ -10,97 +10,79 @@
         </template>
     </v-data-table>
     <div>{{ selectedIds }}</div>
-    <form ref="form">
-        <input type="hidden" name="ids" ref="inputIds">
-        <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit()"> 削除確認する </v-btn>
-    </form>
+    <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit()"> 削除確認する </v-btn>
 </template>
-<script>
+<script setup lang="js">
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
-export default {
-    name: "memberList",
-    components: { SideMenu, Loading },
-    data() {
-        return {
-            memberList: [],
-            memberId: "user01",
-            // selected: ids
-            selectedIds: [],
-            itemsPerPage: 5,
-            pages: [
-                { value: 5, title: "5" },
-                { value: 10, title: "10" },
-                { value: 20, title: "20" },
-                { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
-            ],
-            headers: [
-                {
-                    title: "ID",
-                    align: "start",
-                    sortable: false,
-                    key: "memberId",
-                },
-                { title: "氏名", align: "start", key: "lastName" },
-                { title: "ログインID", align: "start", key: "loginId" },
-                { title: "パスワード", align: "start", key: "password" },
-                { title: "登録日", align: "start", key: "registeredDate" },
-                { title: "更新日", align: "start", key: "updatedDate" },
-                { title: "最終ログインした時刻", align: "start", key: "lastLogin" },
-                { title: "編集", align: "start", key: "actions" },
-            ],
-        };
+import { onBeforeMount, computed, ref } from "vue";
+import { useMemberStore } from "@/stores/member";
+
+/** 会員ストア情報 */
+const memberStore = useMemberStore();
+/** ローディングフラグ */
+const isLoading = computed(() => {
+    return memberStore.isLoading;
+});
+/** 会員情報一覧 */
+const memberList = computed(() => {
+    return memberStore.memberListInfo;
+});
+/** チェックボックスにて選択したIds */
+const selectedIds = ref([]);
+/** 会員ID */
+const memberId = ref("user01");
+/** */
+const itemsPerPage = 5;
+/** */
+const pages = [
+    { value: 5, title: "5" },
+    { value: 10, title: "10" },
+    { value: 20, title: "20" },
+    { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
+];
+/**　テーブルの関連するラベル・プロパティ等の情報 */
+const headers = [
+    {
+        title: "ID",
+        align: "start",
+        sortable: false,
+        key: "memberId",
     },
-    mounted() {
-        fetch("http://localhost:8030/api/member/memberList", {
-            method: "GET",
-        })
-            .then((response) => {
-                return response.json();
-            })
-            .then((data) => {
-                this.memberList = data.memberList;
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    },
-    methods: {
-        /**
-         * チェックボックスクリック時に配列に会員ID情報を格納する。
-         * @param {*} id
-         */
-        pushCheckIds(id) {
-            console.log("id:" + id);
-            this.ids.push(id);
-            console.log("ids.length:" + this.ids);
-        },
-        /**
-         * 削除ボタン押下の際に確認画面に遷移する。
-         * @param {*} ids チェックボックスで選択したidの配列
-         * @returns false
-         */
-        formSubmit() {
-            this.$refs.inputIds.name = "ids";
-            this.$refs.inputIds.value = this.selectedIds;
-            this.$refs.form.method = "POST";
-            this.$refs.form.action = "/member/check";
-            this.$refs.form.submit();
-            return false;
-        },
-        clickRow() {
-            //vuetify3 clickRowで時間あるときに検索
-            console.log("currentRowReactive");
-        },
-        /**
-         * 更新画面に遷移する
-         * @param {*} item 行情報
-         */
-        showUpsert(item) {
-            location.href = "/member/upsert?memberId=" + item.memberId;
-        },
-    },
-};
+    { title: "氏名", align: "start", key: "lastName" },
+    { title: "ログインID", align: "start", key: "loginId" },
+    { title: "パスワード", align: "start", key: "password" },
+    { title: "登録日", align: "start", key: "registeredDate" },
+    { title: "更新日", align: "start", key: "updatedDate" },
+    { title: "最終ログインした時刻", align: "start", key: "lastLogin" },
+    { title: "編集", align: "start", key: "actions" },
+];
+/**
+ * 削除ボタン押下の際、チェックボックスで選択したidの会員情報を削除する。
+ */
+const formSubmit = (() => {
+    const urlParams = new URLSearchParams();
+    selectedIds.value.forEach((id) => {
+        urlParams.append("ids", id);
+    });
+    memberStore.deleteMemberList(urlParams.toString());
+    memberStore.getMemberList();
+});
+const clickRow = (() => {
+    //vuetify3 clickRowで時間あるときに検索
+    console.log("currentRowReactive");
+});
+/**
+ * 更新画面に遷移する
+ * @param {*} item 行情報
+ */
+const showUpsert = ((item) => {
+    location.href = "/member/upsert?memberId=" + item.memberId;
+});
+onBeforeMount(() => {
+    memberStore.getMemberList();
+});
+
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

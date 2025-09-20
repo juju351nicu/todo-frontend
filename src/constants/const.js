@@ -9,6 +9,8 @@ const API_PREFIX_PATH = {
  * REST通信用のURL
  */
 const REST_PATH = {
+  MEMBER_LIST: "/api/v1/member/memberList",
+  MEMBER_DELETE: "/api/v1/member/deleteMembers",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
 };
 export default {
