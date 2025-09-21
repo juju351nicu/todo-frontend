@@ -20,6 +20,7 @@ import { useMemberStore } from "@/stores/member";
 
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
+memberStore.getMemberList();
 /** ローディングフラグ */
 const isLoading = computed(() => {
     return memberStore.isLoading;
@@ -61,12 +62,7 @@ const headers = [
  * 削除ボタン押下の際、チェックボックスで選択したidの会員情報を削除する。
  */
 const formSubmit = (() => {
-    const urlParams = new URLSearchParams();
-    selectedIds.value.forEach((id) => {
-        urlParams.append("ids", id);
-    });
-    memberStore.deleteMemberList(urlParams.toString());
-    memberStore.getMemberList();
+    memberStore.deleteMemberList(selectedIds.value);
 });
 const clickRow = (() => {
     //vuetify3 clickRowで時間あるときに検索
@@ -79,9 +75,9 @@ const clickRow = (() => {
 const showUpsert = ((item) => {
     location.href = "/member/upsert?memberId=" + item.memberId;
 });
-onBeforeMount(() => {
-    memberStore.getMemberList();
-});
+// onBeforeMount(() => {
+//     memberStore.getMemberList();
+// });
 
 </script>
 

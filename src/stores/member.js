@@ -24,9 +24,15 @@ export const useMemberStore = defineStore("member", {
           console.log(error);
         });
     },
-    deleteMemberList(param) {
+    deleteMemberList(payload) {
       this.isLoading = true;
-      Fetcher.deleteRequest(Const.REST_PATH.MEMBER_DELETE + "?" + param)
+      const urlParams = new URLSearchParams();
+      payload.forEach((id) => {
+        urlParams.append("ids", id);
+      });
+      Fetcher.deleteRequest(
+        Const.REST_PATH.MEMBER_DELETE + "?" + urlParams.toString()
+      )
         .then((response) => {
           console.log(response.status);
           return response.json();
@@ -38,6 +44,6 @@ export const useMemberStore = defineStore("member", {
         .catch((error) => {
           console.log(error);
         });
-    }
+    },
   },
 });
