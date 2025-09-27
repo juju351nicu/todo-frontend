@@ -5,7 +5,16 @@ import Fetcher from "@/utils/rest.js";
 export const useMemberStore = defineStore("member", {
   state: () => ({
     isLoading: false,
-    memberListInfo: [],
+    memberListInfo: [{
+      memberId: 0,
+      lastName: "",
+      firstName: "",
+      loginId: "",
+      password: "",
+      email: "",
+      role: "",
+      version: "",
+    }],
   }),
   getters: {},
   actions: {

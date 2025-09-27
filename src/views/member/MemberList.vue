@@ -16,8 +16,10 @@
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
 import { onBeforeMount, computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useMemberStore } from "@/stores/member";
-
+/** ルータ情報 */
+const router = useRouter();
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
 memberStore.getMemberList();
@@ -74,7 +76,7 @@ const clickRow = (() => {
  * @param {*} item 行情報
  */
 const showUpsert = ((item) => {
-    location.href = "/member/upsert?memberId=" + item.memberId;
+    router.push({ name: "MemberDetail", params: { id: item.memberId } });
 });
 // onBeforeMount(() => {
 //     memberStore.getMemberList();
