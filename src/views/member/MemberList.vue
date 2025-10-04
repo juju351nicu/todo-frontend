@@ -22,7 +22,6 @@ import { useMemberStore } from "@/stores/member";
 const router = useRouter();
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
-memberStore.getMemberList();
 /** ローディングフラグ */
 const isLoading = computed(() => {
     return memberStore.isLoading;
@@ -78,9 +77,9 @@ const clickRow = (() => {
 const showUpsert = ((item) => {
     router.push({ name: "MemberDetail", params: { id: item.memberId } });
 });
-// onBeforeMount(() => {
-//     memberStore.getMemberList();
-// });
+onBeforeMount(() => {
+    memberStore.getMemberList();
+});
 
 </script>
 

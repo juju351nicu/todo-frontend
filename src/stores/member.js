@@ -67,6 +67,7 @@ export const useMemberStore = defineStore("member", {
         .then((data) => {
           console.log(data);
           this.isLoading = false;
+          this.isShowModal = true;
         })
         .catch((error) => {
           console.log(error);

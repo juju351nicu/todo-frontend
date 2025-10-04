@@ -1,4 +1,7 @@
 <template>
+    <Loading v-if="isLoading" />
+    <UpsertConfirm v-if="isShowModal" :myform="myform" @close-modal="handleCloseModal"
+        @confirm-submit="confirmSubmit" />
     <v-container>
         <v-card width="800px">
             <v-card-title>
@@ -39,7 +42,7 @@
                             </v-col>
                         </template>
                     </v-row>
-                    <v-btn class="mr-4" color="success" type="submit" @click="confirmSubmit($event)">
+                    <v-btn class="mr-4" color="success" type="submit" @click="showModal($event)">
                         {{ myform.memberId > 0 ? '更新する' : ' 登録する' }}
                     </v-btn>
                     <v-btn>
@@ -51,6 +54,8 @@
     </v-container>
 </template>
 <script setup lang="js">
+import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
+import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref } from 'vue';
 import util from "@/utils/util.js";
 import { useMemberStore } from "@/stores/member";
@@ -59,6 +64,12 @@ const props = defineProps({
 });
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
+
+/** ローディングフラグ */
+const isLoading = computed(() => {
+    return memberStore.isLoading;
+});
+
 /**
  * Noから配列のindexを取得する
  * @param {string} id id
@@ -95,12 +106,29 @@ const roleItems = ref([
     { roleLabel: '管理者', role: 0 },
     { roleLabel: '閲覧管理者', role: 1 },
     { roleLabel: 'ユーザ', role: 2 }]);
+
+/** モーダルを表示・非表示フラグ */
+const isShowModal = ref(false);
+
+/** 確認画面「モーダル」を表示する */
+const showModal = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    isShowModal.value = true;
+});
+
+/**
+ * モーダルを非表示にする
+ */
+const handleCloseModal = (() => {
+    isShowModal.value = false;
+});
+
 /**
  * 会員情報を新規登録・更新する。
  */
 const confirmSubmit = ((event) => {
-    // submitイベントの本来の動作を止める
-    event.preventDefault();
+    isShowModal.value = false;
     const payload = {
         "memberId": myform.memberId,
         "lastName": myform.lastName,
