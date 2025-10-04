@@ -32,17 +32,14 @@
                                 placeholder="emailを入力してください。" required>
                             </v-text-field>
                         </v-col>
-                        <!-- <th:block th:if="${session.user.role == 0}">
+                        <template v-if="myform.role === 0">
                             <v-col cols="12">
                                 <v-select name="role" v-model="myform.role" :items="roleItems" item-title="roleLabel"
                                     item-value="role" label="管理者権限"></v-select>
                             </v-col>
-                        </th:block>
-                        <th:block th:unless="${session.user.role == 0}">
-                            <input type="hidden" name="role" :value="myform.role">
-                        </th:block> -->
+                        </template>
                     </v-row>
-                    <v-btn class="mr-4" color="success" type="submit" @click="formSubmit">
+                    <v-btn class="mr-4" color="success" type="submit" @click="confirmSubmit($event)">
                         {{ myform.memberId > 0 ? '更新する' : ' 登録する' }}
                     </v-btn>
                     <v-btn>
@@ -83,7 +80,7 @@ const memberInfo = computed(() => {
     const index = getFindIndex(numId.value);
     return memberStore.memberListInfo[index];
 });
-
+/** 会員詳細情報 */
 const myform = reactive({
     memberId: memberInfo.value.memberId,
     lastName: memberInfo.value.lastName,
@@ -99,20 +96,22 @@ const roleItems = ref([
     { roleLabel: '閲覧管理者', role: 1 },
     { roleLabel: 'ユーザ', role: 2 }]);
 /**
- * 新規登録・更新のパラメータを/member/upsertに送る。
+ * 会員情報を新規登録・更新する。
  */
-const formSubmit = (() => {
-    this.$refs.form.value = this.myform.memberId;
-    this.$refs.form.value = this.myform.lastName;
-    this.$refs.form.value = this.myform.firstName;
-    this.$refs.form.value = this.myform.loginId;
-    this.$refs.form.value = this.myform.password;
-    this.$refs.form.value = this.myform.email;
-    this.$refs.form.value = this.myform.role;
-    this.$refs.form.value = this.myform.version;
-    this.$refs.form.method = 'POST';
-    this.$refs.form.action = '/member/upsert';
-    this.$refs.form.submit();
+const confirmSubmit = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    const payload = {
+        "memberId": myform.memberId,
+        "lastName": myform.lastName,
+        "firstName": myform.firstName,
+        "loginId": myform.loginId,
+        "password": myform.password,
+        "email": myform.email,
+        "role": myform.role,
+        "version": myform.version,
+    };
+    memberStore.upsertMemberInfo(payload);
 });
 
 </script>

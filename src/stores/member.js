@@ -54,5 +54,23 @@ export const useMemberStore = defineStore("member", {
           console.log(error);
         });
     },
+    upsertMemberInfo(payload) {
+      this.isLoading = true;
+      Fetcher.postRequest(
+        Const.REST_PATH.MEMBER_UPSERT,
+        payload
+      )
+        .then((response) => {
+          console.log(response.status);
+          return response.json();
+        })
+        .then((data) => {
+          console.log(data);
+          this.isLoading = false;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
   },
 });
