@@ -8,47 +8,45 @@
                 <span> {{ myform.memberId > 0 ? myform.memberId : ' (新規)' }}</span>
             </v-card-title>
             <v-card-text>
-                <form ref="form" :model="myform">
-                    <v-row>
-                        <v-col cols="12" sm="6">
-                            <v-text-field name="lastName" v-model="myform.lastName" color="purple darken-2" label="姓"
-                                placeholder="苗字を入力してください。" required>
-                            </v-text-field>
-                        </v-col>
-                        <v-col cols="12" sm="6">
-                            <v-text-field name="firstName" v-model="myform.firstName" color="blue darken-2" label="名"
-                                placeholder="名前を入力してください。" required>
-                            </v-text-field>
-                        </v-col>
+                <v-row>
+                    <v-col cols="12" sm="6">
+                        <v-text-field name="lastName" v-model="myform.lastName" color="purple darken-2" label="姓"
+                            placeholder="苗字を入力してください。" required>
+                        </v-text-field>
+                    </v-col>
+                    <v-col cols="12" sm="6">
+                        <v-text-field name="firstName" v-model="myform.firstName" color="blue darken-2" label="名"
+                            placeholder="名前を入力してください。" required>
+                        </v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                        <v-text-field name="loginId" v-model="myform.loginId" label="ログインID"
+                            placeholder="ログインIDを入力してください。" required>
+                        </v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                        <v-text-field type="password" name="password" v-model="myform.password" label="パスワード"
+                            placeholder="passwordを入力してください。" required>
+                        </v-text-field>
+                    </v-col>
+                    <v-col cols="12">
+                        <v-text-field type="email" name="email" v-model="myform.email" label="Email アドレス"
+                            placeholder="emailを入力してください。" required>
+                        </v-text-field>
+                    </v-col>
+                    <template v-if="myform.role === 0">
                         <v-col cols="12">
-                            <v-text-field name="loginId" v-model="myform.loginId" label="ログインID"
-                                placeholder="ログインIDを入力してください。" required>
-                            </v-text-field>
+                            <v-select name="role" v-model="myform.role" :items="roleItems" item-title="roleLabel"
+                                item-value="role" label="管理者権限"></v-select>
                         </v-col>
-                        <v-col cols="12">
-                            <v-text-field type="password" name="password" v-model="myform.password" label="パスワード"
-                                placeholder="passwordを入力してください。" required>
-                            </v-text-field>
-                        </v-col>
-                        <v-col cols="12">
-                            <v-text-field type="email" name="email" v-model="myform.email" label="Email アドレス"
-                                placeholder="emailを入力してください。" required>
-                            </v-text-field>
-                        </v-col>
-                        <template v-if="myform.role === 0">
-                            <v-col cols="12">
-                                <v-select name="role" v-model="myform.role" :items="roleItems" item-title="roleLabel"
-                                    item-value="role" label="管理者権限"></v-select>
-                            </v-col>
-                        </template>
-                    </v-row>
-                    <v-btn class="mr-4" color="success" type="submit" @click="showModal($event)">
-                        {{ myform.memberId > 0 ? '更新する' : ' 登録する' }}
-                    </v-btn>
-                    <v-btn>
-                        クリア
-                    </v-btn>
-                </form>
+                    </template>
+                </v-row>
+                <v-btn class="mr-4" color="success" type="submit" @click="showModal($event)">
+                    {{ myform.memberId > 0 ? '更新する' : ' 登録する' }}
+                </v-btn>
+                <v-btn>
+                    クリア
+                </v-btn>
             </v-card-text>
         </v-card>
     </v-container>
