@@ -5,20 +5,25 @@ import Fetcher from "@/utils/rest.js";
 export const useMemberStore = defineStore("member", {
   state: () => ({
     isLoading: false,
-    memberListInfo: [{
-      memberId: 0,
-      lastName: "",
-      firstName: "",
-      loginId: "",
-      password: "",
-      email: "",
-      role: "",
-      version: "",
-    }],
+    memberListInfo: [
+      {
+        memberId: 0,
+        lastName: "",
+        firstName: "",
+        loginId: "",
+        password: "",
+        email: "",
+        role: "",
+        version: "",
+      },
+    ],
   }),
   getters: {},
   actions: {
-    getMemberList() {
+    /**
+     * 会員一覧情報を取得する
+     */
+    findMemberList() {
       this.isLoading = true;
       Fetcher.getRequest(Const.REST_PATH.MEMBER_LIST)
         .then((response) => {
@@ -33,6 +38,9 @@ export const useMemberStore = defineStore("member", {
           console.log(error);
         });
     },
+    /**
+     * 会員情報を削除する
+     */
     deleteMemberList(payload) {
       this.isLoading = true;
       const urlParams = new URLSearchParams();
@@ -54,12 +62,12 @@ export const useMemberStore = defineStore("member", {
           console.log(error);
         });
     },
+    /**
+     * 会員情報を更新する
+     */
     upsertMemberInfo(payload) {
       this.isLoading = true;
-      Fetcher.postRequest(
-        Const.REST_PATH.MEMBER_UPSERT,
-        payload
-      )
+      Fetcher.postRequest(Const.REST_PATH.MEMBER_UPSERT, payload)
         .then((response) => {
           console.log(response.status);
           return response.json();
@@ -67,7 +75,24 @@ export const useMemberStore = defineStore("member", {
         .then((data) => {
           console.log(data);
           this.isLoading = false;
-          this.isShowModal = true;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    /**
+     * 会員を退会する
+     */
+    cancelMemberInfo(payload) {
+      this.isLoading = true;
+      Fetcher.postRequest(Const.REST_PATH.MEMBER_CANCEL, payload)
+        .then((response) => {
+          console.log(response.status);
+          return response.json();
+        })
+        .then((data) => {
+          console.log(data);
+          this.isLoading = false;
         })
         .catch((error) => {
           console.log(error);

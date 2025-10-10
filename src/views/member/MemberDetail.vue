@@ -1,4 +1,5 @@
 <template>
+    <SideMenu />
     <Loading v-if="isLoading" />
     <UpsertConfirm v-if="isShowModal" :myform="myform" @close-modal="handleCloseModal"
         @confirm-submit="confirmSubmit" />
@@ -52,6 +53,7 @@
     </v-container>
 </template>
 <script setup lang="js">
+import SideMenu from "@/components/SideMenu.vue";
 import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref } from 'vue';

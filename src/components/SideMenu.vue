@@ -17,53 +17,49 @@
     </v-navigation-drawer>
   </nav>
 </template>
-<script>
-export default {
-  name: "SideMenu",
-  components: {},
-  data() {
-    return {
-      drawer: false,
-      links: [
-        { icon: "mdi-home", text: "Home", url: "" },
-        {
-          icon: "mdi-account",
-          text: "アカウント",
-          url: "/member/upsert?memberId=" + 1,
-        },
-        { icon: "mdi-format-list-bulleted", text: "お知らせ一覧", url: "../news/list" },
-        { icon: "mdi-view-dashboard", text: "ダッシュボード画面", url: "/todo/Top" },
-        { icon: "mdi-account-cancel", text: "退会", url: "/member/cancel" },
-        { icon: "mdi-export", text: "ログアウト", url: "/logout" },
-      ],
-      hoverFlag: false,
-      role: 0,
-    };
+<script setup lang="js">
+import { ref, onMounted } from 'vue';
+
+/** サイドメニューフラグ */
+const drawer = ref(false);
+/** サイドメニュー */
+const links = ref([
+  { icon: "mdi-home", text: "Home", url: "" },
+  {
+    icon: "mdi-account",
+    text: "アカウント",
+    url: "/member/upsert?memberId=" + 1,
   },
-  mounted() {
-    if (this.role == 0) {
-      this.links.push(
-        {
-          icon: "mdi-account-plus",
-          text: "会員新規登録",
-          url: "../member/upsert?memberId=0",
-        },
-        {
-          icon: "mdi-bell-plus",
-          text: "お知らせ新規登録",
-          url: "../news/upsert?newsId=0",
-        }
-      );
-    }
-    if (this.role == 0 || this.role == 1) {
-      this.links.push({
-        icon: "mdi-account-multiple",
-        text: "会員一覧",
-        url: "../member/list",
-      });
-    }
-  },
-};
+  { icon: "mdi-format-list-bulleted", text: "お知らせ一覧", url: "../news/list" },
+  { icon: "mdi-view-dashboard", text: "ダッシュボード画面", url: "/todo/Top" },
+  { icon: "mdi-account-cancel", text: "退会", url: "/member/cancel" + 1 },
+  { icon: "mdi-export", text: "ログアウト", url: "/logout" },
+]);
+const role = ref(0);
+
+onMounted(() => {
+  if (role.value == 0) {
+    links.value.push(
+      {
+        icon: "mdi-account-plus",
+        text: "会員新規登録",
+        url: "../member/upsert?memberId=0",
+      },
+      {
+        icon: "mdi-bell-plus",
+        text: "お知らせ新規登録",
+        url: "../news/upsert?newsId=0",
+      }
+    );
+  };
+  if (role.value == 0 || role.value == 1) {
+    links.value.push({
+      icon: "mdi-account-multiple",
+      text: "会員一覧",
+      url: "../member/list",
+    });
+  }
+});
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

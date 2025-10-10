@@ -1,5 +1,5 @@
 <template>
-    <side-menu />
+    <SideMenu />
     <Loading v-if="isLoading" />
     <h2>会員一覧</h2>
     <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"
@@ -78,7 +78,7 @@ const showUpsert = ((item) => {
     router.push({ name: "MemberDetail", params: { id: item.memberId } });
 });
 onBeforeMount(() => {
-    memberStore.getMemberList();
+    memberStore.findMemberList();
 });
 
 </script>

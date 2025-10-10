@@ -5,20 +5,32 @@ import Calendar from "@/views/Calendar.vue";
 import NotFound from "@/views/NotFound.vue";
 import MemberList from "@/views/member/MemberList.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
-
+import MemberCancel from "@/views/member/MemberCancel.vue";
 const routes = [
   { path: "/", name: "DashBoard", component: VuetifyList },
   {
-    /** 会員一覧 */
+    /** 会員一覧画面 */
     path: "/member/memberList",
     name: "MemberList",
     component: MemberList,
   },
   {
-    /** 会員詳細情報 */
+    /** 会員詳細情報画面 */
     path: "/member/detail:id?",
     name: "MemberDetail",
     component: MemberDetail,
+    props: (routes) => {
+      const idNum = Number(routes.params.id);
+      return {
+        id: idNum,
+      };
+    },
+  },
+  {
+    /** 会員退会画面 */
+    path: "/member/cancel:id",
+    name: "MemberCancel",
+    component: MemberCancel,
     props: (routes) => {
       const idNum = Number(routes.params.id);
       return {
