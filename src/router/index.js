@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
 import InquiryForm from "@/views/InquiryForm.vue";
 import VuetifyList from "@/views/VuetifyList.vue";
-import Calendar from "@/views/Calendar.vue";
 import NotFound from "@/views/NotFound.vue";
 import MemberList from "@/views/member/MemberList.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
 import TodoList from "@/views/todo/TodoList.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
+import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 const routes = [
   { path: "/", name: "DashBoard", component: VuetifyList },
   {
@@ -58,8 +58,13 @@ const routes = [
       };
     },
   },
+  { 
+    /** Todoカレンダー画面 */
+    path: "/todo/calendar",
+    name: "TodoCalendar",
+    component: TodoCalendar
+  },
   { path: "/inquiry", name: "InquiryForm", component: InquiryForm },
-  { path: "/calendar", name: "Calendar", component: Calendar },
   {
     /** 存在しないURLにアクセスした場合 */
     path: "/:pathMatch(.*)*",
