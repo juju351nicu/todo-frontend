@@ -6,6 +6,8 @@ import NotFound from "@/views/NotFound.vue";
 import MemberList from "@/views/member/MemberList.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
+import TodoList from "@/views/todo/TodoList.vue";
+import TodoDetail from "@/views/todo/TodoDetail.vue";
 const routes = [
   { path: "/", name: "DashBoard", component: VuetifyList },
   {
@@ -31,6 +33,24 @@ const routes = [
     path: "/member/cancel:id",
     name: "MemberCancel",
     component: MemberCancel,
+    props: (routes) => {
+      const idNum = Number(routes.params.id);
+      return {
+        id: idNum,
+      };
+    },
+  },
+  {
+    /** Todo一覧画面 */
+    path: "/todo/todoList",
+    name: "TodoList",
+    component: TodoList,
+  },
+  {
+    /** Todo詳細情報画面 */
+    path: "/todo/detail:id?",
+    name: "TodoDetail",
+    component: TodoDetail,
     props: (routes) => {
       const idNum = Number(routes.params.id);
       return {

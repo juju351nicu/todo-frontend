@@ -81,7 +81,7 @@
 </template>
 <script>
 export default {
-    name: "TodoUpsert",
+    name: "TodoDetail",
     data() {
         return {
             myform: {
