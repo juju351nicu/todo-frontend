@@ -28,13 +28,14 @@ export const useTodoStore = defineStore("todo", {
      */
     findTodoList() {
       this.isLoading = true;
-      Fetcher.getRequest(Const.REST_PATH.MEMBER_LIST)
+      Fetcher.postRequest(Const.REST_PATH.TODO_LIST)
         .then((response) => {
           console.log(response.status);
           return response.json();
         })
         .then((data) => {
-          this.memberListInfo = data.memberList;
+          console.log(data);
+          this.todoListInfo = data.todoList;
           this.isLoading = false;
         })
         .catch((error) => {

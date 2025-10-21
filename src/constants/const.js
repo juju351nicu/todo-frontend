@@ -13,6 +13,7 @@ const REST_PATH = {
   MEMBER_DELETE: "/api/v1/member/deleteMembers",
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",
   MEMBER_CANCEL: "/api/v1/member/cancel",
+  TODO_LIST: "/api/v1/todo/todoList",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
 };
 export default {
