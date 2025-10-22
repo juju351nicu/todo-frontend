@@ -18,6 +18,7 @@ import Loading from "@/components/Loading.vue";
 import { onBeforeMount, computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMemberStore } from "@/stores/member";
+import Const from "@/constants/const.js";
 /** ルータ情報 */
 const router = useRouter();
 /** 会員ストア情報 */
@@ -37,12 +38,7 @@ const memberId = ref("user01");
 /** */
 const itemsPerPage = 5;
 /** */
-const pages = [
-    { value: 5, title: "5" },
-    { value: 10, title: "10" },
-    { value: 20, title: "20" },
-    { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
-];
+const pages = Const.DATA_TABLE_PAGES;
 /**　テーブルの関連するラベル・プロパティ等の情報 */
 const headers = [
     {

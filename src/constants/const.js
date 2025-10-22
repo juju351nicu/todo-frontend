@@ -5,6 +5,12 @@ const API_PREFIX_PATH = {
   LOCAL_HOST: "http://localhost:8030",
 };
 
+const DATA_TABLE_PAGES = [
+  { value: 5, title: "5" },
+  { value: 10, title: "10" },
+  { value: 20, title: "20" },
+  { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
+];
 /**
  * REST通信用のURL
  */
@@ -19,4 +25,5 @@ const REST_PATH = {
 export default {
   API_PREFIX_PATH,
   REST_PATH,
+  DATA_TABLE_PAGES
 };

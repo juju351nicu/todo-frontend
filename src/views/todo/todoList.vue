@@ -11,7 +11,7 @@ import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
 import { onBeforeMount, computed } from "vue";
 import { useTodoStore } from "@/stores/todo";
-
+import Const from "@/constants/const.js";
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 /** ローディングフラグ */
@@ -23,12 +23,8 @@ const todoList = computed(() => {
     return todoStore.todoListInfo;
 });
 const itemsPerPage = 5;
-const pages = [
-    { value: 5, title: "5" },
-    { value: 10, title: "10" },
-    { value: 20, title: "20" },
-    { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
-];
+const pages = Const.DATA_TABLE_PAGES;
+
 const headers = [
     { title: '重要度', align: 'start', key: 'priority' },
     { title: '着手日', align: 'start', key: 'dateFrom' },
@@ -62,7 +58,6 @@ const setPriority = ((priority) => {
     }
 });
 const setRemainingDays = ((value) => {
-    console.log(value);
     return '残り' + value + '日間'
 });
 const setDetail = ((value) => {
