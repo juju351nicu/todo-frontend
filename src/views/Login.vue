@@ -36,64 +36,67 @@
         </v-card-text>
     </v-card>
 </template>
-<script>
-export default {
-    data: () => ({
-        showPassword: false,
-        myform: {
-            loginEmail: '',
-            password: ''
-        }
-    }),
-    methods: {
-        /**
-         * ユーザ新規登録を行う。
-         */
-        submitRegister() {
-            location.href = '/member/upsert?memberId=0';
-        },
-        /**
-         * メールアドレスとパスワードでログインする。
-         * @returns false
-         */
-        submitForm() {
-            // this.$refs.form.value = this.myform.loginEmail;
-            // this.$refs.form.value = this.myform.password;
-            // this.$refs.form.method = 'POST';
-            // this.$refs.form.action = '/login';
-            // this.$refs.form.submit();
-            return false;
-        },
-        /**
-         * Facebookでログインする。
-         */
-        submitFacebook() {
-            location.href = '/oauth2/authorization/facebook';
-        },
-        /**
-         * Githubでログインする。
-         */
-        submitGithub() {
-            location.href = '/oauth2/authorization/github';
-        },
-        /**
-         * グーグルでログインする。
-         */
-        submitGoogle() {
-            location.href = '/oauth2/authorization/google';
-        },
-    },
-};
+<script setup lang="js">
+import { ref } from 'vue'
+
+const showPassword = ref(false);
+
+const myform = ref({
+    loginEmail: '',
+    password: ''
+});
+/**
+ * ユーザ新規登録を行う。
+ */
+const submitRegister = (() => {
+    location.href = '/member/upsert?memberId=0';
+});
+/**
+ * メールアドレスとパスワードでログインする。
+ * @returns false
+ */
+const submitForm = (() => {
+    // this.$refs.form.value = this.myform.loginEmail;
+    // this.$refs.form.value = this.myform.password;
+    // this.$refs.form.method = 'POST';
+    // this.$refs.form.action = '/login';
+    // this.$refs.form.submit();
+    console.log(myform.value.loginEmail);
+    console.log(myform.value.password);
+    return false;
+});
+/**
+ * Facebookでログインする。
+ */
+const submitFacebook = (() => {
+    location.href = '/oauth2/authorization/facebook';
+});
+/**
+ * Githubでログインする。
+ */
+const submitGithub = (() => {
+    location.href = '/oauth2/authorization/github';
+});
+/**
+ * グーグルでログインする。
+ */
+const submitGoogle = (() => {
+    location.href = '/oauth2/authorization/google';
+});
 </script>
 <style scoped>
-body{background: #eee url(http://subtlepatterns.com/patterns/sativa.png);}
-html,body{
-	/* margin-top: 200px; */
+body {
+    background: purple;
+}
+
+html,
+body {
+    /* margin-top: 200px; */
     position: relative;
     height: 100%;
 }
 
-.login-container{
+.login-container {
     position: relative;
     width: 350px;
     margin: 80px auto;
@@ -103,7 +106,7 @@ html,body{
     border: 1px solid #ccc;
 }
 
-#output{
+#output {
     position: absolute;
     width: 300px;
     top: -75px;
@@ -111,20 +114,23 @@ html,body{
     color: #fff;
 }
 
-#output.alert-success{
+#output.alert-success {
     background: rgb(25, 204, 25);
 }
 
-#output.alert-danger{
+#output.alert-danger {
     background: rgb(228, 105, 105);
 }
 
 
-.login-container::before,.login-container::after{
+.login-container::before,
+.login-container::after {
     content: "";
     position: absolute;
-    width: 100%;height: 100%;
-    top: 3.5px;left: 0;
+    width: 100%;
+    height: 100%;
+    top: 3.5px;
+    left: 0;
     background: #fff;
     z-index: -1;
     -webkit-transform: rotateZ(4deg);
@@ -134,94 +140,95 @@ html,body{
 
 }
 
-.login-container::after{
+.login-container::after {
     top: 5px;
     z-index: -2;
     -webkit-transform: rotateZ(-2deg);
-     -moz-transform: rotateZ(-2deg);
-      -ms-transform: rotateZ(-2deg);
+    -moz-transform: rotateZ(-2deg);
+    -ms-transform: rotateZ(-2deg);
 
 }
 
-.avatar{
-    width: 100px;height: 100px;
+.avatar {
+    width: 100px;
+    height: 100px;
     margin: 10px auto 30px;
     border-radius: 100%;
     border: 2px solid #aaa;
     background-size: cover;
 }
 
-.form-box input{
+.form-box input {
     width: 100%;
     padding: 10px;
     text-align: center;
-    height:40px;
-    border: 1px solid #ccc;;
+    height: 40px;
+    border: 1px solid #ccc;
+    ;
     background: #fafafa;
-    transition:0.2s ease-in-out;
+    transition: 0.2s ease-in-out;
 
 }
 
-.form-box input:focus{
+.form-box input:focus {
     outline: 0;
     background: #eee;
 }
 
-.form-box input[type="email"]{
+.form-box input[type="email"] {
     border-radius: 5px 5px 0 0;
     text-transform: lowercase;
 }
 
-.form-box input[type="password"]{
+.form-box input[type="password"] {
     border-radius: 0 0 5px 5px;
     border-top: 0;
 }
 
-.form-box button.login{
-    margin-top:15px;
+.form-box button.login {
+    margin-top: 15px;
     padding: 10px 20px;
 }
 
 .animated {
-  -webkit-animation-duration: 1s;
-  animation-duration: 1s;
-  -webkit-animation-fill-mode: both;
-  animation-fill-mode: both;
+    -webkit-animation-duration: 1s;
+    animation-duration: 1s;
+    -webkit-animation-fill-mode: both;
+    animation-fill-mode: both;
 }
 
 @-webkit-keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(20px);
-    transform: translateY(20px);
-  }
+    0% {
+        opacity: 0;
+        -webkit-transform: translateY(20px);
+        transform: translateY(20px);
+    }
 
-  100% {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-  }
+    100% {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+    }
 }
 
 @keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    -webkit-transform: translateY(20px);
-    -ms-transform: translateY(20px);
-    transform: translateY(20px);
-  }
+    0% {
+        opacity: 0;
+        -webkit-transform: translateY(20px);
+        -ms-transform: translateY(20px);
+        transform: translateY(20px);
+    }
 
-  100% {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    -ms-transform: translateY(0);
-    transform: translateY(0);
-  }
+    100% {
+        opacity: 1;
+        -webkit-transform: translateY(0);
+        -ms-transform: translateY(0);
+        transform: translateY(0);
+    }
 }
 
 .fadeInUp {
-  -webkit-animation-name: fadeInUp;
-  animation-name: fadeInUp;
+    -webkit-animation-name: fadeInUp;
+    animation-name: fadeInUp;
 }
-
 </style>
