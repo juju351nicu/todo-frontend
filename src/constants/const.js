@@ -4,7 +4,9 @@
 const API_PREFIX_PATH = {
   LOCAL_HOST: "http://localhost:8030",
 };
-
+/** data-tableの1ページあたりの表示件数（デフォルト）*/
+const NUMBER_OF_ITEMS = 5;
+/** data-tableの表示件数の選択リスト */
 const DATA_TABLE_PAGES = [
   { value: 5, title: "5" },
   { value: 10, title: "10" },
@@ -25,5 +27,6 @@ const REST_PATH = {
 export default {
   API_PREFIX_PATH,
   REST_PATH,
+  NUMBER_OF_ITEMS,
   DATA_TABLE_PAGES
 };

@@ -1,9 +1,28 @@
 <template>
     <SideMenu />
     <Loading v-if="isLoading" />
-    <v-data-table density="compact" v-model:items-per-page="itemsPerPage"
-        item-value="memberId" :headers="headers" :items="todoList" :items-per-page-options="pages"
-        items-per-page-text="表示行数" class="elevation-1">
+    <v-data-table density="compact" v-model:items-per-page="itemsPerPage" :headers="headers" :items="todoList"
+        :items-per-page-options="pages" items-per-page-text="表示行数" class="elevation-1">
+        <template v-slot:item.priority="{ value }">
+            <v-chip :color="getColor(value)">
+                {{ setPriority(value) }}
+            </v-chip>
+        </template>
+        <template v-slot:item.remainingDays="{ value }">
+            {{ setRemainingDays(value) }}
+        </template>
+        <template v-slot:item.detail="{ value }">
+            <span> {{ setDetail(value) }}</span>
+        </template>
+        <template v-slot:item.doneFlag="{ value }">
+            {{ value ? '完了' : '未完了' }}
+        </template>
+        <template v-slot:item.actions="{ item }">
+            <v-row>
+                <v-btn icon="mdi-pencil" size="x-small" class="col ma-1" @click="showUpsert(item)"></v-btn>
+                <v-btn icon="mdi-delete" size="x-small" class="col ma-1" @click="doDoneFlag(item)"></v-btn>
+            </v-row>
+        </template>
     </v-data-table>
 </template>
 <script setup lang="js">
@@ -22,7 +41,9 @@ const isLoading = computed(() => {
 const todoList = computed(() => {
     return todoStore.todoListInfo;
 });
-const itemsPerPage = 5;
+/** data-tableの1ページあたりの表示件数（デフォルト）*/
+const itemsPerPage = Const.NUMBER_OF_ITEMS;
+/** data-tableの表示件数の選択リスト */
 const pages = Const.DATA_TABLE_PAGES;
 
 const headers = [

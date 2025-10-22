@@ -35,9 +35,9 @@ const memberList = computed(() => {
 const selectedIds = ref([]);
 /** 会員ID */
 const memberId = ref("user01");
-/** */
-const itemsPerPage = 5;
-/** */
+/** data-tableの1ページあたりの表示件数（デフォルト）*/
+const itemsPerPage = Const.NUMBER_OF_ITEMS;
+/** data-tableの表示件数の選択リスト */
 const pages = Const.DATA_TABLE_PAGES;
 /**　テーブルの関連するラベル・プロパティ等の情報 */
 const headers = [
