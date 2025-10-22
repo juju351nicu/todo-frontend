@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import Login from '@/views/Login.vue'
 import InquiryForm from "@/views/InquiryForm.vue";
 import VuetifyList from "@/views/VuetifyList.vue";
 import NotFound from "@/views/NotFound.vue";
@@ -10,6 +11,12 @@ import TodoDetail from "@/views/todo/TodoDetail.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 const routes = [
   { path: "/", name: "DashBoard", component: VuetifyList },
+  {
+    /** ログイン画面 */
+    path: "/login",
+    name: "Login",
+    component: Login,
+  },
   {
     /** 会員一覧画面 */
     path: "/member/memberList",
