@@ -17,6 +17,7 @@ const DATA_TABLE_PAGES = [
  * REST通信用のURL
  */
 const REST_PATH = {
+  AUTH_LOGIN: "/api/v1/login",
   MEMBER_LIST: "/api/v1/member/memberList",
   MEMBER_DELETE: "/api/v1/member/deleteMembers",
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",

@@ -16,8 +16,7 @@
                 </v-text-field>
                 <p class="pointer">パスワードを忘れた方</p>
                 <div class="text-center">
-                    <v-btn block color="success" size="large" type="submit" variant="elevated"
-                        @click="submitForm">ログイン</v-btn>
+                    <v-btn color="success" size="large" variant="elevated" @click="submitForm($event)">ログイン</v-btn>
                 </div>
             </form>
             <p @click="submitRegister">新しいアカウントを作成</p>
@@ -37,8 +36,15 @@
     </v-card>
 </template>
 <script setup lang="js">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useUserStore } from "@/stores/user";
 
+/** Authストア情報 */
+const userStore = useUserStore();
+/** ローディングフラグ */
+const isLoading = computed(() => {
+    return userStore.isLoading;
+});
 const showPassword = ref(false);
 
 const myform = ref({
@@ -55,15 +61,14 @@ const submitRegister = (() => {
  * メールアドレスとパスワードでログインする。
  * @returns false
  */
-const submitForm = (() => {
-    // this.$refs.form.value = this.myform.loginEmail;
-    // this.$refs.form.value = this.myform.password;
-    // this.$refs.form.method = 'POST';
-    // this.$refs.form.action = '/login';
-    // this.$refs.form.submit();
-    console.log(myform.value.loginEmail);
-    console.log(myform.value.password);
-    return false;
+const submitForm = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    const payload = {
+        "loginEmail": myform.value.loginEmail,
+        "password": myform.value.password
+    };
+    userStore.authLogin(payload);
 });
 /**
  * Facebookでログインする。
@@ -133,9 +138,6 @@ body {
     left: 0;
     background: #fff;
     z-index: -1;
-    -webkit-transform: rotateZ(4deg);
-    -moz-transform: rotateZ(4deg);
-    -ms-transform: rotateZ(4deg);
     border: 1px solid #ccc;
 
 }
@@ -143,10 +145,6 @@ body {
 .login-container::after {
     top: 5px;
     z-index: -2;
-    -webkit-transform: rotateZ(-2deg);
-    -moz-transform: rotateZ(-2deg);
-    -ms-transform: rotateZ(-2deg);
-
 }
 
 .avatar {
