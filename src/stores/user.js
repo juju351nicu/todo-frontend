@@ -3,7 +3,7 @@ import Const from "@/constants/const.js";
 import Fetcher from "@/utils/rest.js";
 export const useUserStore = defineStore("user", {
   state: () => ({
-    memberId: 0,
+    memberId: 12,
     lastName: "",
     firstName: "",
     loginId: "",

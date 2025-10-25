@@ -1,5 +1,6 @@
 import Util from "@/utils/util.js";
 import Const from "@/constants/const.js";
+import { useUserStore } from "@/stores/user";
 /**
  * Methodの定数
  */
@@ -86,6 +87,10 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   // リクエストヘッダ情報作成
   const headers = new Headers();
   // defaultHeader["ヘッダートークン"] = sessionStorage.getItem("トークンキー");
+  /** Authストア情報 */
+  const userStore = useUserStore();
+  console.log(userStore.memberId);
+  headers.set("X-AUTH-TOKEN", "apikey");
   if (!Util.isEmpty(customHeader)) {
     Object.keys(customHeader).forEach((key) => {
       headers.set(key, customHeader[key]);
@@ -118,5 +123,5 @@ const createRequestData = (uri, reqData, customHeader, method) => {
 export default {
   getRequest,
   postRequest,
-  deleteRequest
+  deleteRequest,
 };
