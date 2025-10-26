@@ -11,6 +11,7 @@ export const useUserStore = defineStore("user", {
     email: "",
     role: "",
     version: "",
+    accessToken: ""
   }),
   getters: {},
   actions: {
@@ -25,6 +26,8 @@ export const useUserStore = defineStore("user", {
           return response.json();
         })
         .then((data) => {
+          // あれば
+          this.accessToken = data.accessToken;
           console.log(data);
           this.isLoading = false;
         })
