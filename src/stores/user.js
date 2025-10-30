@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import Const from "@/constants/const.js";
 import Fetcher from "@/utils/rest.js";
+import Util from "@/utils/util.js";
 export const useUserStore = defineStore("user", {
   state: () => ({
     memberId: 12,
@@ -11,7 +12,7 @@ export const useUserStore = defineStore("user", {
     email: "",
     role: "",
     version: "",
-    accessToken: ""
+    accessToken: "",
   }),
   getters: {},
   actions: {

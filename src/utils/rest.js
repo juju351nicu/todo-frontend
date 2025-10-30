@@ -89,8 +89,8 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   // defaultHeader["ヘッダートークン"] = sessionStorage.getItem("トークンキー");
   /** Authストア情報 */
   const userStore = useUserStore();
-  console.log(userStore.memberId);
-  headers.set("X-AUTH-TOKEN", "apikey");
+  console.log(userStore.accessToken);
+  headers.set("X-AUTH-TOKEN", userStore.accessToken);
   if (!Util.isEmpty(customHeader)) {
     Object.keys(customHeader).forEach((key) => {
       headers.set(key, customHeader[key]);
