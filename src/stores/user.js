@@ -16,25 +16,17 @@ export const useUserStore = defineStore("user", {
   }),
   getters: {},
   actions: {
+    setAccessToken(token) {
+      this.accessToken = token;
+    },
     /**
      * ログインする
      */
     authLogin(payload) {
-      this.isLoading = true;
-      Fetcher.postRequest(Const.REST_PATH.AUTH_LOGIN, payload)
-        .then((response) => {
-          console.log(response.status);
-          return response.json();
-        })
-        .then((data) => {
-          // あれば
-          this.accessToken = data.accessToken;
-          console.log(data);
-          this.isLoading = false;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      return Fetcher.postRequest(Const.REST_PATH.AUTH_LOGIN, payload);
+    },
+    validateToken(_token) {
+      return Fetcher.getRequest(Const.REST_PATH.VALIDATE_TOKEN);
     },
   },
   // SessionStorageに保存する場合

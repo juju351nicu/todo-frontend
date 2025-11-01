@@ -36,15 +36,16 @@
     </v-card>
 </template>
 <script setup lang="js">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
-
+import { useRouter } from "vue-router";
+import Util from "@/utils/util.js";
+/** ルータ情報 */
+const router = useRouter();
 /** Authストア情報 */
 const userStore = useUserStore();
 /** ローディングフラグ */
-const isLoading = computed(() => {
-    return userStore.isLoading;
-});
+const isLoading = ref(false);
 const showPassword = ref(false);
 
 const myform = ref({
@@ -61,14 +62,27 @@ const submitRegister = (() => {
  * メールアドレスとパスワードでログインする。
  * @returns false
  */
-const submitForm = ((event) => {
+const submitForm = (async (event) => {
     // submitイベントの本来の動作を止める
     event.preventDefault();
     const payload = {
         "loginEmail": myform.value.loginEmail,
         "password": myform.value.password
     };
-    userStore.authLogin(payload);
+    try {
+        isLoading.value = true;
+        const res = await userStore.authLogin(payload).then((response) => {
+            console.log(response.status);
+            return response.json();
+        });
+        // あれば
+        console.log(res.accessToken);
+        userStore.setAccessToken(res.accessToken);
+        router.push("/member/memberList");
+        isLoading.value = false;
+    } catch (error) {
+        console.log(error);
+    };
 });
 /**
  * Facebookでログインする。
@@ -88,6 +102,43 @@ const submitGithub = (() => {
 const submitGoogle = (() => {
     location.href = '/oauth2/authorization/google';
 });
+/*
+ * ページ開いた時の処理 
+ * 1.トークンチェック 
+ */
+onMounted(() => {
+    // トークン取得 
+    const token = userStore.accessToken;
+    console.log('ページ開いた時の処理:' + token);
+    // なければ何もしない
+    if (!token) {
+        return;
+    }
+    const checkToken = async () => {
+        try {
+            // トークンチェックAPI起動  
+            const res = await userStore.validateToken(token)
+                .then((response) => {
+                    console.log(response.status);
+                    return response.json();
+                })
+            // 有効なトークンの場合は自動でTOPページへ
+            if (!Util.isEmpty(res.data.username)) {
+                // TOPページへ
+                console.log('TOPページへ');
+                router.push("/member/memberList");
+            } else {
+                // 有効でない場合はトークンを除去    
+                userStore.setAccessToken("");
+            }
+        } catch (err) {
+            // 予期せぬエラーでもトークンを除去しログインしてもらう   
+            userStore.setAccessToken("");
+        }
+    };
+    // トークンチェック処理開始 
+    checkToken();
+}) 
 </script>
 <style scoped>
 body {

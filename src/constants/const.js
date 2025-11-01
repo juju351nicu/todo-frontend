@@ -18,6 +18,7 @@ const DATA_TABLE_PAGES = [
  */
 const REST_PATH = {
   AUTH_LOGIN: "/api/v1/login",
+  VALIDATE_TOKEN: "/api/v1/tokenValidate",
   MEMBER_LIST: "/api/v1/member/memberList",
   MEMBER_DELETE: "/api/v1/member/deleteMembers",
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",
