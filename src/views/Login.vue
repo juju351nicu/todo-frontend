@@ -76,7 +76,7 @@ const errorMessages = ref([]);
  * メールアドレスとパスワードでログインする。
  * @returns false
  */
-const submitForm = (async (event) => {
+const submitForm = ((event) => {
     // submitイベントの本来の動作を止める
     event.preventDefault();
     const payload = {
