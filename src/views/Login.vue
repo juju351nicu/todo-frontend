@@ -84,28 +84,29 @@ const submitForm = (async (event) => {
         "password": myform.value.password
     };
     isLoading.value = true;
-    userStore.authLogin(payload).then(async (response) => {
-        if (response.ok) {
-            const data = await response.json();
-            console.log(data.accessToken);
-            userStore.setAccessToken(data.accessToken);
-            isLoading.value = false;
-            router.push("/member/memberList");
-        } else {
-            const err = await response.json();
-            if (!Util.isEmpty(err.fieldErrors)) {
-                showMessageModal();
-                err.fieldErrors.forEach((fieldError) => {
-                    errorMessages.value.push(fieldError.message);
-                });
+    try {
+        userStore.authLogin(payload).then(async (response) => {
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data.accessToken);
+                userStore.setAccessToken(data.accessToken);
                 isLoading.value = false;
+                router.push("/member/memberList");
+            } else {
+                const err = await response.json();
+                if (!Util.isEmpty(err.fieldErrors)) {
+                    showMessageModal();
+                    err.fieldErrors.forEach((fieldError) => {
+                        errorMessages.value.push(fieldError.message);
+                    });
+                    isLoading.value = false;
+                }
+                throw new Error("There's an error upstream and it says");
             }
-            throw new Error("There's an error upstream and it says");
-        }
-    })
-        .catch((error) => {
-            console.log(error);
-        });
+        })
+    } catch (error) {
+        console.log(error);
+    };
 });
 /**
  * Facebookでログインする。
