@@ -1,4 +1,6 @@
 <template>
+    <Loading v-if="isLoading" />
+    <MessageModal :messages="errorMessages" v-if="isShowModal" @close-modal="hideMessageModal" />
     <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">
         <v-card-title class="d-flex justify-center pa-0 mt-6">ログイン</v-card-title>
         <v-card-text class="d-flex justify-center flex-column">
@@ -36,6 +38,8 @@
     </v-card>
 </template>
 <script setup lang="js">
+import MessageModal from "@/components/MessageModal.vue";
+import Loading from "@/components/Loading.vue";
 import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
@@ -46,6 +50,8 @@ const router = useRouter();
 const userStore = useUserStore();
 /** ローディングフラグ */
 const isLoading = ref(false);
+/** モーダルを表示・非表示フラグ */
+const isShowModal = ref(false);
 const showPassword = ref(false);
 
 const myform = ref({
@@ -58,6 +64,14 @@ const myform = ref({
 const submitRegister = (() => {
     location.href = '/member/upsert?memberId=0';
 });
+const showMessageModal = () => {
+    isShowModal.value = true;
+};
+const hideMessageModal = () => {
+    // モーダルを非表示にする
+    isShowModal.value = false;
+};
+const errorMessages = ref([]);
 /**
  * メールアドレスとパスワードでログインする。
  * @returns false
@@ -69,20 +83,29 @@ const submitForm = (async (event) => {
         "loginEmail": myform.value.loginEmail,
         "password": myform.value.password
     };
-    try {
-        isLoading.value = true;
-        const res = await userStore.authLogin(payload).then((response) => {
-            console.log(response.status);
-            return response.json();
+    isLoading.value = true;
+    userStore.authLogin(payload).then(async (response) => {
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data.accessToken);
+            userStore.setAccessToken(data.accessToken);
+            isLoading.value = false;
+            router.push("/member/memberList");
+        } else {
+            const err = await response.json();
+            if (!Util.isEmpty(err.fieldErrors)) {
+                showMessageModal();
+                err.fieldErrors.forEach((fieldError) => {
+                    errorMessages.value.push(fieldError.message);
+                });
+                isLoading.value = false;
+            }
+            throw new Error("There's an error upstream and it says");
+        }
+    })
+        .catch((error) => {
+            console.log(error);
         });
-        // あれば
-        console.log(res.accessToken);
-        userStore.setAccessToken(res.accessToken);
-        router.push("/member/memberList");
-        isLoading.value = false;
-    } catch (error) {
-        console.log(error);
-    };
 });
 /**
  * Facebookでログインする。
