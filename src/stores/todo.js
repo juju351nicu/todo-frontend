@@ -26,9 +26,9 @@ export const useTodoStore = defineStore("todo", {
     /**
      * Todo一覧情報を取得する
      */
-    findTodoList() {
+    findTodoList(payload) {
       this.isLoading = true;
-      Fetcher.postRequest(Const.REST_PATH.TODO_LIST)
+      Fetcher.postRequest(Const.REST_PATH.TODO_LIST, payload)
         .then((response) => {
           console.log(response.status);
           return response.json();

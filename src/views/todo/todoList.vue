@@ -1,6 +1,38 @@
 <template>
     <SideMenu />
     <Loading v-if="isLoading" />
+    <v-card class="mx-auto" max-width="1000">
+        <v-card-item>
+            <v-card-title>
+                Todo検索
+                <v-row>
+                    <v-col>
+                        <v-text-field v-model="searchTitle" color="purple darken-2" placeholder="タイトル">
+                        </v-text-field>
+                    </v-col>
+                    <!--  <v-col>
+                        <input type="text" name="date_from" placeholder="日付(date_from)" />
+                        <input type="text" name="date_to" placeholder="日付(date_to)" />
+                    </v-col> -->
+                    <v-col>
+                        <v-checkbox v-model="selectedDoneFlag" value="0" label="未完了のみ">
+                        </v-checkbox>
+                    </v-col>
+                    <v-col>
+                        <v-checkbox v-model="selectedDoneFlag" value="1" label="完了のみ">
+                        </v-checkbox>
+                    </v-col>
+                </v-row>
+            </v-card-title>
+            <v-card-subtitle style="text-align: right">
+                11月8日
+            </v-card-subtitle>
+        </v-card-item>
+        <v-card-text style="text-align: right">
+            <v-btn color="success">検索</v-btn>
+        </v-card-text>
+    </v-card>
+    <br />
     <v-data-table density="compact" v-model:items-per-page="itemsPerPage" :headers="headers" :items="todoList"
         :items-per-page-options="pages" items-per-page-text="表示行数" class="elevation-1">
         <template v-slot:item.priority="{ value }">
@@ -28,7 +60,7 @@
 <script setup lang="js">
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
-import { onBeforeMount, computed } from "vue";
+import { onBeforeMount, computed, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import Const from "@/constants/const.js";
 /** Todoストア情報 */
@@ -96,7 +128,17 @@ const doDoneFlag = ((item) => {
     console.log(item);
     location.href = '/todo/doneFlag?todoId=' + item.todoId;
 });
+/** 検索用タイトル */
+const searchTitle = ref("");
+/** 検索用完了・未完了フラグチェックボックス */
+const selectedDoneFlag = ref([]);
+
 onBeforeMount(() => {
-    todoStore.findTodoList();
+    const payload = {
+        "search_title": "",
+        "date_range": "",
+        "done_flag_values": [],
+    };
+    todoStore.findTodoList(payload);
 });
 </script>
