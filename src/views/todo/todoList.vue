@@ -29,7 +29,7 @@
             </v-card-subtitle>
         </v-card-item>
         <v-card-text style="text-align: right">
-            <v-btn color="success">検索</v-btn>
+            <v-btn color="success" @click="formSubmit($event)">検索</v-btn>
         </v-card-text>
     </v-card>
     <br />
@@ -66,13 +66,11 @@ import Const from "@/constants/const.js";
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 /** ローディングフラグ */
-const isLoading = computed(() => {
-    return todoStore.isLoading;
-});
+const isLoading = ref(false);
+/** モーダルを表示・非表示フラグ */
+const isShowModal = ref(false);
 /** Todo情報一覧 */
-const todoList = computed(() => {
-    return todoStore.todoListInfo;
-});
+const todoList = ref([]);
 /** data-tableの1ページあたりの表示件数（デフォルト）*/
 const itemsPerPage = Const.NUMBER_OF_ITEMS;
 /** data-tableの表示件数の選択リスト */
@@ -89,7 +87,13 @@ const headers = [
     { title: '編集', align: 'start', key: 'actions' },
 ];
 
-
+const showMessageModal = () => {
+    isShowModal.value = true;
+};
+const hideMessageModal = () => {
+    // モーダルを非表示にする
+    isShowModal.value = false;
+};
 const getColor = ((priority) => {
     switch (priority) {
         case 1:
@@ -132,13 +136,68 @@ const doDoneFlag = ((item) => {
 const searchTitle = ref("");
 /** 検索用完了・未完了フラグチェックボックス */
 const selectedDoneFlag = ref([]);
-
+/**
+ * 検索ボタン押下の際、TODO情報を検索する。
+ */
+const formSubmit = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    const payload = {
+        "search_title": searchTitle.value,
+        "date_range": "",
+        "done_flag_values": selectedDoneFlag.value,
+    };
+    isLoading.value = true;
+    try {
+        todoStore.findTodoList(payload).then(async (response) => {
+            if (response.ok) {
+                const data = await response.json();
+                todoList.value = data.todoList;
+                isLoading.value = false;
+            } else {
+                const err = await response.json();
+                if (!Util.isEmpty(err.fieldErrors)) {
+                    showMessageModal();
+                    err.fieldErrors.forEach((fieldError) => {
+                        errorMessages.value.push(fieldError.message);
+                    });
+                    isLoading.value = false;
+                }
+                throw new Error("There's an error upstream and it says");
+            }
+        })
+    } catch (error) {
+        console.log(error);
+    };
+});
+/** 初期表示 */
 onBeforeMount(() => {
     const payload = {
         "search_title": "",
         "date_range": "",
         "done_flag_values": [],
     };
-    todoStore.findTodoList(payload);
+    isLoading.value = true;
+    try {
+        todoStore.findTodoList(payload).then(async (response) => {
+            if (response.ok) {
+                const data = await response.json();
+                todoList.value = data.todoList;
+                isLoading.value = false;
+            } else {
+                const err = await response.json();
+                if (!Util.isEmpty(err.fieldErrors)) {
+                    showMessageModal();
+                    err.fieldErrors.forEach((fieldError) => {
+                        errorMessages.value.push(fieldError.message);
+                    });
+                    isLoading.value = false;
+                }
+                throw new Error("There's an error upstream and it says");
+            }
+        })
+    } catch (error) {
+        console.log(error);
+    };
 });
 </script>

@@ -17,7 +17,7 @@ export const useTodoStore = defineStore("todo", {
         priority: 0,
         version: 0,
         idMemberMap: [],
-        userList: []
+        userList: [],
       },
     ],
   }),
@@ -27,20 +27,7 @@ export const useTodoStore = defineStore("todo", {
      * Todo一覧情報を取得する
      */
     findTodoList(payload) {
-      this.isLoading = true;
-      Fetcher.postRequest(Const.REST_PATH.TODO_LIST, payload)
-        .then((response) => {
-          console.log(response.status);
-          return response.json();
-        })
-        .then((data) => {
-          console.log(data);
-          this.todoListInfo = data.todoList;
-          this.isLoading = false;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      return Fetcher.postRequest(Const.REST_PATH.TODO_LIST, payload);
     },
     /**
      * Todo情報を更新する
