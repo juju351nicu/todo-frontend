@@ -60,7 +60,7 @@
 <script setup lang="js">
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
-import { onBeforeMount, computed, ref } from "vue";
+import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import Const from "@/constants/const.js";
 /** Todoストア情報 */
