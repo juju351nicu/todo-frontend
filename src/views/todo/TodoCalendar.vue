@@ -4,7 +4,9 @@
 <script>
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin from '@fullcalendar/interaction'
+import jaLocale from '@fullcalendar/core/locales/ja'
 import Const from "@/constants/const.js";
 import Fetcher from "@/utils/rest.js";
 export default {
@@ -13,8 +15,23 @@ export default {
   },
   data() {
     return {
+      locale: jaLocale, // 日本語化
       calendarOptions: {
-        plugins: [dayGridPlugin, interactionPlugin],
+        plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin],
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay",
+        },
+        buttonText: {
+          prev: "前月",
+          next: "次月",
+          today: "今日",
+          month: "月",
+          week: "週",
+          day: "日",
+          list: "リスト",
+        },
         initialView: 'dayGridMonth',
         dateClick: this.handleDateClick,
         events: [
