@@ -24,6 +24,7 @@ const REST_PATH = {
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",
   MEMBER_CANCEL: "/api/v1/member/cancel",
   TODO_LIST: "/api/v1/todo/todoList",
+  TODO_CALENDAR: "/api/v1/todo/calendar",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
 };
 export default {
