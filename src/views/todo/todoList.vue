@@ -78,8 +78,8 @@ const pages = Const.DATA_TABLE_PAGES;
 
 const headers = [
     { title: '重要度', align: 'start', key: 'priority' },
-    { title: '着手日', align: 'start', key: 'dateFrom' },
-    { title: '期限日', align: 'start', key: 'dateTo' },
+    { title: '着手日', align: 'start', key: 'start' },
+    { title: '期限日', align: 'start', key: 'end' },
     { title: '残り日数', align: 'start', key: 'remainingDays' },
     { title: 'タイトル', align: 'start', key: 'title' },
     { title: '詳細情報', align: 'start', key: 'detail' },
