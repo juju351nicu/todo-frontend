@@ -32,8 +32,8 @@ export const useTodoStore = defineStore("todo", {
     /**
      * Todoカレンダー一覧情報を取得する
      */
-    findCalendarList() {
-      return Fetcher.getRequest(Const.REST_PATH.TODO_CALENDAR);
+    findCalendarList(payload) {
+      return Fetcher.postRequest(Const.REST_PATH.TODO_CALENDAR, payload);
     },
     /**
      * Todo情報を更新する
