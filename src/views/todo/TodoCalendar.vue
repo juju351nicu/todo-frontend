@@ -45,7 +45,7 @@ const showMessageModal = () => {
 /** 検索用タイトル */
 const searchTitle = ref("");
 /** 検索用完了・未完了フラグチェックボックス */
-const selectedDoneFlag = ref([]);
+const selectedDoneFlag = ref(['0','1']);
 /**
  * 検索ボタン押下の際、TODO情報を検索する。
  */
