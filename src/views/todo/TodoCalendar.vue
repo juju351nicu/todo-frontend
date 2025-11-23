@@ -62,7 +62,7 @@ const formSubmit = ((event) => {
     todoStore.findCalendarList(payload).then(async (response) => {
       if (response.ok) {
         const data = await response.json();
-        calendarOptions.events = data.eventDtos;
+        calendarOptions.events = data.todoList;
         isLoading.value = false;
       } else {
         const err = await response.json();
@@ -93,7 +93,7 @@ onBeforeMount(() => {
       if (response.ok) {
         const data = await response.json();
         console.log(data);
-        calendarOptions.events = data.eventDtos;
+        calendarOptions.events = data.todoList;
         // data.eventDtos.forEach((field) => {
         //   this.calendarOptions.events.push({ title: field.title, date: field.start },);
         // });

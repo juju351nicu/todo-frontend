@@ -1,62 +1,3 @@
-<template>
-    <SideMenu />
-    <Loading v-if="isLoading" />
-    <v-card class="mx-auto" max-width="1000">
-        <v-card-item>
-            <v-card-title>
-                Todo検索
-                <v-row>
-                    <v-col>
-                        <v-text-field v-model="searchTitle" color="purple darken-2" placeholder="タイトル">
-                        </v-text-field>
-                    </v-col>
-                    <!--  <v-col>
-                        <input type="text" name="date_from" placeholder="日付(date_from)" />
-                        <input type="text" name="date_to" placeholder="日付(date_to)" />
-                    </v-col> -->
-                    <v-col>
-                        <v-checkbox v-model="selectedDoneFlag" value="0" label="未完了のみ">
-                        </v-checkbox>
-                    </v-col>
-                    <v-col>
-                        <v-checkbox v-model="selectedDoneFlag" value="1" label="完了のみ">
-                        </v-checkbox>
-                    </v-col>
-                </v-row>
-            </v-card-title>
-            <v-card-subtitle style="text-align: right">
-                11月8日
-            </v-card-subtitle>
-        </v-card-item>
-        <v-card-text style="text-align: right">
-            <v-btn color="success" @click="formSubmit($event)">検索</v-btn>
-        </v-card-text>
-    </v-card>
-    <br />
-    <v-data-table density="compact" v-model:items-per-page="itemsPerPage" :headers="headers" :items="todoList"
-        :items-per-page-options="pages" items-per-page-text="表示行数" class="elevation-1">
-        <template v-slot:item.priority="{ value }">
-            <v-chip :color="getColor(value)">
-                {{ setPriority(value) }}
-            </v-chip>
-        </template>
-        <template v-slot:item.remainingDays="{ value }">
-            {{ setRemainingDays(value) }}
-        </template>
-        <template v-slot:item.detail="{ value }">
-            <span> {{ setDetail(value) }}</span>
-        </template>
-        <template v-slot:item.doneFlag="{ value }">
-            {{ value ? '完了' : '未完了' }}
-        </template>
-        <template v-slot:item.actions="{ item }">
-            <v-row>
-                <v-btn icon="mdi-pencil" size="x-small" class="col ma-1" @click="showUpsert(item)"></v-btn>
-                <v-btn icon="mdi-delete" size="x-small" class="col ma-1" @click="doDoneFlag(item)"></v-btn>
-            </v-row>
-        </template>
-    </v-data-table>
-</template>
 <script setup lang="js">
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
@@ -201,3 +142,62 @@ onBeforeMount(() => {
     };
 });
 </script>
+<template>
+    <SideMenu />
+    <Loading v-if="isLoading" />
+    <v-card class="mx-auto" max-width="1000">
+        <v-card-item>
+            <v-card-title>
+                Todo検索
+                <v-row>
+                    <v-col>
+                        <v-text-field v-model="searchTitle" color="purple darken-2" placeholder="タイトル">
+                        </v-text-field>
+                    </v-col>
+                    <!--  <v-col>
+                        <input type="text" name="date_from" placeholder="日付(date_from)" />
+                        <input type="text" name="date_to" placeholder="日付(date_to)" />
+                    </v-col> -->
+                    <v-col>
+                        <v-checkbox v-model="selectedDoneFlag" value="0" label="未完了のみ">
+                        </v-checkbox>
+                    </v-col>
+                    <v-col>
+                        <v-checkbox v-model="selectedDoneFlag" value="1" label="完了のみ">
+                        </v-checkbox>
+                    </v-col>
+                </v-row>
+            </v-card-title>
+            <v-card-subtitle style="text-align: right">
+                11月8日
+            </v-card-subtitle>
+        </v-card-item>
+        <v-card-text style="text-align: right">
+            <v-btn color="success" @click="formSubmit($event)">検索</v-btn>
+        </v-card-text>
+    </v-card>
+    <br />
+    <v-data-table density="compact" v-model:items-per-page="itemsPerPage" :headers="headers" :items="todoList"
+        :items-per-page-options="pages" items-per-page-text="表示行数" class="elevation-1">
+        <template v-slot:item.priority="{ value }">
+            <v-chip :color="getColor(value)">
+                {{ setPriority(value) }}
+            </v-chip>
+        </template>
+        <template v-slot:item.remainingDays="{ value }">
+            {{ setRemainingDays(value) }}
+        </template>
+        <template v-slot:item.detail="{ value }">
+            <span> {{ setDetail(value) }}</span>
+        </template>
+        <template v-slot:item.doneFlag="{ value }">
+            {{ value ? '完了' : '未完了' }}
+        </template>
+        <template v-slot:item.actions="{ item }">
+            <v-row>
+                <v-btn icon="mdi-pencil" size="x-small" class="col ma-1" @click="showUpsert(item)"></v-btn>
+                <v-btn icon="mdi-delete" size="x-small" class="col ma-1" @click="doDoneFlag(item)"></v-btn>
+            </v-row>
+        </template>
+    </v-data-table>
+</template>
