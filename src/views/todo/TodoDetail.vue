@@ -4,7 +4,6 @@
             <v-card-title>
                 <span> {{ myform.todoId > 0 ? myform.todoId : ' (新規)' }}</span>
             </v-card-title>
-            <span th:if="${#fields.hasErrors('todoId')}" th:errors="*{todoId}" th:errorclass="err"></span>
             <v-card-text>
                 <form ref="form" :model="myform">
                     <v-row>
@@ -25,8 +24,6 @@
                         <template v-if="myform.todoId == 0">
                             <input type="hidden" name="userId" ref="inputUserId">
                         </template>
-                        <span th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}"
-                            th:errorclass="err">errorMessage</span>
                         <v-col cols="12">
                             <v-text-field name="dateFrom" v-model="myform.dateFrom" label="着手日" required>
                             </v-text-field>
@@ -35,10 +32,6 @@
                             <v-text-field name="dateTo" v-model="myform.dateTo" label="期限日" required>
                             </v-text-field>
                         </v-col>
-                        <span th:if="${#fields.hasErrors('dateFrom')}" th:errors="*{dateFrom}"
-                            th:errorclass="err">errorMessage</span>
-                        <span th:if="${#fields.hasErrors('dateTo')}" th:errors="*{dateTo}"
-                            th:errorclass="err">errorMessage</span>
                         <v-col cols="12">
                             <v-select name="priority" v-model="myform.priority" :items="priorityItems"
                                 item-title="priorityLabel" item-value="priority" label="重要度"></v-select>
@@ -51,20 +44,10 @@
                             <v-text-field name="title" v-model="myform.title" label="タイトル" required>
                             </v-text-field>
                         </v-col>
-                        <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}"
-                            th:errorclass="err">errorMessage</span>
                         <v-col cols="12">
                             <v-textarea name="detail" v-model="myform.detail" label="詳細" required>
                             </v-textarea>
                         </v-col>
-                        <span th:if="${#fields.hasErrors('detail')}" th:errors="*{detail}"
-                            th:errorclass="err">errorMessage</span>
-                        <span th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}"
-                            th:errorclass="err">errorMessage</span>
-                        <span th:if="${#fields.hasErrors('doneFlag')}" th:errors="*{doneFlag}"
-                            th:errorclass="err">errorMessage</span>
-                        <span th:if="${#fields.hasErrors('version')}" th:errors="*{version}"
-                            th:errorclass="err">errorMessage</span>
                         <input type="hidden" name="todoId" :value="myform.todoId">
                         <input type="hidden" name="version" :value="myform.version">
                         <v-btn class="mr-4" color="success" type="submit" @click="formSubmit">

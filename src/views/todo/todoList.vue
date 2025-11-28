@@ -67,7 +67,7 @@ const setDoneFlag = ((doneFlag) => {
 });
 const showUpsert = ((item) => {
     console.log(item);
-    location.href = '/todo/upsert?todoId=' + item.todoId + '&userId=' + item.userId;
+    router.push({ name: "TodoDetail", params: { id: item.todoId } });
 });
 const doDoneFlag = ((item) => {
     console.log(item);

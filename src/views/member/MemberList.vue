@@ -1,17 +1,3 @@
-<template>
-    <SideMenu />
-    <Loading v-if="isLoading" />
-    <h2>会員一覧</h2>
-    <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"
-        item-value="memberId" :headers="headers" :items="memberList" :items-per-page-options="pages"
-        items-per-page-text="表示行数" class="elevation-1">
-        <template v-slot:item.actions="{ item }">
-            <v-icon size="small" class="me-2" @click="showUpsert(item)"> mdi-pencil </v-icon>
-        </template>
-    </v-data-table>
-    <div>{{ selectedIds }}</div>
-    <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit()"> 削除確認する </v-btn>
-</template>
 <script setup lang="js">
 import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
@@ -78,6 +64,19 @@ onBeforeMount(() => {
 });
 
 </script>
-
+<template>
+    <SideMenu />
+    <Loading v-if="isLoading" />
+    <h2>会員一覧</h2>
+    <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"
+        item-value="memberId" :headers="headers" :items="memberList" :items-per-page-options="pages"
+        items-per-page-text="表示行数" class="elevation-1">
+        <template v-slot:item.actions="{ item }">
+            <v-icon size="small" class="me-2" @click="showUpsert(item)"> mdi-pencil </v-icon>
+        </template>
+    </v-data-table>
+    <div>{{ selectedIds }}</div>
+    <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit()"> 削除確認する </v-btn>
+</template>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped></style>

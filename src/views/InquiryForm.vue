@@ -1,3 +1,28 @@
+<script setup lang="js">
+import { computed, ref } from "vue";
+import SideMenu from "@/components/SideMenu.vue";
+import Loading from "@/components/Loading.vue";
+import { useInquiryStore } from "@/stores/inquiry";
+
+
+const inquiryStore = useInquiryStore();
+
+const isLoading = computed(() => {
+  return inquiryStore.isLoading;
+});
+const fullName = ref("");
+const email = ref("");
+const message = ref("");
+/** お問い合わせ情報のパラメータを送る */
+const submit = (() => {
+  const payload = {
+    "fullName": fullName.value,
+    "email": email.value,
+    "message": message.value
+  };
+  inquiryStore.recieveInquiryInfo(payload);
+});
+</script>
 <template>
   <side-menu />
   <Loading v-if="isLoading" />
@@ -28,31 +53,5 @@
     なルール・体制を確立し，定めた個人情報保護方針を実行し維持します。
   </p>
 </template>
-<script setup lang="js">
-import { computed, ref } from "vue";
-import SideMenu from "@/components/SideMenu.vue";
-import Loading from "@/components/Loading.vue";
-import { useInquiryStore } from "@/stores/inquiry";
-
-
-const inquiryStore = useInquiryStore();
-
-const isLoading = computed(() => {
-  return inquiryStore.isLoading;
-});
-const fullName = ref("");
-const email = ref("");
-const message = ref("");
-/** お問い合わせ情報のパラメータを送る */
-const submit = (() => {
-  const payload = {
-    "fullName": fullName.value,
-    "email": email.value,
-    "message": message.value
-  };
-  inquiryStore.recieveInquiryInfo(payload);
-});
-</script>
-
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped></style>

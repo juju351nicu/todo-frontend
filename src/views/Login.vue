@@ -1,42 +1,3 @@
-<template>
-    <Loading v-if="isLoading" />
-    <MessageModal :messages="errorMessages" v-if="isShowModal" @close-modal="hideMessageModal" />
-    <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">
-        <v-card-title class="d-flex justify-center pa-0 mt-6">ログイン</v-card-title>
-        <v-card-text class="d-flex justify-center flex-column">
-            <p class="text-center pt-3 mt-3 text-subtitle-1 siginIn-border-top">
-                メールアドレスでログイン
-            </p>
-            <form class="mx-9" ref="form" :model="myform">
-                <v-text-field prepend-inner-icon="mdi-email" name="loginEmail" type="email" v-model="myform.loginEmail"
-                    placeholder="メールアドレス" outlined dense>
-                </v-text-field>
-                <v-text-field prepend-inner-icon="mdi-lock" name="password"
-                    v-bind:type="showPassword ? 'text' : 'password'" @click:append-inner="showPassword = !showPassword"
-                    v-bind:append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" v-model="myform.password"
-                    placeholder="パスワード" outlined dense>
-                </v-text-field>
-                <p class="pointer">パスワードを忘れた方</p>
-                <div class="text-center">
-                    <v-btn color="success" size="large" variant="elevated" @click="submitForm($event)">ログイン</v-btn>
-                </div>
-            </form>
-            <p @click="submitRegister">新しいアカウントを作成</p>
-            <v-btn prepend-icon="mdi-facebook" class="fill-width mt-6 text-capitalize white--text caption mx-4" rounded
-                color="#3b5998" depressed height="48px" @click="submitFacebook">
-                Facebookでログイン
-            </v-btn>
-            <v-btn prepend-icon="mdi-google" class="fill-width mt-6 text-capitalize text--white caption mx-4" rounded
-                height="48px" outlined color="red" @click="submitGoogle">
-                Googleでログイン
-            </v-btn>
-            <v-btn prepend-icon="mdi-github" class="fill-width mt-6 text-capitalize text--white caption mx-4 mb-6"
-                rounded height="48px" outlined color="black" @click="submitGithub">
-                Githubでログイン
-            </v-btn>
-        </v-card-text>
-    </v-card>
-</template>
 <script setup lang="js">
 import MessageModal from "@/components/MessageModal.vue";
 import Loading from "@/components/Loading.vue";
@@ -164,6 +125,45 @@ onMounted(() => {
     checkToken();
 }) 
 </script>
+<template>
+    <Loading v-if="isLoading" />
+    <MessageModal :messages="errorMessages" v-if="isShowModal" @close-modal="hideMessageModal" />
+    <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">
+        <v-card-title class="d-flex justify-center pa-0 mt-6">ログイン</v-card-title>
+        <v-card-text class="d-flex justify-center flex-column">
+            <p class="text-center pt-3 mt-3 text-subtitle-1 siginIn-border-top">
+                メールアドレスでログイン
+            </p>
+            <form class="mx-9" ref="form" :model="myform">
+                <v-text-field prepend-inner-icon="mdi-email" name="loginEmail" type="email" v-model="myform.loginEmail"
+                    placeholder="メールアドレス" outlined dense>
+                </v-text-field>
+                <v-text-field prepend-inner-icon="mdi-lock" name="password"
+                    v-bind:type="showPassword ? 'text' : 'password'" @click:append-inner="showPassword = !showPassword"
+                    v-bind:append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" v-model="myform.password"
+                    placeholder="パスワード" outlined dense>
+                </v-text-field>
+                <p class="pointer">パスワードを忘れた方</p>
+                <div class="text-center">
+                    <v-btn color="success" size="large" variant="elevated" @click="submitForm($event)">ログイン</v-btn>
+                </div>
+            </form>
+            <p @click="submitRegister">新しいアカウントを作成</p>
+            <v-btn prepend-icon="mdi-facebook" class="fill-width mt-6 text-capitalize white--text caption mx-4" rounded
+                color="#3b5998" depressed height="48px" @click="submitFacebook">
+                Facebookでログイン
+            </v-btn>
+            <v-btn prepend-icon="mdi-google" class="fill-width mt-6 text-capitalize text--white caption mx-4" rounded
+                height="48px" outlined color="red" @click="submitGoogle">
+                Googleでログイン
+            </v-btn>
+            <v-btn prepend-icon="mdi-github" class="fill-width mt-6 text-capitalize text--white caption mx-4 mb-6"
+                rounded height="48px" outlined color="black" @click="submitGithub">
+                Githubでログイン
+            </v-btn>
+        </v-card-text>
+    </v-card>
+</template>
 <style scoped>
 body {
     background: purple;
