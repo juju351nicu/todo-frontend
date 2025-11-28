@@ -74,6 +74,8 @@ const handleCloseModal = (() => {
  * 会員情報を新規登録・更新する。
  */
 const confirmSubmit = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
     isShowModal.value = false;
     const payload = {
         "memberId": myform.memberId,

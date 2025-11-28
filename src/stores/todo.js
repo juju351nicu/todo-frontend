@@ -8,8 +8,8 @@ export const useTodoStore = defineStore("todo", {
     todoListInfo: [
       {
         todoId: 0,
-        dateFrom: "",
-        dateTo: "",
+        start: "",
+        end: "",
         title: "",
         detail: "",
         userId: 0,
@@ -23,6 +23,12 @@ export const useTodoStore = defineStore("todo", {
   }),
   getters: {},
   actions: {
+    /**
+     * Todo一覧情報を設定する
+     */
+    setTodoList(payload) {
+      this.todoListInfo = payload;
+    },
     /**
      * Todo一覧情報を取得する
      */

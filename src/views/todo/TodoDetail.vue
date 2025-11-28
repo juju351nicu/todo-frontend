@@ -1,4 +1,145 @@
+<script setup lang="js">
+import SideMenu from "@/components/SideMenu.vue";
+// import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
+import Loading from "@/components/Loading.vue";
+import { computed, onMounted, reactive, ref } from 'vue';
+import util from "@/utils/util.js";
+import { useTodoStore } from "@/stores/todo";
+const props = defineProps({
+    id: Number,
+});
+/** Todoストア情報 */
+const todoStore = useTodoStore();
+
+/** ローディングフラグ */
+const isLoading = computed(() => {
+    return todoStore.isLoading;
+});
+/**
+ * Noから配列のindexを取得する
+ * @param {string} id id
+ * @returns index番号
+ */
+const getFindIndex = ((id) => {
+    const index = todoStore.todoListInfo.findIndex(
+        (todo) => todo.todoId === id
+    );
+    // 下記の部分、見直し
+    return util.isEmpty(id) ? 0 : index;;
+});
+/**
+  * 
+  * @returns 
+  */
+const fullName = computed(() => {
+    // return (this.myform.userId in this.myform.idMemberMap) ? this.myform.idMemberMap[this.myform.userId].lastName + this.myform.idMemberMap[this.myform.userId].firstName : '削除されたユーザ';
+return "";
+});
+/** Todo詳細情報 */
+const numId = computed(() => {
+    return util.isEmpty(props.id) ? 0 : props.id;
+});
+/** Todo詳細情報 */
+const todoInfo = computed(() => {
+    const index = getFindIndex(numId.value);
+    return todoStore.todoListInfo[index];
+});
+/** Todo詳細情報 */
+const myform = reactive({
+    todoId: todoInfo.value.todoId,
+    dateFrom: todoInfo.value.start,
+    dateTo: todoInfo.value.end,
+    title: todoInfo.value.title,
+    detail: todoInfo.value.detail,
+    userId: todoInfo.value.userId,
+    doneFlag: false,
+    priority: 0,
+    version: 0,
+    idMemberMap: [],
+    userList: [],
+});
+
+/** モーダルを表示・非表示フラグ */
+const isShowModal = ref(false);
+
+/** 確認画面「モーダル」を表示する */
+const showModal = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    isShowModal.value = true;
+});
+
+/**
+ * モーダルを非表示にする
+ */
+const handleCloseModal = (() => {
+    isShowModal.value = false;
+});
+
+const priorityItems = [
+    { priorityLabel: '低', priority: 1 },
+    { priorityLabel: '中', priority: 2 },
+    { priorityLabel: '高', priority: 3 },];
+const doneFlagItems = [
+    { doneFlagLabel: '未完了', doneFlag: 0 },
+    { doneFlagLabel: '完了', doneFlag: 1 },];
+const fullNameItems = [
+    { userObjLabel: '全員', userObjId: -1 }
+];
+
+/** 初期表示 */
+onMounted(() => {
+    // console.log('priority' + (this.myform.priority == 0));
+    // console.log('doneFlag' + (this.myform.doneFlag == false) + '値' + this.myform.doneFlag);
+    // console.log('判定結果:' + (this.myform.userId in this.myform.idMemberMap));
+    // if (this.myform.doneFlag == null || this.myform.doneFlag == 'false') {
+    //     this.myform.doneFlag = { doneFlagLabel: '未完了', doneFlag: 0 };
+    // };
+    // if (this.myform.priority == 0) {
+    //     this.myform.priority = { priorityLabel: '低', priority: 1 }
+    // };
+    // if (role == 0 && this.myform.todoId == 0) {
+    //     for (let i = 0; i < this.myform.userList.length; i++) {
+    //         this.fullNameItems.push({
+    //             userObjLabel: this.myform.userList[i].lastName + this.myform.userList[i].firstName,
+    //             userObjId: this.myform.userList[i].id
+    //         })
+    //     }
+    // }
+});
+/**
+ * 会員情報を新規登録・更新する。
+ */
+const confirmSubmit = ((event) => {
+    // submitイベントの本来の動作を止める
+    event.preventDefault();
+    isShowModal.value = false;
+    const payload = {
+        "todoId": myform.todoId,
+        "dateFrom": myform.dateFrom,
+        "dateTo": myform.dateTo,
+        "title": myform.title,
+        "detail": myform.detail,
+        "doneFlag": myform.doneFlag,
+        "role": myform.role,
+        "priority": myform.priority,
+        "version": myform.version,
+    };
+    // if (role == 0) {
+    //             if (this.myform.todoId == 0) {
+    //                 this.$refs.form.value = this.myform.userId;
+    //             } else {
+    //                 this.$refs.inputUserId.value = this.myform.userId;
+    //             }
+    //         } else {
+    //             this.$refs.inputUserId.value = this.sessionUserId;
+    //         }
+    // memberStore.upsertMemberInfo(payload);
+});
+</script>
 <template>
+    <SideMenu />
+    <Loading v-if="isLoading" />
     <v-container>
         <v-card width="800px">
             <v-card-title>
@@ -62,93 +203,3 @@
         </v-card>
     </v-container>
 </template>
-<script>
-export default {
-    name: "TodoDetail",
-    data() {
-        return {
-            myform: {
-                todoId: 0,
-                dateFrom: "",
-                dateTo: "",
-                title: "",
-                detail: "",
-                userId: 0,
-                doneFlag: false,
-                priority: 0,
-                version: 0,
-                idMemberMap: [],
-                userList: []
-            },
-            role: 0,
-            priorityItems: [
-                { priorityLabel: '低', priority: 1 },
-                { priorityLabel: '中', priority: 2 },
-                { priorityLabel: '高', priority: 3 },],
-            doneFlagItems: [
-                { doneFlagLabel: '未完了', doneFlag: 0 },
-                { doneFlagLabel: '完了', doneFlag: 1 },],
-            fullNameItems: [
-                { userObjLabel: '全員', userObjId: -1 }
-            ]
-        }
-    },
-    mounted() {
-        console.log('priority' + (this.myform.priority == 0));
-        console.log('doneFlag' + (this.myform.doneFlag == false) + '値' + this.myform.doneFlag);
-        console.log('判定結果:' + (this.myform.userId in this.myform.idMemberMap));
-        if (this.myform.doneFlag == null || this.myform.doneFlag == 'false') {
-            this.myform.doneFlag = { doneFlagLabel: '未完了', doneFlag: 0 };
-        };
-        if (this.myform.priority == 0) {
-            this.myform.priority = { priorityLabel: '低', priority: 1 }
-        };
-        if (role == 0 && this.myform.todoId == 0) {
-            for (let i = 0; i < this.myform.userList.length; i++) {
-                this.fullNameItems.push({
-                    userObjLabel: this.myform.userList[i].lastName + this.myform.userList[i].firstName,
-                    userObjId: this.myform.userList[i].id
-                })
-            }
-        }
-    },
-    computed: {
-        /**
-         * 
-         * @returns 
-         */
-        fullName() {
-            return (this.myform.userId in this.myform.idMemberMap) ? this.myform.idMemberMap[this.myform.userId].lastName + this.myform.idMemberMap[this.myform.userId].firstName : '削除されたユーザ';
-        }
-    },
-    methods: {
-        /**
-         * 
-         * @returns 
-         */
-        formSubmit() {
-            this.$refs.form.value = this.myform.todoId;
-            this.$refs.form.value = this.myform.dateFrom;
-            this.$refs.form.value = this.myform.dateTo;
-            this.$refs.form.value = this.myform.title;
-            this.$refs.form.value = this.myform.detail;
-            if (role == 0) {
-                if (this.myform.todoId == 0) {
-                    this.$refs.form.value = this.myform.userId;
-                } else {
-                    this.$refs.inputUserId.value = this.myform.userId;
-                }
-            } else {
-                this.$refs.inputUserId.value = this.sessionUserId;
-            }
-            this.$refs.form.value = this.myform.doneFlag;
-            this.$refs.form.value = this.myform.priority;
-            this.$refs.form.value = this.myform.version;
-            this.$refs.form.method = 'POST';
-            this.$refs.form.action = '/todo/upsert';
-            this.$refs.form.submit();
-            return false;
-        }
-    }
-};
-</script>

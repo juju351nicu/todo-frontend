@@ -3,7 +3,10 @@ import SideMenu from "@/components/SideMenu.vue";
 import Loading from "@/components/Loading.vue";
 import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
+import { useRouter } from "vue-router";
 import Const from "@/constants/const.js";
+/** ルータ情報 */
+const router = useRouter();
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 /** ローディングフラグ */
@@ -67,6 +70,7 @@ const setDoneFlag = ((doneFlag) => {
 });
 const showUpsert = ((item) => {
     console.log(item);
+    console.log(item.todoId);
     router.push({ name: "TodoDetail", params: { id: item.todoId } });
 });
 const doDoneFlag = ((item) => {
@@ -94,6 +98,7 @@ const formSubmit = ((event) => {
             if (response.ok) {
                 const data = await response.json();
                 todoList.value = data.todoList;
+                todoStore.setTodoList(data.todoList);
                 isLoading.value = false;
             } else {
                 const err = await response.json();
@@ -124,6 +129,7 @@ onBeforeMount(() => {
             if (response.ok) {
                 const data = await response.json();
                 todoList.value = data.todoList;
+                todoStore.setTodoList(data.todoList);
                 isLoading.value = false;
             } else {
                 const err = await response.json();
