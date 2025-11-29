@@ -30,36 +30,36 @@ const handleConfirmSubmit = ((event) => {
 <template>
     <div id="modal">
         <div class="modal">
-            <h4> {{ myform.memberId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
+            <h4> {{ myform.todoId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
             <v-container>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.lastName }} &nbsp;{{ myform.firstName }}</span>
+                        <span>{{ myform.title }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.loginId }}</span>
+                        <span>{{ myform.dateFrom }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.password }}</span>
+                        <span>{{ myform.dateTo }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.email }}</span>
+                        <span>{{ myform.detail }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.role }}</span>
+                        <span>{{ myform.doneFlag }}</span>
                     </v-col>
                 </v-row>
             </v-container>
             <button class="modal__btn" @click="handleCloseModal($event)">戻る</button>
-            <button class="modal__btn" @click="handleConfirmSubmit($event)">{{ myform.memberId > 0 ? '更新' : '登録'
+            <button class="modal__btn" @click="handleConfirmSubmit($event)">{{ myform.todoId > 0 ? '更新' : '登録'
             }}</button>
         </div>
         <div class="modal-overlay"></div>

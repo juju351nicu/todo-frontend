@@ -45,19 +45,7 @@ export const useTodoStore = defineStore("todo", {
      * Todo情報を更新する
      */
     upsertTodoInfo(payload) {
-      this.isLoading = true;
-      Fetcher.postRequest(Const.REST_PATH.MEMBER_UPSERT, payload)
-        .then((response) => {
-          console.log(response.status);
-          return response.json();
-        })
-        .then((data) => {
-          console.log(data);
-          this.isLoading = false;
-        })
-        .catch((error) => {
-          console.log(error);
-        });
+      return Fetcher.postRequest(Const.REST_PATH.TODO_UPSERT, payload);
     },
   },
 });

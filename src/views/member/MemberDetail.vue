@@ -75,7 +75,7 @@ const handleCloseModal = (() => {
  */
 const confirmSubmit = ((event) => {
     // submitイベントの本来の動作を止める
-    event.preventDefault();
+    // event.preventDefault();
     isShowModal.value = false;
     const payload = {
         "memberId": myform.memberId,
