@@ -1,5 +1,6 @@
 <script setup lang="js">
 import MessageModal from "@/components/MessageModal.vue";
+import Alert from "@/components/Alert.vue";
 import Loading from "@/components/Loading.vue";
 import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
@@ -67,6 +68,8 @@ const submitForm = ((event) => {
         })
     } catch (error) {
         console.log(error);
+    } finally {
+        errorMessages.value = [];
     };
 });
 /**
@@ -126,6 +129,7 @@ onMounted(() => {
 }) 
 </script>
 <template>
+    <Alert v-if="isShowModal" :messages="errorMessages" />
     <Loading v-if="isLoading" />
     <MessageModal :messages="errorMessages" v-if="isShowModal" @close-modal="hideMessageModal" />
     <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">

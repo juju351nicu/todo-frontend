@@ -17,6 +17,7 @@ const emit = defineEmits(["close-modal"]);
 
 /** 会員情報 */
 const myform = computed(() => {
+    console.log("messages:" + props.messages.length);
     return props.myform;
 });
 /**
