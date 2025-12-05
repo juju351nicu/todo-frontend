@@ -1,5 +1,4 @@
 <script setup lang="js">
-import MessageModal from "@/components/MessageModal.vue";
 import Alert from "@/components/Alert.vue";
 import Loading from "@/components/Loading.vue";
 import { ref, onMounted } from 'vue'
@@ -129,9 +128,12 @@ onMounted(() => {
 }) 
 </script>
 <template>
-    <Alert v-if="isShowModal" :messages="errorMessages" />
     <Loading v-if="isLoading" />
-    <MessageModal :messages="errorMessages" v-if="isShowModal" @close-modal="hideMessageModal" />
+    <template v-if="isShowModal">
+        <div v-for="(alert, index) in errorMessages" :key="index">
+            <Alert :message="alert" />
+        </div>
+    </template>
     <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">
         <v-card-title class="d-flex justify-center pa-0 mt-6">ログイン</v-card-title>
         <v-card-text class="d-flex justify-center flex-column">

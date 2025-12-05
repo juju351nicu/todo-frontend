@@ -2,13 +2,12 @@
 import { ref, onBeforeMount, computed } from 'vue';
 
 const props = defineProps({
-    messages: Array,
+    message: String,
 });
 
-/** メッセージリスト情報 */
-const messages = computed(() => {
-    console.log("messages:" + props.messages.length);
-    return props.messages;
+/** メッセージ情報 */
+const message = computed(() => {
+    return props.message;
 });
 
 const alertFlag = ref(true);
@@ -20,14 +19,8 @@ onBeforeMount(() => {
 });
 </script>
 <template>
-    <!-- <div>
-        <v-alert v-model="alertFlag" type="success" dense class="alert" closable>
-        登録しました。
+    <v-alert v-model="alertFlag" type="success" dense class="alert" closable>
+        {{ message }}
     </v-alert>
-    </div> -->
-    <div v-for="(alert, index) in props.messages" :key="index" >
-        <v-alert v-model="alertFlag" type="success" dense class="alert" closable>
-            {{ alert }}
-        </v-alert>
-    </div>
+
 </template>
