@@ -3,6 +3,7 @@ import { ref, onBeforeMount, computed } from 'vue';
 
 const props = defineProps({
     message: String,
+    type: String
 });
 
 /** メッセージ情報 */
@@ -19,8 +20,7 @@ onBeforeMount(() => {
 });
 </script>
 <template>
-    <v-alert v-model="alertFlag" type="success" dense class="alert" closable>
+    <v-alert v-model="alertFlag" :type=type dense class="alert" closable>
         {{ message }}
     </v-alert>
-
 </template>

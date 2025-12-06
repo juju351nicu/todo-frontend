@@ -14,6 +14,15 @@ const DATA_TABLE_PAGES = [
   { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
 ];
 /**
+ * アラートの種類の定数
+ */
+const ALERT_TYPE = {
+  SUCCESS: "success",
+  INFO: "info",
+  WARNING: "warning",
+  ERROR: "error",
+};
+/**
  * REST通信用のURL
  */
 const REST_PATH = {
@@ -30,6 +39,7 @@ const REST_PATH = {
 };
 export default {
   API_PREFIX_PATH,
+  ALERT_TYPE,
   REST_PATH,
   NUMBER_OF_ITEMS,
   DATA_TABLE_PAGES,

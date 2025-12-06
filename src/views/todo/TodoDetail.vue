@@ -4,7 +4,7 @@ import MessageModal from "@/components/MessageModal.vue";
 import UpsertConfirm from "@/components/todo/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, onMounted, reactive, ref } from 'vue';
-import util from "@/utils/util.js";
+import Util from "@/utils/util.js";
 import { useTodoStore } from "@/stores/todo";
 const props = defineProps({
     id: Number,
@@ -24,7 +24,7 @@ const getFindIndex = ((id) => {
         (todo) => todo.todoId === id
     );
     // 下記の部分、見直し
-    return util.isEmpty(id) ? 0 : index;;
+    return Util.isEmpty(id) ? 0 : index;;
 });
 /**
   * 
@@ -36,7 +36,7 @@ const fullName = computed(() => {
 });
 /** Todo詳細情報 */
 const numId = computed(() => {
-    return util.isEmpty(props.id) ? 0 : props.id;
+    return Util.isEmpty(props.id) ? 0 : props.id;
 });
 /** Todo詳細情報 */
 const todoInfo = computed(() => {
@@ -139,7 +139,7 @@ const confirmSubmit = ((event) => {
                 isLoading.value = false;
             } else {
                 const err = await response.json();
-                if (!util.isEmpty(err.fieldErrors)) {
+                if (!Util.isEmpty(err.fieldErrors)) {
                     showMessageModal();
                     err.fieldErrors.forEach((fieldError) => {
                         errorMessages.value.push(fieldError.message);

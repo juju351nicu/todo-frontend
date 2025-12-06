@@ -4,6 +4,7 @@ import Loading from "@/components/Loading.vue";
 import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import { useRouter } from "vue-router";
+import Util from "@/utils/util.js";
 import Const from "@/constants/const.js";
 /** ルータ情報 */
 const router = useRouter();
@@ -90,7 +91,7 @@ const formSubmit = ((event) => {
     const payload = {
         "search_title": searchTitle.value,
         "date_range": "",
-        "done_flag_values": selectedDoneFlag.value,
+        "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
     };
     isLoading.value = true;
     try {
@@ -121,7 +122,7 @@ onBeforeMount(() => {
     const payload = {
         "search_title": "",
         "date_range": "",
-        "done_flag_values": [],
+        "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
     };
     isLoading.value = true;
     try {

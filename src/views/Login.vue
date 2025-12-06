@@ -5,6 +5,7 @@ import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
 import Util from "@/utils/util.js";
+import Const from "@/constants/const.js";
 /** ルータ情報 */
 const router = useRouter();
 /** Authストア情報 */
@@ -130,8 +131,8 @@ onMounted(() => {
 <template>
     <Loading v-if="isLoading" />
     <template v-if="isShowModal">
-        <div v-for="(alert, index) in errorMessages" :key="index">
-            <Alert :message="alert" />
+        <div v-for="(message, index) in errorMessages" :key="index">
+            <Alert :message="message" :type=Const.ALERT_TYPE.ERROR />
         </div>
     </template>
     <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">

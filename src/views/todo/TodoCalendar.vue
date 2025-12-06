@@ -8,6 +8,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import jaLocale from '@fullcalendar/core/locales/ja'
 import { useTodoStore } from "@/stores/todo";
 import { onBeforeMount, reactive, ref } from 'vue'
+import Util from "@/utils/util.js";
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 /** フルカレンダー設定情報 */
@@ -55,7 +56,7 @@ const formSubmit = ((event) => {
   const payload = {
     "search_title": searchTitle.value,
     "date_range": "",
-    "done_flag_values": selectedDoneFlag.value,
+    "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
   };
   isLoading.value = true;
   try {
@@ -85,7 +86,7 @@ onBeforeMount(() => {
   const payload = {
     "search_title": "",
     "date_range": "",
-    "done_flag_values": [],
+    "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
   };
   isLoading.value = true;
   try {
