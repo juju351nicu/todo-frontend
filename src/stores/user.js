@@ -4,23 +4,22 @@ import Fetcher from "@/utils/rest.js";
 export const useUserStore = defineStore("user", {
   state: () => ({
     memberId: 12,
-    lastName: "",
-    firstName: "",
+    username: "",
     loginId: "",
-    password: "",
     email: "",
     role: "",
-    version: "",
     accessToken: "",
   }),
   getters: {},
   actions: {
     /**
-     * アクセストークンチェックを設定する
-     * @param {String} token トークン文字列
+     * ユーザー情報を設定する
+     * @param {Object} payload ユーザ情報
      */
-    setAccessToken(token) {
-      this.accessToken = token;
+    setAuthUser(payload) {
+      this.username = payload.username;
+      this.accessToken = payload.access_token;
+      this.role = payload.role;
     },
     /**
      * ログインする

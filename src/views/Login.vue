@@ -50,8 +50,8 @@ const submitForm = ((event) => {
         userStore.authLogin(payload).then(async (response) => {
             if (response.ok) {
                 const data = await response.json();
-                console.log(data.accessToken);
-                userStore.setAccessToken(data.accessToken);
+                console.log(data.access_token);
+                userStore.setAuthUser(data);
                 isLoading.value = false;
                 router.push("/member/memberList");
             } else {
@@ -132,7 +132,9 @@ onMounted(() => {
     <Loading v-if="isLoading" />
     <template v-if="isShowModal">
         <div v-for="(message, index) in errorMessages" :key="index">
-            <Alert :message="message" :type=Const.ALERT_TYPE.ERROR />
+            <div class="d-flex justify-end">
+                <Alert class="mx-4" :message="message" :type=Const.ALERT_TYPE.WARNING />
+            </div>
         </div>
     </template>
     <v-card class="d-flex flex-column mx-auto mt-9 flat" width="374" color="#fff">
