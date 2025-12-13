@@ -13,9 +13,9 @@ const message = computed(() => {
 
 const alertFlag = ref(true);
 
-// setTimeout(() => {
-//     alertFlag.value = false
-// }, 4000);
+setTimeout(() => {
+    alertFlag.value = false
+}, 4000);
 </script>
 <template>
     <v-alert v-model="alertFlag" :type=type dense class="alert" closable>
@@ -26,5 +26,8 @@ const alertFlag = ref(true);
 .alert {
     margin: 5px;
     max-width: 400px;
+}
+.bg-error {
+    background-color: #F44336 !important
 }
 </style>

@@ -133,7 +133,7 @@ onMounted(() => {
     <template v-if="isShowModal">
         <div v-for="(message, index) in errorMessages" :key="index">
             <div class="d-flex justify-end">
-                <Alert class="mx-4" :message="message" :type=Const.ALERT_TYPE.WARNING />
+                <Alert class="mx-4" :message="message" :type=Const.ALERT_TYPE.ERROR />
             </div>
         </div>
     </template>
