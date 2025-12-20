@@ -7,7 +7,7 @@ export const useUserStore = defineStore("user", {
     username: "",
     loginId: "",
     email: "",
-    role: "",
+    role: -1,
     accessToken: "",
   }),
   getters: {},
@@ -17,6 +17,7 @@ export const useUserStore = defineStore("user", {
      * @param {Object} payload ユーザ情報
      */
     setAuthUser(payload) {
+      this.memberId = payload.member_id
       this.username = payload.username;
       this.accessToken = payload.access_token;
       this.role = payload.role;
