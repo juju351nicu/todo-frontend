@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Login from '@/views/Login.vue'
+import Login from "@/views/Login.vue";
 import InquiryForm from "@/views/InquiryForm.vue";
 import VuetifyList from "@/views/VuetifyList.vue";
 import NotFound from "@/views/NotFound.vue";
@@ -48,6 +48,12 @@ const routes = [
     },
   },
   {
+    /** Todoカレンダー画面 */
+    path: "/todo/calendar",
+    name: "TodoCalendar",
+    component: TodoCalendar,
+  },
+  {
     /** Todo一覧画面 */
     path: "/todo/todoList",
     name: "TodoList",
@@ -65,13 +71,12 @@ const routes = [
       };
     },
   },
-  { 
-    /** Todoカレンダー画面 */
-    path: "/todo/calendar",
-    name: "TodoCalendar",
-    component: TodoCalendar
+  {
+    /** お問い合わせ画面 */
+    path: "/inquiry",
+    name: "InquiryForm",
+    component: InquiryForm,
   },
-  { path: "/inquiry", name: "InquiryForm", component: InquiryForm },
   {
     /** 存在しないURLにアクセスした場合 */
     path: "/:pathMatch(.*)*",
