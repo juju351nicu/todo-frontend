@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useUserStore } from "@/stores/user";
 import Login from "@/views/Login.vue";
 import InquiryForm from "@/views/InquiryForm.vue";
 import VuetifyList from "@/views/VuetifyList.vue";
@@ -10,18 +11,25 @@ import TodoList from "@/views/todo/TodoList.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 const routes = [
-  { path: "/", name: "DashBoard", component: VuetifyList },
   {
     /** ログイン画面 */
-    path: "/login",
+    path: "/",
     name: "Login",
     component: Login,
+  },
+  {
+    /** Vuetifサンプル画面 */
+    path: "/VuetifyList",
+    name: "DashBoard",
+    component: VuetifyList,
+    meta: { requiresAuth: true },
   },
   {
     /** 会員一覧画面 */
     path: "/member/memberList",
     name: "MemberList",
     component: MemberList,
+    meta: { requiresAuth: true },
   },
   {
     /** 会員詳細情報画面 */
@@ -52,12 +60,14 @@ const routes = [
     path: "/todo/calendar",
     name: "TodoCalendar",
     component: TodoCalendar,
+    meta: { requiresAuth: true },
   },
   {
     /** Todo一覧画面 */
     path: "/todo/todoList",
     name: "TodoList",
     component: TodoList,
+    meta: { requiresAuth: true },
   },
   {
     /** Todo詳細情報画面 */
@@ -70,6 +80,7 @@ const routes = [
         id: idNum,
       };
     },
+    meta: { requiresAuth: true },
   },
   {
     /** お問い合わせ画面 */
@@ -90,5 +101,17 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+// ナビゲーションガード
+router.beforeEach((to, _from, next) => {
+  /** Authストア情報 */
+  const userStore = useUserStore();
+  const token = userStore.getAccessToken;
 
+  if (to.meta.requiresAuth && !token) {
+    alert("ログインが必要です");
+    next("/"); // 未認証ならログインページへ
+  } else {
+    next();
+  }
+});
 export default router;

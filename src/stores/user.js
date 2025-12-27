@@ -10,7 +10,14 @@ export const useUserStore = defineStore("user", {
     role: -1,
     accessToken: "",
   }),
-  getters: {},
+  getters: {
+    getAccessToken() {
+      return this.accessToken;
+    },
+    getRole() {
+      return this.role;
+    }
+  },
   actions: {
     /**
      * ユーザー情報を設定する

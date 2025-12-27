@@ -1,12 +1,3 @@
-<template>
-    <div id="modal">
-        <div class="modal">
-            <h4> {{ messages }}</h4>
-            <button class="modal__btn" @click="handleCloseModal($event)">戻る</button>
-        </div>
-        <div class="modal-overlay"></div>
-    </div>
-</template>
 <script setup lang="js">
 import { computed } from 'vue';
 const props = defineProps({
@@ -29,6 +20,15 @@ const handleCloseModal = ((event) => {
     emit("close-modal");
 });
 </script>
+<template>
+    <div id="modal">
+        <div class="modal">
+            <h4> {{ messages }}</h4>
+            <button class="modal__btn" @click="handleCloseModal($event)">戻る</button>
+        </div>
+        <div class="modal-overlay"></div>
+    </div>
+</template>
 <style scoped>
 /* ========================================
       Modal css

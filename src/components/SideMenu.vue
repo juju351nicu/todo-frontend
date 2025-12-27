@@ -17,7 +17,7 @@ const links = ref([
 ]);
 /** Authストア情報 */
 const userStore = useUserStore();
-const role = userStore.role;
+const role = userStore.getRole;
 
 onMounted(() => {
   if (role == 0) {

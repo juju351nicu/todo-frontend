@@ -96,7 +96,7 @@ const submitGoogle = (() => {
  */
 onMounted(() => {
     // トークン取得 
-    const token = userStore.accessToken;
+    const token = userStore.getAccessToken;
     console.log('ページ開いた時の処理:' + token);
     // なければ何もしない
     if (!token) {

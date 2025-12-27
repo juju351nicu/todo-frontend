@@ -1,11 +1,3 @@
-<template>
-  <v-app>
-    <v-main>
-      <router-view />
-    </v-main>
-  </v-app>
-</template>
-
 <script>
 import { useCounterStore } from "./stores/counter";
 export default {
@@ -22,7 +14,13 @@ export default {
   methods: {},
 };
 </script>
-
+<template>
+  <v-app>
+    <v-main>
+      <router-view />
+    </v-main>
+  </v-app>
+</template>
 <style scoped>
 [v-cloak] {
   display: none;
