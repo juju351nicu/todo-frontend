@@ -42,6 +42,7 @@ const routes = [
         id: idNum,
       };
     },
+    meta: { requiresAuth: true },
   },
   {
     /** 会員退会画面 */
@@ -54,6 +55,7 @@ const routes = [
         id: idNum,
       };
     },
+    meta: { requiresAuth: true },
   },
   {
     /** Todoカレンダー画面 */
@@ -101,9 +103,11 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
-// ナビゲーションガード
+/**
+ * ナビゲーションガード
+ */
 router.beforeEach((to, _from, next) => {
-  /** Authストア情報 */
+  // Authストア情報
   const userStore = useUserStore();
   const token = userStore.getAccessToken;
 

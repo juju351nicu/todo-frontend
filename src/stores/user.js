@@ -11,20 +11,34 @@ export const useUserStore = defineStore("user", {
     accessToken: "",
   }),
   getters: {
+    /**
+     * アクセストークンを取得する
+     * @returns アクセストークン
+     */
     getAccessToken() {
       return this.accessToken;
     },
+    /**
+     * 権限情報を取得する
+     * @returns 権限情報
+     */
     getRole() {
       return this.role;
-    }
+    },
   },
   actions: {
+    /**
+     * アクセストークンを削除する
+     */
+    removeAccessToken() {
+      this.accessToken = "";
+    },
     /**
      * ユーザー情報を設定する
      * @param {Object} payload ユーザ情報
      */
     setAuthUser(payload) {
-      this.memberId = payload.member_id
+      this.memberId = payload.member_id;
       this.username = payload.username;
       this.accessToken = payload.access_token;
       this.role = payload.role;

@@ -117,11 +117,11 @@ onMounted(() => {
                 router.push("/member/memberList");
             } else {
                 // 有効でない場合はトークンを除去    
-                userStore.setAccessToken("");
+                userStore.removeAccessToken();
             }
         } catch (err) {
             // 予期せぬエラーでもトークンを除去しログインしてもらう   
-            userStore.setAccessToken("");
+            userStore.removeAccessToken();
         }
     };
     // トークンチェック処理開始 
