@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useUserStore } from "@/stores/user";
+import Util from "@/utils/util.js";
 import Login from "@/views/Login.vue";
 import InquiryForm from "@/views/InquiryForm.vue";
 import VuetifyList from "@/views/VuetifyList.vue";
@@ -111,7 +112,7 @@ router.beforeEach((to, _from, next) => {
   const userStore = useUserStore();
   const token = userStore.getAccessToken;
 
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && Util.isEmpty(token)) {
     alert("ログインが必要です");
     next("/"); // 未認証ならログインページへ
   } else {

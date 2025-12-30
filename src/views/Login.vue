@@ -90,6 +90,31 @@ const submitGithub = (() => {
 const submitGoogle = (() => {
     location.href = '/oauth2/authorization/google';
 });
+/**
+ * トークンチェックを行う。
+ */
+const checkToken = async () => {
+    try {
+        // トークンチェックAPI起動  
+        const res = await userStore.validateToken(token)
+            .then((response) => {
+                console.log(response.status);
+                return response.json();
+            })
+        // 有効なトークンの場合は自動でTOPページへ
+        if (!Util.isEmpty(res.data.username)) {
+            // TOPページへ
+            console.log('TOPページへ');
+            router.push("/member/memberList");
+        } else {
+            // 有効でない場合はトークンを除去    
+            userStore.removeAccessToken();
+        }
+    } catch (err) {
+        // 予期せぬエラーでもトークンを除去しログインしてもらう   
+        userStore.removeAccessToken();
+    }
+};
 /*
  * ページ開いた時の処理 
  * 1.トークンチェック 
@@ -102,28 +127,6 @@ onMounted(() => {
     if (!token) {
         return;
     }
-    const checkToken = async () => {
-        try {
-            // トークンチェックAPI起動  
-            const res = await userStore.validateToken(token)
-                .then((response) => {
-                    console.log(response.status);
-                    return response.json();
-                })
-            // 有効なトークンの場合は自動でTOPページへ
-            if (!Util.isEmpty(res.data.username)) {
-                // TOPページへ
-                console.log('TOPページへ');
-                router.push("/member/memberList");
-            } else {
-                // 有効でない場合はトークンを除去    
-                userStore.removeAccessToken();
-            }
-        } catch (err) {
-            // 予期せぬエラーでもトークンを除去しログインしてもらう   
-            userStore.removeAccessToken();
-        }
-    };
     // トークンチェック処理開始 
     checkToken();
 }) 

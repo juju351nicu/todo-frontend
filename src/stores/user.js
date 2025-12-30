@@ -8,7 +8,7 @@ export const useUserStore = defineStore("user", {
     loginId: "",
     email: "",
     role: -1,
-    accessToken: "",
+    accessToken: null,
   }),
   getters: {
     /**
@@ -31,7 +31,7 @@ export const useUserStore = defineStore("user", {
      * アクセストークンを削除する
      */
     removeAccessToken() {
-      this.accessToken = "";
+      this.accessToken = null;
     },
     /**
      * ユーザー情報を設定する
