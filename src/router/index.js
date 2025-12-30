@@ -105,14 +105,20 @@ const router = createRouter({
   routes,
 });
 /**
- * ナビゲーションガード
+ * ストアにトークン情報がある場合、true。ない場合、false。
+ * @returns 判定結果
  */
-router.beforeEach((to, _from, next) => {
+const isAuthorited = () => {
   // Authストア情報
   const userStore = useUserStore();
   const token = userStore.getAccessToken;
-
-  if (to.meta.requiresAuth && Util.isEmpty(token)) {
+  return !Util.isEmpty(token);
+};
+/**
+ * ナビゲーションガード
+ */
+router.beforeEach((to, _from, next) => {
+  if (to.meta.requiresAuth && !isAuthorited()) {
     alert("ログインが必要です");
     next("/"); // 未認証ならログインページへ
   } else {

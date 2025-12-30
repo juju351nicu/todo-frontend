@@ -4,9 +4,9 @@ import Fetcher from "@/utils/rest.js";
 export const useUserStore = defineStore("user", {
   state: () => ({
     memberId: 12,
-    username: "",
-    loginId: "",
-    email: "",
+    username: null,
+    loginId: null,
+    email: null,
     role: -1,
     accessToken: null,
   }),
