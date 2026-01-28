@@ -25,7 +25,7 @@ const memberId = ref("user01");
 const itemsPerPage = Const.NUMBER_OF_ITEMS;
 /** data-tableの表示件数の選択リスト */
 const pages = Const.DATA_TABLE_PAGES;
-/**　テーブルの関連するラベル・プロパティ等の情報 */
+/** テーブルの関連するラベル・プロパティ等の情報 */
 const headers = [
     {
         title: "ID",
