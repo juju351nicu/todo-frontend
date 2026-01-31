@@ -1,5 +1,5 @@
 <script setup lang="js">
-import SideMenu from "@/components/SideMenu.vue";
+import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
 import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
@@ -150,7 +150,7 @@ onBeforeMount(() => {
 });
 </script>
 <template>
-    <SideMenu />
+    <TheHeader />
     <Loading v-if="isLoading" />
     <v-card class="mx-auto" max-width="1000">
         <v-card-item>

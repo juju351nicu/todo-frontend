@@ -1,5 +1,5 @@
 <script setup lang="js">
-import SideMenu from "@/components/SideMenu.vue";
+import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
 import { onBeforeMount, computed, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -65,7 +65,7 @@ onBeforeMount(() => {
 
 </script>
 <template>
-    <SideMenu />
+    <TheHeader />
     <Loading v-if="isLoading" />
     <h2>会員一覧</h2>
     <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"

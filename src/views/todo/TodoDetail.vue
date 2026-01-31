@@ -1,5 +1,5 @@
 <script setup lang="js">
-import SideMenu from "@/components/SideMenu.vue";
+import TheHeader from "@/components/TheHeader.vue";
 import MessageModal from "@/components/MessageModal.vue";
 import UpsertConfirm from "@/components/todo/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
@@ -155,7 +155,7 @@ const confirmSubmit = ((event) => {
 });
 </script>
 <template>
-    <SideMenu />
+    <TheHeader />
     <Loading v-if="isLoading" />
     <UpsertConfirm v-if="isShowModal" :myform="myform" @close-modal="handleCloseModal"
         @confirm-submit="confirmSubmit" />

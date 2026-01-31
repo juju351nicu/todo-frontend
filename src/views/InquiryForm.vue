@@ -1,7 +1,7 @@
 <script setup lang="js">
-import { computed, ref } from "vue";
-import SideMenu from "@/components/SideMenu.vue";
+import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
+import { computed, ref } from "vue";
 import { useInquiryStore } from "@/stores/inquiry";
 
 
@@ -24,7 +24,7 @@ const submit = (() => {
 });
 </script>
 <template>
-  <side-menu />
+  <TheHeader />
   <Loading v-if="isLoading" />
   <v-container>
     <v-card width="800px">

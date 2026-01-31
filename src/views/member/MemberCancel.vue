@@ -1,5 +1,5 @@
 <script setup lang="js">
-import SideMenu from "@/components/SideMenu.vue";
+import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, ref } from 'vue';
 import { useMemberStore } from "@/stores/member";
@@ -40,7 +40,7 @@ const confirmSubmit = ((event) => {
 
 </script>
 <template>
-    <SideMenu />
+    <TheHeader />
     <Loading v-if="isLoading" />
     <v-container>
         <p>アカウントを削除して退会されたい場合は、以下の注意事項をご確認の上、お手続きいただきますようお願いいたします。</p>
