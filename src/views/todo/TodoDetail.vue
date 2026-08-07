@@ -1,67 +1,73 @@
 <script setup lang="js">
 import TheHeader from "@/components/TheHeader.vue";
-import MessageModal from "@/components/MessageModal.vue";
 import UpsertConfirm from "@/components/todo/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
-import { computed, onMounted, reactive, ref } from 'vue';
-import Util from "@/utils/util.js";
+import { computed, reactive, ref, watch } from "vue";
 import { useTodoStore } from "@/stores/todo";
+import { useUserStore } from "@/stores/user";
+import { createTodoDetailForm } from "@/utils/detail.js";
+
 const props = defineProps({
     id: Number,
 });
+
 /** Todoストア情報 */
 const todoStore = useTodoStore();
+const userStore = useUserStore();
+
+/** 送信中フラグ */
+const isSubmitting = ref(false);
 
 /** ローディングフラグ */
-const isLoading = ref(false);
-/**
- * Noから配列のindexを取得する
- * @param {string} id id
- * @returns index番号
- */
-const getFindIndex = ((id) => {
-    const index = todoStore.todoListInfo.findIndex(
-        (todo) => todo.todoId === id
-    );
-    // 下記の部分、見直し
-    return Util.isEmpty(id) ? 0 : index;;
+const isLoading = computed(() => {
+    return todoStore.isLoading || isSubmitting.value;
 });
-/**
-  * 
-  * @returns 
-  */
+
+/** ログインユーザーの権限 */
+const role = computed(() => userStore.getRole);
+
+/** Todoの対象ユーザー表示 */
 const fullName = computed(() => {
-    // return (this.myform.userId in this.myform.idMemberMap) ? this.myform.idMemberMap[this.myform.userId].lastName + this.myform.idMemberMap[this.myform.userId].firstName : '削除されたユーザ';
-    return "";
+    return myform.userId > 0 ? `ユーザーID: ${myform.userId}` : "対象ユーザーなし";
 });
-/** Todo詳細情報 */
+
+/** URLから受け取ったTodo ID */
 const numId = computed(() => {
-    return Util.isEmpty(props.id) ? 0 : props.id;
+    return Number.isInteger(props.id) && props.id > 0 ? props.id : 0;
 });
-/** Todo詳細情報 */
-const todoInfo = computed(() => {
-    const index = getFindIndex(numId.value);
-    return todoStore.todoListInfo[index];
-});
-/** Todo詳細情報 */
-const myform = reactive({
-    todoId: todoInfo.value.todoId,
-    dateFrom: todoInfo.value.start,
-    dateTo: todoInfo.value.end,
-    title: todoInfo.value.title,
-    detail: todoInfo.value.detail,
-    userId: 1,
-    doneFlag: 0,
-    priority: 3,
-    version: 0,
-    idMemberMap: [],
-    userList: [],
-});
+
+/** Todo編集フォーム */
+const myform = reactive(createTodoDetailForm());
+
+/** 詳細取得エラー */
+const loadError = ref("");
+
+/**
+ * Todo詳細をAPIから取得してフォームを復元する。
+ * 新規登録（ID=0）の場合は初期値のまま表示する。
+ */
+const loadTodoDetail = async () => {
+    Object.assign(myform, createTodoDetailForm());
+    loadError.value = "";
+    if (numId.value === 0) {
+        return;
+    }
+
+    try {
+        const detail = await todoStore.findTodoDetail(numId.value);
+        Object.assign(myform, createTodoDetailForm(detail));
+    } catch (error) {
+        console.error(error);
+        loadError.value = "Todo情報を取得できませんでした。Todo一覧から開き直してください。";
+    }
+};
+
+watch(numId, loadTodoDetail, { immediate: true });
 
 /** モーダルを表示・非表示フラグ */
 const isShowModal = ref(false);
 
-const showMessageModal = () => {
+const showConfirmModal = () => {
     isShowModal.value = true;
 };
 /**
@@ -82,76 +88,43 @@ const fullNameItems = [
     { userObjLabel: '全員', userObjId: -1 }
 ];
 
-/** 初期表示 */
-onMounted(() => {
-    // console.log('priority' + (this.myform.priority == 0));
-    // console.log('doneFlag' + (this.myform.doneFlag == false) + '値' + this.myform.doneFlag);
-    // console.log('判定結果:' + (this.myform.userId in this.myform.idMemberMap));
-    // if (this.myform.doneFlag == null || this.myform.doneFlag == 'false') {
-    //     this.myform.doneFlag = { doneFlagLabel: '未完了', doneFlag: 0 };
-    // };
-    // if (this.myform.priority == 0) {
-    //     this.myform.priority = { priorityLabel: '低', priority: 1 }
-    // };
-    // if (role == 0 && this.myform.todoId == 0) {
-    //     for (let i = 0; i < this.myform.userList.length; i++) {
-    //         this.fullNameItems.push({
-    //             userObjLabel: this.myform.userList[i].lastName + this.myform.userList[i].firstName,
-    //             userObjId: this.myform.userList[i].id
-    //         })
-    //     }
-    // }
-});
 const errorMessages = ref([]);
 /**
  * Todoを新規登録・更新する。
  */
-const confirmSubmit = ((event) => {
-    // submitイベントの本来の動作を止める
-    // event.preventDefault();
+const confirmSubmit = (async () => {
+    isShowModal.value = false;
+    errorMessages.value = [];
     const payload = {
         "todo_id": myform.todoId,
         "date_from": myform.dateFrom,
         "date_to": myform.dateTo,
         "title": myform.title,
         "detail": myform.detail,
-        "done_flag": myform.doneFlag,
+        "done_flag": String(myform.doneFlag),
         "role": myform.role,
         "priority": myform.priority,
         "version": myform.version,
         "user_id": myform.userId
     };
-    // if (role == 0) {
-    //             if (this.myform.todoId == 0) {
-    //                 this.$refs.form.value = this.myform.userId;
-    //             } else {
-    //                 this.$refs.inputUserId.value = this.myform.userId;
-    //             }
-    //         } else {
-    //             this.$refs.inputUserId.value = this.sessionUserId;
-    //         }
-    isLoading.value = true;
+    isSubmitting.value = true;
     try {
-        todoStore.upsertTodoInfo(payload).then(async (response) => {
-            if (response.ok) {
-                const data = await response.json();
-                console.log(data);
-                isLoading.value = false;
-            } else {
-                const err = await response.json();
-                if (!Util.isEmpty(err.fieldErrors)) {
-                    showMessageModal();
-                    err.fieldErrors.forEach((fieldError) => {
-                        errorMessages.value.push(fieldError.message);
-                    });
-                    isLoading.value = false;
-                }
-                throw new Error("There's an error upstream and it says");
+        const response = await todoStore.upsertTodoInfo(payload);
+        if (!response.ok) {
+            const errorResponse = await response.json();
+            errorMessages.value = (errorResponse.fieldErrors ?? []).map(
+                (fieldError) => fieldError.message
+            );
+            if (errorMessages.value.length === 0) {
+                errorMessages.value = ["Todo情報を保存できませんでした。"];
             }
-        })
+        }
     } catch (error) {
-        console.log(error);
-    };
+        console.error(error);
+        errorMessages.value = ["Todo情報を保存できませんでした。"];
+    } finally {
+        isSubmitting.value = false;
+    }
 });
 </script>
 <template>
@@ -160,6 +133,12 @@ const confirmSubmit = ((event) => {
     <UpsertConfirm v-if="isShowModal" :myform="myform" @close-modal="handleCloseModal"
         @confirm-submit="confirmSubmit" />
     <v-container>
+        <v-alert v-if="loadError" type="error" class="mb-4">
+            {{ loadError }}
+        </v-alert>
+        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+            <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+        </v-alert>
         <v-card width="800px">
             <v-card-title>
                 <span> {{ myform.todoId > 0 ? myform.todoId : ' (新規)' }}</span>
@@ -175,8 +154,7 @@ const confirmSubmit = ((event) => {
                     <!-- <template v-if="myform.id > 0 && role == 0"> 2月3日削除 -->
                     <template v-if="myform.todoId > 0">
                         <v-col cols="12">
-                            <v-text-field>{{ fullName }}
-                            </v-text-field>
+                            <v-text-field :model-value="fullName" label="対象ユーザー" readonly></v-text-field>
                         </v-col>
                         <input type="hidden" name="userId" ref="inputUserId">
                     </template>
@@ -207,8 +185,8 @@ const confirmSubmit = ((event) => {
                         <v-textarea name="detail" v-model="myform.detail" label="詳細" required>
                         </v-textarea>
                     </v-col>
-                    <v-btn class="mr-4" color="success" type="submit" @click="showMessageModal($event)">
-                        更新する
+                    <v-btn class="mr-4" color="success" type="submit" @click="showConfirmModal">
+                        {{ myform.todoId > 0 ? '更新する' : '登録する' }}
                     </v-btn>
                     <v-btn>
                         クリア

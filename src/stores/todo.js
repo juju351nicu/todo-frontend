@@ -24,6 +24,26 @@ export const useTodoStore = defineStore("todo", {
   getters: {},
   actions: {
     /**
+     * Todo詳細情報を取得する
+     *
+     * @param {number} todoId Todo ID
+     * @returns {Promise<Object>} Todo詳細情報
+     */
+    async findTodoDetail(todoId) {
+      this.isLoading = true;
+      try {
+        const response = await Fetcher.getRequest(
+          `${Const.REST_PATH.TODO_DETAIL}/${todoId}`
+        );
+        if (!response.ok) {
+          throw new Error(`Todo詳細の取得に失敗しました。status=${response.status}`);
+        }
+        return await response.json();
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    /**
      * Todo一覧情報を設定する
      */
     setTodoList(payload) {

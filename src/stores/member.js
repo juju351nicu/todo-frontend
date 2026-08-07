@@ -21,6 +21,26 @@ export const useMemberStore = defineStore("member", {
   getters: {},
   actions: {
     /**
+     * 会員詳細情報を取得する
+     *
+     * @param {number} memberId 会員ID
+     * @returns {Promise<Object>} 会員詳細情報
+     */
+    async findMemberDetail(memberId) {
+      this.isLoading = true;
+      try {
+        const response = await Fetcher.getRequest(
+          `${Const.REST_PATH.MEMBER_DETAIL}/${memberId}`
+        );
+        if (!response.ok) {
+          throw new Error(`会員詳細の取得に失敗しました。status=${response.status}`);
+        }
+        return await response.json();
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    /**
      * 会員一覧情報を取得する
      */
     findMemberList() {

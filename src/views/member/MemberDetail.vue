@@ -2,52 +2,55 @@
 import TheHeader from "@/components/TheHeader.vue";
 import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
-import { computed, reactive, ref } from 'vue';
-import util from "@/utils/util.js";
+import { computed, reactive, ref, watch } from "vue";
 import { useMemberStore } from "@/stores/member";
+import { createMemberDetailForm } from "@/utils/detail.js";
+
 const props = defineProps({
     id: Number,
 });
+
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
-
-const EMPTY_MEMBER = Object.freeze({
-    memberId: 0,
-    lastName: "",
-    firstName: "",
-    loginId: "",
-    password: "",
-    email: "",
-    role: 2,
-    version: 0,
-});
 
 /** ローディングフラグ */
 const isLoading = computed(() => {
     return memberStore.isLoading;
 });
 
-/** 会員詳細情報 */
+/** URLから受け取った会員ID */
 const numId = computed(() => {
-    return util.isEmpty(props.id) ? 0 : props.id;
+    return Number.isInteger(props.id) && props.id > 0 ? props.id : 0;
 });
-/** 会員詳細情報 */
-const memberInfo = computed(() => {
-    return memberStore.memberListInfo.find(
-        (member) => member.memberId === numId.value
-    ) ?? EMPTY_MEMBER;
-});
-/** 会員詳細情報 */
-const myform = reactive({
-    memberId: memberInfo.value.memberId,
-    lastName: memberInfo.value.lastName,
-    firstName: memberInfo.value.firstName,
-    loginId: memberInfo.value.loginId,
-    password: memberInfo.value.password,
-    email: memberInfo.value.email,
-    role: memberInfo.value.role,
-    version: memberInfo.value.version,
-});
+
+/** 会員編集フォーム */
+const myform = reactive(createMemberDetailForm());
+
+/** 詳細取得エラー */
+const loadError = ref("");
+
+/**
+ * 会員詳細をAPIから取得してフォームを復元する。
+ * 新規登録（ID=0）の場合は初期値のまま表示する。
+ */
+const loadMemberDetail = async () => {
+    Object.assign(myform, createMemberDetailForm());
+    loadError.value = "";
+    if (numId.value === 0) {
+        return;
+    }
+
+    try {
+        const detail = await memberStore.findMemberDetail(numId.value);
+        Object.assign(myform, createMemberDetailForm(detail));
+    } catch (error) {
+        console.error(error);
+        loadError.value = "会員情報を取得できませんでした。会員一覧から開き直してください。";
+    }
+};
+
+watch(numId, loadMemberDetail, { immediate: true });
+
 const roleItems = ref([
     { roleLabel: '管理者', role: 0 },
     { roleLabel: '閲覧管理者', role: 1 },
@@ -73,9 +76,7 @@ const handleCloseModal = (() => {
 /**
  * 会員情報を新規登録・更新する。
  */
-const confirmSubmit = ((event) => {
-    // submitイベントの本来の動作を止める
-    // event.preventDefault();
+const confirmSubmit = (() => {
     isShowModal.value = false;
     const payload = {
         "memberId": myform.memberId,
@@ -97,6 +98,9 @@ const confirmSubmit = ((event) => {
     <UpsertConfirm v-if="isShowModal" :myform="myform" @close-modal="handleCloseModal"
         @confirm-submit="confirmSubmit" />
     <v-container>
+        <v-alert v-if="loadError" type="error" class="mb-4">
+            {{ loadError }}
+        </v-alert>
         <v-card width="800px">
             <v-card-title>
                 <span> {{ myform.memberId > 0 ? myform.memberId : ' (新規)' }}</span>
@@ -120,7 +124,8 @@ const confirmSubmit = ((event) => {
                     </v-col>
                     <v-col cols="12">
                         <v-text-field type="password" name="password" v-model="myform.password" label="パスワード"
-                            placeholder="passwordを入力してください。" required>
+                            :placeholder="myform.memberId > 0 ? '変更する場合だけ入力してください。' : 'パスワードを入力してください。'"
+                            :required="myform.memberId === 0">
                         </v-text-field>
                     </v-col>
                     <v-col cols="12">

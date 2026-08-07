@@ -44,7 +44,7 @@ const handleConfirmSubmit = ((event) => {
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.password }}</span>
+                        <span>パスワード: {{ myform.password ? '入力済み' : '変更なし' }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
