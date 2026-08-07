@@ -74,9 +74,19 @@ const showUpsert = ((item) => {
     console.log(item.todoId);
     router.push({ name: "TodoDetail", params: { id: item.todoId } });
 });
-const doDoneFlag = ((item) => {
-    console.log(item);
-    location.href = '/todo/doneFlag?todoId=' + item.todoId;
+const doDoneFlag = (async (item) => {
+    isLoading.value = true;
+    try {
+        const response = await todoStore.completeTodo(item.todoId);
+        if (!response.ok) {
+            throw new Error("Todoの完了更新に失敗しました。");
+        }
+        item.doneFlag = true;
+    } catch (error) {
+        console.error(error);
+    } finally {
+        isLoading.value = false;
+    }
 });
 /** 検索用タイトル */
 const searchTitle = ref("");

@@ -42,6 +42,13 @@ export const useTodoStore = defineStore("todo", {
       return Fetcher.postRequest(Const.REST_PATH.TODO_CALENDAR, payload);
     },
     /**
+     * Todoを完了にする
+     */
+    completeTodo(todoId) {
+      const query = new URLSearchParams({ todo_id: String(todoId) });
+      return Fetcher.getRequest(`${Const.REST_PATH.TODO_DONE}?${query}`);
+    },
+    /**
      * Todo情報を更新する
      */
     upsertTodoInfo(payload) {

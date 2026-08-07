@@ -10,6 +10,8 @@ const drawer = computed({
     get: () => props.drawer,
     set: (value) => emit("update:drawer", value)
 });
+/** Authストア情報 */
+const userStore = useUserStore();
 /** サイドメニュー */
 const links = ref([
     { icon: "mdi-home", text: "Home", url: "/todo/calendar" },
@@ -19,11 +21,9 @@ const links = ref([
         url: "/member/memberList",
     },
     { icon: "mdi-view-dashboard", text: "ダッシュボード画面", url: "/todo/todoList" },
-    { icon: "mdi-account-cancel", text: "退会", url: "/member/cancel" + 1 },
+    { icon: "mdi-account-cancel", text: "退会", url: `/member/cancel/${userStore.memberId}` },
     { icon: "mdi-export", text: "ログアウト", url: "/logout" },
 ]);
-/** Authストア情報 */
-const userStore = useUserStore();
 const role = userStore.getRole;
 
 onMounted(() => {

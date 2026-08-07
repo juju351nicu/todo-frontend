@@ -24,7 +24,7 @@ const myform = ref({
  * ユーザ新規登録を行う。
  */
 const submitRegister = (() => {
-    location.href = '/member/upsert?memberId=0';
+    router.push({ name: "MemberRegister" });
 });
 const showMessageModal = () => {
     isShowModal.value = true;

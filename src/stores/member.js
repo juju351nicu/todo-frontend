@@ -25,17 +25,20 @@ export const useMemberStore = defineStore("member", {
      */
     findMemberList() {
       this.isLoading = true;
-      Fetcher.getRequest(Const.REST_PATH.MEMBER_LIST)
+      return Fetcher.getRequest(Const.REST_PATH.MEMBER_LIST)
         .then((response) => {
-          console.log(response.status);
           return response.json();
         })
-        .then(() => {
+        .then((data) => {
           this.memberListInfo = data.memberList;
-          this.isLoading = false;
+          return data;
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
+          return null;
+        })
+        .finally(() => {
+          this.isLoading = false;
         });
     },
     /**

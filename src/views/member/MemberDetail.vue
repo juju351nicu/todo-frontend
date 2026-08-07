@@ -11,31 +11,31 @@ const props = defineProps({
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
 
+const EMPTY_MEMBER = Object.freeze({
+    memberId: 0,
+    lastName: "",
+    firstName: "",
+    loginId: "",
+    password: "",
+    email: "",
+    role: 2,
+    version: 0,
+});
+
 /** ローディングフラグ */
 const isLoading = computed(() => {
     return memberStore.isLoading;
 });
 
-/**
- * Noから配列のindexを取得する
- * @param {string} id id
- * @returns index番号
- */
-const getFindIndex = ((id) => {
-    const index = memberStore.memberListInfo.findIndex(
-        (member) => member.memberId === id
-    );
-    // 下記の部分、見直し
-    return util.isEmpty(id) ? 0 : index;;
-});
 /** 会員詳細情報 */
 const numId = computed(() => {
     return util.isEmpty(props.id) ? 0 : props.id;
 });
 /** 会員詳細情報 */
 const memberInfo = computed(() => {
-    const index = getFindIndex(numId.value);
-    return memberStore.memberListInfo[index];
+    return memberStore.memberListInfo.find(
+        (member) => member.memberId === numId.value
+    ) ?? EMPTY_MEMBER;
 });
 /** 会員詳細情報 */
 const myform = reactive({

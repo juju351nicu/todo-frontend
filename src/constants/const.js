@@ -34,6 +34,7 @@ const REST_PATH = {
   MEMBER_CANCEL: "/api/v1/member/cancel",
   TODO_LIST: "/api/v1/todo/todoList",
   TODO_CALENDAR: "/api/v1/todo/calendar",
+  TODO_DONE: "/api/v1/todo/doneFlag",
   TODO_UPSERT: "/api/v1/todo/upsertConfirm",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
 };
