@@ -1,8 +1,32 @@
-# Vue 3 + Vite
+# Work Management Frontend
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3とViteで構成したフロントエンドです。
 
-## Recommended IDE Setup
+## 必要な環境
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
-# todo-frontend
+- Node.js 24
+- npm（`package-lock.json`に従って`npm ci`を使用）
+
+`.nvmrc`を利用する場合は、次のコマンドでNode.jsの版を合わせます。
+
+```bash
+nvm use
+```
+
+## セットアップと起動
+
+```bash
+npm ci
+npm run dev
+```
+
+開発サーバーは既定で`http://localhost:8081`を使用します。
+
+## 検証
+
+```bash
+npm run test
+npm run build
+```
+
+CIでもNode.js 24を使い、同じテストとビルドを実行します。

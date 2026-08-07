@@ -50,7 +50,6 @@ const submitForm = ((event) => {
         userStore.authLogin(payload).then(async (response) => {
             if (response.ok) {
                 const data = await response.json();
-                console.log(data.access_token);
                 userStore.setAuthUser(data);
                 isLoading.value = false;
                 router.push("/member/memberList");
@@ -93,18 +92,16 @@ const submitGoogle = (() => {
 /**
  * トークンチェックを行う。
  */
-const checkToken = async () => {
+const checkToken = async (token) => {
     try {
         // トークンチェックAPI起動  
         const res = await userStore.validateToken(token)
             .then((response) => {
-                console.log(response.status);
                 return response.json();
             })
         // 有効なトークンの場合は自動でTOPページへ
         if (!Util.isEmpty(res.data.username)) {
             // TOPページへ
-            console.log('TOPページへ');
             router.push("/member/memberList");
         } else {
             // 有効でない場合はトークンを除去    
@@ -122,13 +119,12 @@ const checkToken = async () => {
 onMounted(() => {
     // トークン取得 
     const token = userStore.getAccessToken;
-    console.log('ページ開いた時の処理:' + token);
     // なければ何もしない
     if (!token) {
         return;
     }
     // トークンチェック処理開始 
-    checkToken();
+    checkToken(token);
 }) 
 </script>
 <template>

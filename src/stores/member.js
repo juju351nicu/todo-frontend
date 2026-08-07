@@ -30,7 +30,7 @@ export const useMemberStore = defineStore("member", {
           console.log(response.status);
           return response.json();
         })
-        .then((data) => {
+        .then(() => {
           this.memberListInfo = data.memberList;
           this.isLoading = false;
         })
@@ -54,8 +54,7 @@ export const useMemberStore = defineStore("member", {
           console.log(response.status);
           return response.json();
         })
-        .then((data) => {
-          console.log(data);
+        .then(() => {
           this.isLoading = false;
         })
         .catch((error) => {
@@ -72,8 +71,7 @@ export const useMemberStore = defineStore("member", {
           console.log(response.status);
           return response.json();
         })
-        .then((data) => {
-          console.log(data);
+        .then(() => {
           this.isLoading = false;
         })
         .catch((error) => {
@@ -91,7 +89,6 @@ export const useMemberStore = defineStore("member", {
           return response.json();
         })
         .then((data) => {
-          console.log(data);
           this.isLoading = false;
         })
         .catch((error) => {

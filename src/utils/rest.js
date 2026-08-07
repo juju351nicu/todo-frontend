@@ -89,7 +89,6 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   // defaultHeader["ヘッダートークン"] = sessionStorage.getItem("トークンキー");
   /** Authストア情報 */
   const userStore = useUserStore();
-  console.log(userStore.getAccessToken);
   headers.set("X-AUTH-TOKEN", userStore.getAccessToken);
   if (!Util.isEmpty(customHeader)) {
     Object.keys(customHeader).forEach((key) => {
@@ -98,7 +97,6 @@ const createRequestData = (uri, reqData, customHeader, method) => {
   } else {
     Object.keys(defaultHeader).forEach((key) => {
       headers.set(key, defaultHeader[key]);
-      console.log(defaultHeader[key]);
     });
   }
   // optionsで HTTPMethodやHeadersを設定する
