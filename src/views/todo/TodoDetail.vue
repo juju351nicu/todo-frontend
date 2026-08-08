@@ -5,7 +5,7 @@ import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import { useUserStore } from "@/stores/user";
-import { createTodoDetailForm } from "@/utils/detail.js";
+import { createTodoDetailForm } from "@/utils/detail";
 
 const props = defineProps({
     id: Number,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getTodoPriorityLabel } from "@/utils/todo.js";
+import { getTodoPriorityLabel } from "@/utils/todo";
 
 describe("Todo表示変換", () => {
   it.each([

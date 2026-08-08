@@ -8,7 +8,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import jaLocale from '@fullcalendar/core/locales/ja'
 import { useTodoStore } from "@/stores/todo";
 import { onBeforeMount, reactive, ref } from 'vue'
-import Util from "@/utils/util.js";
+import Util from "@/utils/util";
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 /** フルカレンダー設定情報 */

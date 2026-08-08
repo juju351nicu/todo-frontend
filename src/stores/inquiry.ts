@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 import type { InquiryRequest, InquiryResponse } from "@/types/inquiry";
 import Fetcher from "@/utils/rest";
 

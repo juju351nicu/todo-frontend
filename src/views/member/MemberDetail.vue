@@ -4,7 +4,7 @@ import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
 import { useMemberStore } from "@/stores/member";
-import { createMemberDetailForm } from "@/utils/detail.js";
+import { createMemberDetailForm } from "@/utils/detail";
 
 const props = defineProps({
     id: Number,

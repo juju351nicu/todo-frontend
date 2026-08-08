@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import Util from "@/utils/util.js";
+import Util from "@/utils/util";
 
 describe("Util", () => {
   it.each([null, undefined, "", []])("空の値を判定できる: %s", (value) => {

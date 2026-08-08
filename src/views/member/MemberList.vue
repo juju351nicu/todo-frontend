@@ -4,7 +4,7 @@ import Loading from "@/components/Loading.vue";
 import { onBeforeMount, computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useMemberStore } from "@/stores/member";
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 /** ルータ情報 */
 const router = useRouter();
 /** 会員ストア情報 */

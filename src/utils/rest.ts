@@ -1,4 +1,4 @@
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 
 const METHOD = {
   GET: "GET",

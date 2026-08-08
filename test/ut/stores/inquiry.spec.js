@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 import { useInquiryStore } from "@/stores/inquiry";
 import Fetcher from "@/utils/rest";
 

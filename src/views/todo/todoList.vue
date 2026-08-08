@@ -4,9 +4,9 @@ import Loading from "@/components/Loading.vue";
 import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import { useRouter } from "vue-router";
-import Util from "@/utils/util.js";
-import { getTodoPriorityLabel } from "@/utils/todo.js";
-import Const from "@/constants/const.js";
+import Util from "@/utils/util";
+import { getTodoPriorityLabel } from "@/utils/todo";
+import Const from "@/constants/const";
 /** ルータ情報 */
 const router = useRouter();
 /** Todoストア情報 */

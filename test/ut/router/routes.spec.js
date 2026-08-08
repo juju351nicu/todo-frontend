@@ -7,11 +7,11 @@ vi.mock("@/views/NotFound.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberList.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberDetail.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberCancel.vue", () => ({ default: {} }));
-vi.mock("@/views/todo/TodoList.vue", () => ({ default: {} }));
+vi.mock("@/views/todo/todoList.vue", () => ({ default: {} }));
 vi.mock("@/views/todo/TodoDetail.vue", () => ({ default: {} }));
 vi.mock("@/views/todo/TodoCalendar.vue", () => ({ default: {} }));
 
-import { routes } from "@/router/routes.js";
+import { routes } from "@/router/routes";
 
 const findRoute = (name) => routes.find((route) => route.name === name);
 

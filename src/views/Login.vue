@@ -4,7 +4,7 @@ import Loading from "@/components/Loading.vue";
 import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 /** ルータ情報 */
 const router = useRouter();
 /** Authストア情報 */

@@ -1,30 +1,28 @@
-/**
- * 接続先のURL
- */
+/** Backend APIの接続先。 */
 const API_PREFIX_PATH = {
   LOCAL_HOST: "http://localhost:8030",
-};
-/** data-tableの1ページあたりの表示件数（デフォルト）*/
+} as const;
+
+/** data-tableの1ページあたりの既定表示件数。 */
 const NUMBER_OF_ITEMS = 5;
-/** data-tableの表示件数の選択リスト */
+
+/** data-tableで選択できる表示件数。 */
 const DATA_TABLE_PAGES = [
   { value: 5, title: "5" },
   { value: 10, title: "10" },
   { value: 20, title: "20" },
   { value: -1, title: "$vuetify.dataFooter.itemsPerPageAll" },
-];
-/**
- * アラートの種類の定数
- */
+] as const;
+
+/** アラート表示種別。 */
 const ALERT_TYPE = {
   SUCCESS: "success",
   INFO: "info",
   WARNING: "warning",
   ERROR: "error",
-};
-/**
- * REST通信用のURL
- */
+} as const;
+
+/** BackendのREST APIパス。 */
 const REST_PATH = {
   AUTH_LOGIN: "/api/v1/login",
   SESSION: "/api/v1/session",
@@ -41,7 +39,8 @@ const REST_PATH = {
   TODO_DONE: "/api/v1/todo/doneFlag",
   TODO_UPSERT: "/api/v1/todo/upsertConfirm",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
-};
+} as const;
+
 export default {
   API_PREFIX_PATH,
   ALERT_TYPE,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createMemberDetailForm,
   createTodoDetailForm,
-} from "@/utils/detail.js";
+} from "@/utils/detail";
 
 describe("Detail form mapper", () => {
   it("会員詳細をパスワードなしの編集フォームへ変換する", () => {

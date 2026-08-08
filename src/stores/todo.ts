@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import Const from "@/constants/const.js";
+import Const from "@/constants/const";
 import type {
   TodoDetailResponse,
   TodoListItem,
