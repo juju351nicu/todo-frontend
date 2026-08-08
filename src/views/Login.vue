@@ -2,7 +2,7 @@
 import Alert from "@/components/Alert.vue";
 import Loading from "@/components/Loading.vue";
 import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import Const from "@/constants/const";
 import { useUserStore } from "@/stores/user";
@@ -10,6 +10,7 @@ import type { LoginRequest } from "@/types/auth";
 import type { ErrorResponse } from "@/types/error";
 /** ルータ情報 */
 const router = useRouter();
+const route = useRoute();
 /** Authストア情報 */
 const userStore = useUserStore();
 /** ローディングフラグ */
@@ -66,7 +67,7 @@ const submitForm = async (): Promise<void> => {
     }
 };
 /**
- * Githubでログインする。
+ * GitHubでログインする。
  */
 const submitGithub = (): void => {
     window.location.assign(
@@ -77,6 +78,21 @@ const submitGithub = (): void => {
 onMounted(async () => {
     if (await userStore.restoreSession(true)) {
         await router.push("/member/memberList");
+        return;
+    }
+    const oauthError = Array.isArray(route.query.oauthError)
+        ? route.query.oauthError[0]
+        : route.query.oauthError;
+    if (typeof oauthError === "string") {
+        const oauthMessages: Record<string, string> = {
+            email_required: "GitHubからメールアドレスを取得できませんでした。GitHubのメール設定を確認してください。",
+            account_unavailable: "このアカウントは現在利用できません。",
+            unsupported_provider: "対応していないOAuth2プロバイダーです。",
+            login_failed: "GitHubでログインできませんでした。もう一度お試しください。",
+        };
+        errorMessages.value = [oauthMessages[oauthError] ?? oauthMessages.login_failed];
+        showMessageModal();
+        await router.replace({ path: route.path, query: {} });
     }
 });
 </script>
@@ -112,7 +128,7 @@ onMounted(async () => {
             <p @click="submitRegister">新しいアカウントを作成</p>
             <v-btn prepend-icon="mdi-github" class="fill-width mt-6 text-capitalize text--white caption mx-4 mb-6"
                 rounded height="48px" outlined color="black" @click="submitGithub">
-                Githubでログイン
+                GitHubでログイン
             </v-btn>
         </v-card-text>
     </v-card>
