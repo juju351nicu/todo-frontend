@@ -1,22 +1,33 @@
-<script setup lang="js">
+<script setup lang="ts">
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/stores/user";
 
-const props = defineProps(["drawer"]);
-const emit = defineEmits(["update:drawer"]);
+interface NavigationLink {
+    icon: string;
+    text: string;
+    url: string;
+}
 
-const drawer = computed({
+const props = defineProps<{
+    drawer: boolean;
+}>();
+
+const emit = defineEmits<{
+    "update:drawer": [value: boolean];
+}>();
+
+const drawer = computed<boolean>({
     get: () => props.drawer,
-    set: (value) => emit("update:drawer", value),
+    set: (value: boolean) => emit("update:drawer", value),
 });
 
 const router = useRouter();
 const userStore = useUserStore();
 
-const links = computed(() => {
-    const values = [
+const links = computed<NavigationLink[]>(() => {
+    const values: NavigationLink[] = [
         { icon: "mdi-home", text: "Home", url: "/todo/calendar" },
         { icon: "mdi-account", text: "アカウント", url: "/member/memberList" },
         { icon: "mdi-view-dashboard", text: "ダッシュボード画面", url: "/todo/todoList" },
@@ -39,7 +50,7 @@ const links = computed(() => {
     return values;
 });
 
-const handleLogout = async () => {
+const handleLogout = async (): Promise<void> => {
     try {
         await userStore.logout();
     } catch (error) {

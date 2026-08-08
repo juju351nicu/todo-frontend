@@ -1,32 +1,40 @@
-<script setup lang="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
-import { onBeforeMount, computed, ref } from "vue";
+import { computed, onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useMemberStore } from "@/stores/member";
+
 import Const from "@/constants/const";
+import { useMemberStore } from "@/stores/member";
+import type { MemberListItem } from "@/types/member";
+
+interface MemberTableHeader {
+    title: string;
+    align: "start" | "center" | "end";
+    sortable?: boolean;
+    key: string;
+}
+
 /** ルータ情報 */
 const router = useRouter();
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
 /** ローディングフラグ */
-const isLoading = computed(() => {
+const isLoading = computed<boolean>(() => {
     return memberStore.isLoading;
 });
 /** 会員情報一覧 */
-const memberList = computed(() => {
+const memberList = computed<MemberListItem[]>(() => {
     return memberStore.memberListInfo;
 });
 /** チェックボックスにて選択したIds */
-const selectedIds = ref([]);
-/** 会員ID */
-const memberId = ref("user01");
+const selectedIds = ref<number[]>([]);
 /** data-tableの1ページあたりの表示件数（デフォルト）*/
-const itemsPerPage = Const.NUMBER_OF_ITEMS;
+const itemsPerPage = ref<number>(Const.NUMBER_OF_ITEMS);
 /** data-tableの表示件数の選択リスト */
 const pages = Const.DATA_TABLE_PAGES;
 /** テーブルの関連するラベル・プロパティ等の情報 */
-const headers = [
+const headers: MemberTableHeader[] = [
     {
         title: "ID",
         align: "start",
@@ -45,22 +53,18 @@ const headers = [
 /**
  * 削除ボタン押下の際、チェックボックスで選択したidの会員情報を削除する。
  */
-const formSubmit = (() => {
-    memberStore.deleteMemberList(selectedIds.value);
-});
-const clickRow = (() => {
-    //vuetify3 clickRowで時間あるときに検索
-    console.log("currentRowReactive");
-});
+const formSubmit = async (): Promise<void> => {
+    await memberStore.deleteMemberList(selectedIds.value);
+};
 /**
  * 更新画面に遷移する
- * @param {*} item 行情報
+ * @param item 行情報
  */
-const showUpsert = ((item) => {
-    router.push({ name: "MemberDetail", params: { id: item.memberId } });
-});
+const showUpsert = (item: MemberListItem): void => {
+    void router.push({ name: "MemberDetail", params: { id: item.memberId } });
+};
 onBeforeMount(() => {
-    memberStore.findMemberList();
+    void memberStore.findMemberList();
 });
 
 </script>
@@ -76,7 +80,7 @@ onBeforeMount(() => {
         </template>
     </v-data-table>
     <div>{{ selectedIds }}</div>
-    <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit()"> 削除確認する </v-btn>
+    <v-btn prepend-icon="mdi-delete" class="mr-4" color="success" @click="formSubmit"> 削除確認する </v-btn>
 </template>
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped></style>

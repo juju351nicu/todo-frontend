@@ -2,8 +2,14 @@
   "extends": "./tsconfig.json",
   "include": [
     "src/views/Login.vue",
+    "src/views/member/MemberList.vue",
+    "src/views/member/MemberDetail.vue",
+    "src/views/member/MemberCancel.vue",
     "src/components/Alert.vue",
     "src/components/Loading.vue",
+    "src/components/TheHeader.vue",
+    "src/components/SideMenu.vue",
+    "src/components/member/UpsertConfirm.vue",
     "src/App.vue",
     "src/types/**/*.d.ts"
   ],

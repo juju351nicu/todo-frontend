@@ -1,21 +1,24 @@
-<script setup lang="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
-import { computed, ref } from 'vue';
+import { computed, ref } from "vue";
+
 import { useMemberStore } from "@/stores/member";
-const props = defineProps({
-    id: Number,
-});
+import type { MemberCancelRequest } from "@/types/member";
+
+const props = defineProps<{
+    id: number;
+}>();
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
 
 /** ローディングフラグ */
-const isLoading = computed(() => {
+const isLoading = computed<boolean>(() => {
     return memberStore.isLoading;
 });
 
 /** 会員詳細情報 */
-const memberId = computed(() => {
+const memberId = computed<number>(() => {
     return props.id;
 });
 
@@ -28,15 +31,13 @@ const password = ref("");
 /**
  * 会員情報を新規登録・更新する。
  */
-const confirmSubmit = ((event) => {
-    // submitイベントの本来の動作を止める
-    event.preventDefault();
-    const payload = {
-        "memberId": memberId.value,
-        "password": password.value,
+const confirmSubmit = async (): Promise<void> => {
+    const payload: MemberCancelRequest = {
+        memberId: memberId.value,
+        password: password.value,
     };
-    memberStore.cancelMemberInfo(payload);
-});
+    await memberStore.cancelMemberInfo(payload);
+};
 
 </script>
 <template>
@@ -56,7 +57,7 @@ const confirmSubmit = ((event) => {
         </v-card-title>
         <v-divider></v-divider>
         <v-text-field v-model="password" type="password" name="password" label="パスワード"></v-text-field>
-        <v-btn class="mr-4" color="success" @click="confirmSubmit($event)">
+        <v-btn class="mr-4" color="success" @click="confirmSubmit">
             上記に同意してアカウントを削除する
         </v-btn>
         <v-btn>

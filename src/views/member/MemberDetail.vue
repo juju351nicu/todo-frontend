@@ -1,30 +1,38 @@
-<script setup lang="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
-import { useMemberStore } from "@/stores/member";
-import { createMemberDetailForm } from "@/utils/detail";
 
-const props = defineProps({
-    id: Number,
-});
+import { useMemberStore } from "@/stores/member";
+import type { AccountRole, MemberUpsertRequest } from "@/types/member";
+import { createMemberDetailForm, type MemberDetailForm } from "@/utils/detail";
+
+interface RoleItem {
+    roleLabel: string;
+    role: AccountRole;
+}
+
+const props = defineProps<{
+    id?: number;
+}>();
 
 /** 会員ストア情報 */
 const memberStore = useMemberStore();
 
 /** ローディングフラグ */
-const isLoading = computed(() => {
+const isLoading = computed<boolean>(() => {
     return memberStore.isLoading;
 });
 
 /** URLから受け取った会員ID */
-const numId = computed(() => {
-    return Number.isInteger(props.id) && props.id > 0 ? props.id : 0;
+const numId = computed<number>(() => {
+    const id = props.id ?? 0;
+    return Number.isInteger(id) && id > 0 ? id : 0;
 });
 
 /** 会員編集フォーム */
-const myform = reactive(createMemberDetailForm());
+const myform = reactive<MemberDetailForm>(createMemberDetailForm());
 
 /** 詳細取得エラー */
 const loadError = ref("");
@@ -33,7 +41,7 @@ const loadError = ref("");
  * 会員詳細をAPIから取得してフォームを復元する。
  * 新規登録（ID=0）の場合は初期値のまま表示する。
  */
-const loadMemberDetail = async () => {
+const loadMemberDetail = async (): Promise<void> => {
     Object.assign(myform, createMemberDetailForm());
     loadError.value = "";
     if (numId.value === 0) {
@@ -49,47 +57,48 @@ const loadMemberDetail = async () => {
     }
 };
 
-watch(numId, loadMemberDetail, { immediate: true });
+watch(numId, () => {
+    void loadMemberDetail();
+}, { immediate: true });
 
-const roleItems = ref([
-    { roleLabel: '管理者', role: 0 },
-    { roleLabel: '閲覧管理者', role: 1 },
-    { roleLabel: 'ユーザ', role: 2 }]);
+const roleItems: RoleItem[] = [
+    { roleLabel: "管理者", role: 0 },
+    { roleLabel: "閲覧管理者", role: 1 },
+    { roleLabel: "ユーザ", role: 2 },
+];
 
 /** モーダルを表示・非表示フラグ */
 const isShowModal = ref(false);
 
 /** 確認画面「モーダル」を表示する */
-const showModal = ((event) => {
-    // submitイベントの本来の動作を止める
-    event.preventDefault();
+const showModal = (): void => {
     isShowModal.value = true;
-});
+};
 
 /**
  * モーダルを非表示にする
  */
-const handleCloseModal = (() => {
+const handleCloseModal = (): void => {
     isShowModal.value = false;
-});
+};
 
 /**
  * 会員情報を新規登録・更新する。
  */
-const confirmSubmit = (() => {
+const confirmSubmit = async (): Promise<void> => {
     isShowModal.value = false;
-    const payload = {
-        "memberId": myform.memberId,
-        "lastName": myform.lastName,
-        "firstName": myform.firstName,
-        "loginId": myform.loginId,
-        "password": myform.password,
-        "email": myform.email,
-        "role": myform.role,
-        "version": myform.version,
+    const payload: MemberUpsertRequest = {
+        memberId: myform.memberId,
+        lastName: myform.lastName,
+        firstName: myform.firstName,
+        loginId: myform.loginId,
+        password: myform.password,
+        email: myform.email,
+        role: myform.role,
+        version: myform.version,
     };
-    memberStore.upsertMemberInfo(payload);
-});
+    await memberStore.upsertMemberInfo(payload);
+};
 
 </script>
 <template>
@@ -140,7 +149,7 @@ const confirmSubmit = (() => {
                         </v-col>
                     </template>
                 </v-row>
-                <v-btn class="mr-4" color="success" type="submit" @click="showModal($event)">
+                <v-btn class="mr-4" color="success" type="button" @click="showModal">
                     {{ myform.memberId > 0 ? '更新する' : ' 登録する' }}
                 </v-btn>
                 <v-btn>

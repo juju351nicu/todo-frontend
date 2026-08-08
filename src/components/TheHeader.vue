@@ -1,8 +1,9 @@
-<script setup lang="js">
+<script setup lang="ts">
 import SideMenu from "@/components/SideMenu.vue";
-import { ref } from 'vue';
+import { ref } from "vue";
+
 /** サイドメニューフラグ */
-const drawer = ref(false);
+const drawer = ref<boolean>(false);
 
 </script>
 <template>
