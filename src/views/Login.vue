@@ -1,10 +1,13 @@
-<script setup lang="js">
+<script setup lang="ts">
 import Alert from "@/components/Alert.vue";
 import Loading from "@/components/Loading.vue";
-import { ref, onMounted } from 'vue'
-import { useUserStore } from "@/stores/user";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+
 import Const from "@/constants/const";
+import { useUserStore } from "@/stores/user";
+import type { LoginRequest } from "@/types/auth";
+import type { ErrorResponse } from "@/types/error";
 /** ルータ情報 */
 const router = useRouter();
 /** Authストア情報 */
@@ -15,35 +18,25 @@ const isLoading = ref(false);
 const isShowModal = ref(false);
 const showPassword = ref(false);
 
-const myform = ref({
-    loginId: '',
-    password: ''
+const myform = ref<LoginRequest>({
+    loginId: "",
+    password: "",
 });
 /**
  * ユーザ新規登録を行う。
  */
-const submitRegister = (() => {
-    router.push({ name: "MemberRegister" });
-});
+const submitRegister = (): void => {
+    void router.push({ name: "MemberRegister" });
+};
 const showMessageModal = () => {
     isShowModal.value = true;
 };
-const hideMessageModal = () => {
-    // モーダルを非表示にする
-    isShowModal.value = false;
-};
-const errorMessages = ref([]);
+const errorMessages = ref<string[]>([]);
 /**
  * ログインIDとパスワードでログインする。
- * @returns false
  */
-const submitForm = (async (event) => {
-    // submitイベントの本来の動作を止める
-    event.preventDefault();
-    const payload = {
-        "loginId": myform.value.loginId,
-        "password": myform.value.password
-    };
+const submitForm = async (): Promise<void> => {
+    const payload: LoginRequest = { ...myform.value };
     isLoading.value = true;
     errorMessages.value = [];
     try {
@@ -53,7 +46,7 @@ const submitForm = (async (event) => {
             return;
         }
         if (response.status === 400) {
-            const errorResponse = await response.json();
+            const errorResponse = (await response.json()) as ErrorResponse;
             errorMessages.value = (errorResponse.fieldErrors ?? []).map(
                 (fieldError) => fieldError.message
             );
@@ -70,14 +63,16 @@ const submitForm = (async (event) => {
         showMessageModal();
     } finally {
         isLoading.value = false;
-    };
-});
+    }
+};
 /**
  * Githubでログインする。
  */
-const submitGithub = (() => {
-    location.href = `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`;
-});
+const submitGithub = (): void => {
+    window.location.assign(
+        `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`
+    );
+};
 
 onMounted(async () => {
     if (await userStore.restoreSession(true)) {
@@ -100,7 +95,7 @@ onMounted(async () => {
             <p class="text-center pt-3 mt-3 text-subtitle-1 siginIn-border-top">
                 ログインIDでログイン
             </p>
-            <form class="mx-9" ref="form" :model="myform">
+            <form class="mx-9" @submit.prevent="submitForm">
                 <v-text-field prepend-inner-icon="mdi-account" name="loginId" type="text" v-model="myform.loginId"
                     placeholder="ログインID" autocomplete="username" outlined dense>
                 </v-text-field>
@@ -111,7 +106,7 @@ onMounted(async () => {
                 </v-text-field>
                 <p class="pointer">パスワードを忘れた方</p>
                 <div class="text-center">
-                    <v-btn color="success" size="large" variant="elevated" @click="submitForm($event)">ログイン</v-btn>
+                    <v-btn type="submit" color="success" size="large" variant="elevated">ログイン</v-btn>
                 </div>
             </form>
             <p @click="submitRegister">新しいアカウントを作成</p>

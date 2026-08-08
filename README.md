@@ -36,11 +36,11 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## TypeScript段階移行
 
-JavaScriptからTypeScriptへ機能単位で移行しています。現在は認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、業務で使用するPinia Store、起動処理、Router、定数、共通utilityをTypeScript化済みです。
+JavaScriptからTypeScriptへ機能単位で移行しています。現在は認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、業務で使用するPinia Store、起動処理、Router、定数、共通utilityに加え、ログイン画面とAlert部品をTypeScript化済みです。
 
 - JavaScriptとの混在期間は`tsconfig.json`の`allowJs`を有効にする。
-- `.ts`ファイルは`npm run typecheck`で型検査する。
-- Vue画面を`<script setup lang="ts">`へ変更する作業単位で`vue-tsc`を導入し、Single File Componentも型検査へ含める。
+- `npm run typecheck`で`.ts`ファイルと移行済みのVue Single File Componentを型検査する。
+- Vue画面は`<script setup lang="ts">`へ機能単位で変更し、`tsconfig.vue.json`の対象へ追加する。
 - 全移行後に`allowJs`を無効化する。
 
 ## 検証

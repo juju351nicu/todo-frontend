@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/views/Login.vue",
+    "src/components/Alert.vue",
+    "src/components/Loading.vue",
+    "src/App.vue",
+    "src/types/**/*.d.ts"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

@@ -1,24 +1,19 @@
-<script setup lang="js">
-import { ref, onBeforeMount, computed } from 'vue';
+<script setup lang="ts">
+import { ref } from "vue";
 
-const props = defineProps({
-    message: String,
-    type: String
-});
+defineProps<{
+    message: string;
+    type: "success" | "info" | "warning" | "error";
+}>();
 
-/** メッセージ情報 */
-const message = computed(() => {
-    return props.message;
-});
-
-const alertFlag = ref(true);
+const alertFlag = ref<boolean>(true);
 
 setTimeout(() => {
-    alertFlag.value = false
+    alertFlag.value = false;
 }, 4000);
 </script>
 <template>
-    <v-alert v-model="alertFlag" :type=type dense class="alert" closable>
+    <v-alert v-model="alertFlag" :type="type" density="compact" class="alert" closable>
         {{ message }}
     </v-alert>
 </template>
