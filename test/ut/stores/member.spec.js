@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const.js";
-import { useMemberStore } from "@/stores/member.js";
+import { useMemberStore } from "@/stores/member";
 import Fetcher from "@/utils/rest";
 
 vi.mock("@/utils/rest", () => ({
@@ -25,6 +25,7 @@ describe("Member store", () => {
       { memberId: 2, lastName: "佐藤", firstName: "花子" },
     ];
     Fetcher.getRequest.mockResolvedValue({
+      ok: true,
       json: vi.fn().mockResolvedValue({ memberList }),
     });
     const store = useMemberStore();

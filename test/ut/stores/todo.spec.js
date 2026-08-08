@@ -2,7 +2,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const.js";
-import { useTodoStore } from "@/stores/todo.js";
+import { useTodoStore } from "@/stores/todo";
 import Fetcher from "@/utils/rest";
 
 vi.mock("@/utils/rest", () => ({
