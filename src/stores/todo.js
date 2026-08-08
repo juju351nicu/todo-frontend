@@ -66,7 +66,7 @@ export const useTodoStore = defineStore("todo", {
      */
     completeTodo(todoId) {
       const query = new URLSearchParams({ todo_id: String(todoId) });
-      return Fetcher.getRequest(`${Const.REST_PATH.TODO_DONE}?${query}`);
+      return Fetcher.postRequest(`${Const.REST_PATH.TODO_DONE}?${query}`, null);
     },
     /**
      * Todo情報を更新する

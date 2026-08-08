@@ -1,67 +1,93 @@
 import { defineStore } from "pinia";
+
 import Const from "@/constants/const.js";
 import Fetcher from "@/utils/rest.js";
+
 export const useUserStore = defineStore("user", {
   state: () => ({
-    memberId: 12,
+    memberId: null,
     username: null,
-    loginId: null,
-    email: null,
-    role: -1,
-    accessToken: null,
+    displayName: null,
+    roleCodes: [],
+    permissionCodes: [],
+    authenticated: false,
+    sessionChecked: false,
   }),
   getters: {
-    /**
-     * アクセストークンを取得する
-     * @returns アクセストークン
-     */
-    getAccessToken() {
-      return this.accessToken;
-    },
-    /**
-     * 権限情報を取得する
-     * @returns 権限情報
-     */
     getRole() {
-      return this.role;
+      if (this.roleCodes.includes("SYSTEM_ADMIN")) {
+        return 0;
+      }
+      if (this.roleCodes.includes("READ_ONLY_ADMIN")) {
+        return 1;
+      }
+      return 2;
+    },
+    isAuthenticated() {
+      return this.authenticated;
+    },
+    hasRole() {
+      return (roleCode) => this.roleCodes.includes(roleCode);
     },
   },
   actions: {
-    /**
-     * アクセストークンを削除する
-     */
-    removeAccessToken() {
-      this.accessToken = null;
-    },
-    /**
-     * ユーザー情報を設定する
-     * @param {Object} payload ユーザ情報
-     */
-    setAuthUser(payload) {
-      this.memberId = payload.member_id;
+    setSessionUser(payload) {
+      this.memberId = payload.accountId;
       this.username = payload.username;
-      this.accessToken = payload.access_token;
-      this.role = payload.role;
+      this.displayName = payload.displayName;
+      this.roleCodes = [...(payload.roleCodes ?? [])];
+      this.permissionCodes = [...(payload.permissionCodes ?? [])];
+      this.authenticated = true;
+      this.sessionChecked = true;
     },
-    /**
-     * ログインする
-     * @param {Object} payload リクエスト情報
-     * @returns ログイン結果
-     */
-    authLogin(payload) {
-      return Fetcher.postRequest(Const.REST_PATH.AUTH_LOGIN, payload);
+    clearSession() {
+      this.memberId = null;
+      this.username = null;
+      this.displayName = null;
+      this.roleCodes = [];
+      this.permissionCodes = [];
+      this.authenticated = false;
     },
-    /**
-     * トークンチェックを行う
-     * @param {String} _token トークン文字列
-     * @returns トークン判定結果
-     */
-    validateToken(_token) {
-      return Fetcher.getRequest(Const.REST_PATH.VALIDATE_TOKEN);
+    async restoreSession(force = false) {
+      if (this.sessionChecked && !force) {
+        return this.authenticated;
+      }
+      try {
+        const response = await Fetcher.getRequest(Const.REST_PATH.SESSION);
+        if (!response.ok) {
+          this.clearSession();
+          return false;
+        }
+        this.setSessionUser(await response.json());
+        return true;
+      } catch (_error) {
+        this.clearSession();
+        return false;
+      } finally {
+        this.sessionChecked = true;
+      }
     },
-  },
-  // SessionStorageに保存する場合
-  persist: {
-    storage: sessionStorage,
+    async authLogin(payload) {
+      const response = await Fetcher.postRequest(Const.REST_PATH.AUTH_LOGIN, payload);
+      if (response.ok) {
+        await Fetcher.refreshCsrfToken();
+        await this.restoreSession(true);
+      }
+      return response;
+    },
+    async logout() {
+      try {
+        const response = await Fetcher.postRequest(Const.REST_PATH.LOGOUT, null);
+        if (!response.ok) {
+          throw new Error(`ログアウトに失敗しました。status=${response.status}`);
+        }
+        Fetcher.clearCsrfToken();
+        await Fetcher.refreshCsrfToken();
+        return response;
+      } finally {
+        this.clearSession();
+        this.sessionChecked = true;
+      }
+    },
   },
 });

@@ -27,7 +27,9 @@ const ALERT_TYPE = {
  */
 const REST_PATH = {
   AUTH_LOGIN: "/api/v1/login",
-  VALIDATE_TOKEN: "/api/v1/tokenValidate",
+  SESSION: "/api/v1/session",
+  CSRF: "/api/v1/csrf",
+  LOGOUT: "/api/v1/logout",
   MEMBER_LIST: "/api/v1/member/memberList",
   MEMBER_DETAIL: "/api/v1/member",
   MEMBER_DELETE: "/api/v1/member/deleteMembers",

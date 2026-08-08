@@ -21,13 +21,14 @@ describe("Todo store", () => {
 
   it("Backendと一致するURLとパラメータ名でTodoを完了にする", async () => {
     const response = { ok: true };
-    Fetcher.getRequest.mockResolvedValue(response);
+    Fetcher.postRequest.mockResolvedValue(response);
     const store = useTodoStore();
 
     await expect(store.completeTodo(42)).resolves.toBe(response);
 
-    expect(Fetcher.getRequest).toHaveBeenCalledWith(
-      "/api/v1/todo/doneFlag?todo_id=42"
+    expect(Fetcher.postRequest).toHaveBeenCalledWith(
+      "/api/v1/todo/doneFlag?todo_id=42",
+      null
     );
   });
 

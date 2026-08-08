@@ -4,7 +4,6 @@ import Loading from "@/components/Loading.vue";
 import { ref, onMounted } from 'vue'
 import { useUserStore } from "@/stores/user";
 import { useRouter } from "vue-router";
-import Util from "@/utils/util.js";
 import Const from "@/constants/const.js";
 /** ルータ情報 */
 const router = useRouter();
@@ -38,7 +37,7 @@ const errorMessages = ref([]);
  * ログインIDとパスワードでログインする。
  * @returns false
  */
-const submitForm = ((event) => {
+const submitForm = (async (event) => {
     // submitイベントの本来の動作を止める
     event.preventDefault();
     const payload = {
@@ -46,86 +45,45 @@ const submitForm = ((event) => {
         "password": myform.value.password
     };
     isLoading.value = true;
+    errorMessages.value = [];
     try {
-        userStore.authLogin(payload).then(async (response) => {
-            if (response.ok) {
-                const data = await response.json();
-                userStore.setAuthUser(data);
-                isLoading.value = false;
-                router.push("/member/memberList");
-            } else {
-                const err = await response.json();
-                if (!Util.isEmpty(err.fieldErrors)) {
-                    showMessageModal();
-                    err.fieldErrors.forEach((fieldError) => {
-                        errorMessages.value.push(fieldError.message);
-                    });
-                    isLoading.value = false;
-                }
-                throw new Error("There's an error upstream and it says");
-            }
-        })
+        const response = await userStore.authLogin(payload);
+        if (response.ok) {
+            await router.push("/member/memberList");
+            return;
+        }
+        if (response.status === 400) {
+            const errorResponse = await response.json();
+            errorMessages.value = (errorResponse.fieldErrors ?? []).map(
+                (fieldError) => fieldError.message
+            );
+        }
+        if (errorMessages.value.length === 0) {
+            errorMessages.value = [response.status === 401
+                ? "ログインIDまたはパスワードが正しくありません。"
+                : "ログインできませんでした。"];
+        }
+        showMessageModal();
     } catch (error) {
-        console.log(error);
+        console.error(error);
+        errorMessages.value = ["Backendへ接続できませんでした。"];
+        showMessageModal();
     } finally {
-        errorMessages.value = [];
+        isLoading.value = false;
     };
-});
-/**
- * Facebookでログインする。
- */
-const submitFacebook = (() => {
-    location.href = '/oauth2/authorization/facebook';
 });
 /**
  * Githubでログインする。
  */
 const submitGithub = (() => {
-    location.href = '/oauth2/authorization/github';
+    location.href = `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`;
 });
-/**
- * グーグルでログインする。
- */
-const submitGoogle = (() => {
-    location.href = '/oauth2/authorization/google';
+
+onMounted(async () => {
+    if (await userStore.restoreSession(true)) {
+        await router.push("/member/memberList");
+    }
 });
-/**
- * トークンチェックを行う。
- */
-const checkToken = async (token) => {
-    try {
-        // トークンチェックAPI起動  
-        const res = await userStore.validateToken(token)
-            .then((response) => {
-                return response.json();
-            })
-        // 有効なトークンの場合は自動でTOPページへ
-        if (!Util.isEmpty(res.data.username)) {
-            // TOPページへ
-            router.push("/member/memberList");
-        } else {
-            // 有効でない場合はトークンを除去    
-            userStore.removeAccessToken();
-        }
-    } catch (err) {
-        // 予期せぬエラーでもトークンを除去しログインしてもらう   
-        userStore.removeAccessToken();
-    }
-};
-/*
- * ページ開いた時の処理 
- * 1.トークンチェック 
- */
-onMounted(() => {
-    // トークン取得 
-    const token = userStore.getAccessToken;
-    // なければ何もしない
-    if (!token) {
-        return;
-    }
-    // トークンチェック処理開始 
-    checkToken(token);
-}) 
 </script>
 <template>
     <Loading v-if="isLoading" />
@@ -157,14 +115,6 @@ onMounted(() => {
                 </div>
             </form>
             <p @click="submitRegister">新しいアカウントを作成</p>
-            <v-btn prepend-icon="mdi-facebook" class="fill-width mt-6 text-capitalize white--text caption mx-4" rounded
-                color="#3b5998" depressed height="48px" @click="submitFacebook">
-                Facebookでログイン
-            </v-btn>
-            <v-btn prepend-icon="mdi-google" class="fill-width mt-6 text-capitalize text--white caption mx-4" rounded
-                height="48px" outlined color="red" @click="submitGoogle">
-                Googleでログイン
-            </v-btn>
             <v-btn prepend-icon="mdi-github" class="fill-width mt-6 text-capitalize text--white caption mx-4 mb-6"
                 rounded height="48px" outlined color="black" @click="submitGithub">
                 Githubでログイン

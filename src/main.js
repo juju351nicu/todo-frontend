@@ -11,4 +11,4 @@ const pinia = createPinia();
 pinia.use(createPersistedState());
 const vuetify = createVuetify({});
 
-createApp(App).use(router).use(pinia).use(vuetify).mount("#app");
+createApp(App).use(pinia).use(router).use(vuetify).mount("#app");

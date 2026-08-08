@@ -10,8 +10,8 @@ export default defineConfig({
     __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
   },
   server: {
-    host: true,
-    port: "8081",
+    host: "localhost",
+    port: 8081,
   },
   plugins: [vue(), vuetify()],
   resolve: {
