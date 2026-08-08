@@ -36,7 +36,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## TypeScript段階移行
 
-JavaScriptからTypeScriptへ機能単位で移行しています。現在は認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、業務で使用するPinia Store、起動処理、Router、定数、共通utilityに加え、ログイン画面、共通レイアウト部品、会員一覧・詳細・退会画面をTypeScript化済みです。
+JavaScriptからTypeScriptへ機能単位で移行しています。現在は認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、業務で使用するPinia Store、起動処理、Router、定数、共通utilityに加え、ログイン画面、共通レイアウト部品、会員機能、Todo一覧・詳細・カレンダー画面をTypeScript化済みです。
 
 - JavaScriptとの混在期間は`tsconfig.json`の`allowJs`を有効にする。
 - `npm run typecheck`で`.ts`ファイルと移行済みのVue Single File Componentを型検査する。

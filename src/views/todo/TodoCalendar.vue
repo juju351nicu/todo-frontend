@@ -1,18 +1,44 @@
-<script setup="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
-import FullCalendar from '@fullcalendar/vue3'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import interactionPlugin from '@fullcalendar/interaction'
-import jaLocale from '@fullcalendar/core/locales/ja'
+import type { CalendarOptions, EventInput } from "@fullcalendar/core";
+import jaLocale from "@fullcalendar/core/locales/ja";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import FullCalendar from "@fullcalendar/vue3";
+import { onBeforeMount, reactive, ref } from "vue";
+
 import { useTodoStore } from "@/stores/todo";
-import { onBeforeMount, reactive, ref } from 'vue'
+import type { ErrorResponse } from "@/types/error";
+import type { TodoListItem, TodoListRequest, TodoListResponse } from "@/types/todo";
 import Util from "@/utils/util";
+
 /** Todoストア情報 */
 const todoStore = useTodoStore();
+
+const toCalendarEvents = (todoList: TodoListItem[]): EventInput[] =>
+  todoList.map((todo) => ({
+    id: String(todo.todoId),
+    title: todo.title,
+    start: todo.start,
+    end: todo.end,
+    color: todo.color ?? undefined,
+    url: todo.url ?? undefined,
+    display: (todo.display ?? undefined) as EventInput["display"],
+    extendedProps: {
+      todoId: todo.todoId,
+      description: todo.description,
+      detail: todo.detail,
+      doneFlag: todo.doneFlag,
+      userId: todo.userId,
+      remainingDays: todo.remainingDays,
+      priority: todo.priority,
+    },
+  }));
+
 /** フルカレンダー設定情報 */
-const calendarOptions = reactive({
+const calendarOptions = reactive<CalendarOptions>({
   locale: jaLocale, // 日本語化
   height: window.innerHeight - 100,
   plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin],
@@ -30,94 +56,74 @@ const calendarOptions = reactive({
     day: "日",
     list: "リスト",
   },
-  initialView: 'dayGridMonth',
-  dateClick: (arg) => {
-    alert('date click! ' + arg.dateStr);
+  initialView: "dayGridMonth",
+  dateClick: (arg: DateClickArg) => {
+    window.alert(`date click! ${arg.dateStr}`);
   },
-  events: [],
+  events: [] as EventInput[],
 });
 /** ローディングフラグ */
-const isLoading = ref(false);
-/** モーダルを表示・非表示フラグ */
-const isShowModal = ref(false);
-const showMessageModal = () => {
-  isShowModal.value = true;
-};
+const isLoading = ref<boolean>(false);
+/** エラーメッセージ */
+const errorMessages = ref<string[]>([]);
 /** 検索用タイトル */
-const searchTitle = ref("");
+const searchTitle = ref<string>("");
 /** 検索用完了・未完了フラグチェックボックス */
-const selectedDoneFlag = ref(['0','1']);
+const selectedDoneFlag = ref<string[]>(["0", "1"]);
+
+const createSearchRequest = (): TodoListRequest => ({
+  search_title: searchTitle.value,
+  date_range: "",
+  done_flag_values: Util.getNumberList(selectedDoneFlag.value),
+});
+
+const setResponseErrors = (errorResponse: ErrorResponse): void => {
+  errorMessages.value = (errorResponse.fieldErrors ?? []).map(
+    (fieldError) => fieldError.message
+  );
+  if (errorMessages.value.length === 0) {
+    errorMessages.value = ["Todoカレンダーを取得できませんでした。"];
+  }
+};
+
+const loadCalendar = async (payload: TodoListRequest): Promise<void> => {
+  isLoading.value = true;
+  errorMessages.value = [];
+  try {
+    const response = await todoStore.findCalendarList(payload);
+    if (!response.ok) {
+      setResponseErrors((await response.json()) as ErrorResponse);
+      return;
+    }
+    const data = (await response.json()) as TodoListResponse;
+    calendarOptions.events = toCalendarEvents(data.todoList);
+  } catch (error: unknown) {
+    console.error(error);
+    if (errorMessages.value.length === 0) {
+      errorMessages.value = ["Backendへ接続できませんでした。"];
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 /**
  * 検索ボタン押下の際、TODO情報を検索する。
  */
-const formSubmit = ((event) => {
-  // submitイベントの本来の動作を止める
-  event.preventDefault();
-  const payload = {
-    "search_title": searchTitle.value,
-    "date_range": "",
-    "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
-  };
-  isLoading.value = true;
-  try {
-    todoStore.findCalendarList(payload).then(async (response) => {
-      if (response.ok) {
-        const data = await response.json();
-        calendarOptions.events = data.todoList;
-        isLoading.value = false;
-      } else {
-        const err = await response.json();
-        if (!Util.isEmpty(err.fieldErrors)) {
-          showMessageModal();
-          err.fieldErrors.forEach((fieldError) => {
-            errorMessages.value.push(fieldError.message);
-          });
-          isLoading.value = false;
-        }
-        throw new Error("There's an error upstream and it says");
-      }
-    })
-  } catch (error) {
-    console.log(error);
-  };
-});
+const formSubmit = async (): Promise<void> => {
+  await loadCalendar(createSearchRequest());
+};
 /** 初期表示 */
 onBeforeMount(() => {
-  const payload = {
-    "search_title": "",
-    "date_range": "",
-    "done_flag_values": Util.getNumberList(selectedDoneFlag.value),
-  };
-  isLoading.value = true;
-  try {
-    todoStore.findCalendarList(payload).then(async (response) => {
-      if (response.ok) {
-        const data = await response.json();
-        calendarOptions.events = data.todoList;
-        // data.eventDtos.forEach((field) => {
-        //   this.calendarOptions.events.push({ title: field.title, date: field.start },);
-        // });
-        isLoading.value = false;
-      } else {
-        const err = await response.json();
-        if (!Util.isEmpty(err.fieldErrors)) {
-          showMessageModal();
-          err.fieldErrors.forEach((fieldError) => {
-            errorMessages.value.push(fieldError.message);
-          });
-          isLoading.value = false;
-        }
-        throw new Error("There's an error upstream and it says");
-      }
-    })
-  } catch (error) {
-    console.log(error);
-  };
+  void loadCalendar(createSearchRequest());
 });
 </script>
 <template>
   <TheHeader />
   <Loading v-if="isLoading" />
+  <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+    <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+  </v-alert>
   <v-card class="mx-auto" max-width="1000">
     <v-card-item>
       <v-card-title>
@@ -146,7 +152,7 @@ onBeforeMount(() => {
       </v-card-subtitle>
     </v-card-item>
     <v-card-text style="text-align: right">
-      <v-btn color="success" @click="formSubmit($event)">検索</v-btn>
+      <v-btn color="success" @click="formSubmit">検索</v-btn>
     </v-card-text>
   </v-card>
   <br />

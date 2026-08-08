@@ -1,31 +1,28 @@
-<script setup lang="js">
-import { computed } from 'vue';
-const props = defineProps({
-    myform: Object,
-});
+<script setup lang="ts">
+import type { TodoDetailForm } from "@/utils/detail";
 
-const emit = defineEmits(["close-modal", "confirm-submit"]);
+defineProps<{
+    myform: TodoDetailForm;
+}>();
 
-/** 会員情報 */
-const myform = computed(() => {
-    return props.myform;
-});
+const emit = defineEmits<{
+    "close-modal": [];
+    "confirm-submit": [];
+}>();
+
 /**
  * モーダル画面を閉じる。
  */
-const handleCloseModal = ((event) => {
-    // submitイベントの本来の動作を止める
-    // event.preventDefault();
+const handleCloseModal = (): void => {
     emit("close-modal");
-});
+};
+
 /**
- * 確認した会員情報を登録・更新する。
+ * 確認したTodo情報を登録・更新する。
  */
-const handleConfirmSubmit = ((event) => {
-    // submitイベントの本来の動作を止める
-    event.preventDefault();
+const handleConfirmSubmit = (): void => {
     emit("confirm-submit");
-});
+};
 </script>
 <template>
     <div id="modal">
@@ -58,8 +55,8 @@ const handleConfirmSubmit = ((event) => {
                     </v-col>
                 </v-row>
             </v-container>
-            <button class="modal__btn" @click="handleCloseModal($event)">戻る</button>
-            <button class="modal__btn" @click="handleConfirmSubmit($event)">{{ myform.todoId > 0 ? '更新' : '登録'
+            <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
+            <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ myform.todoId > 0 ? '更新' : '登録'
             }}</button>
         </div>
         <div class="modal-overlay"></div>

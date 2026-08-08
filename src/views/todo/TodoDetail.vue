@@ -1,43 +1,63 @@
-<script setup lang="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import UpsertConfirm from "@/components/todo/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
+
 import { useTodoStore } from "@/stores/todo";
 import { useUserStore } from "@/stores/user";
-import { createTodoDetailForm } from "@/utils/detail";
+import type { ErrorResponse } from "@/types/error";
+import type { AccountRole } from "@/types/member";
+import type { TodoUpsertRequest } from "@/types/todo";
+import { createTodoDetailForm, type TodoDetailForm } from "@/utils/detail";
 
-const props = defineProps({
-    id: Number,
-});
+interface PriorityItem {
+    priorityLabel: string;
+    priority: number;
+}
+
+interface DoneFlagItem {
+    doneFlagLabel: string;
+    doneFlag: 0 | 1;
+}
+
+interface UserItem {
+    userObjLabel: string;
+    userObjId: number;
+}
+
+const props = defineProps<{
+    id?: number;
+}>();
 
 /** Todoストア情報 */
 const todoStore = useTodoStore();
 const userStore = useUserStore();
 
 /** 送信中フラグ */
-const isSubmitting = ref(false);
+const isSubmitting = ref<boolean>(false);
 
 /** ローディングフラグ */
-const isLoading = computed(() => {
+const isLoading = computed<boolean>(() => {
     return todoStore.isLoading || isSubmitting.value;
 });
 
 /** ログインユーザーの権限 */
-const role = computed(() => userStore.getRole);
+const role = computed<AccountRole>(() => userStore.getRole as AccountRole);
 
 /** Todoの対象ユーザー表示 */
-const fullName = computed(() => {
+const fullName = computed<string>(() => {
     return myform.userId > 0 ? `ユーザーID: ${myform.userId}` : "対象ユーザーなし";
 });
 
 /** URLから受け取ったTodo ID */
-const numId = computed(() => {
-    return Number.isInteger(props.id) && props.id > 0 ? props.id : 0;
+const numId = computed<number>(() => {
+    const id = props.id ?? 0;
+    return Number.isInteger(id) && id > 0 ? id : 0;
 });
 
 /** Todo編集フォーム */
-const myform = reactive(createTodoDetailForm());
+const myform = reactive<TodoDetailForm>(createTodoDetailForm());
 
 /** 詳細取得エラー */
 const loadError = ref("");
@@ -49,7 +69,7 @@ const successMessage = ref("");
  * Todo詳細をAPIから取得してフォームを復元する。
  * 新規登録（ID=0）の場合は初期値のまま表示する。
  */
-const loadTodoDetail = async () => {
+const loadTodoDetail = async (): Promise<void> => {
     Object.assign(myform, createTodoDetailForm());
     loadError.value = "";
     successMessage.value = "";
@@ -66,51 +86,55 @@ const loadTodoDetail = async () => {
     }
 };
 
-watch(numId, loadTodoDetail, { immediate: true });
+watch(numId, () => {
+    void loadTodoDetail();
+}, { immediate: true });
 
 /** モーダルを表示・非表示フラグ */
 const isShowModal = ref(false);
 
-const showConfirmModal = () => {
+const showConfirmModal = (): void => {
     isShowModal.value = true;
 };
 /**
  * モーダルを非表示にする
  */
-const handleCloseModal = (() => {
+const handleCloseModal = (): void => {
     isShowModal.value = false;
-});
+};
 
-const priorityItems = [
-    { priorityLabel: '低', priority: 1 },
-    { priorityLabel: '中', priority: 2 },
-    { priorityLabel: '高', priority: 3 },];
-const doneFlagItems = [
-    { doneFlagLabel: '未完了', doneFlag: 0 },
-    { doneFlagLabel: '完了', doneFlag: 1 },];
-const fullNameItems = [
-    { userObjLabel: '全員', userObjId: -1 }
+const priorityItems: PriorityItem[] = [
+    { priorityLabel: "低", priority: 1 },
+    { priorityLabel: "中", priority: 2 },
+    { priorityLabel: "高", priority: 3 },
+];
+const doneFlagItems: DoneFlagItem[] = [
+    { doneFlagLabel: "未完了", doneFlag: 0 },
+    { doneFlagLabel: "完了", doneFlag: 1 },
+];
+const fullNameItems: UserItem[] = [
+    { userObjLabel: "全員", userObjId: -1 },
 ];
 
-const errorMessages = ref([]);
+const errorMessages = ref<string[]>([]);
 /**
  * Todoを新規登録・更新する。
  */
-const confirmSubmit = (async () => {
+const confirmSubmit = async (): Promise<void> => {
     isShowModal.value = false;
     errorMessages.value = [];
     successMessage.value = "";
-    const payload = {
-        "todo_id": myform.todoId,
-        "date_from": myform.dateFrom,
-        "date_to": myform.dateTo,
-        "title": myform.title,
-        "detail": myform.detail,
-        "done_flag": String(myform.doneFlag),
-        "role": myform.role,
-        "priority": myform.priority,
-        "version": myform.version,
-        "user_id": myform.userId
+    const payload: TodoUpsertRequest = {
+        todo_id: myform.todoId,
+        date_from: myform.dateFrom,
+        date_to: myform.dateTo,
+        title: myform.title,
+        detail: myform.detail,
+        done_flag: myform.doneFlag === 1 ? "1" : "0",
+        role: role.value,
+        priority: myform.priority,
+        version: myform.version,
+        user_id: myform.userId,
     };
     isSubmitting.value = true;
     try {
@@ -122,7 +146,7 @@ const confirmSubmit = (async () => {
                 Object.assign(myform, createTodoDetailForm());
             }
         } else {
-            const errorResponse = await response.json();
+            const errorResponse = (await response.json()) as ErrorResponse;
             errorMessages.value = (errorResponse.fieldErrors ?? []).map(
                 (fieldError) => fieldError.message
             );
@@ -136,7 +160,7 @@ const confirmSubmit = (async () => {
     } finally {
         isSubmitting.value = false;
     }
-});
+};
 </script>
 <template>
     <TheHeader />
@@ -199,7 +223,7 @@ const confirmSubmit = (async () => {
                         <v-textarea name="detail" v-model="myform.detail" label="詳細" required>
                         </v-textarea>
                     </v-col>
-                    <v-btn class="mr-4" color="success" type="submit" @click="showConfirmModal">
+                    <v-btn class="mr-4" color="success" type="button" @click="showConfirmModal">
                         {{ myform.todoId > 0 ? '更新する' : '登録する' }}
                     </v-btn>
                     <v-btn>
