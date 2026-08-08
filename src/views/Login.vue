@@ -17,7 +17,7 @@ const isShowModal = ref(false);
 const showPassword = ref(false);
 
 const myform = ref({
-    loginEmail: '',
+    loginId: '',
     password: ''
 });
 /**
@@ -35,14 +35,14 @@ const hideMessageModal = () => {
 };
 const errorMessages = ref([]);
 /**
- * メールアドレスとパスワードでログインする。
+ * ログインIDとパスワードでログインする。
  * @returns false
  */
 const submitForm = ((event) => {
     // submitイベントの本来の動作を止める
     event.preventDefault();
     const payload = {
-        "loginEmail": myform.value.loginEmail,
+        "loginId": myform.value.loginId,
         "password": myform.value.password
     };
     isLoading.value = true;
@@ -140,11 +140,11 @@ onMounted(() => {
         <v-card-title class="d-flex justify-center pa-0 mt-6">ログイン</v-card-title>
         <v-card-text class="d-flex justify-center flex-column">
             <p class="text-center pt-3 mt-3 text-subtitle-1 siginIn-border-top">
-                メールアドレスでログイン
+                ログインIDでログイン
             </p>
             <form class="mx-9" ref="form" :model="myform">
-                <v-text-field prepend-inner-icon="mdi-email" name="loginEmail" type="email" v-model="myform.loginEmail"
-                    placeholder="メールアドレス" outlined dense>
+                <v-text-field prepend-inner-icon="mdi-account" name="loginId" type="text" v-model="myform.loginId"
+                    placeholder="ログインID" autocomplete="username" outlined dense>
                 </v-text-field>
                 <v-text-field prepend-inner-icon="mdi-lock" name="password"
                     v-bind:type="showPassword ? 'text' : 'password'" @click:append-inner="showPassword = !showPassword"
