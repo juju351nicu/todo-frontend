@@ -5,6 +5,7 @@ import { onBeforeMount, ref } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import { useRouter } from "vue-router";
 import Util from "@/utils/util.js";
+import { getTodoPriorityLabel } from "@/utils/todo.js";
 import Const from "@/constants/const.js";
 /** ルータ情報 */
 const router = useRouter();
@@ -49,16 +50,6 @@ const getColor = ((priority) => {
             return '#ff0000'
     }
 });
-const setPriority = ((priority) => {
-    switch (priority) {
-        case 1:
-            return '高'
-        case 2:
-            return '中'
-        default:
-            return '低'
-    }
-});
 const setRemainingDays = ((value) => {
     return '残り' + value + '日間'
 });
@@ -70,8 +61,6 @@ const setDoneFlag = ((doneFlag) => {
     else return '未完了'
 });
 const showUpsert = ((item) => {
-    console.log(item);
-    console.log(item.todoId);
     router.push({ name: "TodoDetail", params: { id: item.todoId } });
 });
 const doDoneFlag = (async (item) => {
@@ -198,7 +187,7 @@ onBeforeMount(() => {
         :items-per-page-options="pages" items-per-page-text="表示行数" class="elevation-1">
         <template v-slot:item.priority="{ value }">
             <v-chip :color="getColor(value)">
-                {{ setPriority(value) }}
+                {{ getTodoPriorityLabel(value) }}
             </v-chip>
         </template>
         <template v-slot:item.remainingDays="{ value }">

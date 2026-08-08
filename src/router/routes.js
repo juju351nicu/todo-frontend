@@ -5,7 +5,7 @@ import NotFound from "@/views/NotFound.vue";
 import MemberList from "@/views/member/MemberList.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
-import TodoList from "@/views/todo/TodoList.vue";
+import TodoList from "@/views/todo/todoList.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 

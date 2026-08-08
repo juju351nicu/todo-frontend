@@ -42,6 +42,9 @@ const myform = reactive(createTodoDetailForm());
 /** 詳細取得エラー */
 const loadError = ref("");
 
+/** 登録・更新完了メッセージ */
+const successMessage = ref("");
+
 /**
  * Todo詳細をAPIから取得してフォームを復元する。
  * 新規登録（ID=0）の場合は初期値のまま表示する。
@@ -49,6 +52,7 @@ const loadError = ref("");
 const loadTodoDetail = async () => {
     Object.assign(myform, createTodoDetailForm());
     loadError.value = "";
+    successMessage.value = "";
     if (numId.value === 0) {
         return;
     }
@@ -95,6 +99,7 @@ const errorMessages = ref([]);
 const confirmSubmit = (async () => {
     isShowModal.value = false;
     errorMessages.value = [];
+    successMessage.value = "";
     const payload = {
         "todo_id": myform.todoId,
         "date_from": myform.dateFrom,
@@ -110,7 +115,13 @@ const confirmSubmit = (async () => {
     isSubmitting.value = true;
     try {
         const response = await todoStore.upsertTodoInfo(payload);
-        if (!response.ok) {
+        if (response.ok) {
+            const isUpdate = myform.todoId > 0;
+            successMessage.value = `Todoを${isUpdate ? '更新' : '登録'}しました。`;
+            if (!isUpdate) {
+                Object.assign(myform, createTodoDetailForm());
+            }
+        } else {
             const errorResponse = await response.json();
             errorMessages.value = (errorResponse.fieldErrors ?? []).map(
                 (fieldError) => fieldError.message
@@ -135,6 +146,9 @@ const confirmSubmit = (async () => {
     <v-container>
         <v-alert v-if="loadError" type="error" class="mb-4">
             {{ loadError }}
+        </v-alert>
+        <v-alert v-if="successMessage" type="success" class="mb-4">
+            {{ successMessage }}
         </v-alert>
         <v-alert v-if="errorMessages.length" type="error" class="mb-4">
             <div v-for="message in errorMessages" :key="message">{{ message }}</div>
