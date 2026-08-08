@@ -3,7 +3,6 @@ import type { RouteRecordRaw } from "vue-router";
 import InquiryForm from "@/views/InquiryForm.vue";
 import Login from "@/views/Login.vue";
 import NotFound from "@/views/NotFound.vue";
-import VuetifyList from "@/views/VuetifyList.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
 import MemberList from "@/views/member/MemberList.vue";
@@ -16,12 +15,6 @@ export const routes: RouteRecordRaw[] = [
     path: "/",
     name: "Login",
     component: Login,
-  },
-  {
-    path: "/VuetifyList",
-    name: "DashBoard",
-    component: VuetifyList,
-    meta: { requiresAuth: true },
   },
   {
     path: "/member/memberList",

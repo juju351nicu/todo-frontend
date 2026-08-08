@@ -34,14 +34,13 @@ BackendのSpring Security + Spring Session JDBCを使用します。JWTは使用
 
 BackendとFrontendはどちらも`localhost`で起動してください。`localhost`と`127.0.0.1`を混在させるとCookieの送信先が変わります。
 
-## TypeScript段階移行
+## TypeScript
 
-JavaScriptからTypeScriptへ機能単位で移行しています。現在は認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、業務で使用するPinia Store、起動処理、Router、定数、共通utilityに加え、ログイン画面、共通レイアウト部品、会員機能、Todo一覧・詳細・カレンダー画面をTypeScript化済みです。
+アプリケーションソースのTypeScript移行は完了しています。認証・会員・Todo・問い合わせAPIのRequest / Response型、共通HTTPクライアント、Pinia Store、起動処理、Router、定数、共通utility、すべてのVue Single File Componentを型検査します。
 
-- JavaScriptとの混在期間は`tsconfig.json`の`allowJs`を有効にする。
-- `npm run typecheck`で`.ts`ファイルと移行済みのVue Single File Componentを型検査する。
-- Vue画面は`<script setup lang="ts">`へ機能単位で変更し、`tsconfig.vue.json`の対象へ追加する。
-- 全移行後に`allowJs`を無効化する。
+- `tsconfig.json`の`allowJs`は無効です。
+- `npm run typecheck`で`src`配下の`.ts`とすべての`.vue`を型検査します。
+- 新しいアプリケーションコードはTypeScriptで作成します。
 
 ## 検証
 

@@ -1,21 +1,5 @@
 {
   "extends": "./tsconfig.json",
-  "include": [
-    "src/views/Login.vue",
-    "src/views/member/MemberList.vue",
-    "src/views/member/MemberDetail.vue",
-    "src/views/member/MemberCancel.vue",
-    "src/views/todo/todoList.vue",
-    "src/views/todo/TodoDetail.vue",
-    "src/views/todo/TodoCalendar.vue",
-    "src/components/Alert.vue",
-    "src/components/Loading.vue",
-    "src/components/TheHeader.vue",
-    "src/components/SideMenu.vue",
-    "src/components/member/UpsertConfirm.vue",
-    "src/components/todo/UpsertConfirm.vue",
-    "src/App.vue",
-    "src/types/**/*.d.ts"
-  ],
+  "include": ["src/**/*.vue", "src/types/**/*.d.ts"],
   "exclude": ["dist", "node_modules"]
 }

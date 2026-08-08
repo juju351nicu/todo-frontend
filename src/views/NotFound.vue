@@ -1,11 +1,12 @@
-<script setup lang="js">
+<script setup lang="ts">
 import { useRouter } from "vue-router";
+
 const router = useRouter();
 /**
  * トップページに戻る
  */
-const goHome = () => {
-    router.push({ name: "DashBoard" });
+const goHome = (): void => {
+    void router.push({ name: "TodoCalendar" });
 };
 </script>
 <template>

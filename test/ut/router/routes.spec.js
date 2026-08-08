@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/views/Login.vue", () => ({ default: {} }));
 vi.mock("@/views/InquiryForm.vue", () => ({ default: {} }));
-vi.mock("@/views/VuetifyList.vue", () => ({ default: {} }));
 vi.mock("@/views/NotFound.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberList.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberDetail.vue", () => ({ default: {} }));
@@ -28,5 +27,10 @@ describe("Vue routes", () => {
     expect(route.path).toBe("/member/register");
     expect(route.props).toEqual({ id: 0 });
     expect(route.meta?.requiresAuth).not.toBe(true);
+  });
+
+  it("試作Dashboardルートを公開しない", () => {
+    expect(findRoute("DashBoard")).toBeUndefined();
+    expect(findRoute("TodoCalendar").path).toBe("/todo/calendar");
   });
 });

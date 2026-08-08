@@ -1,27 +1,28 @@
-<script setup lang="js">
+<script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, ref } from "vue";
-import { useInquiryStore } from "@/stores/inquiry";
 
+import { useInquiryStore } from "@/stores/inquiry";
+import type { InquiryRequest } from "@/types/inquiry";
 
 const inquiryStore = useInquiryStore();
 
-const isLoading = computed(() => {
+const isLoading = computed<boolean>(() => {
   return inquiryStore.isLoading;
 });
-const fullName = ref("");
-const email = ref("");
-const message = ref("");
+const fullName = ref<string>("");
+const email = ref<string>("");
+const message = ref<string>("");
 /** お問い合わせ情報のパラメータを送る */
-const submit = (() => {
-  const payload = {
-    "fullName": fullName.value,
-    "email": email.value,
-    "message": message.value
+const submit = async (): Promise<void> => {
+  const payload: InquiryRequest = {
+    fullName: fullName.value,
+    email: email.value,
+    message: message.value,
   };
-  inquiryStore.recieveInquiryInfo(payload);
-});
+  await inquiryStore.recieveInquiryInfo(payload);
+};
 </script>
 <template>
   <TheHeader />
