@@ -5,17 +5,23 @@ const METHOD = {
   POST: "POST",
   PUT: "PUT",
   DELETE: "DELETE",
-};
+} as const;
+
+type HttpMethod = (typeof METHOD)[keyof typeof METHOD];
 
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
-const MUTATING_METHODS = new Set([METHOD.POST, METHOD.PUT, METHOD.DELETE]);
+const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
+  METHOD.POST,
+  METHOD.PUT,
+  METHOD.DELETE,
+]);
 
-let csrfToken = null;
+let csrfToken: string | null = null;
 
-const apiUrl = (uri) => Const.API_PREFIX_PATH.LOCAL_HOST + uri;
+const apiUrl = (uri: string): string => Const.API_PREFIX_PATH.LOCAL_HOST + uri;
 
-const readCookie = (name) => {
+const readCookie = (name: string): string | null => {
   if (typeof document === "undefined") {
     return null;
   }
@@ -30,10 +36,8 @@ const readCookie = (name) => {
 /**
  * Backendから新しいCSRF Cookieを取得する。
  * ログイン・ログアウトで古いトークンが破棄された後にも呼び出す。
- *
- * @returns {Promise<string>} CSRFトークン
  */
-const refreshCsrfToken = async () => {
+const refreshCsrfToken = async (): Promise<string> => {
   const response = await fetch(apiUrl(Const.REST_PATH.CSRF), {
     method: METHOD.GET,
     headers: { Accept: "application/json" },
@@ -49,16 +53,20 @@ const refreshCsrfToken = async () => {
   return csrfToken;
 };
 
-const ensureCsrfToken = async () => {
+const ensureCsrfToken = async (): Promise<string> => {
   csrfToken = csrfToken ?? readCookie(CSRF_COOKIE_NAME);
   return csrfToken ?? refreshCsrfToken();
 };
 
-const clearCsrfToken = () => {
+const clearCsrfToken = (): void => {
   csrfToken = null;
 };
 
-const request = async (uri, method, requestData = null) => {
+const request = async <TRequest = unknown>(
+  uri: string,
+  method: HttpMethod,
+  requestData: TRequest | null = null
+): Promise<Response> => {
   const headers = new Headers({
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -67,7 +75,7 @@ const request = async (uri, method, requestData = null) => {
     headers.set(CSRF_HEADER_NAME, await ensureCsrfToken());
   }
 
-  const options = {
+  const options: RequestInit = {
     method,
     headers,
     credentials: "include",
@@ -78,12 +86,15 @@ const request = async (uri, method, requestData = null) => {
   return fetch(apiUrl(uri), options);
 };
 
-const getRequest = (uri) => request(uri, METHOD.GET);
+const getRequest = (uri: string): Promise<Response> => request(uri, METHOD.GET);
 
-const postRequest = (uri, requestData) =>
-  request(uri, METHOD.POST, requestData);
+const postRequest = <TRequest = unknown>(
+  uri: string,
+  requestData: TRequest | null
+): Promise<Response> => request(uri, METHOD.POST, requestData);
 
-const deleteRequest = (uri) => request(uri, METHOD.DELETE);
+const deleteRequest = (uri: string): Promise<Response> =>
+  request(uri, METHOD.DELETE);
 
 export default {
   getRequest,

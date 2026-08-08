@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const.js";
 import { useTodoStore } from "@/stores/todo.js";
-import Fetcher from "@/utils/rest.js";
+import Fetcher from "@/utils/rest";
 
-vi.mock("@/utils/rest.js", () => ({
+vi.mock("@/utils/rest", () => ({
   default: {
     getRequest: vi.fn(),
     postRequest: vi.fn(),

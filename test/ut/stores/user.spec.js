@@ -2,10 +2,10 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const.js";
-import { useUserStore } from "@/stores/user.js";
-import Fetcher from "@/utils/rest.js";
+import { useUserStore } from "@/stores/user";
+import Fetcher from "@/utils/rest";
 
-vi.mock("@/utils/rest.js", () => ({
+vi.mock("@/utils/rest", () => ({
   default: {
     getRequest: vi.fn(),
     postRequest: vi.fn(),

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Fetcher from "@/utils/rest.js";
+import Fetcher from "@/utils/rest";
 
 describe("REST client", () => {
   beforeEach(() => {
