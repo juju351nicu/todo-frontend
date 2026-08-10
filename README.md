@@ -2,6 +2,10 @@
 
 Vue 3とViteで構成したフロントエンドです。
 
+- [コーディング規約](docs/coding-guidelines.md)
+- [Frontend構成ガイド](docs/frontend-architecture.md)
+- [ブラウザ回帰チェックリスト](docs/browser-regression-checklist.md)
+
 ## 必要な環境
 
 - Node.js 24
@@ -49,7 +53,7 @@ Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位�
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
-画面の状態と操作は最初から細かく分けず、`useLoginPage`のように1画面につき1つのcomposableへまとめます。複数の独立した責務が明確になった場合だけ追加分割します。詳しくは[Frontend構成ガイド](docs/frontend-architecture.md)を参照してください。
+画面の状態と操作は最初から細かく分けず、`useLoginPage`のように1画面につき1つのcomposableへまとめます。複数の独立した責務が明確になった場合だけ追加分割します。詳しくは[Frontend構成ガイド](docs/frontend-architecture.md)を参照してください。JSDocと補足コメントの基準は[コーディング規約](docs/coding-guidelines.md)へ記載しています。
 
 ## 検証
 
