@@ -3,8 +3,8 @@ import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, ref } from "vue";
 
-import { useMemberStore } from "@/stores/member";
-import type { MemberCancelRequest } from "@/types/member";
+import { useMemberStore } from "@/features/member/stores/member";
+import type { MemberCancelRequest } from "@/features/member/types/member";
 
 const props = defineProps<{
     id: number;

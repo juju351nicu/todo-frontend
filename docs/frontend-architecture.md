@@ -54,8 +54,13 @@ src/
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
 - `src/features/auth/composables/useLoginPage.ts`: ログイン画面の状態、Session復元、入力送信、OAuth2エラー表示
 - `src/features/auth/views/LoginPage.vue`: composableを利用して表示を組み立てるログイン画面
+- `src/features/member/api/memberApi.ts`: 会員一覧・詳細・登録更新・削除・退会API
+- `src/features/member/stores/member.ts`: 会員情報とAPI実行中状態
+- `src/features/member/types/member.ts`: 会員APIのRequest / Response型
+- `src/features/member/composables/useMemberListPage.ts`: 会員一覧、選択ID、ページング、削除、詳細画面遷移
+- `src/features/member/views/MemberListPage.vue`: composableを利用して表示を組み立てる会員一覧画面
 
-会員、Todo、問い合わせは既存の`src/views`、`src/stores`、`src/types`に残している。次は`member`、`task`、`inquiry`の順で機能単位に移行する。
+会員詳細・退会画面と会員登録更新の確認部品は既存位置に残している。次の作業単位で`useMemberDetailPage`、`useMemberCancelPage`を作成して`features/member`へ移し、その後に`task`、`inquiry`を順番に移行する。
 
 ## 変更時の確認
 

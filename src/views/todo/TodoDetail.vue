@@ -7,7 +7,7 @@ import { computed, reactive, ref, watch } from "vue";
 import { useTodoStore } from "@/stores/todo";
 import { useUserStore } from "@/features/auth/stores/user";
 import type { ErrorResponse } from "@/shared/types/error";
-import type { AccountRole } from "@/types/member";
+import type { AccountRole } from "@/features/member/types/member";
 import type { TodoUpsertRequest } from "@/types/todo";
 import { createTodoDetailForm, type TodoDetailForm } from "@/utils/detail";
 

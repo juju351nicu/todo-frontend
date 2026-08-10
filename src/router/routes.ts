@@ -2,10 +2,10 @@ import type { RouteRecordRaw } from "vue-router";
 
 import InquiryForm from "@/views/InquiryForm.vue";
 import LoginPage from "@/features/auth/views/LoginPage.vue";
+import MemberListPage from "@/features/member/views/MemberListPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
-import MemberList from "@/views/member/MemberList.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
 import TodoList from "@/views/todo/todoList.vue";
@@ -19,7 +19,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/member/memberList",
     name: "MemberList",
-    component: MemberList,
+    component: MemberListPage,
     meta: { requiresAuth: true },
   },
   {

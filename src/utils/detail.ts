@@ -2,7 +2,7 @@ import type {
   AccountRole,
   MemberDetailResponse,
   MemberListItem,
-} from "@/types/member";
+} from "@/features/member/types/member";
 import type { TodoDetailResponse } from "@/types/todo";
 
 export interface MemberDetailForm {

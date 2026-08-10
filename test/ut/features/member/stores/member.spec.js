@@ -1,15 +1,16 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
-import { useMemberStore } from "@/stores/member";
-import Fetcher from "@/shared/api/httpClient";
+import MemberApi from "@/features/member/api/memberApi";
+import { useMemberStore } from "@/features/member/stores/member";
 
-vi.mock("@/shared/api/httpClient", () => ({
+vi.mock("@/features/member/api/memberApi", () => ({
   default: {
-    getRequest: vi.fn(),
-    postRequest: vi.fn(),
-    deleteRequest: vi.fn(),
+    cancel: vi.fn(),
+    deleteMembers: vi.fn(),
+    findDetail: vi.fn(),
+    findList: vi.fn(),
+    upsert: vi.fn(),
   },
 }));
 
@@ -24,17 +25,14 @@ describe("Member store", () => {
       { memberId: 1, lastName: "山田", firstName: "太郎" },
       { memberId: 2, lastName: "佐藤", firstName: "花子" },
     ];
-    Fetcher.getRequest.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ memberList }),
-    });
+    MemberApi.findList.mockResolvedValue({ memberList });
     const store = useMemberStore();
 
     const request = store.findMemberList();
 
     expect(store.isLoading).toBe(true);
     await request;
-    expect(Fetcher.getRequest).toHaveBeenCalledWith(Const.REST_PATH.MEMBER_LIST);
+    expect(MemberApi.findList).toHaveBeenCalledOnce();
     expect(store.memberListInfo).toEqual(memberList);
     expect(store.isLoading).toBe(false);
   });
@@ -49,24 +47,21 @@ describe("Member store", () => {
       role: 2,
       version: 3,
     };
-    Fetcher.getRequest.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(memberDetail),
-    });
+    MemberApi.findDetail.mockResolvedValue(memberDetail);
     const store = useMemberStore();
 
     const request = store.findMemberDetail(7);
 
     expect(store.isLoading).toBe(true);
     await expect(request).resolves.toEqual(memberDetail);
-    expect(Fetcher.getRequest).toHaveBeenCalledWith(
-      `${Const.REST_PATH.MEMBER_DETAIL}/7`
-    );
+    expect(MemberApi.findDetail).toHaveBeenCalledWith(7);
     expect(store.isLoading).toBe(false);
   });
 
   it("会員詳細APIが失敗しても処理中フラグを解除する", async () => {
-    Fetcher.getRequest.mockResolvedValue({ ok: false, status: 404 });
+    MemberApi.findDetail.mockRejectedValue(
+      new Error("会員詳細の取得に失敗しました。status=404")
+    );
     const store = useMemberStore();
 
     await expect(store.findMemberDetail(999)).rejects.toThrow(

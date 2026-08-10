@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/features/auth/views/LoginPage.vue", () => ({ default: {} }));
 vi.mock("@/views/InquiryForm.vue", () => ({ default: {} }));
 vi.mock("@/views/NotFound.vue", () => ({ default: {} }));
-vi.mock("@/views/member/MemberList.vue", () => ({ default: {} }));
+vi.mock("@/features/member/views/MemberListPage.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberDetail.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberCancel.vue", () => ({ default: {} }));
 vi.mock("@/views/todo/todoList.vue", () => ({ default: {} }));

@@ -4,8 +4,11 @@ import UpsertConfirm from "@/components/member/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
 
-import { useMemberStore } from "@/stores/member";
-import type { AccountRole, MemberUpsertRequest } from "@/types/member";
+import { useMemberStore } from "@/features/member/stores/member";
+import type {
+    AccountRole,
+    MemberUpsertRequest,
+} from "@/features/member/types/member";
 import { createMemberDetailForm, type MemberDetailForm } from "@/utils/detail";
 
 interface RoleItem {

@@ -1,4 +1,7 @@
-import type { AccountRole, MemberListItem } from "@/types/member";
+import type {
+  AccountRole,
+  MemberListItem,
+} from "@/features/member/types/member";
 
 /** Todo一覧・カレンダー検索APIリクエスト。 */
 export interface TodoListRequest {
