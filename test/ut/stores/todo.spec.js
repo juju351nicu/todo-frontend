@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const";
 import { useTodoStore } from "@/stores/todo";
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
-vi.mock("@/utils/rest", () => ({
+vi.mock("@/shared/api/httpClient", () => ({
   default: {
     getRequest: vi.fn(),
     postRequest: vi.fn(),

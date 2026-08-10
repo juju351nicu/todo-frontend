@@ -5,8 +5,8 @@ import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
 
 import { useTodoStore } from "@/stores/todo";
-import { useUserStore } from "@/stores/user";
-import type { ErrorResponse } from "@/types/error";
+import { useUserStore } from "@/features/auth/stores/user";
+import type { ErrorResponse } from "@/shared/types/error";
 import type { AccountRole } from "@/types/member";
 import type { TodoUpsertRequest } from "@/types/todo";
 import { createTodoDetailForm, type TodoDetailForm } from "@/utils/detail";

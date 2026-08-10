@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
 describe("REST client", () => {
   beforeEach(() => {

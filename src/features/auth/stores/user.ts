@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
 
-import Const from "@/constants/const";
 import type {
   LoginRequest,
   RoleCode,
   SessionUserResponse,
-} from "@/types/auth";
-import Fetcher from "@/utils/rest";
+} from "@/features/auth/types/auth";
+import AuthApi from "@/features/auth/api/authApi";
 
 interface UserState {
   memberId: number | null;
@@ -67,12 +66,12 @@ export const useUserStore = defineStore("user", {
         return this.authenticated;
       }
       try {
-        const response = await Fetcher.getRequest(Const.REST_PATH.SESSION);
-        if (!response.ok) {
+        const sessionUser = await AuthApi.getSession();
+        if (!sessionUser) {
           this.clearSession();
           return false;
         }
-        this.setSessionUser((await response.json()) as SessionUserResponse);
+        this.setSessionUser(sessionUser);
         return true;
       } catch (_error: unknown) {
         this.clearSession();
@@ -82,28 +81,15 @@ export const useUserStore = defineStore("user", {
       }
     },
     async authLogin(payload: LoginRequest): Promise<Response> {
-      const response = await Fetcher.postRequest(
-        Const.REST_PATH.AUTH_LOGIN,
-        payload
-      );
+      const response = await AuthApi.login(payload);
       if (response.ok) {
-        await Fetcher.refreshCsrfToken();
         await this.restoreSession(true);
       }
       return response;
     },
     async logout(): Promise<Response> {
       try {
-        const response = await Fetcher.postRequest(
-          Const.REST_PATH.LOGOUT,
-          null
-        );
-        if (!response.ok) {
-          throw new Error(`ログアウトに失敗しました。status=${response.status}`);
-        }
-        Fetcher.clearCsrfToken();
-        await Fetcher.refreshCsrfToken();
-        return response;
+        return await AuthApi.logout();
       } finally {
         this.clearSession();
         this.sessionChecked = true;

@@ -1,7 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 
 import InquiryForm from "@/views/InquiryForm.vue";
-import Login from "@/views/Login.vue";
+import LoginPage from "@/features/auth/views/LoginPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import MemberCancel from "@/views/member/MemberCancel.vue";
 import MemberDetail from "@/views/member/MemberDetail.vue";
@@ -14,7 +14,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "Login",
-    component: Login,
+    component: LoginPage,
   },
   {
     path: "/member/memberList",

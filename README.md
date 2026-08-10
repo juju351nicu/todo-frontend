@@ -42,6 +42,12 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 - `npm run typecheck`で`src`配下の`.ts`とすべての`.vue`を型検査します。
 - 新しいアプリケーションコードはTypeScriptで作成します。
 
+## フロントエンド構成
+
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ段階的に移行しています。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`へ移行済みです。
+
+画面の状態と操作は最初から細かく分けず、`useLoginPage`のように1画面につき1つのcomposableへまとめます。複数の独立した責務が明確になった場合だけ追加分割します。詳しくは[Frontend構成ガイド](docs/frontend-architecture.md)を参照してください。
+
 ## 検証
 
 ```bash

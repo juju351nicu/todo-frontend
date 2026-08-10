@@ -7,7 +7,7 @@ import type {
   TodoListRequest,
   TodoUpsertRequest,
 } from "@/types/todo";
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
 interface TodoState {
   isLoading: boolean;

@@ -10,7 +10,7 @@ import FullCalendar from "@fullcalendar/vue3";
 import { onBeforeMount, reactive, ref } from "vue";
 
 import { useTodoStore } from "@/stores/todo";
-import type { ErrorResponse } from "@/types/error";
+import type { ErrorResponse } from "@/shared/types/error";
 import type { TodoListItem, TodoListRequest, TodoListResponse } from "@/types/todo";
 import Util from "@/utils/util";
 

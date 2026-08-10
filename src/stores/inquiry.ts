@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 
 import Const from "@/constants/const";
 import type { InquiryRequest, InquiryResponse } from "@/types/inquiry";
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
 interface InquiryState {
   isLoading: boolean;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/views/Login.vue", () => ({ default: {} }));
+vi.mock("@/features/auth/views/LoginPage.vue", () => ({ default: {} }));
 vi.mock("@/views/InquiryForm.vue", () => ({ default: {} }));
 vi.mock("@/views/NotFound.vue", () => ({ default: {} }));
 vi.mock("@/views/member/MemberList.vue", () => ({ default: {} }));

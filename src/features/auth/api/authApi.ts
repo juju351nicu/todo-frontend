@@ -1,0 +1,66 @@
+import Const from "@/constants/const";
+import type {
+  LoginRequest,
+  SessionUserResponse,
+} from "@/features/auth/types/auth";
+import HttpClient from "@/shared/api/httpClient";
+
+/**
+ * 現在のHttpSessionに保存された認証利用者を取得する。
+ *
+ * @returns 未認証の場合はnull、認証済みの場合は利用者情報
+ */
+const getSession = async (): Promise<SessionUserResponse | null> => {
+  const response = await HttpClient.getRequest(Const.REST_PATH.SESSION);
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as SessionUserResponse;
+};
+
+/**
+ * ログインIDとパスワードでログインする。
+ *
+ * @param payload ログイン情報
+ * @returns Backendのレスポンス
+ */
+const login = async (payload: LoginRequest): Promise<Response> => {
+  const response = await HttpClient.postRequest(
+    Const.REST_PATH.AUTH_LOGIN,
+    payload
+  );
+  if (response.ok) {
+    await HttpClient.refreshCsrfToken();
+  }
+  return response;
+};
+
+/**
+ * 現在のHttpSessionを無効化してログアウトする。
+ *
+ * @returns Backendのレスポンス
+ */
+const logout = async (): Promise<Response> => {
+  const response = await HttpClient.postRequest(Const.REST_PATH.LOGOUT, null);
+  if (!response.ok) {
+    throw new Error(`ログアウトに失敗しました。status=${response.status}`);
+  }
+  HttpClient.clearCsrfToken();
+  await HttpClient.refreshCsrfToken();
+  return response;
+};
+
+/**
+ * GitHub OAuth2ログインの開始URLを返す。
+ *
+ * @returns BackendのGitHub認可開始URL
+ */
+const getGitHubAuthorizationUrl = (): string =>
+  `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`;
+
+export default {
+  getGitHubAuthorizationUrl,
+  getSession,
+  login,
+  logout,
+};

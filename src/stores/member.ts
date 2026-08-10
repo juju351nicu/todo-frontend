@@ -10,7 +10,7 @@ import type {
   MemberUpsertRequest,
   MemberUpsertResponse,
 } from "@/types/member";
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
 interface MemberState {
   isLoading: boolean;

@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/stores/user";
+import { useUserStore } from "@/features/auth/stores/user";
 
 interface NavigationLink {
     icon: string;

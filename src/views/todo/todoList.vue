@@ -6,7 +6,7 @@ import { useRouter } from "vue-router";
 
 import Const from "@/constants/const";
 import { useTodoStore } from "@/stores/todo";
-import type { ErrorResponse } from "@/types/error";
+import type { ErrorResponse } from "@/shared/types/error";
 import type { TodoListItem, TodoListRequest, TodoListResponse } from "@/types/todo";
 import { getTodoPriorityLabel } from "@/utils/todo";
 import Util from "@/utils/util";

@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Const from "@/constants/const";
 import { useInquiryStore } from "@/stores/inquiry";
-import Fetcher from "@/utils/rest";
+import Fetcher from "@/shared/api/httpClient";
 
-vi.mock("@/utils/rest", () => ({
+vi.mock("@/shared/api/httpClient", () => ({
   default: {
     postRequest: vi.fn(),
   },

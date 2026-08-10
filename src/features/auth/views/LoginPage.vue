@@ -1,100 +1,24 @@
 <script setup lang="ts">
 import Alert from "@/components/Alert.vue";
 import Loading from "@/components/Loading.vue";
-import { onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { onMounted } from "vue";
 
 import Const from "@/constants/const";
-import { useUserStore } from "@/stores/user";
-import type { LoginRequest } from "@/types/auth";
-import type { ErrorResponse } from "@/types/error";
-/** ルータ情報 */
-const router = useRouter();
-const route = useRoute();
-/** Authストア情報 */
-const userStore = useUserStore();
-/** ローディングフラグ */
-const isLoading = ref(false);
-/** モーダルを表示・非表示フラグ */
-const isShowModal = ref(false);
-const showPassword = ref(false);
+import { useLoginPage } from "@/features/auth/composables/useLoginPage";
 
-const myform = ref<LoginRequest>({
-    loginId: "",
-    password: "",
-});
-/**
- * ユーザ新規登録を行う。
- */
-const submitRegister = (): void => {
-    void router.push({ name: "MemberRegister" });
-};
-const showMessageModal = () => {
-    isShowModal.value = true;
-};
-const errorMessages = ref<string[]>([]);
-/**
- * ログインIDとパスワードでログインする。
- */
-const submitForm = async (): Promise<void> => {
-    const payload: LoginRequest = { ...myform.value };
-    isLoading.value = true;
-    errorMessages.value = [];
-    try {
-        const response = await userStore.authLogin(payload);
-        if (response.ok) {
-            await router.push("/member/memberList");
-            return;
-        }
-        if (response.status === 400) {
-            const errorResponse = (await response.json()) as ErrorResponse;
-            errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-                (fieldError) => fieldError.message
-            );
-        }
-        if (errorMessages.value.length === 0) {
-            errorMessages.value = [response.status === 401
-                ? "ログインIDまたはパスワードが正しくありません。"
-                : "ログインできませんでした。"];
-        }
-        showMessageModal();
-    } catch (error) {
-        console.error(error);
-        errorMessages.value = ["Backendへ接続できませんでした。"];
-        showMessageModal();
-    } finally {
-        isLoading.value = false;
-    }
-};
-/**
- * GitHubでログインする。
- */
-const submitGithub = (): void => {
-    window.location.assign(
-        `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`
-    );
-};
+const {
+    errorMessages,
+    initialize,
+    isLoading,
+    isShowModal,
+    loginForm,
+    showPassword,
+    submitForm,
+    submitGithub,
+    submitRegister,
+} = useLoginPage();
 
-onMounted(async () => {
-    if (await userStore.restoreSession(true)) {
-        await router.push("/member/memberList");
-        return;
-    }
-    const oauthError = Array.isArray(route.query.oauthError)
-        ? route.query.oauthError[0]
-        : route.query.oauthError;
-    if (typeof oauthError === "string") {
-        const oauthMessages: Record<string, string> = {
-            email_required: "GitHubからメールアドレスを取得できませんでした。GitHubのメール設定を確認してください。",
-            account_unavailable: "このアカウントは現在利用できません。",
-            unsupported_provider: "対応していないOAuth2プロバイダーです。",
-            login_failed: "GitHubでログインできませんでした。もう一度お試しください。",
-        };
-        errorMessages.value = [oauthMessages[oauthError] ?? oauthMessages.login_failed];
-        showMessageModal();
-        await router.replace({ path: route.path, query: {} });
-    }
-});
+onMounted(initialize);
 </script>
 <template>
     <Loading v-if="isLoading" />
@@ -112,12 +36,12 @@ onMounted(async () => {
                 ログインIDでログイン
             </p>
             <form class="mx-9" @submit.prevent="submitForm">
-                <v-text-field prepend-inner-icon="mdi-account" name="loginId" type="text" v-model="myform.loginId"
+                <v-text-field prepend-inner-icon="mdi-account" name="loginId" type="text" v-model="loginForm.loginId"
                     placeholder="ログインID" autocomplete="username" outlined dense>
                 </v-text-field>
                 <v-text-field prepend-inner-icon="mdi-lock" name="password"
                     v-bind:type="showPassword ? 'text' : 'password'" @click:append-inner="showPassword = !showPassword"
-                    v-bind:append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" v-model="myform.password"
+                    v-bind:append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'" v-model="loginForm.password"
                     placeholder="パスワード" outlined dense>
                 </v-text-field>
                 <p class="pointer">パスワードを忘れた方</p>

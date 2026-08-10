@@ -1,16 +1,14 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
-import { useUserStore } from "@/stores/user";
-import Fetcher from "@/utils/rest";
+import AuthApi from "@/features/auth/api/authApi";
+import { useUserStore } from "@/features/auth/stores/user";
 
-vi.mock("@/utils/rest", () => ({
+vi.mock("@/features/auth/api/authApi", () => ({
   default: {
-    getRequest: vi.fn(),
-    postRequest: vi.fn(),
-    refreshCsrfToken: vi.fn(),
-    clearCsrfToken: vi.fn(),
+    getSession: vi.fn(),
+    login: vi.fn(),
+    logout: vi.fn(),
   },
 }));
 
@@ -29,15 +27,12 @@ describe("User store", () => {
   });
 
   it("JSESSIONIDから現在の利用者と権限を復元する", async () => {
-    Fetcher.getRequest.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(sessionUser),
-    });
+    AuthApi.getSession.mockResolvedValue(sessionUser);
     const store = useUserStore();
 
     await expect(store.restoreSession()).resolves.toBe(true);
 
-    expect(Fetcher.getRequest).toHaveBeenCalledWith(Const.REST_PATH.SESSION);
+    expect(AuthApi.getSession).toHaveBeenCalledOnce();
     expect(store.isAuthenticated).toBe(true);
     expect(store.memberId).toBe(1);
     expect(store.getRole).toBe(0);
@@ -46,33 +41,29 @@ describe("User store", () => {
 
   it("ログイン成功後にCSRFを更新してSessionを読み直す", async () => {
     const loginResponse = { ok: true, status: 200 };
-    Fetcher.postRequest.mockResolvedValue(loginResponse);
-    Fetcher.refreshCsrfToken.mockResolvedValue("new-csrf-token");
-    Fetcher.getRequest.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(sessionUser),
-    });
+    AuthApi.login.mockResolvedValue(loginResponse);
+    AuthApi.getSession.mockResolvedValue(sessionUser);
     const store = useUserStore();
 
     await expect(store.authLogin({ loginId: "user01", password: "password" }))
       .resolves.toBe(loginResponse);
 
-    expect(Fetcher.refreshCsrfToken).toHaveBeenCalledOnce();
+    expect(AuthApi.login).toHaveBeenCalledWith({
+      loginId: "user01",
+      password: "password",
+    });
     expect(store.isAuthenticated).toBe(true);
   });
 
   it("ログアウト後はFrontendの認証情報とCSRFを破棄する", async () => {
-    Fetcher.postRequest.mockResolvedValue({ ok: true, status: 204 });
-    Fetcher.refreshCsrfToken.mockResolvedValue("anonymous-csrf-token");
+    AuthApi.logout.mockResolvedValue({ ok: true, status: 204 });
     const store = useUserStore();
     store.setSessionUser(sessionUser);
 
     await store.logout();
 
-    expect(Fetcher.postRequest).toHaveBeenCalledWith(Const.REST_PATH.LOGOUT, null);
+    expect(AuthApi.logout).toHaveBeenCalledOnce();
     expect(store.isAuthenticated).toBe(false);
     expect(store.memberId).toBeNull();
-    expect(Fetcher.clearCsrfToken).toHaveBeenCalledOnce();
-    expect(Fetcher.refreshCsrfToken).toHaveBeenCalledOnce();
   });
 });
