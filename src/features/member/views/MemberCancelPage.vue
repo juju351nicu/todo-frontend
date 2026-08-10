@@ -1,43 +1,24 @@
 <script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
-import { useMemberStore } from "@/features/member/stores/member";
-import type { MemberCancelRequest } from "@/features/member/types/member";
+import { useMemberCancelPage } from "@/features/member/composables/useMemberCancelPage";
 
 const props = defineProps<{
     id: number;
 }>();
-/** 会員ストア情報 */
-const memberStore = useMemberStore();
-
-/** ローディングフラグ */
-const isLoading = computed<boolean>(() => {
-    return memberStore.isLoading;
-});
-
-/** 会員詳細情報 */
 const memberId = computed<number>(() => {
     return props.id;
 });
 
-/** メッセージ */
-const message = ref("");
-
-/** パスワード */
-const password = ref("");
-
-/**
- * 会員情報を新規登録・更新する。
- */
-const confirmSubmit = async (): Promise<void> => {
-    const payload: MemberCancelRequest = {
-        memberId: memberId.value,
-        password: password.value,
-    };
-    await memberStore.cancelMemberInfo(payload);
-};
+const {
+    clearPassword,
+    confirmCancellation,
+    isLoading,
+    message,
+    password,
+} = useMemberCancelPage(memberId);
 
 </script>
 <template>
@@ -57,10 +38,10 @@ const confirmSubmit = async (): Promise<void> => {
         </v-card-title>
         <v-divider></v-divider>
         <v-text-field v-model="password" type="password" name="password" label="パスワード"></v-text-field>
-        <v-btn class="mr-4" color="success" @click="confirmSubmit">
+        <v-btn class="mr-4" color="success" @click="confirmCancellation">
             上記に同意してアカウントを削除する
         </v-btn>
-        <v-btn>
+        <v-btn @click="clearPassword">
             クリア
         </v-btn>
         <p style="color: red">{{ message }}</p>

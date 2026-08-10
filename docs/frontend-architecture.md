@@ -59,8 +59,14 @@ src/
 - `src/features/member/types/member.ts`: 会員APIのRequest / Response型
 - `src/features/member/composables/useMemberListPage.ts`: 会員一覧、選択ID、ページング、削除、詳細画面遷移
 - `src/features/member/views/MemberListPage.vue`: composableを利用して表示を組み立てる会員一覧画面
+- `src/features/member/composables/useMemberDetailPage.ts`: 会員詳細取得、登録更新フォーム、確認モーダル
+- `src/features/member/composables/useMemberCancelPage.ts`: 退会パスワード入力、退会処理、エラー表示
+- `src/features/member/components/MemberUpsertConfirm.vue`: 会員登録更新の確認部品
+- `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
+- `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
+- `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
 
-会員詳細・退会画面と会員登録更新の確認部品は既存位置に残している。次の作業単位で`useMemberDetailPage`、`useMemberCancelPage`を作成して`features/member`へ移し、その後に`task`、`inquiry`を順番に移行する。
+これで会員機能のAPI、Store、型、composable、確認部品、画面は`features/member`への移行が完了した。次は`task`、`inquiry`を順番に移行する。Todo画面用フォームが残る`src/utils/detail.ts`は、`task`移行時に機能内へ移す。
 
 ## 変更時の確認
 

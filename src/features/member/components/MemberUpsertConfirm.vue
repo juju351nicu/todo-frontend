@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { MemberDetailForm } from "@/utils/detail";
+import type { MemberDetailForm } from "@/features/member/utils/memberForm";
 
 defineProps<{
-    myform: MemberDetailForm;
+    memberForm: MemberDetailForm;
 }>();
 
 const emit = defineEmits<{
@@ -27,36 +27,36 @@ const handleConfirmSubmit = (): void => {
 <template>
     <div id="modal">
         <div class="modal">
-            <h4> {{ myform.memberId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
+            <h4> {{ memberForm.memberId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
             <v-container>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.lastName }} &nbsp;{{ myform.firstName }}</span>
+                        <span>{{ memberForm.lastName }} &nbsp;{{ memberForm.firstName }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.loginId }}</span>
+                        <span>{{ memberForm.loginId }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>パスワード: {{ myform.password ? '入力済み' : '変更なし' }}</span>
+                        <span>パスワード: {{ memberForm.password ? '入力済み' : '変更なし' }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.email }}</span>
+                        <span>{{ memberForm.email }}</span>
                     </v-col>
                 </v-row>
                 <v-row>
                     <v-col cols="12" sm="6">
-                        <span>{{ myform.role }}</span>
+                        <span>{{ memberForm.role }}</span>
                     </v-col>
                 </v-row>
             </v-container>
             <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
-            <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ myform.memberId > 0 ? '更新' : '登録'
+            <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ memberForm.memberId > 0 ? '更新' : '登録'
             }}</button>
         </div>
         <div class="modal-overlay"></div>

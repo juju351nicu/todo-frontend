@@ -1,20 +1,7 @@
 import type {
-  AccountRole,
-  MemberDetailResponse,
   MemberListItem,
 } from "@/features/member/types/member";
 import type { TodoDetailResponse } from "@/types/todo";
-
-export interface MemberDetailForm {
-  memberId: number;
-  lastName: string;
-  firstName: string;
-  loginId: string;
-  password: string;
-  email: string;
-  role: AccountRole;
-  version: number;
-}
 
 export interface TodoDetailForm {
   todoId: number;
@@ -29,20 +16,6 @@ export interface TodoDetailForm {
   idMemberMap: Record<string, MemberListItem>;
   userList: MemberListItem[];
 }
-
-/** 会員詳細APIレスポンスをパスワードなしの編集フォームへ変換する。 */
-export const createMemberDetailForm = (
-  detail: Partial<MemberDetailResponse> = {}
-): MemberDetailForm => ({
-  memberId: detail.memberId ?? 0,
-  lastName: detail.lastName ?? "",
-  firstName: detail.firstName ?? "",
-  loginId: detail.loginId ?? "",
-  password: "",
-  email: detail.email ?? "",
-  role: detail.role ?? 2,
-  version: detail.version ?? 0,
-});
 
 const toDoneFlag = (
   value: TodoDetailResponse["done_flag"] | undefined

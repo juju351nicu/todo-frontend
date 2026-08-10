@@ -2,10 +2,10 @@ import type { RouteRecordRaw } from "vue-router";
 
 import InquiryForm from "@/views/InquiryForm.vue";
 import LoginPage from "@/features/auth/views/LoginPage.vue";
+import MemberCancelPage from "@/features/member/views/MemberCancelPage.vue";
+import MemberDetailPage from "@/features/member/views/MemberDetailPage.vue";
 import MemberListPage from "@/features/member/views/MemberListPage.vue";
 import NotFound from "@/views/NotFound.vue";
-import MemberCancel from "@/views/member/MemberCancel.vue";
-import MemberDetail from "@/views/member/MemberDetail.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
 import TodoList from "@/views/todo/todoList.vue";
@@ -25,20 +25,20 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/member/register",
     name: "MemberRegister",
-    component: MemberDetail,
+    component: MemberDetailPage,
     props: { id: 0 },
   },
   {
     path: "/member/detail/:id?",
     name: "MemberDetail",
-    component: MemberDetail,
+    component: MemberDetailPage,
     props: (route) => ({ id: Number(route.params.id ?? 0) }),
     meta: { requiresAuth: true },
   },
   {
     path: "/member/cancel/:id",
     name: "MemberCancel",
-    component: MemberCancel,
+    component: MemberCancelPage,
     props: (route) => ({ id: Number(route.params.id) }),
     meta: { requiresAuth: true },
   },

@@ -1,35 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  createMemberDetailForm,
-  createTodoDetailForm,
-} from "@/utils/detail";
+import { createTodoDetailForm } from "@/utils/detail";
 
-describe("Detail form mapper", () => {
-  it("会員詳細をパスワードなしの編集フォームへ変換する", () => {
-    expect(
-      createMemberDetailForm({
-        memberId: 7,
-        lastName: "山田",
-        firstName: "太郎",
-        loginId: "yamada",
-        email: "yamada@example.com",
-        role: 1,
-        version: 3,
-        password: "APIに混入しても利用しない",
-      })
-    ).toEqual({
-      memberId: 7,
-      lastName: "山田",
-      firstName: "太郎",
-      loginId: "yamada",
-      password: "",
-      email: "yamada@example.com",
-      role: 1,
-      version: 3,
-    });
-  });
-
+describe("Todo detail form mapper", () => {
   it("Todo詳細のsnake_caseと文字列フラグを画面用へ変換する", () => {
     expect(
       createTodoDetailForm({
@@ -54,8 +27,7 @@ describe("Detail form mapper", () => {
     });
   });
 
-  it("新規登録では各フォームの初期値を返す", () => {
-    expect(createMemberDetailForm()).toMatchObject({ memberId: 0, role: 2 });
+  it("新規登録ではTodoフォームの初期値を返す", () => {
     expect(createTodoDetailForm()).toMatchObject({
       todoId: 0,
       doneFlag: 0,
