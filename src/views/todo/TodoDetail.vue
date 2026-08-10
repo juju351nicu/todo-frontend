@@ -4,11 +4,11 @@ import UpsertConfirm from "@/components/todo/UpsertConfirm.vue";
 import Loading from "@/components/Loading.vue";
 import { computed, reactive, ref, watch } from "vue";
 
-import { useTodoStore } from "@/stores/todo";
+import { useTodoStore } from "@/features/task/stores/task";
 import { useUserStore } from "@/features/auth/stores/user";
 import type { ErrorResponse } from "@/shared/types/error";
 import type { AccountRole } from "@/features/member/types/member";
-import type { TodoUpsertRequest } from "@/types/todo";
+import type { TodoUpsertRequest } from "@/features/task/types/task";
 import { createTodoDetailForm, type TodoDetailForm } from "@/utils/detail";
 
 interface PriorityItem {

@@ -1,0 +1,127 @@
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+import Const from "@/constants/const";
+import { useTodoStore } from "@/features/task/stores/task";
+import type {
+  TodoListItem,
+  TodoListRequest,
+  TodoListResponse,
+} from "@/features/task/types/task";
+import type { ErrorResponse } from "@/shared/types/error";
+import Util from "@/utils/util";
+
+interface TodoTableHeader {
+  title: string;
+  align: "start" | "center" | "end";
+  key: string;
+}
+
+const TODO_TABLE_HEADERS: TodoTableHeader[] = [
+  { title: "重要度", align: "start", key: "priority" },
+  { title: "着手日", align: "start", key: "start" },
+  { title: "期限日", align: "start", key: "end" },
+  { title: "残り日数", align: "start", key: "remainingDays" },
+  { title: "タイトル", align: "start", key: "title" },
+  { title: "詳細情報", align: "start", key: "detail" },
+  { title: "完了フラグ", align: "start", key: "doneFlag" },
+  { title: "編集", align: "start", key: "actions" },
+];
+
+/** Todo一覧画面の状態と操作を提供する。 */
+export const useTodoListPage = () => {
+  const router = useRouter();
+  const todoStore = useTodoStore();
+
+  const errorMessages = ref<string[]>([]);
+  const headers = TODO_TABLE_HEADERS;
+  const isLoading = ref(false);
+  const itemsPerPage = ref<number>(Const.NUMBER_OF_ITEMS);
+  const pages = Const.DATA_TABLE_PAGES;
+  const searchTitle = ref("");
+  const selectedDoneFlag = ref<string[]>(["0", "1"]);
+  const todoList = ref<TodoListItem[]>([]);
+
+  const createSearchRequest = (): TodoListRequest => ({
+    search_title: searchTitle.value,
+    date_range: "",
+    done_flag_values: Util.getNumberList(selectedDoneFlag.value),
+  });
+
+  const setResponseErrors = (errorResponse: ErrorResponse): void => {
+    errorMessages.value = (errorResponse.fieldErrors ?? []).map(
+      (fieldError) => fieldError.message
+    );
+    if (errorMessages.value.length === 0) {
+      errorMessages.value = ["Todo情報を取得できませんでした。"];
+    }
+  };
+
+  const loadTodoList = async (payload: TodoListRequest): Promise<void> => {
+    isLoading.value = true;
+    errorMessages.value = [];
+    try {
+      const response = await todoStore.findTodoList(payload);
+      if (!response.ok) {
+        setResponseErrors((await response.json()) as ErrorResponse);
+        return;
+      }
+      const data = (await response.json()) as TodoListResponse;
+      todoList.value = data.todoList;
+      todoStore.setTodoList(data.todoList);
+    } catch (_error: unknown) {
+      if (errorMessages.value.length === 0) {
+        errorMessages.value = ["Backendへ接続できませんでした。"];
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /** 初期条件でTodo一覧を取得する。 */
+  const initialize = async (): Promise<void> => {
+    await loadTodoList(createSearchRequest());
+  };
+
+  /** 入力された検索条件でTodo一覧を取得する。 */
+  const search = async (): Promise<void> => {
+    await loadTodoList(createSearchRequest());
+  };
+
+  /** Todo詳細画面へ移動する。 */
+  const showTodoDetail = (todo: TodoListItem): void => {
+    void router.push({ name: "TodoDetail", params: { id: todo.todoId } });
+  };
+
+  /** 指定されたTodoを完了状態へ更新する。 */
+  const completeTodo = async (todo: TodoListItem): Promise<void> => {
+    isLoading.value = true;
+    errorMessages.value = [];
+    try {
+      const response = await todoStore.completeTodo(todo.todoId);
+      if (!response.ok) {
+        throw new Error("Todoの完了更新に失敗しました。");
+      }
+      todo.doneFlag = true;
+    } catch (_error: unknown) {
+      errorMessages.value = ["Todoを完了状態へ更新できませんでした。"];
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  return {
+    completeTodo,
+    errorMessages,
+    headers,
+    initialize,
+    isLoading,
+    itemsPerPage,
+    pages,
+    search,
+    searchTitle,
+    selectedDoneFlag,
+    showTodoDetail,
+    todoList,
+  };
+};

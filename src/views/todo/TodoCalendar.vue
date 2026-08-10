@@ -9,9 +9,13 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import FullCalendar from "@fullcalendar/vue3";
 import { onBeforeMount, reactive, ref } from "vue";
 
-import { useTodoStore } from "@/stores/todo";
+import { useTodoStore } from "@/features/task/stores/task";
 import type { ErrorResponse } from "@/shared/types/error";
-import type { TodoListItem, TodoListRequest, TodoListResponse } from "@/types/todo";
+import type {
+  TodoListItem,
+  TodoListRequest,
+  TodoListResponse,
+} from "@/features/task/types/task";
 import Util from "@/utils/util";
 
 /** Todoストア情報 */

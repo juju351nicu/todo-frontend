@@ -5,10 +5,10 @@ import LoginPage from "@/features/auth/views/LoginPage.vue";
 import MemberCancelPage from "@/features/member/views/MemberCancelPage.vue";
 import MemberDetailPage from "@/features/member/views/MemberDetailPage.vue";
 import MemberListPage from "@/features/member/views/MemberListPage.vue";
+import TodoListPage from "@/features/task/views/TodoListPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import TodoCalendar from "@/views/todo/TodoCalendar.vue";
 import TodoDetail from "@/views/todo/TodoDetail.vue";
-import TodoList from "@/views/todo/todoList.vue";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -51,7 +51,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/todoList",
     name: "TodoList",
-    component: TodoList,
+    component: TodoListPage,
     meta: { requiresAuth: true },
   },
   {

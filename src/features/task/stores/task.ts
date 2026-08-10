@@ -1,13 +1,12 @@
 import { defineStore } from "pinia";
 
-import Const from "@/constants/const";
+import TaskApi from "@/features/task/api/taskApi";
 import type {
   TodoDetailResponse,
   TodoListItem,
   TodoListRequest,
   TodoUpsertRequest,
-} from "@/types/todo";
-import Fetcher from "@/shared/api/httpClient";
+} from "@/features/task/types/task";
 
 interface TodoState {
   isLoading: boolean;
@@ -24,15 +23,7 @@ export const useTodoStore = defineStore("todo", {
     async findTodoDetail(todoId: number): Promise<TodoDetailResponse> {
       this.isLoading = true;
       try {
-        const response = await Fetcher.getRequest(
-          `${Const.REST_PATH.TODO_DETAIL}/${todoId}`
-        );
-        if (!response.ok) {
-          throw new Error(
-            `Todo詳細の取得に失敗しました。status=${response.status}`
-          );
-        }
-        return (await response.json()) as TodoDetailResponse;
+        return await TaskApi.findDetail(todoId);
       } finally {
         this.isLoading = false;
       }
@@ -45,23 +36,22 @@ export const useTodoStore = defineStore("todo", {
 
     /** Todo一覧情報を取得する。レスポンス本文は画面側で処理する。 */
     findTodoList(payload: TodoListRequest): Promise<Response> {
-      return Fetcher.postRequest(Const.REST_PATH.TODO_LIST, payload);
+      return TaskApi.findList(payload);
     },
 
     /** Todoカレンダー情報を取得する。レスポンス本文は画面側で処理する。 */
     findCalendarList(payload: TodoListRequest): Promise<Response> {
-      return Fetcher.postRequest(Const.REST_PATH.TODO_CALENDAR, payload);
+      return TaskApi.findCalendar(payload);
     },
 
     /** Todoを完了状態にする。 */
     completeTodo(todoId: number): Promise<Response> {
-      const query = new URLSearchParams({ todo_id: String(todoId) });
-      return Fetcher.postRequest(`${Const.REST_PATH.TODO_DONE}?${query}`, null);
+      return TaskApi.complete(todoId);
     },
 
     /** Todo情報を登録または更新する。 */
     upsertTodoInfo(payload: TodoUpsertRequest): Promise<Response> {
-      return Fetcher.postRequest(Const.REST_PATH.TODO_UPSERT, payload);
+      return TaskApi.upsert(payload);
     },
   },
 });

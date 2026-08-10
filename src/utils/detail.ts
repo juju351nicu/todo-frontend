@@ -1,7 +1,7 @@
 import type {
   MemberListItem,
 } from "@/features/member/types/member";
-import type { TodoDetailResponse } from "@/types/todo";
+import type { TodoDetailResponse } from "@/features/task/types/task";
 
 export interface TodoDetailForm {
   todoId: number;
