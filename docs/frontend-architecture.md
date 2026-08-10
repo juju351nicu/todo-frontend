@@ -78,8 +78,12 @@ src/
 - `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
 - `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
 - `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
+- `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
+- `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
+- `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
+- `src/features/inquiry/views/InquiryFormPage.vue`: composableを利用して表示を組み立てる問い合わせ画面
 
-会員機能とTask機能の移行は完了した。Todo一覧・詳細・カレンダーはいずれも、1画面につき1つのcomposableを使用する構成になっている。次の作業単位では`inquiry`を移行し、その後に共通部品の配置と`app/router`への移行要否を見直す。
+認証・会員・Task・問い合わせ機能の移行は完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。次の作業単位では共通部品の配置を整理し、`app/router`への移行要否とルート単位の遅延読み込みを見直す。
 
 ## 変更時の確認
 

@@ -1,7 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 
-import InquiryForm from "@/views/InquiryForm.vue";
 import LoginPage from "@/features/auth/views/LoginPage.vue";
+import InquiryFormPage from "@/features/inquiry/views/InquiryFormPage.vue";
 import MemberCancelPage from "@/features/member/views/MemberCancelPage.vue";
 import MemberDetailPage from "@/features/member/views/MemberDetailPage.vue";
 import MemberListPage from "@/features/member/views/MemberListPage.vue";
@@ -64,7 +64,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/inquiry",
     name: "InquiryForm",
-    component: InquiryForm,
+    component: InquiryFormPage,
   },
   {
     path: "/:pathMatch(.*)*",

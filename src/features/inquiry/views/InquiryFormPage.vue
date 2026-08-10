@@ -1,33 +1,31 @@
 <script setup lang="ts">
 import TheHeader from "@/components/TheHeader.vue";
 import Loading from "@/components/Loading.vue";
-import { computed, ref } from "vue";
 
-import { useInquiryStore } from "@/stores/inquiry";
-import type { InquiryRequest } from "@/types/inquiry";
+import { useInquiryFormPage } from "@/features/inquiry/composables/useInquiryFormPage";
 
-const inquiryStore = useInquiryStore();
-
-const isLoading = computed<boolean>(() => {
-  return inquiryStore.isLoading;
-});
-const fullName = ref<string>("");
-const email = ref<string>("");
-const message = ref<string>("");
-/** お問い合わせ情報のパラメータを送る */
-const submit = async (): Promise<void> => {
-  const payload: InquiryRequest = {
-    fullName: fullName.value,
-    email: email.value,
-    message: message.value,
-  };
-  await inquiryStore.recieveInquiryInfo(payload);
-};
+const {
+  email,
+  errorMessages,
+  fullName,
+  isLoading,
+  message,
+  submit,
+  successMessage,
+} = useInquiryFormPage();
 </script>
 <template>
   <TheHeader />
   <Loading v-if="isLoading" />
   <v-container>
+    <v-alert v-if="successMessage" type="success" class="mb-4">
+      {{ successMessage }}
+    </v-alert>
+    <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+      <div v-for="errorMessage in errorMessages" :key="errorMessage">
+        {{ errorMessage }}
+      </div>
+    </v-alert>
     <v-card width="800px">
       <v-card-title>
         <h4>企業広告等のお問い合わせはこちらからお願いします。</h4>
@@ -43,7 +41,7 @@ const submit = async (): Promise<void> => {
         </v-text-field>
         <v-textarea v-model="message" label="お問い合わせ内容(必須)"> </v-textarea>
       </v-card-text>
-      <v-btn class="mt-2" color="success" @click="submit" size="large" width="768px">
+      <v-btn class="mt-2" color="success" :disabled="isLoading" @click="submit" size="large" width="768px">
         送信する
       </v-btn>
     </v-card> </v-container><br />
