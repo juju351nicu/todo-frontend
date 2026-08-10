@@ -1,4 +1,3 @@
-import Const from "@/constants/const";
 import type {
   MemberCancelRequest,
   MemberCancelResponse,
@@ -8,6 +7,7 @@ import type {
   MemberUpsertResponse,
 } from "@/features/member/types/member";
 import HttpClient from "@/shared/api/httpClient";
+import { API_PATHS } from "@/shared/constants/api";
 
 const requireSuccess = (response: Response, operation: string): Response => {
   if (!response.ok) {
@@ -19,7 +19,7 @@ const requireSuccess = (response: Response, operation: string): Response => {
 /** 会員一覧を取得する。 */
 const findList = async (): Promise<MemberListResponse> => {
   const response = requireSuccess(
-    await HttpClient.getRequest(Const.REST_PATH.MEMBER_LIST),
+    await HttpClient.getRequest(API_PATHS.MEMBER_LIST),
     "会員一覧の取得"
   );
   return (await response.json()) as MemberListResponse;
@@ -32,7 +32,7 @@ const findList = async (): Promise<MemberListResponse> => {
  */
 const findDetail = async (memberId: number): Promise<MemberDetailResponse> => {
   const response = requireSuccess(
-    await HttpClient.getRequest(`${Const.REST_PATH.MEMBER_DETAIL}/${memberId}`),
+    await HttpClient.getRequest(`${API_PATHS.MEMBER_DETAIL}/${memberId}`),
     "会員詳細の取得"
   );
   return (await response.json()) as MemberDetailResponse;
@@ -52,7 +52,7 @@ const deleteMembers = async (
   });
   const response = requireSuccess(
     await HttpClient.deleteRequest(
-      `${Const.REST_PATH.MEMBER_DELETE}?${urlParams.toString()}`
+      `${API_PATHS.MEMBER_DELETE}?${urlParams.toString()}`
     ),
     "会員情報の削除"
   );
@@ -68,7 +68,7 @@ const upsert = async (
   payload: MemberUpsertRequest
 ): Promise<MemberUpsertResponse> => {
   const response = requireSuccess(
-    await HttpClient.postRequest(Const.REST_PATH.MEMBER_UPSERT, payload),
+    await HttpClient.postRequest(API_PATHS.MEMBER_UPSERT, payload),
     "会員情報の保存"
   );
   return (await response.json()) as MemberUpsertResponse;
@@ -83,7 +83,7 @@ const cancel = async (
   payload: MemberCancelRequest
 ): Promise<MemberCancelResponse> => {
   const response = requireSuccess(
-    await HttpClient.postRequest(Const.REST_PATH.MEMBER_CANCEL, payload),
+    await HttpClient.postRequest(API_PATHS.MEMBER_CANCEL, payload),
     "退会処理"
   );
   return (await response.json()) as MemberCancelResponse;

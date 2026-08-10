@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
 import TaskApi from "@/features/task/api/taskApi";
 import HttpClient from "@/shared/api/httpClient";
+import { API_PATHS } from "@/shared/constants/api";
 
 vi.mock("@/shared/api/httpClient", () => ({
   default: {
@@ -26,7 +26,7 @@ describe("Task API", () => {
     await expect(TaskApi.findDetail(42)).resolves.toEqual(payload);
 
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      `${Const.REST_PATH.TODO_DETAIL}/42`
+      `${API_PATHS.TODO_DETAIL}/42`
     );
   });
 
@@ -50,7 +50,7 @@ describe("Task API", () => {
     await expect(TaskApi.findList(request)).resolves.toBe(response);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.TODO_LIST,
+      API_PATHS.TODO_LIST,
       request
     );
   });
@@ -61,7 +61,7 @@ describe("Task API", () => {
     await TaskApi.complete(42);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      `${Const.REST_PATH.TODO_DONE}?todo_id=42`,
+      `${API_PATHS.TODO_DONE}?todo_id=42`,
       null
     );
   });

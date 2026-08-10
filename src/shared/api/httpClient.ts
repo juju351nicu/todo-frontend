@@ -1,4 +1,4 @@
-import Const from "@/constants/const";
+import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
 
 const METHOD = {
   GET: "GET",
@@ -19,7 +19,7 @@ const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
 
 let csrfToken: string | null = null;
 
-const apiUrl = (uri: string): string => Const.API_PREFIX_PATH.LOCAL_HOST + uri;
+const apiUrl = (uri: string): string => API_BASE_URL + uri;
 
 const readCookie = (name: string): string | null => {
   if (typeof document === "undefined") {
@@ -38,7 +38,7 @@ const readCookie = (name: string): string | null => {
  * ログイン・ログアウトで古いトークンが破棄された後にも呼び出す。
  */
 const refreshCsrfToken = async (): Promise<string> => {
-  const response = await fetch(apiUrl(Const.REST_PATH.CSRF), {
+  const response = await fetch(apiUrl(API_PATHS.CSRF), {
     method: METHOD.GET,
     headers: { Accept: "application/json" },
     credentials: "include",

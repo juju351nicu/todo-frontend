@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
 import AuthApi from "@/features/auth/api/authApi";
 import HttpClient from "@/shared/api/httpClient";
+import { API_PATHS } from "@/shared/constants/api";
 
 vi.mock("@/shared/api/httpClient", () => ({
   default: {
@@ -34,7 +34,7 @@ describe("Auth API", () => {
 
     await expect(AuthApi.getSession()).resolves.toEqual(sessionUser);
 
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(Const.REST_PATH.SESSION);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.SESSION);
   });
 
   it("Sessionが未認証の場合はnullを返す", async () => {
@@ -52,7 +52,7 @@ describe("Auth API", () => {
     await expect(AuthApi.login(payload)).resolves.toBe(response);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.AUTH_LOGIN,
+      API_PATHS.AUTH_LOGIN,
       payload
     );
     expect(HttpClient.refreshCsrfToken).toHaveBeenCalledOnce();
@@ -66,7 +66,7 @@ describe("Auth API", () => {
     await expect(AuthApi.logout()).resolves.toBe(response);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.LOGOUT,
+      API_PATHS.LOGOUT,
       null
     );
     expect(HttpClient.clearCsrfToken).toHaveBeenCalledOnce();

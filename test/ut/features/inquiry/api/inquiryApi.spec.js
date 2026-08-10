@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
 import InquiryApi from "@/features/inquiry/api/inquiryApi";
 import HttpClient from "@/shared/api/httpClient";
+import { API_PATHS } from "@/shared/constants/api";
 
 vi.mock("@/shared/api/httpClient", () => ({
   default: {
@@ -26,7 +26,7 @@ describe("Inquiry API", () => {
 
     await expect(InquiryApi.send(payload)).resolves.toBe(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.INQUIRY_SEND_MAIL,
+      API_PATHS.INQUIRY_SEND_MAIL,
       payload
     );
   });

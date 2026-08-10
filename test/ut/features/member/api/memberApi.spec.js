@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import Const from "@/constants/const";
 import MemberApi from "@/features/member/api/memberApi";
 import HttpClient from "@/shared/api/httpClient";
+import { API_PATHS } from "@/shared/constants/api";
 
 vi.mock("@/shared/api/httpClient", () => ({
   default: {
@@ -27,7 +27,7 @@ describe("Member API", () => {
     await expect(MemberApi.findList()).resolves.toEqual(payload);
 
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.MEMBER_LIST
+      API_PATHS.MEMBER_LIST
     );
   });
 
@@ -49,7 +49,7 @@ describe("Member API", () => {
     await expect(MemberApi.deleteMembers([1, "2"])).resolves.toEqual(payload);
 
     expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
-      `${Const.REST_PATH.MEMBER_DELETE}?ids=1&ids=2`
+      `${API_PATHS.MEMBER_DELETE}?ids=1&ids=2`
     );
   });
 
@@ -72,7 +72,7 @@ describe("Member API", () => {
     await MemberApi.upsert(request);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      Const.REST_PATH.MEMBER_UPSERT,
+      API_PATHS.MEMBER_UPSERT,
       request
     );
   });

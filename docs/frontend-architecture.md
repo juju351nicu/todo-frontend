@@ -53,11 +53,15 @@ src/
 - `src/shared/api/httpClient.ts`: `JSESSIONID`とCSRFに対応する共通HTTPクライアント
 - `src/shared/components/AppAlert.vue`: 機能に依存しないアラート表示部品
 - `src/shared/components/LoadingIndicator.vue`: 機能に依存しない処理中表示部品
+- `src/shared/constants/api.ts`: 環境変数で変更可能なBackend接続先とAPIパス
+- `src/shared/constants/ui.ts`: data-tableのページ表示定数
 - `src/shared/types/error.ts`: Backend共通エラー型
+- `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
 - `src/app/layouts/AppHeader.vue`: アプリケーション共通ヘッダー
 - `src/app/layouts/AppSideMenu.vue`: 認証利用者のロールに応じた共通メニュー
 - `src/app/router/index.ts`: Router生成とSession認証ガード
 - `src/app/router/routes.ts`: ルート定義と画面単位の遅延読み込み
+- `src/app/router/router.d.ts`: Routerの認証要否メタデータ型
 - `src/app/views/NotFoundPage.vue`: NotFound画面
 - `src/features/auth/api/authApi.ts`: Session確認、ローカルログイン、ログアウト、GitHub OAuth2開始URL
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
@@ -92,7 +96,7 @@ src/
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
 - `src/features/inquiry/views/InquiryFormPage.vue`: composableを利用して表示を組み立てる問い合わせ画面
 
-認証・会員・Task・問い合わせ機能の移行に加え、共通表示部品とアプリケーション全体のレイアウト・Routerの移行も完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。全ルートを動的importへ変更したことで、従来約608KBだった単一JavaScriptは初期共通約152KB、最大のカレンダー画面約261KBへ分割され、500KB超の警告を解消した。次の作業単位では残る共通定数・utility・型宣言の配置と未使用資産を整理する。
+認証・会員・Task・問い合わせ機能、共通表示部品、レイアウト、Router、定数、utility、型宣言の配置整理は完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。全ルートを動的importへ変更したことで、従来約608KBだった単一JavaScriptは初期共通約151KB、最大のカレンダー画面約261KBへ分割され、500KB超の警告を解消した。API接続先は`VITE_API_BASE_URL`で環境別に設定し、未使用utility・テスト・Viteロゴも削除した。Frontendの構成移行は一区切りとし、次はブラウザ回帰確認と管理者向け権限管理機能の設計へ進む。
 
 ## 変更時の確認
 

@@ -3,7 +3,6 @@ import AppAlert from "@/shared/components/AppAlert.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { onMounted } from "vue";
 
-import Const from "@/constants/const";
 import { useLoginPage } from "@/features/auth/composables/useLoginPage";
 
 const {
@@ -25,7 +24,7 @@ onMounted(initialize);
     <template v-if="isShowModal">
         <div v-for="(message, index) in errorMessages" :key="index">
             <div class="d-flex justify-end">
-                <AppAlert class="mx-4" :message="message" :type=Const.ALERT_TYPE.ERROR />
+                <AppAlert class="mx-4" :message="message" type="error" />
             </div>
         </div>
     </template>

@@ -1,9 +1,9 @@
-import Const from "@/constants/const";
 import type {
   LoginRequest,
   SessionUserResponse,
 } from "@/features/auth/types/auth";
 import HttpClient from "@/shared/api/httpClient";
+import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
 
 /**
  * 現在のHttpSessionに保存された認証利用者を取得する。
@@ -11,7 +11,7 @@ import HttpClient from "@/shared/api/httpClient";
  * @returns 未認証の場合はnull、認証済みの場合は利用者情報
  */
 const getSession = async (): Promise<SessionUserResponse | null> => {
-  const response = await HttpClient.getRequest(Const.REST_PATH.SESSION);
+  const response = await HttpClient.getRequest(API_PATHS.SESSION);
   if (!response.ok) {
     return null;
   }
@@ -26,7 +26,7 @@ const getSession = async (): Promise<SessionUserResponse | null> => {
  */
 const login = async (payload: LoginRequest): Promise<Response> => {
   const response = await HttpClient.postRequest(
-    Const.REST_PATH.AUTH_LOGIN,
+    API_PATHS.AUTH_LOGIN,
     payload
   );
   if (response.ok) {
@@ -41,7 +41,7 @@ const login = async (payload: LoginRequest): Promise<Response> => {
  * @returns Backendのレスポンス
  */
 const logout = async (): Promise<Response> => {
-  const response = await HttpClient.postRequest(Const.REST_PATH.LOGOUT, null);
+  const response = await HttpClient.postRequest(API_PATHS.LOGOUT, null);
   if (!response.ok) {
     throw new Error(`ログアウトに失敗しました。status=${response.status}`);
   }
@@ -56,7 +56,7 @@ const logout = async (): Promise<Response> => {
  * @returns BackendのGitHub認可開始URL
  */
 const getGitHubAuthorizationUrl = (): string =>
-  `${Const.API_PREFIX_PATH.LOCAL_HOST}/oauth2/authorization/github`;
+  `${API_BASE_URL}/oauth2/authorization/github`;
 
 export default {
   getGitHubAuthorizationUrl,

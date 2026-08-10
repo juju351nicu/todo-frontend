@@ -10,7 +10,7 @@ import {
   buildTodoCalendarOptions,
 } from "@/features/task/utils/taskCalendar";
 import type { ErrorResponse } from "@/shared/types/error";
-import Util from "@/utils/util";
+import { toNumberList } from "@/shared/utils/number";
 
 /** Todoカレンダー画面の状態と操作を提供する。 */
 export const useTodoCalendarPage = () => {
@@ -25,7 +25,7 @@ export const useTodoCalendarPage = () => {
   const createSearchRequest = (): TodoListRequest => ({
     search_title: searchTitle.value,
     date_range: "",
-    done_flag_values: Util.getNumberList(selectedDoneFlag.value),
+    done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
   const setResponseErrors = (errorResponse: ErrorResponse): void => {

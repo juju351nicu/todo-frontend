@@ -1,7 +1,6 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-import Const from "@/constants/const";
 import { useTodoStore } from "@/features/task/stores/task";
 import type {
   TodoListItem,
@@ -9,7 +8,11 @@ import type {
   TodoListResponse,
 } from "@/features/task/types/task";
 import type { ErrorResponse } from "@/shared/types/error";
-import Util from "@/utils/util";
+import {
+  DATA_TABLE_PAGE_OPTIONS,
+  DEFAULT_ITEMS_PER_PAGE,
+} from "@/shared/constants/ui";
+import { toNumberList } from "@/shared/utils/number";
 
 interface TodoTableHeader {
   title: string;
@@ -36,8 +39,8 @@ export const useTodoListPage = () => {
   const errorMessages = ref<string[]>([]);
   const headers = TODO_TABLE_HEADERS;
   const isLoading = ref(false);
-  const itemsPerPage = ref<number>(Const.NUMBER_OF_ITEMS);
-  const pages = Const.DATA_TABLE_PAGES;
+  const itemsPerPage = ref<number>(DEFAULT_ITEMS_PER_PAGE);
+  const pages = DATA_TABLE_PAGE_OPTIONS;
   const searchTitle = ref("");
   const selectedDoneFlag = ref<string[]>(["0", "1"]);
   const todoList = ref<TodoListItem[]>([]);
@@ -45,7 +48,7 @@ export const useTodoListPage = () => {
   const createSearchRequest = (): TodoListRequest => ({
     search_title: searchTitle.value,
     date_range: "",
-    done_flag_values: Util.getNumberList(selectedDoneFlag.value),
+    done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
   const setResponseErrors = (errorResponse: ErrorResponse): void => {

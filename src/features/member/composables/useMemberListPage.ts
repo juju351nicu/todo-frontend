@@ -1,9 +1,12 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import Const from "@/constants/const";
 import { useMemberStore } from "@/features/member/stores/member";
 import type { MemberListItem } from "@/features/member/types/member";
+import {
+  DATA_TABLE_PAGE_OPTIONS,
+  DEFAULT_ITEMS_PER_PAGE,
+} from "@/shared/constants/ui";
 
 interface MemberTableHeader {
   title: string;
@@ -35,11 +38,11 @@ export const useMemberListPage = () => {
 
   const headers = MEMBER_TABLE_HEADERS;
   const isLoading = computed<boolean>(() => memberStore.isLoading);
-  const itemsPerPage = ref<number>(Const.NUMBER_OF_ITEMS);
+  const itemsPerPage = ref<number>(DEFAULT_ITEMS_PER_PAGE);
   const memberList = computed<MemberListItem[]>(
     () => memberStore.memberListInfo
   );
-  const pages = Const.DATA_TABLE_PAGES;
+  const pages = DATA_TABLE_PAGE_OPTIONS;
   const selectedIds = ref<number[]>([]);
 
   /** 会員一覧をBackendから取得する。 */
