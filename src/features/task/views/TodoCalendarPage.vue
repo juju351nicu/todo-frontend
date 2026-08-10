@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TheHeader from "@/components/TheHeader.vue";
-import Loading from "@/components/Loading.vue";
+import AppHeader from "@/app/layouts/AppHeader.vue";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import FullCalendar from "@fullcalendar/vue3";
 import { onBeforeMount } from "vue";
 
@@ -21,8 +21,8 @@ onBeforeMount(() => {
 });
 </script>
 <template>
-  <TheHeader />
-  <Loading v-if="isLoading" />
+  <AppHeader />
+  <LoadingIndicator v-if="isLoading" />
   <v-alert v-if="errorMessages.length" type="error" class="mb-4">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </v-alert>

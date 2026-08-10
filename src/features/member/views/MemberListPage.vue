@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TheHeader from "@/components/TheHeader.vue";
-import Loading from "@/components/Loading.vue";
+import AppHeader from "@/app/layouts/AppHeader.vue";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { onBeforeMount } from "vue";
 
 import { useMemberListPage } from "@/features/member/composables/useMemberListPage";
@@ -21,8 +21,8 @@ onBeforeMount(initialize);
 
 </script>
 <template>
-    <TheHeader />
-    <Loading v-if="isLoading" />
+    <AppHeader />
+    <LoadingIndicator v-if="isLoading" />
     <h2>会員一覧</h2>
     <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"
         item-value="memberId" :headers="headers" :items="memberList" :items-per-page-options="pages"

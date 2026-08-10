@@ -12,7 +12,8 @@ Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`
 src/
 ├── app/
 │   ├── layouts/
-│   └── router/
+│   ├── router/
+│   └── views/
 ├── features/
 │   ├── auth/
 │   │   ├── api/
@@ -34,6 +35,7 @@ src/
 
 ## 各ディレクトリの責務
 
+- `app`: アプリケーション全体のRouter、認証ガード、ヘッダー・メニュー等のレイアウト、NotFound等を置く。
 - `views`: 画面全体を組み立て、画面用composableを呼び出す。
 - `composables`: 画面状態、入力、検索、登録、画面遷移等の操作を扱う。
 - `components`: PropsとEventを中心とする表示部品とし、Backend APIを直接呼ばない。
@@ -49,7 +51,14 @@ src/
 最初の作業単位として、次を移行した。
 
 - `src/shared/api/httpClient.ts`: `JSESSIONID`とCSRFに対応する共通HTTPクライアント
+- `src/shared/components/AppAlert.vue`: 機能に依存しないアラート表示部品
+- `src/shared/components/LoadingIndicator.vue`: 機能に依存しない処理中表示部品
 - `src/shared/types/error.ts`: Backend共通エラー型
+- `src/app/layouts/AppHeader.vue`: アプリケーション共通ヘッダー
+- `src/app/layouts/AppSideMenu.vue`: 認証利用者のロールに応じた共通メニュー
+- `src/app/router/index.ts`: Router生成とSession認証ガード
+- `src/app/router/routes.ts`: ルート定義と画面単位の遅延読み込み
+- `src/app/views/NotFoundPage.vue`: NotFound画面
 - `src/features/auth/api/authApi.ts`: Session確認、ローカルログイン、ログアウト、GitHub OAuth2開始URL
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
 - `src/features/auth/composables/useLoginPage.ts`: ログイン画面の状態、Session復元、入力送信、OAuth2エラー表示
@@ -83,7 +92,7 @@ src/
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
 - `src/features/inquiry/views/InquiryFormPage.vue`: composableを利用して表示を組み立てる問い合わせ画面
 
-認証・会員・Task・問い合わせ機能の移行は完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。次の作業単位では共通部品の配置を整理し、`app/router`への移行要否とルート単位の遅延読み込みを見直す。
+認証・会員・Task・問い合わせ機能の移行に加え、共通表示部品とアプリケーション全体のレイアウト・Routerの移行も完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。全ルートを動的importへ変更したことで、従来約608KBだった単一JavaScriptは初期共通約152KB、最大のカレンダー画面約261KBへ分割され、500KB超の警告を解消した。次の作業単位では残る共通定数・utility・型宣言の配置と未使用資産を整理する。
 
 ## 変更時の確認
 

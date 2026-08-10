@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TheHeader from "@/components/TheHeader.vue";
-import Loading from "@/components/Loading.vue";
+import AppHeader from "@/app/layouts/AppHeader.vue";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { computed } from "vue";
 
 import MemberUpsertConfirm from "@/features/member/components/MemberUpsertConfirm.vue";
@@ -26,8 +26,8 @@ const {
 
 </script>
 <template>
-    <TheHeader />
-    <Loading v-if="isLoading" />
+    <AppHeader />
+    <LoadingIndicator v-if="isLoading" />
     <MemberUpsertConfirm v-if="isShowConfirm" :member-form="memberForm" @close-modal="closeConfirm"
         @confirm-submit="confirmSubmit" />
     <v-container>

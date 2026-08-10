@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TheHeader from "@/components/TheHeader.vue";
-import Loading from "@/components/Loading.vue";
+import AppHeader from "@/app/layouts/AppHeader.vue";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 import { useInquiryFormPage } from "@/features/inquiry/composables/useInquiryFormPage";
 
@@ -15,8 +15,8 @@ const {
 } = useInquiryFormPage();
 </script>
 <template>
-  <TheHeader />
-  <Loading v-if="isLoading" />
+  <AppHeader />
+  <LoadingIndicator v-if="isLoading" />
   <v-container>
     <v-alert v-if="successMessage" type="success" class="mb-4">
       {{ successMessage }}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TheHeader from "@/components/TheHeader.vue";
-import Loading from "@/components/Loading.vue";
+import AppHeader from "@/app/layouts/AppHeader.vue";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { computed } from "vue";
 
 import { useMemberCancelPage } from "@/features/member/composables/useMemberCancelPage";
@@ -22,8 +22,8 @@ const {
 
 </script>
 <template>
-    <TheHeader />
-    <Loading v-if="isLoading" />
+    <AppHeader />
+    <LoadingIndicator v-if="isLoading" />
     <v-container>
         <p>アカウントを削除して退会されたい場合は、以下の注意事項をご確認の上、お手続きいただきますようお願いいたします。</p>
         <ul>

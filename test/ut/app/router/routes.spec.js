@@ -1,16 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-vi.mock("@/features/auth/views/LoginPage.vue", () => ({ default: {} }));
-vi.mock("@/features/inquiry/views/InquiryFormPage.vue", () => ({ default: {} }));
-vi.mock("@/views/NotFound.vue", () => ({ default: {} }));
-vi.mock("@/features/member/views/MemberListPage.vue", () => ({ default: {} }));
-vi.mock("@/features/member/views/MemberDetailPage.vue", () => ({ default: {} }));
-vi.mock("@/features/member/views/MemberCancelPage.vue", () => ({ default: {} }));
-vi.mock("@/features/task/views/TodoListPage.vue", () => ({ default: {} }));
-vi.mock("@/features/task/views/TodoDetailPage.vue", () => ({ default: {} }));
-vi.mock("@/features/task/views/TodoCalendarPage.vue", () => ({ default: {} }));
-
-import { routes } from "@/router/routes";
+import { routes } from "@/app/router/routes";
 
 const findRoute = (name) => routes.find((route) => route.name === name);
 
@@ -32,5 +22,11 @@ describe("Vue routes", () => {
   it("試作Dashboardルートを公開しない", () => {
     expect(findRoute("DashBoard")).toBeUndefined();
     expect(findRoute("TodoCalendar").path).toBe("/todo/calendar");
+  });
+
+  it("各画面をルート単位で遅延読み込みする", () => {
+    routes.forEach((route) => {
+      expect(route.component).toBeTypeOf("function");
+    });
   });
 });
