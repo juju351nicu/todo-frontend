@@ -5,10 +5,10 @@ import LoginPage from "@/features/auth/views/LoginPage.vue";
 import MemberCancelPage from "@/features/member/views/MemberCancelPage.vue";
 import MemberDetailPage from "@/features/member/views/MemberDetailPage.vue";
 import MemberListPage from "@/features/member/views/MemberListPage.vue";
+import TodoCalendarPage from "@/features/task/views/TodoCalendarPage.vue";
+import TodoDetailPage from "@/features/task/views/TodoDetailPage.vue";
 import TodoListPage from "@/features/task/views/TodoListPage.vue";
 import NotFound from "@/views/NotFound.vue";
-import TodoCalendar from "@/views/todo/TodoCalendar.vue";
-import TodoDetail from "@/views/todo/TodoDetail.vue";
 
 export const routes: RouteRecordRaw[] = [
   {
@@ -45,7 +45,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/calendar",
     name: "TodoCalendar",
-    component: TodoCalendar,
+    component: TodoCalendarPage,
     meta: { requiresAuth: true },
   },
   {
@@ -57,7 +57,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/detail/:id?",
     name: "TodoDetail",
-    component: TodoDetail,
+    component: TodoDetailPage,
     props: (route) => ({ id: Number(route.params.id ?? 0) }),
     meta: { requiresAuth: true },
   },

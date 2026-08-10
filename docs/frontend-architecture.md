@@ -69,10 +69,17 @@ src/
 - `src/features/task/stores/task.ts`: Todo一覧の共有状態とTask API呼び出し
 - `src/features/task/types/task.ts`: Task APIのRequest / Response型
 - `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移
+- `src/features/task/composables/useTodoDetailPage.ts`: Todo詳細取得、登録更新フォーム、確認モーダル、エラー表示
+- `src/features/task/composables/useTodoCalendarPage.ts`: Todoカレンダー検索、イベント設定、エラー表示
+- `src/features/task/components/TodoUpsertConfirm.vue`: Todo登録更新の確認部品
+- `src/features/task/utils/taskForm.ts`: Todo詳細Responseからフォーム、フォームから登録更新Requestへの変換
+- `src/features/task/utils/taskCalendar.ts`: Todo一覧からFullCalendarイベント・設定への変換
 - `src/features/task/utils/taskDisplay.ts`: 重要度・色・残日数・詳細省略の表示変換
 - `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
+- `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
+- `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
 
-会員機能の移行は完了した。Task API・Store・型とTodo一覧は`features/task`へ移行済みで、Todo詳細・カレンダー・登録更新確認部品は既存位置に残している。次の作業単位で`useTodoDetailPage`、`useTodoCalendarPage`を作成し、Todo画面用フォームが残る`src/utils/detail.ts`もTask機能内へ移す。その後に`inquiry`を移行する。
+会員機能とTask機能の移行は完了した。Todo一覧・詳細・カレンダーはいずれも、1画面につき1つのcomposableを使用する構成になっている。次の作業単位では`inquiry`を移行し、その後に共通部品の配置と`app/router`への移行要否を見直す。
 
 ## 変更時の確認
 

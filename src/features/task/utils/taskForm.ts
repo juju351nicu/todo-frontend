@@ -1,7 +1,11 @@
 import type {
+  AccountRole,
   MemberListItem,
 } from "@/features/member/types/member";
-import type { TodoDetailResponse } from "@/features/task/types/task";
+import type {
+  TodoDetailResponse,
+  TodoUpsertRequest,
+} from "@/features/task/types/task";
 
 export interface TodoDetailForm {
   todoId: number;
@@ -36,4 +40,21 @@ export const createTodoDetailForm = (
   version: detail.version ?? 0,
   idMemberMap: {},
   userList: [],
+});
+
+/** Todo編集フォームを登録・更新APIのsnake_caseリクエストへ変換する。 */
+export const buildTodoUpsertRequest = (
+  form: TodoDetailForm,
+  role: AccountRole
+): TodoUpsertRequest => ({
+  todo_id: form.todoId,
+  date_from: form.dateFrom,
+  date_to: form.dateTo,
+  title: form.title,
+  detail: form.detail,
+  done_flag: form.doneFlag === 1 ? "1" : "0",
+  role,
+  priority: form.priority,
+  version: form.version,
+  user_id: form.userId,
 });

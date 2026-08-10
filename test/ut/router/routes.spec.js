@@ -7,8 +7,8 @@ vi.mock("@/features/member/views/MemberListPage.vue", () => ({ default: {} }));
 vi.mock("@/features/member/views/MemberDetailPage.vue", () => ({ default: {} }));
 vi.mock("@/features/member/views/MemberCancelPage.vue", () => ({ default: {} }));
 vi.mock("@/features/task/views/TodoListPage.vue", () => ({ default: {} }));
-vi.mock("@/views/todo/TodoDetail.vue", () => ({ default: {} }));
-vi.mock("@/views/todo/TodoCalendar.vue", () => ({ default: {} }));
+vi.mock("@/features/task/views/TodoDetailPage.vue", () => ({ default: {} }));
+vi.mock("@/features/task/views/TodoCalendarPage.vue", () => ({ default: {} }));
 
 import { routes } from "@/router/routes";
 
