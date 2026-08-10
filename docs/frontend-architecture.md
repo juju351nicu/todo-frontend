@@ -96,7 +96,9 @@ src/
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
 - `src/features/inquiry/views/InquiryFormPage.vue`: composableを利用して表示を組み立てる問い合わせ画面
 
-認証・会員・Task・問い合わせ機能、共通表示部品、レイアウト、Router、定数、utility、型宣言の配置整理は完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。全ルートを動的importへ変更したことで、従来約608KBだった単一JavaScriptは初期共通約151KB、最大のカレンダー画面約261KBへ分割され、500KB超の警告を解消した。API接続先は`VITE_API_BASE_URL`で環境別に設定し、未使用utility・テスト・Viteロゴも削除した。Frontendの構成移行は一区切りとし、次はブラウザ回帰確認と管理者向け権限管理機能の設計へ進む。
+認証・会員・Task・問い合わせ機能、共通表示部品、レイアウト、Router、定数、utility、型宣言の配置整理は完了した。各業務画面は1画面につき1つのcomposableを使用し、複数画面で共有しない問い合わせの処理中状態はStoreではなく画面composableで管理する。全ルートを動的importへ変更したことで、従来約608KBだった単一JavaScriptは初期共通約151KB、最大のカレンダー画面約261KBへ分割され、500KB超の警告を解消した。API接続先は`VITE_API_BASE_URL`で環境別に設定し、未使用utility・テスト・Viteロゴも削除した。
+
+2026-08-11にBackendと同時起動してブラウザ回帰確認を行い、ローカルログイン、再読み込み後のSession復元、会員一覧・詳細、Todo一覧・詳細・カレンダー、問い合わせフォーム、ログアウト後の保護ルート拒否が正常であることを確認した。詳細は[ブラウザ回帰チェックリスト](browser-regression-checklist.md)に記録する。Frontendの構成移行と画面表示回帰は一区切りとし、次は管理者向け権限管理API・画面と監査ログ基盤の設計へ進む。
 
 ## 変更時の確認
 

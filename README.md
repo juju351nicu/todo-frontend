@@ -60,3 +60,5 @@ npm run build
 ```
 
 CIでもNode.js 24を使い、同じ型検査、テスト、ビルドを実行します。
+
+Backendと同時に起動して確認する手順と実施記録は[ブラウザ回帰チェックリスト](docs/browser-regression-checklist.md)を参照してください。
