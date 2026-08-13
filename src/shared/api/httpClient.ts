@@ -19,8 +19,16 @@ const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
 
 let csrfToken: string | null = null;
 
+/** Backend APIの相対pathを環境別の接続先URLへ解決する。 */
 const apiUrl = (uri: string): string => API_BASE_URL + uri;
 
+/**
+ * ブラウザーCookieから指定名の値をURL decodeして取得する。
+ * SSRやVitest等でdocumentが存在しない環境ではnullを返す。
+ *
+ * @param name 取得するCookie名
+ * @returns Cookie値。未設定またはdocumentが存在しない場合はnull
+ */
 const readCookie = (name: string): string | null => {
   if (typeof document === "undefined") {
     return null;
@@ -53,15 +61,32 @@ const refreshCsrfToken = async (): Promise<string> => {
   return csrfToken;
 };
 
+/**
+ * 更新Requestに使用できるCSRFトークンをCookieまたはBackendから取得する。
+ * メモリー上の値を優先し、未取得時だけCookie、CSRF APIの順で解決する。
+ *
+ * @returns X-XSRF-TOKEN headerへ設定するトークン
+ * @throws CSRF APIが失敗するか、Cookieを取得できない場合
+ */
 const ensureCsrfToken = async (): Promise<string> => {
   csrfToken = csrfToken ?? readCookie(CSRF_COOKIE_NAME);
   return csrfToken ?? refreshCsrfToken();
 };
 
+/** ログイン・ログアウトで無効になったメモリー上のCSRFトークンを破棄する。 */
 const clearCsrfToken = (): void => {
   csrfToken = null;
 };
 
+/**
+ * JSESSIONIDを含む共通Requestを送信し、更新系ではCSRF headerを付与する。
+ * HTTP statusは解釈せず、feature APIが業務エラーへ変換できるResponseを返す。
+ *
+ * @param uri Backend APIの相対path
+ * @param method HTTP method
+ * @param requestData JSON body。GETまたはbodyなしの場合はnull
+ * @returns BackendのResponse
+ */
 const request = async <TRequest = unknown>(
   uri: string,
   method: HttpMethod,
@@ -86,18 +111,22 @@ const request = async <TRequest = unknown>(
   return fetch(apiUrl(uri), options);
 };
 
+/** Session Cookie付きGET Requestを送信する。 */
 const getRequest = (uri: string): Promise<Response> => request(uri, METHOD.GET);
 
+/** Session Cookie・CSRF token付きPOST Requestを送信する。 */
 const postRequest = <TRequest = unknown>(
   uri: string,
   requestData: TRequest | null
 ): Promise<Response> => request(uri, METHOD.POST, requestData);
 
+/** Session Cookie・CSRF token付きPUT Requestを送信する。 */
 const putRequest = <TRequest = unknown>(
   uri: string,
   requestData: TRequest
 ): Promise<Response> => request(uri, METHOD.PUT, requestData);
 
+/** Session Cookie・CSRF token付きDELETE Requestを送信する。 */
 const deleteRequest = (uri: string): Promise<Response> =>
   request(uri, METHOD.DELETE);
 

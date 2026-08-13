@@ -33,6 +33,7 @@ export const useLoginPage = () => {
   });
   const showPassword = ref(false);
 
+  /** エラー一覧を設定し、ログイン画面の通知Modalを表示する。 */
   const showErrors = (messages: string[]): void => {
     errorMessages.value = messages;
     isShowModal.value = true;

@@ -39,6 +39,7 @@ export const useMemberDetailPage = (
   });
   const roleItems = ROLE_ITEMS;
 
+  /** 会員フォームをパスワード未入力の初期状態へ戻し、取得エラーを破棄する。 */
   const clearForm = (): void => {
     Object.assign(memberForm, createMemberDetailForm());
     loadError.value = "";

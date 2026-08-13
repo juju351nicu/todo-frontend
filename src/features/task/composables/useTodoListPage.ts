@@ -59,12 +59,14 @@ export const useTodoListPage = () => {
     (userStore.hasPermission("TASK_WRITE_OWN") &&
       userStore.memberId === todo.userId);
 
+  /** 画面の検索状態をBackendのsnake_case Requestへ変換する。 */
   const createSearchRequest = (): TodoListRequest => ({
     search_title: searchTitle.value,
     date_range: "",
     done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
+  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
   const setResponseErrors = (errorResponse: ErrorResponse): void => {
     errorMessages.value = (errorResponse.fieldErrors ?? []).map(
       (fieldError) => fieldError.message
@@ -74,6 +76,10 @@ export const useTodoListPage = () => {
     }
   };
 
+  /**
+   * 指定条件でTodo一覧を取得し、画面とStoreを同じ一覧へ同期する。
+   * API失敗時は不完全なResponseで既存一覧を上書きしない。
+   */
   const loadTodoList = async (payload: TodoListRequest): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];

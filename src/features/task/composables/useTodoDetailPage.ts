@@ -78,12 +78,14 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     todoForm.userId > 0 ? `ユーザーID: ${todoForm.userId}` : "対象ユーザーなし"
   );
 
+  /** 取得・保存処理が表示したメッセージを次の画面操作前に破棄する。 */
   const clearMessages = (): void => {
     errorMessages.value = [];
     loadError.value = "";
     successMessage.value = "";
   };
 
+  /** Todoフォームを新規登録用の既定値へ戻す。 */
   const resetForm = (): void => {
     Object.assign(todoForm, createTodoDetailForm());
   };

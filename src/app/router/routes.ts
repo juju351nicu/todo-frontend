@@ -5,6 +5,10 @@ import {
   TASK_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
 
+/**
+ * Work Management Frontendの画面、遅延読込Component、認証・permission要件を定義する。
+ * `requiredAnyPermissions`は表示前の補助判定であり、Backendの最終認可を代替しない。
+ */
 export const routes: RouteRecordRaw[] = [
   {
     path: "/",

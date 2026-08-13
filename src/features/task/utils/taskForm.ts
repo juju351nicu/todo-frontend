@@ -17,6 +17,7 @@ export interface TodoDetailForm {
   version: number;
 }
 
+/** Backendの文字列完了フラグを画面フォームの数値コードへ正規化する。 */
 const toDoneFlag = (
   value: TodoDetailResponse["done_flag"] | undefined
 ): 0 | 1 => (value === "1" ? 1 : 0);

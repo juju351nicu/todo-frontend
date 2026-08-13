@@ -107,6 +107,7 @@ await authStore.restoreSession();
 - 時刻、乱数、通信、Router、Store等の外部要因はテスト境界で固定し、テストの実行順へ依存させない。`beforeEach`でmockと共有状態を初期化する。
 - DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。
 - Backend変更を伴う場合はFrontendのVitestだけで完了せず、Backendの該当JUnitと`./mvnw verify`も成功させる。
+- repository conventionのVitestでexportedな型・関数とAPI境界の関数にJSDocがあることを構文解析する。composable内部の非同期副作用、認証、CSRF、変換等は自動検査だけに依存せずレビューする。
 
 ```bash
 npm run typecheck

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+/** 4秒後に自動で閉じる通知文とVuetify alert種別。 */
 defineProps<{
     message: string;
     type: "success" | "info" | "warning" | "error";

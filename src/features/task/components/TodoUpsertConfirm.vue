@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { TodoDetailForm } from "@/features/task/utils/taskForm";
 
+/** 登録・更新前に表示するTodoフォーム。 */
 defineProps<{
     todoForm: TodoDetailForm;
 }>();
 
+/** 保存せず戻る操作と、確認済みフォームの保存要求を親画面へ通知する。 */
 const emit = defineEmits<{
     "close-modal": [];
     "confirm-submit": [];

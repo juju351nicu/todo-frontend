@@ -31,3 +31,4 @@ Node.js 24で`npm run typecheck`、`npm run test`、`npm run build`を実行す�
 - APIのmethod・path・Request形式、composableのAPI非実行条件・Router遷移・Session破棄・Store更新もassertする。
 - テストで不具合を発見した場合は原因を修正し、その事象を再現する回帰テストを残す。
 - Backend変更を伴う場合は該当JUnitと`./mvnw verify`も実行する。
+- repository conventionのVitestを維持し、exportedな型・関数とAPI境界のJSDoc記載漏れを新規変更で増やさない。composable内の非自明な副作用・変換は自動検査対象外でも必ずレビューする。

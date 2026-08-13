@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { MemberDetailForm } from "@/features/member/utils/memberForm";
 
+/** パスワードを表示せずに確認する会員フォーム。 */
 defineProps<{
     memberForm: MemberDetailForm;
 }>();
 
+/** 保存せず戻る操作と、確認済みフォームの保存要求を親画面へ通知する。 */
 const emit = defineEmits<{
     "close-modal": [];
     "confirm-submit": [];

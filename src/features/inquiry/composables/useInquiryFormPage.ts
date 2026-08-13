@@ -16,12 +16,14 @@ export const useInquiryFormPage = () => {
   const message = ref("");
   const successMessage = ref("");
 
+  /** 入力中の画面状態を、Backendへ送信するRequestのスナップショットへ変換する。 */
   const buildInquiryRequest = (): InquiryRequest => ({
     fullName: fullName.value,
     email: email.value,
     message: message.value,
   });
 
+  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
   const setResponseErrors = (errorResponse: ErrorResponse): void => {
     errorMessages.value = (errorResponse.fieldErrors ?? []).map(
       (fieldError) => fieldError.message
@@ -31,6 +33,7 @@ export const useInquiryFormPage = () => {
     }
   };
 
+  /** 送信成功後だけ問い合わせ入力を空に戻す。 */
   const clearForm = (): void => {
     fullName.value = "";
     email.value = "";

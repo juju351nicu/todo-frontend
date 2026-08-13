@@ -22,12 +22,14 @@ export const useTodoCalendarPage = () => {
   const searchTitle = ref("");
   const selectedDoneFlag = ref<string[]>(["0", "1"]);
 
+  /** 画面の検索状態をBackendのsnake_case Requestへ変換する。 */
   const createSearchRequest = (): TodoListRequest => ({
     search_title: searchTitle.value,
     date_range: "",
     done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
+  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
   const setResponseErrors = (errorResponse: ErrorResponse): void => {
     errorMessages.value = (errorResponse.fieldErrors ?? []).map(
       (fieldError) => fieldError.message
@@ -37,6 +39,10 @@ export const useTodoCalendarPage = () => {
     }
   };
 
+  /**
+   * 指定条件のTodoと休日を取得し、FullCalendarのEventへ置き換える。
+   * 取得に失敗した場合は既存Eventを変更せず、利用者が再検索できる状態を保つ。
+   */
   const loadCalendar = async (payload: TodoListRequest): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];

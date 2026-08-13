@@ -17,6 +17,7 @@ export const useMemberCancelPage = (
   const message = ref("");
   const password = ref("");
 
+  /** Modalを閉じる際に平文パスワードと失敗メッセージを画面メモリーから破棄する。 */
   const clearPassword = (): void => {
     password.value = "";
     message.value = "";
