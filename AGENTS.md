@@ -24,3 +24,9 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 ## 検証
 
 Node.js 24で`npm run typecheck`、`npm run test`、`npm run build`を実行する。
+
+- 新規・変更したAPI、composable、Store、業務utilityにはVitestを同じ変更で追加または更新する。
+- 正常系だけでなく、入力境界、null・空、401、403、404、409、通信失敗、二重送信、再読込・rollback等、対象処理に実在する異常系を優先して検証する。
+- APIのmethod・path・Request形式、composableのAPI非実行条件・Router遷移・Session破棄・Store更新もassertする。
+- テストで不具合を発見した場合は原因を修正し、その事象を再現する回帰テストを残す。
+- Backend変更を伴う場合は該当JUnitと`./mvnw verify`も実行する。

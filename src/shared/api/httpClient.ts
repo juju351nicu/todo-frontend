@@ -93,12 +93,18 @@ const postRequest = <TRequest = unknown>(
   requestData: TRequest | null
 ): Promise<Response> => request(uri, METHOD.POST, requestData);
 
+const putRequest = <TRequest = unknown>(
+  uri: string,
+  requestData: TRequest
+): Promise<Response> => request(uri, METHOD.PUT, requestData);
+
 const deleteRequest = (uri: string): Promise<Response> =>
   request(uri, METHOD.DELETE);
 
 export default {
   getRequest,
   postRequest,
+  putRequest,
   deleteRequest,
   refreshCsrfToken,
   clearCsrfToken,

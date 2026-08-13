@@ -35,6 +35,13 @@ describe("Vue routes", () => {
     ]);
   });
 
+  it("アカウント・ロール管理画面をACCOUNT_READで保護する", () => {
+    const route = findRoute("AccountAdministration");
+
+    expect(route.path).toBe("/administration/accounts");
+    expect(route.meta.requiredAnyPermissions).toEqual(["ACCOUNT_READ"]);
+  });
+
   it("各画面をルート単位で遅延読み込みする", () => {
     routes.forEach((route) => {
       expect(route.component).toBeTypeOf("function");

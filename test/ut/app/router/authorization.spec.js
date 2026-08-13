@@ -20,7 +20,7 @@ describe("Router authorization", () => {
       "TodoCalendar"
     );
     expect(resolveAuthenticatedHomeRouteName(["ACCOUNT_READ"])).toBe(
-      "MemberList"
+      "AccountAdministration"
     );
     expect(resolveAuthenticatedHomeRouteName([])).toBe("AccessDenied");
   });

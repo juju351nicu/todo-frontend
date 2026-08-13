@@ -96,6 +96,17 @@ await authStore.restoreSession();
 
 ## 検証とレビュー
 
+### Vitestの方針
+
+- 新規・変更したAPI、composable、Store、業務utilityには、振る舞いを固定するVitestを同じ変更で追加または更新する。
+- 正常系だけでなく、入力境界、空配列・null、401、403、404、409、通信失敗、二重送信、再読込・rollback等、その処理に実在する失敗条件を優先して検証する。
+- Backend APIのテストでは、HTTP method、path、Request body、query parameterがOpenAPIおよびJava DTOと一致することを確認する。
+- composableのテストでは、表示用stateだけでなく、APIを呼ばない条件、Router遷移、Session破棄、Store更新等の副作用も確認する。
+- テストを通すために実装の型を弱めたり、実際には発生しない保証をmockへ追加したりしない。失敗したテストが仕様誤認や実装不備を示す場合は、原因を修正して回帰テストとして残す。
+- 時刻、乱数、通信、Router、Store等の外部要因はテスト境界で固定し、テストの実行順へ依存させない。`beforeEach`でmockと共有状態を初期化する。
+- DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。
+- Backend変更を伴う場合はFrontendのVitestだけで完了せず、Backendの該当JUnitと`./mvnw verify`も成功させる。
+
 ```bash
 npm run typecheck
 npm run test
@@ -108,4 +119,5 @@ npm run build
 - [ ] 非自明な副作用・処理順・互換対応へ、理由が分かる`//`コメントを書いている。
 - [ ] 実装の逐語訳、推測、不要・古いコメント、コメントアウトした旧コードを残していない。
 - [ ] Session、CSRF、秘密情報を安全に扱っている。
+- [ ] 正常系と実在する異常系・境界値をVitestで検証し、発見した不具合の回帰テストを残している。
 - [ ] 型検査、テスト、production buildが成功している。

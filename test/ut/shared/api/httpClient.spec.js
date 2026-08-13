@@ -40,4 +40,25 @@ describe("REST client", () => {
     expect(options.headers.get("X-AUTH-TOKEN")).toBeNull();
     expect(options.body).toBe(JSON.stringify({ title: "test" }));
   });
+
+  it("PUTでもCSRF CookieとJSON本文を送信する", async () => {
+    document.cookie = "XSRF-TOKEN=csrf-put-token";
+    fetch.mockResolvedValue({ ok: true, status: 200 });
+
+    await Fetcher.putRequest("/api/v1/administration/accounts/2/roles", {
+      roleCodes: ["USER"],
+      version: 3,
+    });
+
+    const [url, options] = fetch.mock.calls[0];
+    expect(url).toBe(
+      "http://localhost:8030/api/v1/administration/accounts/2/roles"
+    );
+    expect(options.method).toBe("PUT");
+    expect(options.credentials).toBe("include");
+    expect(options.headers.get("X-XSRF-TOKEN")).toBe("csrf-put-token");
+    expect(options.body).toBe(
+      JSON.stringify({ roleCodes: ["USER"], version: 3 })
+    );
+  });
 });

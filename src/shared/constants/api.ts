@@ -22,4 +22,6 @@ export const API_PATHS = {
   TODO_DONE: "/api/v1/todo/doneFlag",
   TODO_UPSERT: "/api/v1/todo/upsertConfirm",
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
+  ADMINISTRATION_ACCOUNTS: "/api/v1/administration/accounts",
+  ADMINISTRATION_ROLES: "/api/v1/administration/roles",
 } as const;

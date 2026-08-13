@@ -44,6 +44,13 @@ const links = computed<NavigationLink[]>(() => {
     if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
         values.push({ icon: "mdi-plus-box", text: "Todo新規登録", url: "/todo/register" });
     }
+    if (userStore.hasPermission("ACCOUNT_READ")) {
+        values.push({
+            icon: "mdi-account-key",
+            text: "アカウント・ロール管理",
+            url: "/administration/accounts",
+        });
+    }
     if (userStore.hasRole("SYSTEM_ADMIN")) {
         values.push({
             icon: "mdi-account-plus",
