@@ -42,6 +42,15 @@ describe("Vue routes", () => {
     expect(route.meta.requiredAnyPermissions).toEqual(["ACCOUNT_READ"]);
   });
 
+  it("権限変更監査ログ画面を専用permissionで保護する", () => {
+    const route = findRoute("AuthorizationAuditList");
+
+    expect(route.path).toBe("/administration/authorization-audit-logs");
+    expect(route.meta.requiredAnyPermissions).toEqual([
+      "AUTHORIZATION_AUDIT_READ",
+    ]);
+  });
+
   it("各画面をルート単位で遅延読み込みする", () => {
     routes.forEach((route) => {
       expect(route.component).toBeTypeOf("function");

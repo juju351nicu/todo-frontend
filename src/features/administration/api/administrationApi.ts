@@ -3,6 +3,7 @@ import type {
   AccountAuthorizationListResponse,
   AccountRoleUpdateRequest,
   AdministrationRole,
+  AuthorizationAuditLogListResponse,
   RoleListResponse,
 } from "@/features/administration/types/administration";
 import HttpClient from "@/shared/api/httpClient";
@@ -101,8 +102,32 @@ const updateAccountRoles = async (
   return (await response.json()) as AccountAuthorization;
 };
 
+/**
+ * AUTHORIZATION_AUDIT_READ permissionを使用して権限変更監査ログを取得する。
+ *
+ * @param page Backendへ渡す0始まりページ番号
+ * @param size 1ページの取得件数。Backend契約上1以上100以下
+ * @returns 新しい操作順の監査ログとページ情報
+ * @throws AdministrationApiError 入力不正、未認証、permission不足の場合
+ */
+const getAuthorizationAuditLogs = async (
+  page: number,
+  size: number
+): Promise<AuthorizationAuditLogListResponse> => {
+  const query = new URLSearchParams({
+    page: String(page),
+    size: String(size),
+  });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.AUTHORIZATION_AUDIT_LOGS}?${query}`
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as AuthorizationAuditLogListResponse;
+};
+
 export default {
   getAccounts,
+  getAuthorizationAuditLogs,
   getRoles,
   updateAccountRoles,
 };

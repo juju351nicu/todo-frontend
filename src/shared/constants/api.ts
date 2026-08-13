@@ -24,4 +24,6 @@ export const API_PATHS = {
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
   ADMINISTRATION_ACCOUNTS: "/api/v1/administration/accounts",
   ADMINISTRATION_ROLES: "/api/v1/administration/roles",
+  AUTHORIZATION_AUDIT_LOGS:
+    "/api/v1/administration/authorization-audit-logs",
 } as const;

@@ -51,6 +51,13 @@ const links = computed<NavigationLink[]>(() => {
             url: "/administration/accounts",
         });
     }
+    if (userStore.hasPermission("AUTHORIZATION_AUDIT_READ")) {
+        values.push({
+            icon: "mdi-history",
+            text: "権限変更監査ログ",
+            url: "/administration/authorization-audit-logs",
+        });
+    }
     if (userStore.hasRole("SYSTEM_ADMIN")) {
         values.push({
             icon: "mdi-account-plus",

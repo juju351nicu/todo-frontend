@@ -9,6 +9,7 @@
 - Backend API呼出しはfeatureの`api`、画面状態と操作は`composables`、画面をまたぐ状態だけを`stores`へ置く。
 - 最初からcomposableを細分化せず、1画面につき1つの`useXxxPage`を基本とする。
 - 複数機能で共用するものだけを`shared`へ置き、`shared`から個別featureへ依存させない。
+- 旧タスク管理製品から移植したコード・文言に含まれていた名称を、Frontendのソース・テスト・リポジトリ内資料へ再混入させない。比較調査で必要な場合はリポジトリ外の資料フォルダで管理する。
 
 ## JSDoc
 

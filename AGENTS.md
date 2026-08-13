@@ -9,6 +9,7 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 - 画面の状態と操作は、最初は1画面につき1つの`useXxxPage`へまとめる。再利用可能な独立責務が明確になった場合だけ分割する。
 - Backend認証はSpring Session JDBCの`JSESSIONID`とCSRFを使用する。JWT、Session ID、OAuth token、パスワードをWeb Storageやログへ保存しない。
 - BackendのRequest／Responseとの変換を境界へ集約し、画面内にsnake_case変換や既定値処理を散らさない。
+- 旧タスク管理製品から移植したコード・文言に含まれていた名称はFrontendへ再混入させず、比較調査はリポジトリ外の資料フォルダで行う。
 
 ## JSDocとコメント
 

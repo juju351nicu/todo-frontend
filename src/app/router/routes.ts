@@ -24,6 +24,18 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/administration/authorization-audit-logs",
+    name: "AuthorizationAuditList",
+    component: () =>
+      import(
+        "@/features/administration/views/AuthorizationAuditListPage.vue"
+      ),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["AUTHORIZATION_AUDIT_READ"],
+    },
+  },
+  {
     path: "/member/memberList",
     name: "MemberList",
     component: () => import("@/features/member/views/MemberListPage.vue"),

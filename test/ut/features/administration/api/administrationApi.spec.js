@@ -123,4 +123,26 @@ describe("Administration API", () => {
       errorResponse: null,
     });
   });
+
+  it("0始まりページ番号と表示件数を監査ログAPIへ渡す", async () => {
+    const payload = {
+      auditLogs: [],
+      page: 1,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0,
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(payload),
+    });
+
+    await expect(
+      AdministrationApi.getAuthorizationAuditLogs(1, 20)
+    ).resolves.toEqual(payload);
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/administration/authorization-audit-logs?page=1&size=20"
+    );
+  });
 });

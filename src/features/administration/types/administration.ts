@@ -40,3 +40,32 @@ export interface AccountRoleUpdateRequest {
   roleCodes: string[];
   version: number;
 }
+
+/** Backendが記録する権限変更操作コード。 */
+export type AuthorizationAuditAction = "ROLE_ASSIGNED" | "ROLE_REVOKED";
+
+/**
+ * 権限変更監査ログAPIが返す1件の操作履歴。
+ * `occurredAt`はBackendのUTC InstantをISO 8601文字列として受け取る。
+ */
+export interface AuthorizationAuditLog {
+  authorizationAuditLogId: number;
+  actorAccountId: number;
+  actorDisplayName: string;
+  targetAccountId: number;
+  targetDisplayName: string;
+  action: AuthorizationAuditAction;
+  roleCode: string;
+  beforeRoleCodes: string[];
+  afterRoleCodes: string[];
+  occurredAt: string;
+}
+
+/** 権限変更監査ログAPIの0始まりページングResponse。 */
+export interface AuthorizationAuditLogListResponse {
+  auditLogs: AuthorizationAuditLog[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
