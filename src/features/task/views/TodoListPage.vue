@@ -12,6 +12,7 @@ import {
 } from "@/features/task/utils/taskDisplay";
 
 const {
+    canWriteTodo,
     completeTodo,
     errorMessages,
     headers,
@@ -43,10 +44,6 @@ onBeforeMount(initialize);
                         <v-text-field v-model="searchTitle" color="purple darken-2" placeholder="タイトル">
                         </v-text-field>
                     </v-col>
-                    <!--  <v-col>
-                        <input type="text" name="date_from" placeholder="日付(date_from)" />
-                        <input type="text" name="date_to" placeholder="日付(date_to)" />
-                    </v-col> -->
                     <v-col>
                         <v-checkbox v-model="selectedDoneFlag" value="0" label="未完了のみ">
                         </v-checkbox>
@@ -84,8 +81,10 @@ onBeforeMount(initialize);
         </template>
         <template v-slot:item.actions="{ item }">
             <v-row>
-                <v-btn icon="mdi-pencil" size="x-small" class="col ma-1" @click="showTodoDetail(item)"></v-btn>
-                <v-btn icon="mdi-delete" size="x-small" class="col ma-1" @click="completeTodo(item)"></v-btn>
+                <v-btn :icon="canWriteTodo(item) ? 'mdi-pencil' : 'mdi-eye'" size="x-small" class="col ma-1"
+                    @click="showTodoDetail(item)"></v-btn>
+                <v-btn v-if="canWriteTodo(item)" icon="mdi-check" size="x-small" class="col ma-1"
+                    :disabled="item.doneFlag" @click="completeTodo(item)"></v-btn>
             </v-row>
         </template>
     </v-data-table>

@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { resolveAuthenticatedHomeRouteName } from "@/app/router/authorization";
 import AuthApi from "@/features/auth/api/authApi";
 import { useUserStore } from "@/features/auth/stores/user";
 import type { LoginRequest } from "@/features/auth/types/auth";
@@ -14,7 +15,10 @@ const OAUTH_ERROR_MESSAGES: Readonly<Record<string, string>> = {
   login_failed: "GitHubでログインできませんでした。もう一度お試しください。",
 };
 
-/** ログイン画面の状態と操作を提供する。 */
+/**
+ * ログイン画面の入力、Session復元、OAuth2開始および認証後遷移を提供する。
+ * 認証後はSessionのpermissionから利用可能な既定画面を選択する。
+ */
 export const useLoginPage = () => {
   const route = useRoute();
   const router = useRouter();
@@ -37,7 +41,9 @@ export const useLoginPage = () => {
   /** ログイン画面を初期化し、既存SessionとOAuth2エラーを確認する。 */
   const initialize = async (): Promise<void> => {
     if (await userStore.restoreSession(true)) {
-      await router.push({ name: "MemberList" });
+      await router.push({
+        name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
+      });
       return;
     }
 
@@ -61,7 +67,9 @@ export const useLoginPage = () => {
     try {
       const response = await userStore.authLogin({ ...loginForm.value });
       if (response.ok) {
-        await router.push({ name: "MemberList" });
+        await router.push({
+          name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
+        });
         return;
       }
 

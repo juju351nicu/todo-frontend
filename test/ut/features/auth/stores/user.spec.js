@@ -17,7 +17,7 @@ const sessionUser = {
   username: "user01",
   displayName: "松浦 大地",
   roleCodes: ["SYSTEM_ADMIN"],
-  permissionCodes: ["ACCOUNT_READ"],
+  permissionCodes: ["ACCOUNT_READ", "TASK_READ_ALL", "TASK_WRITE_ALL"],
 };
 
 describe("User store", () => {
@@ -35,8 +35,11 @@ describe("User store", () => {
     expect(AuthApi.getSession).toHaveBeenCalledOnce();
     expect(store.isAuthenticated).toBe(true);
     expect(store.memberId).toBe(1);
-    expect(store.getRole).toBe(0);
     expect(store.hasRole("SYSTEM_ADMIN")).toBe(true);
+    expect(store.hasPermission("TASK_READ_ALL")).toBe(true);
+    expect(store.hasAnyPermission(["TASK_WRITE_ALL", "TASK_WRITE_OWN"])).toBe(
+      true
+    );
   });
 
   it("ログイン成功後にCSRFを更新してSessionを読み直す", async () => {

@@ -1,16 +1,11 @@
-import type {
-  AccountRole,
-  MemberListItem,
-} from "@/features/member/types/member";
-
-/** Todo一覧・カレンダー検索APIリクエスト。 */
+/** Todo一覧・カレンダー検索APIリクエスト。Backendが認証主体から参照範囲を決定する。 */
 export interface TodoListRequest {
   search_title: string;
   date_range: string;
   done_flag_values: number[];
 }
 
-/** Todo一覧とカレンダーが共有するTodo情報。 */
+/** Todo一覧とカレンダーが共有する、認可済みTodo情報。 */
 export interface TodoListItem {
   todoId: number;
   title: string;
@@ -29,12 +24,10 @@ export interface TodoListItem {
   priority: number;
 }
 
-/** Todo一覧・カレンダーAPIレスポンス。 */
+/** Todo一覧・カレンダーAPIレスポンス。旧role・会員情報は認可判断へ使用しない。 */
 export interface TodoListResponse {
   errorMessages: string[] | null;
-  user: MemberListItem | null;
   message: string | null;
-  role: AccountRole;
   todoList: TodoListItem[];
 }
 
@@ -51,13 +44,8 @@ export interface TodoDetailResponse {
   version: number;
 }
 
-/** Todo登録・更新APIリクエスト。 */
-export interface TodoUpsertRequest extends TodoDetailResponse {
-  role?: AccountRole | null;
-}
-
-/** Todo登録・更新APIレスポンス。 */
-export interface TodoUpsertResponse extends TodoUpsertRequest {
-  id_member_map?: Record<string, MemberListItem> | null;
-  user_list?: MemberListItem[] | null;
-}
+/**
+ * Todo登録・更新APIリクエスト。
+ * `user_id`は全件更新permission利用者の割当候補であり、本人更新permissionではBackendが無視する。
+ */
+export type TodoUpsertRequest = TodoDetailResponse;

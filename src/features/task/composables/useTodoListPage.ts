@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useUserStore } from "@/features/auth/stores/user";
 import { useTodoStore } from "@/features/task/stores/task";
 import type {
   TodoListItem,
@@ -28,13 +29,17 @@ const TODO_TABLE_HEADERS: TodoTableHeader[] = [
   { title: "タイトル", align: "start", key: "title" },
   { title: "詳細情報", align: "start", key: "detail" },
   { title: "完了フラグ", align: "start", key: "doneFlag" },
-  { title: "編集", align: "start", key: "actions" },
+  { title: "操作", align: "start", key: "actions" },
 ];
 
-/** Todo一覧画面の状態と操作を提供する。 */
+/**
+ * Todo一覧画面の検索、詳細遷移および完了操作を提供する。
+ * Session利用者に更新permissionがない場合、更新操作を画面から公開しない。
+ */
 export const useTodoListPage = () => {
   const router = useRouter();
   const todoStore = useTodoStore();
+  const userStore = useUserStore();
 
   const errorMessages = ref<string[]>([]);
   const headers = TODO_TABLE_HEADERS;
@@ -44,6 +49,15 @@ export const useTodoListPage = () => {
   const searchTitle = ref("");
   const selectedDoneFlag = ref<string[]>(["0", "1"]);
   const todoList = ref<TodoListItem[]>([]);
+
+  /**
+   * 対象Todoの更新操作を画面へ表示できるか判定する。
+   * 全件更新permissionは全Todo、本人更新permissionはSession利用者が所有するTodoだけを許可する。
+   */
+  const canWriteTodo = (todo: TodoListItem): boolean =>
+    userStore.hasPermission("TASK_WRITE_ALL") ||
+    (userStore.hasPermission("TASK_WRITE_OWN") &&
+      userStore.memberId === todo.userId);
 
   const createSearchRequest = (): TodoListRequest => ({
     search_title: searchTitle.value,
@@ -98,6 +112,10 @@ export const useTodoListPage = () => {
 
   /** 指定されたTodoを完了状態へ更新する。 */
   const completeTodo = async (todo: TodoListItem): Promise<void> => {
+    if (!canWriteTodo(todo)) {
+      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      return;
+    }
     isLoading.value = true;
     errorMessages.value = [];
     try {
@@ -114,6 +132,7 @@ export const useTodoListPage = () => {
   };
 
   return {
+    canWriteTodo,
     completeTodo,
     errorMessages,
     headers,

@@ -1,5 +1,10 @@
 import type { RouteRecordRaw } from "vue-router";
 
+import {
+  TASK_READ_PERMISSION_CODES,
+  TASK_WRITE_PERMISSION_CODES,
+} from "@/features/auth/types/auth";
+
 export const routes: RouteRecordRaw[] = [
   {
     path: "/",
@@ -36,19 +41,44 @@ export const routes: RouteRecordRaw[] = [
     path: "/todo/calendar",
     name: "TodoCalendar",
     component: () => import("@/features/task/views/TodoCalendarPage.vue"),
-    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+    },
   },
   {
     path: "/todo/todoList",
     name: "TodoList",
     component: () => import("@/features/task/views/TodoListPage.vue"),
-    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+    },
   },
   {
-    path: "/todo/detail/:id?",
+    path: "/todo/detail/:id",
     name: "TodoDetail",
     component: () => import("@/features/task/views/TodoDetailPage.vue"),
-    props: (route) => ({ id: Number(route.params.id ?? 0) }),
+    props: (route) => ({ id: Number(route.params.id) }),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+    },
+  },
+  {
+    path: "/todo/register",
+    name: "TodoRegister",
+    component: () => import("@/features/task/views/TodoDetailPage.vue"),
+    props: { id: 0 },
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: TASK_WRITE_PERMISSION_CODES,
+    },
+  },
+  {
+    path: "/forbidden",
+    name: "AccessDenied",
+    component: () => import("@/app/views/AccessDeniedPage.vue"),
     meta: { requiresAuth: true },
   },
   {

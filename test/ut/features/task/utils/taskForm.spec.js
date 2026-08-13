@@ -33,6 +33,7 @@ describe("Todo detail form mapper", () => {
   it("新規登録ではTodoフォームの初期値を返す", () => {
     expect(createTodoDetailForm()).toMatchObject({
       todoId: 0,
+      userId: 0,
       doneFlag: 0,
       priority: 3,
     });
@@ -51,14 +52,13 @@ describe("Todo detail form mapper", () => {
       version: 4,
     });
 
-    expect(buildTodoUpsertRequest(form, 1)).toEqual({
+    expect(buildTodoUpsertRequest(form)).toEqual({
       todo_id: 42,
       date_from: "2026-08-08",
       date_to: "2026-08-31",
       title: "詳細API対応",
       detail: "再読み込みに対応する",
       done_flag: "1",
-      role: 1,
       priority: 2,
       version: 4,
       user_id: 5,

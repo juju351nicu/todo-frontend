@@ -10,16 +10,12 @@ const emit = defineEmits<{
     "confirm-submit": [];
 }>();
 
-/**
- * モーダル画面を閉じる。
- */
+/** 確認内容を保存せずモーダル画面を閉じる。 */
 const handleCloseModal = (): void => {
     emit("close-modal");
 };
 
-/**
- * 確認したTodo情報を登録・更新する。
- */
+/** 確認したTodo情報の登録・更新を親画面へ依頼する。 */
 const handleConfirmSubmit = (): void => {
     emit("confirm-submit");
 };
@@ -63,10 +59,6 @@ const handleConfirmSubmit = (): void => {
     </div>
 </template>
 <style scoped>
-/* ========================================
-      Modal css
-  ========================================= */
-
 .modal {
     padding: 10px 20px;
     border: 2px solid #a5272a;
@@ -81,9 +73,6 @@ const handleConfirmSubmit = (): void => {
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 10px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
     user-select: none;
 }
 

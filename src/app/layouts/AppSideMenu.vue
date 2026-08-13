@@ -3,6 +3,10 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import {
+    TASK_READ_PERMISSION_CODES,
+    TASK_WRITE_PERMISSION_CODES,
+} from "@/features/auth/types/auth";
 
 interface NavigationLink {
     icon: string;
@@ -28,11 +32,18 @@ const userStore = useUserStore();
 
 const links = computed<NavigationLink[]>(() => {
     const values: NavigationLink[] = [
-        { icon: "mdi-home", text: "Home", url: "/todo/calendar" },
         { icon: "mdi-account", text: "アカウント", url: "/member/memberList" },
-        { icon: "mdi-view-dashboard", text: "ダッシュボード画面", url: "/todo/todoList" },
         { icon: "mdi-account-cancel", text: "退会", url: `/member/cancel/${userStore.memberId}` },
     ];
+    if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
+        values.unshift(
+            { icon: "mdi-calendar", text: "Todoカレンダー", url: "/todo/calendar" },
+            { icon: "mdi-format-list-checks", text: "Todo一覧", url: "/todo/todoList" },
+        );
+    }
+    if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
+        values.push({ icon: "mdi-plus-box", text: "Todo新規登録", url: "/todo/register" });
+    }
     if (userStore.hasRole("SYSTEM_ADMIN")) {
         values.push({
             icon: "mdi-account-plus",
@@ -53,8 +64,8 @@ const links = computed<NavigationLink[]>(() => {
 const handleLogout = async (): Promise<void> => {
     try {
         await userStore.logout();
-    } catch (error) {
-        console.error(error);
+    } catch (_error: unknown) {
+        // Logout APIが失敗しても、端末上の認証表示を残さずログイン画面へ戻す。
     } finally {
         drawer.value = false;
         await router.push({ name: "Login" });

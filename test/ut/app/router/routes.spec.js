@@ -8,7 +8,7 @@ describe("Vue routes", () => {
   it("会員とTodoのIDをパス区切り付きで受け取る", () => {
     expect(findRoute("MemberDetail").path).toBe("/member/detail/:id?");
     expect(findRoute("MemberCancel").path).toBe("/member/cancel/:id");
-    expect(findRoute("TodoDetail").path).toBe("/todo/detail/:id?");
+    expect(findRoute("TodoDetail").path).toBe("/todo/detail/:id");
   });
 
   it("未ログインでも会員新規登録画面を開ける", () => {
@@ -22,6 +22,17 @@ describe("Vue routes", () => {
   it("試作Dashboardルートを公開しない", () => {
     expect(findRoute("DashBoard")).toBeUndefined();
     expect(findRoute("TodoCalendar").path).toBe("/todo/calendar");
+  });
+
+  it("Todo画面にBackendと一致するpermissionメタデータを設定する", () => {
+    expect(findRoute("TodoList").meta.requiredAnyPermissions).toEqual([
+      "TASK_READ_ALL",
+      "TASK_READ_OWN",
+    ]);
+    expect(findRoute("TodoRegister").meta.requiredAnyPermissions).toEqual([
+      "TASK_WRITE_ALL",
+      "TASK_WRITE_OWN",
+    ]);
   });
 
   it("各画面をルート単位で遅延読み込みする", () => {

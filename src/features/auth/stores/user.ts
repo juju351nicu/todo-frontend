@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 
 import type {
   LoginRequest,
+  PermissionCode,
   RoleCode,
   SessionUserResponse,
 } from "@/features/auth/types/auth";
@@ -12,7 +13,7 @@ interface UserState {
   username: string | null;
   displayName: string | null;
   roleCodes: RoleCode[];
-  permissionCodes: string[];
+  permissionCodes: PermissionCode[];
   authenticated: boolean;
   sessionChecked: boolean;
 }
@@ -28,22 +29,29 @@ export const useUserStore = defineStore("user", {
     sessionChecked: false,
   }),
   getters: {
-    getRole: (state): number => {
-      if (state.roleCodes.includes("SYSTEM_ADMIN")) {
-        return 0;
-      }
-      if (state.roleCodes.includes("READ_ONLY_ADMIN")) {
-        return 1;
-      }
-      return 2;
-    },
     isAuthenticated: (state): boolean => state.authenticated,
     hasRole:
       (state) =>
       (roleCode: RoleCode): boolean =>
         state.roleCodes.includes(roleCode),
+    /**
+     * 指定したBackend permissionを現在のSession利用者が持つか判定する。
+     * 画面制御を補助するgetterであり、APIの最終認可を代替しない。
+     */
+    hasPermission:
+      (state) =>
+      (permissionCode: PermissionCode): boolean =>
+        state.permissionCodes.includes(permissionCode),
+    /** 指定したBackend permissionのうち1件以上を持つか判定する。 */
+    hasAnyPermission:
+      (state) =>
+      (permissionCodes: readonly PermissionCode[]): boolean =>
+        permissionCodes.some((permissionCode) =>
+          state.permissionCodes.includes(permissionCode)
+        ),
   },
   actions: {
+    /** Session APIの利用者情報を、画面遷移をまたぐ認証状態へ保存する。 */
     setSessionUser(payload: SessionUserResponse): void {
       this.memberId = payload.accountId;
       this.username = payload.username;
@@ -53,6 +61,7 @@ export const useUserStore = defineStore("user", {
       this.authenticated = true;
       this.sessionChecked = true;
     },
+    /** Frontendが保持する認証表示情報を破棄する。HttpSessionの破棄はlogout APIが担当する。 */
     clearSession(): void {
       this.memberId = null;
       this.username = null;
@@ -61,6 +70,12 @@ export const useUserStore = defineStore("user", {
       this.permissionCodes = [];
       this.authenticated = false;
     },
+    /**
+     * BackendのHttpSessionから認証状態を復元する。
+     *
+     * @param force 既に確認済みでもSession APIを再実行する場合はtrue
+     * @returns 認証済みの場合はtrue、未認証または確認失敗の場合はfalse
+     */
     async restoreSession(force = false): Promise<boolean> {
       if (this.sessionChecked && !force) {
         return this.authenticated;
@@ -80,6 +95,7 @@ export const useUserStore = defineStore("user", {
         this.sessionChecked = true;
       }
     },
+    /** ローカルログイン成功後にSession利用者を再取得する。 */
     async authLogin(payload: LoginRequest): Promise<Response> {
       const response = await AuthApi.login(payload);
       if (response.ok) {
@@ -87,6 +103,7 @@ export const useUserStore = defineStore("user", {
       }
       return response;
     },
+    /** BackendのHttpSessionを無効化し、Frontendの認証表示情報も必ず破棄する。 */
     async logout(): Promise<Response> {
       try {
         return await AuthApi.logout();

@@ -2,9 +2,7 @@
 import AppSideMenu from "@/app/layouts/AppSideMenu.vue";
 import { ref } from "vue";
 
-/** サイドメニューフラグ */
 const drawer = ref<boolean>(false);
-
 </script>
 <template>
   <nav>
@@ -16,5 +14,4 @@ const drawer = ref<boolean>(false);
     <AppSideMenu v-model:drawer="drawer" />
   </nav>
 </template>
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped></style>

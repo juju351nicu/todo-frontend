@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
     findTodoList: vi.fn(),
     setTodoList: vi.fn(),
   },
+  userStore: {
+    hasPermission: vi.fn(),
+    memberId: 5,
+  },
 }));
 
 vi.mock("vue-router", () => ({
@@ -19,6 +23,10 @@ vi.mock("vue-router", () => ({
 
 vi.mock("@/features/task/stores/task", () => ({
   useTodoStore: () => mocks.todoStore,
+}));
+
+vi.mock("@/features/auth/stores/user", () => ({
+  useUserStore: () => mocks.userStore,
 }));
 
 const todo = {
@@ -32,6 +40,10 @@ describe("useTodoListPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
+    mocks.userStore.memberId = 5;
+    mocks.userStore.hasPermission.mockImplementation(
+      (permissionCode) => permissionCode === "TASK_WRITE_ALL"
+    );
   });
 
   it("初期条件でTodo一覧を取得してStoreにも保存する", async () => {
@@ -93,6 +105,32 @@ describe("useTodoListPage", () => {
 
     expect(mocks.todoStore.completeTodo).toHaveBeenCalledWith(42);
     expect(item.doneFlag).toBe(true);
+  });
+
+  it("更新permissionがない場合は完了APIを呼ばない", async () => {
+    mocks.userStore.hasPermission.mockReturnValue(false);
+    const page = useTodoListPage();
+    const item = { ...todo };
+
+    await page.completeTodo(item);
+
+    expect(mocks.todoStore.completeTodo).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual([
+      "Todoを更新するpermissionがありません。",
+    ]);
+  });
+
+  it("本人更新permissionでは他人のTodoを完了できない", async () => {
+    mocks.userStore.hasPermission.mockImplementation(
+      (permissionCode) => permissionCode === "TASK_WRITE_OWN"
+    );
+    const page = useTodoListPage();
+    const item = { ...todo, userId: 8 };
+
+    await page.completeTodo(item);
+
+    expect(page.canWriteTodo(item)).toBe(false);
+    expect(mocks.todoStore.completeTodo).not.toHaveBeenCalled();
   });
 
   it("Todo詳細画面へTodo ID付きで移動する", () => {

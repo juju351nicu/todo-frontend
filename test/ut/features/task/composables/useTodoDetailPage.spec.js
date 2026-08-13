@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
     upsertTodoInfo: vi.fn(),
   },
   userStore: {
-    getRole: 1,
+    hasPermission: vi.fn(),
+    memberId: 5,
   },
 }));
 
@@ -26,7 +27,10 @@ describe("useTodoDetailPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.todoStore.isLoading = false;
-    mocks.userStore.getRole = 1;
+    mocks.userStore.memberId = 5;
+    mocks.userStore.hasPermission.mockImplementation(
+      (permissionCode) => permissionCode === "TASK_WRITE_ALL"
+    );
   });
 
   it("Todo IDに対応する詳細をフォームへ設定する", async () => {
@@ -117,13 +121,48 @@ describe("useTodoDetailPage", () => {
       title: "新規Todo",
       detail: "登録する",
       done_flag: "0",
-      role: 1,
       priority: 2,
       version: 0,
       user_id: 5,
     });
     expect(page.successMessage.value).toBe("Todoを登録しました。");
     expect(page.todoForm.todoId).toBe(0);
+  });
+
+  it("更新permissionがない場合は確認画面と保存APIを開かない", async () => {
+    mocks.userStore.hasPermission.mockReturnValue(false);
+    const page = useTodoDetailPage(ref(0));
+
+    page.showConfirm();
+    await page.confirmSubmit();
+
+    expect(page.isShowConfirm.value).toBe(false);
+    expect(mocks.todoStore.upsertTodoInfo).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual([
+      "Todoを更新するpermissionがありません。",
+    ]);
+  });
+
+  it("本人更新permissionでは他人が所有するTodoを参照専用にする", async () => {
+    mocks.userStore.hasPermission.mockImplementation(
+      (permissionCode) => permissionCode === "TASK_WRITE_OWN"
+    );
+    mocks.todoStore.findTodoDetail.mockResolvedValue({
+      todo_id: 42,
+      date_from: "2026-08-08",
+      date_to: "2026-08-31",
+      title: "他人のTodo",
+      detail: "参照だけ許可された組み合わせ",
+      done_flag: "0",
+      user_id: 8,
+      priority: 2,
+      version: 0,
+    });
+
+    const page = useTodoDetailPage(ref(42));
+    await vi.waitFor(() => expect(page.todoForm.todoId).toBe(42));
+
+    expect(page.canWriteTodo.value).toBe(false);
   });
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {

@@ -101,6 +101,8 @@ src/
 
 2026-08-11にBackendと同時起動してブラウザ回帰確認を行い、ローカルログイン、再読み込み後のSession復元、会員一覧・詳細、Todo一覧・詳細・カレンダー、問い合わせフォーム、ログアウト後の保護ルート拒否が正常であることを確認した。詳細は[ブラウザ回帰チェックリスト](browser-regression-checklist.md)に記録する。Frontendの構成移行と画面表示回帰は一区切りとし、次は管理者向け権限管理API・画面と監査ログ基盤の設計へ進む。
 
+2026-08-14にTodo画面をBackendのPrincipal認可へ追従させた。Session APIの`permissionCodes`を型付きでStoreへ保持し、Todo一覧・詳細・カレンダーは`TASK_READ_ALL`または`TASK_READ_OWN`、新規登録は`TASK_WRITE_ALL`または`TASK_WRITE_OWN`をRouterメタデータで事前検査する。メニュー、完了ボタン、登録更新ボタンも同じpermissionで表示を制御し、読取専用利用者の詳細フォームはreadonlyにする。旧数値`role`をTodo Requestと画面判定から削除し、新規Todoの所有者初期値は固定会員IDではなく0としてBackendに認証主体の解決を委ねる。Frontendの制御は利用者向け表示のためであり、最終認可はBackendの`@PreAuthorize`と`TaskAuthorizationLogic`が行う。
+
 管理機能は`src/features/administration`へ追加する。最初はアカウント一覧とロール編集を同じ`useAccountAdministrationPage`で扱い、監査ログ一覧だけを`useAuthorizationAuditListPage`へ分ける。Backend APIとOpenAPI定義が安定してから画面を追加し、Routerの表示制御だけに依存せずBackend permissionで認可する。
 
 ## 変更時の確認

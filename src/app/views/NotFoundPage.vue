@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 
+import { resolveAuthenticatedHomeRouteName } from "@/app/router/authorization";
+import { useUserStore } from "@/features/auth/stores/user";
+
 const router = useRouter();
+const userStore = useUserStore();
 /**
- * トップページに戻る
+ * 現在のpermissionで参照できる既定画面へ戻る。
  */
 const goHome = (): void => {
-    void router.push({ name: "TodoCalendar" });
+    const routeName = userStore.isAuthenticated
+        ? resolveAuthenticatedHomeRouteName(userStore.permissionCodes)
+        : "Login";
+    void router.push({ name: routeName });
 };
 </script>
 <template>

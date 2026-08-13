@@ -1,7 +1,6 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
-import type { AccountRole } from "@/features/member/types/member";
 import { useTodoStore } from "@/features/task/stores/task";
 import {
   buildTodoUpsertRequest,
@@ -37,10 +36,14 @@ const DONE_FLAG_ITEMS: DoneFlagItem[] = [
 ];
 
 const USER_ITEMS: UserItem[] = [
+  { userObjLabel: "自分", userObjId: 0 },
   { userObjLabel: "全員", userObjId: -1 },
 ];
 
-/** Todo詳細画面の状態と操作を提供する。 */
+/**
+ * Todo詳細・登録画面の取得、入力、確認および保存操作を提供する。
+ * `TASK_WRITE_ALL`だけが所有者指定UIを利用でき、本人更新permissionではBackendが所有者を固定する。
+ */
 export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => {
   const todoStore = useTodoStore();
   const userStore = useUserStore();
@@ -56,8 +59,21 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     const value = todoId.value ?? 0;
     return Number.isInteger(value) && value > 0 ? value : 0;
   });
-  const role = computed<AccountRole>(() => userStore.getRole as AccountRole);
   const isLoading = computed(() => todoStore.isLoading || isSubmitting.value);
+  const canAssignTodoOwner = computed(() =>
+    userStore.hasPermission("TASK_WRITE_ALL")
+  );
+  const canWriteTodo = computed(() => {
+    if (userStore.hasPermission("TASK_WRITE_ALL")) {
+      return true;
+    }
+    if (!userStore.hasPermission("TASK_WRITE_OWN")) {
+      return false;
+    }
+    return (
+      normalizedTodoId.value === 0 || todoForm.userId === userStore.memberId
+    );
+  });
   const fullName = computed(() =>
     todoForm.userId > 0 ? `ユーザーID: ${todoForm.userId}` : "対象ユーザーなし"
   );
@@ -95,6 +111,10 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   };
 
   const showConfirm = (): void => {
+    if (!canWriteTodo.value) {
+      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      return;
+    }
     isShowConfirm.value = true;
   };
 
@@ -107,8 +127,12 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     closeConfirm();
     errorMessages.value = [];
     successMessage.value = "";
+    if (!canWriteTodo.value) {
+      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      return;
+    }
     const isUpdate = todoForm.todoId > 0;
-    const payload = buildTodoUpsertRequest(todoForm, role.value);
+    const payload = buildTodoUpsertRequest(todoForm);
 
     isSubmitting.value = true;
     try {
@@ -144,6 +168,8 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   );
 
   return {
+    canAssignTodoOwner,
+    canWriteTodo,
     clearForm,
     closeConfirm,
     confirmSubmit,
@@ -155,7 +181,6 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     isShowConfirm,
     loadError,
     priorityItems: PRIORITY_ITEMS,
-    role,
     showConfirm,
     successMessage,
     todoForm,

@@ -35,10 +35,6 @@ onBeforeMount(() => {
             <v-text-field v-model="searchTitle" color="purple darken-2" placeholder="タイトル">
             </v-text-field>
           </v-col>
-          <!--  <v-col>
-                        <input type="text" name="date_from" placeholder="日付(date_from)" />
-                        <input type="text" name="date_to" placeholder="日付(date_to)" />
-                    </v-col> -->
           <v-col>
             <v-checkbox v-model="selectedDoneFlag" value="0" label="未完了のみ">
             </v-checkbox>
