@@ -3,11 +3,13 @@ import { onBeforeMount } from "vue";
 import Draggable from "vuedraggable";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
 import type { TaskPriority } from "@/features/project/types/project";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
+  applyProjectDetail,
   archiveTask,
   board,
   canArchiveTask,
@@ -81,6 +83,11 @@ onBeforeMount(initialize);
       >
         {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
       </v-chip>
+      <ProjectSettingsDialog
+        v-if="project"
+        :project="project"
+        @project-updated="applyProjectDetail"
+      />
       <v-btn
         v-if="canCreateTask"
         color="primary"

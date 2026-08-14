@@ -7,7 +7,12 @@ import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
 vi.mock("@/shared/api/httpClient", () => ({
-  default: { getRequest: vi.fn() },
+  default: {
+    deleteRequest: vi.fn(),
+    getRequest: vi.fn(),
+    postRequest: vi.fn(),
+    putRequest: vi.fn(),
+  },
 }));
 
 describe("Project API", () => {
@@ -63,5 +68,64 @@ describe("Project API", () => {
       errorResponse: null,
     });
     await promise.catch((error) => expect(error).toBeInstanceOf(ProjectApiError));
+  });
+
+  it("Project表示情報とarchive状態をPUT契約で更新する", async () => {
+    const request = {
+      name: "更新Project",
+      description: "説明",
+      status: "ARCHIVED",
+      version: 3,
+    };
+    const updated = { projectId: 7, ...request, version: 4 };
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(updated),
+    });
+
+    await expect(ProjectApi.updateProject(7, request)).resolves.toEqual(updated);
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7",
+      request
+    );
+  });
+
+  it("Project memberの追加とrole変更をBackend DTO形式で送信する", async () => {
+    const detail = { projectId: 7, members: [] };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(detail),
+    });
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(detail),
+    });
+
+    await ProjectApi.addProjectMember(7, {
+      accountId: 21,
+      projectRole: "MEMBER",
+    });
+    await ProjectApi.updateProjectMember(7, 21, {
+      projectRole: "MANAGER",
+      version: 2,
+    });
+
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/members",
+      { accountId: 21, projectRole: "MEMBER" }
+    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/members/21",
+      { projectRole: "MANAGER", version: 2 }
+    );
+  });
+
+  it("Project member除外ではmember versionをquery parameterへ設定して204を本文なしで扱う", async () => {
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await expect(ProjectApi.removeProjectMember(7, 21, 4)).resolves.toBeUndefined();
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/members/21?version=4"
+    );
   });
 });

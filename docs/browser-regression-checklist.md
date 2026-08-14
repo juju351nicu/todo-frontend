@@ -37,6 +37,10 @@ npm run dev -- --host localhost
 | 12 | Taskカードを開く | Task詳細がDialogへ表示され、更新可能な利用者には保存操作が表示される |
 | 13 | Taskの移動操作を確認する | 移動可能な利用者にはカード右上の移動ハンドルが表示され、dragと方向キーの操作案内を確認できる |
 | 14 | Taskのarchive操作を確認する | 許可された利用者にだけarchive操作が表示され、確認Dialogからキャンセルできる |
+| 15 | OWNERでProject設定を開く | 基本情報とmember一覧、各versionが表示される |
+| 16 | Project名またはmember roleを更新する | 成功通知とBackend確定後の値が表示され、再読込後も維持される |
+| 17 | Project memberを追加・除外する | ACTIVEなアカウントだけを追加でき、最後のOWNERは降格・除外できない |
+| 18 | 検証用Projectをarchiveする | 確認後に参照専用へ切り替わり、Taskとmemberの更新操作が表示されない |
 
 ## 2026-08-11 実施結果
 

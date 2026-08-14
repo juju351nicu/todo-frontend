@@ -176,6 +176,17 @@ export const useTaskBoardPage = () => {
     { title: "低", value: 3 },
   ];
 
+  /** Project管理APIの確定ResponseをBoard見出し・認可・担当者候補へ反映する。 */
+  const applyProjectDetail = (updatedProject: ProjectDetail): void => {
+    project.value = updatedProject;
+    if (board.value !== null) {
+      board.value = {
+        ...board.value,
+        projectName: updatedProject.name,
+      };
+    }
+  };
+
   /** Project詳細とBoardを同じ画面スナップショットとして取得する。 */
   const loadBoardData = async (): Promise<void> => {
     if (projectId.value === null) {
@@ -658,6 +669,7 @@ export const useTaskBoardPage = () => {
   };
 
   return {
+    applyProjectDetail,
     board,
     archiveTask,
     canArchiveTask,

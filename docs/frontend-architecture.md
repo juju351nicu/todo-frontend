@@ -93,9 +93,11 @@ src/
 - `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
 - `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
 - `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
-- `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照API
+- `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
 - `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
+- `src/features/project/composables/useProjectSettingsDialog.ts`: Project基本情報、archive、member追加・role変更・除外、409再取得
+- `src/features/project/components/ProjectSettingsDialog.vue`: Task Boardから開くProject設定・member管理Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
@@ -120,6 +122,8 @@ src/
 Task archiveはTask詳細Dialogから確認Dialogを経由して実行し、`TASK_ARCHIVE`とProject roleの両方で操作表示を制御する。Task詳細取得時点のversionをDELETE APIへ渡し、成功後はBackendからBoardを再取得して対象Taskが除外されたことを確定する。409競合では古いTask詳細を閉じて最新Boardを表示する。物理削除やFrontend配列だけの削除は行わず、Backendの論理archiveを唯一の確定状態とする。
 
 Task移動はpointer操作だけに限定せず、移動ハンドルへフォーカスした方向キー操作にも対応する。上下キーは同じ列で1件移動し、左右キーは隣接列の末尾へ移動する。列または並び順の端ではAPIを呼ばない。keyboard操作もdragと同じ`TASK_MOVE`、Project role、version、前後Task ID、失敗復元、409再取得処理を使用し、Frontend独自の確定状態を作らない。
+
+Project設定とmember管理はTask Boardから開く1つのDialogと`useProjectSettingsDialog`へまとめる。Project名・説明の更新、ACTIVEからARCHIVEDへの変更、member追加・role変更・除外を扱い、操作ごとの小さなcomposableへは分割しない。Project／memberのversionをBackendへ送り、409では古いフォームを確定せず最新Project詳細を再取得する。最後のOWNERの降格・除外は画面でも抑止して理由を表示するが、同時操作を含む最終判定はBackendのtransactionへ委ねる。自己除外は204 Responseを確定結果として扱い、削除後に取得不能となるProject詳細を要求せずProject一覧へ遷移する。archive成功後は親BoardのProject詳細をResponseで差し替え、Task操作を参照専用へ切り替える。
 
 ## 変更時の確認
 

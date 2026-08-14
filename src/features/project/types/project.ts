@@ -53,6 +53,26 @@ export interface ProjectDetail {
   taskStatuses: TaskStatus[];
 }
 
+/** Projectの表示情報または状態を現在version付きで更新するRequest。 */
+export interface ProjectUpdateRequest {
+  name: string;
+  description: string | null;
+  status: ProjectStatus;
+  version: number;
+}
+
+/** 有効なアカウントをProject memberとして追加するRequest。 */
+export interface ProjectMemberCreateRequest {
+  accountId: number;
+  projectRole: ProjectRole;
+}
+
+/** Project memberのresource roleを現在version付きで変更するRequest。 */
+export interface ProjectMemberUpdateRequest {
+  projectRole: ProjectRole;
+  version: number;
+}
+
 /** Project内Taskの優先度。数字が小さいほど優先度が高い。 */
 export type TaskPriority = 1 | 2 | 3;
 
