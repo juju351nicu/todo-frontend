@@ -30,6 +30,7 @@ const {
   isReadonly,
   isSaving,
   memberOptions,
+  moveTaskByKeyboard,
   openArchiveConfirm,
   openTaskCreator,
   openTaskEditor,
@@ -54,7 +55,9 @@ onBeforeMount(initialize);
 
 <template>
   <AppHeader />
-  <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving || isArchiving" />
+  <LoadingIndicator
+    v-if="isLoading || isLoadingTask || isMoving || isArchiving"
+  />
   <v-container fluid class="pa-6 board-page">
     <div class="d-flex align-center flex-wrap ga-3 mb-4">
       <v-btn
@@ -98,7 +101,7 @@ onBeforeMount(initialize);
       アーカイブ済みProjectのため、Taskは参照のみ可能です。
     </v-alert>
     <v-alert v-else-if="canMoveTask" type="info" variant="tonal" class="mb-4">
-      Task右上の移動アイコンをドラッグすると、列移動と列内の並び替えができます。
+      Task右上の移動アイコンをドラッグするか、アイコンへフォーカスして方向キーを押すと移動できます。上下キーは列内移動、左右キーは隣の列の末尾への移動です。
     </v-alert>
 
     <div v-if="board" class="board-columns">
@@ -155,8 +158,14 @@ onBeforeMount(initialize);
                   size="x-small"
                   variant="text"
                   :disabled="isMoving"
-                  :aria-label="`${task.title}を移動`"
+                  :aria-label="`${task.title}を移動。上下キーで列内移動、左右キーで列移動`"
+                  aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
+                  title="方向キー: 上下で列内移動、左右で列移動"
                   @click.stop
+                  @keydown.up.stop.prevent="moveTaskByKeyboard(task.taskId, 'UP')"
+                  @keydown.down.stop.prevent="moveTaskByKeyboard(task.taskId, 'DOWN')"
+                  @keydown.left.stop.prevent="moveTaskByKeyboard(task.taskId, 'LEFT')"
+                  @keydown.right.stop.prevent="moveTaskByKeyboard(task.taskId, 'RIGHT')"
                 />
               </v-card-title>
               <v-card-text class="pb-2">

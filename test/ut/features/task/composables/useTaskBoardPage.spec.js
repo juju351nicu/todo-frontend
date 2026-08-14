@@ -110,6 +110,14 @@ const destinationTask = {
   version: 2,
 };
 
+const precedingTask = {
+  ...task,
+  taskId: 30,
+  title: "直前Task",
+  position: 512,
+  version: 3,
+};
+
 const movableBoard = {
   projectId: 5,
   projectName: "開発Project",
@@ -123,6 +131,23 @@ const movableBoard = {
       completed: false,
       version: 1,
       tasks: [destinationTask],
+    },
+  ],
+};
+
+const keyboardBoard = {
+  ...movableBoard,
+  columns: [
+    { ...project.taskStatuses[0], tasks: [precedingTask, task] },
+    movableBoard.columns[1],
+    {
+      taskStatusId: 13,
+      statusCode: "DONE",
+      name: "完了",
+      position: 3072,
+      completed: true,
+      version: 1,
+      tasks: [],
     },
   ],
 };
@@ -353,6 +378,87 @@ describe("useTaskBoardPage", () => {
     });
     expect(page.board.value).toEqual(confirmedBoard);
     expect(page.successMessage.value).toBe("Taskを移動しました。");
+  });
+
+  it.each([
+    ["上キー", 31, "UP", 11, null, 30, 4],
+    ["下キー", 30, "DOWN", 11, 31, null, 3],
+    ["右キー", 31, "RIGHT", 12, 40, null, 4],
+    ["左キー", 40, "LEFT", 11, 31, null, 2],
+  ])(
+    "%sでTaskの前後関係を計算して移動APIへ送信する",
+    async (
+      _keyName,
+      taskId,
+      direction,
+      destinationStatusId,
+      previousTaskId,
+      nextTaskId,
+      version
+    ) => {
+      mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+      mocks.projectApi.getTaskBoard.mockResolvedValue(
+        structuredClone(keyboardBoard)
+      );
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.moveTaskByKeyboard(taskId, direction);
+
+      expect(mocks.projectTaskApi.moveTask).toHaveBeenCalledWith(5, taskId, {
+        destinationStatusId,
+        previousTaskId,
+        nextTaskId,
+        version,
+      });
+      expect(page.successMessage.value).toBe("Taskを移動しました。");
+    }
+  );
+
+  it("先頭Taskの上・左方向では移動APIを送信しない", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.moveTaskByKeyboard(30, "UP");
+    await page.moveTaskByKeyboard(30, "LEFT");
+
+    expect(mocks.projectTaskApi.moveTask).not.toHaveBeenCalled();
+  });
+
+  it("MEMBERの方向キー操作では移動APIを送信しない", async () => {
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.moveTaskByKeyboard(31, "RIGHT");
+
+    expect(mocks.projectTaskApi.moveTask).not.toHaveBeenCalled();
+  });
+
+  it("方向キー移動の409競合ではBackendの最新Boardを再取得する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard
+      .mockResolvedValueOnce(structuredClone(keyboardBoard))
+      .mockResolvedValueOnce(structuredClone(board));
+    mocks.projectTaskApi.moveTask.mockRejectedValue(
+      new ProjectTaskApiError(409, {
+        fieldErrors: [
+          { field: "version", message: "移動中にTaskが更新されました。" },
+        ],
+      })
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.moveTaskByKeyboard(31, "RIGHT");
+
+    expect(page.errorMessages.value).toEqual([
+      "移動中にTaskが更新されました。",
+    ]);
+    expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
+    expect(page.board.value).toEqual(board);
   });
 
   it("source列のremoved eventでは移動APIを送信しない", async () => {

@@ -86,6 +86,7 @@ await authStore.restoreSession();
 - `components`はPropsとEmitを中心とし、Backend APIを直接呼ばない。
 - PropsとEmitは型を明示する。boolean Propsの既定値や更新Event等、利用側が誤解しやすい契約にはJSDocを書く。
 - Template内へ複雑な条件式を置かず、意味の分かるcomputedまたはfunctionへ抽出する。
+- drag and drop等のpointer操作だけに業務操作を限定しない。同じ認可・API・競合回復を利用するkeyboard操作を用意し、操作部品へ`aria-label`と`aria-keyshortcuts`を設定する。
 
 ## 認証・API
 
@@ -103,6 +104,7 @@ await authStore.restoreSession();
 - 正常系だけでなく、入力境界、空配列・null、401、403、404、409、通信失敗、二重送信、再読込・rollback等、その処理に実在する失敗条件を優先して検証する。
 - Backend APIのテストでは、HTTP method、path、Request body、query parameterがOpenAPIおよびJava DTOと一致することを確認する。
 - composableのテストでは、表示用stateだけでなく、APIを呼ばない条件、Router遷移、Session破棄、Store更新等の副作用も確認する。
+- dragとkeyboard等、同じAPIを複数の入力方法から利用する場合は、入力方法ごとのRequest組立てと端でAPIを呼ばない境界を検証し、送信・rollback・409回復は共通処理として固定する。
 - テストを通すために実装の型を弱めたり、実際には発生しない保証をmockへ追加したりしない。失敗したテストが仕様誤認や実装不備を示す場合は、原因を修正して回帰テストとして残す。
 - 時刻、乱数、通信、Router、Store等の外部要因はテスト境界で固定し、テストの実行順へ依存させない。`beforeEach`でmockと共有状態を初期化する。
 - DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。

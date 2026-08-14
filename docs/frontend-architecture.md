@@ -97,8 +97,8 @@ src/
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
 - `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
-- `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新API
-- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新、競合回復
+- `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
+- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
@@ -118,6 +118,8 @@ src/
 同日に`vuedraggable 4`を追加し、`TASK_MOVE`専用APIへ列移動と列内並び替えを接続した。Ghost-PDF5と同系統のライブラリだがCDNでは読み込まず、npmとViteでversionを固定してTypeScriptの検査対象にする。ドラッグ開始時にBoardを複製し、移動後の直前・直後Task IDと移動前versionをBackendへ送信する。成功時はFrontend上の仮順序を使い続けず、Backendが再採番して返したBoardへ置き換える。403・接続失敗ではドラッグ前の順序へ戻し、409競合では仮順序を破棄して最新Boardを再取得する。system permissionに加えてProject roleがOWNERまたはMANAGERの利用者だけに移動ハンドルを表示し、MEMBERには表示しない。既存Todo画面は移行期間中の互換機能として残し、Project Taskへデータ移行するまでは削除しない。
 
 Task archiveはTask詳細Dialogから確認Dialogを経由して実行し、`TASK_ARCHIVE`とProject roleの両方で操作表示を制御する。Task詳細取得時点のversionをDELETE APIへ渡し、成功後はBackendからBoardを再取得して対象Taskが除外されたことを確定する。409競合では古いTask詳細を閉じて最新Boardを表示する。物理削除やFrontend配列だけの削除は行わず、Backendの論理archiveを唯一の確定状態とする。
+
+Task移動はpointer操作だけに限定せず、移動ハンドルへフォーカスした方向キー操作にも対応する。上下キーは同じ列で1件移動し、左右キーは隣接列の末尾へ移動する。列または並び順の端ではAPIを呼ばない。keyboard操作もdragと同じ`TASK_MOVE`、Project role、version、前後Task ID、失敗復元、409再取得処理を使用し、Frontend独自の確定状態を作らない。
 
 ## 変更時の確認
 

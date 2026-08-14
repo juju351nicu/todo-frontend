@@ -46,6 +46,9 @@ interface TaskDragChangeEvent {
   removed?: TaskDragChangeDetail;
 }
 
+/** キーボードから指定できるTaskの移動方向。 */
+export type TaskMoveDirection = "UP" | "DOWN" | "LEFT" | "RIGHT";
+
 /** 編集前の値を共有しない、新しいTaskフォームを作る。 */
 const createEmptyTaskForm = (): TaskForm => ({
   taskId: null,
@@ -440,10 +443,63 @@ export const useTaskBoardPage = () => {
     }
   };
 
-  /** 退避したBoardを複製して復元し、失敗した楽観表示を残さない。 */
-  const restoreBoardSnapshot = (): void => {
-    if (dragSnapshot.value !== null) {
-      board.value = cloneTaskBoard(dragSnapshot.value);
+  /** 指定されたBoardを複製して復元し、失敗した楽観表示を残さない。 */
+  const restoreBoardSnapshot = (snapshot: TaskBoard | null): void => {
+    if (snapshot !== null) {
+      board.value = cloneTaskBoard(snapshot);
+    }
+  };
+
+  /**
+   * dragとkeyboardで共通のTask移動APIを実行し、失敗時の復元と競合回復を行う。
+   *
+   * @param movedTask 移動対象Task
+   * @param destinationStatusId 移動先列ID
+   * @param previousTask 移動後に直前となるTask
+   * @param nextTask 移動後に直後となるTask
+   * @param snapshot API失敗時に復元する移動前Board
+   */
+  const executeTaskMove = async (
+    movedTask: TaskCard,
+    destinationStatusId: number,
+    previousTask: TaskCard | null,
+    nextTask: TaskCard | null,
+    snapshot: TaskBoard | null
+  ): Promise<void> => {
+    if (
+      !canMoveTask.value ||
+      isMoving.value ||
+      projectId.value === null ||
+      board.value === null
+    ) {
+      restoreBoardSnapshot(snapshot);
+      return;
+    }
+
+    isMoving.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      board.value = await ProjectTaskApi.moveTask(
+        projectId.value,
+        movedTask.taskId,
+        {
+          destinationStatusId,
+          previousTaskId: previousTask?.taskId ?? null,
+          nextTaskId: nextTask?.taskId ?? null,
+          version: movedTask.version,
+        }
+      );
+      successMessage.value = "Taskを移動しました。";
+    } catch (error: unknown) {
+      restoreBoardSnapshot(snapshot);
+      await handleApiError(error, "Taskを移動できませんでした。");
+      if (error instanceof ProjectTaskApiError && error.status === 409) {
+        await reloadBoardAfterConflict();
+      }
+    } finally {
+      isMoving.value = false;
+      dragSnapshot.value = null;
     }
   };
 
@@ -465,7 +521,7 @@ export const useTaskBoardPage = () => {
       projectId.value === null ||
       board.value === null
     ) {
-      restoreBoardSnapshot();
+      restoreBoardSnapshot(dragSnapshot.value);
       return;
     }
     const destinationColumn = board.value.columns.find(
@@ -479,38 +535,89 @@ export const useTaskBoardPage = () => {
       movedTaskIndex === undefined ||
       movedTaskIndex < 0
     ) {
-      restoreBoardSnapshot();
+      restoreBoardSnapshot(dragSnapshot.value);
       errorMessages.value = ["Taskの移動先を特定できませんでした。"];
       return;
     }
 
     const previousTask = destinationColumn.tasks[movedTaskIndex - 1] ?? null;
     const nextTask = destinationColumn.tasks[movedTaskIndex + 1] ?? null;
-    isMoving.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
-    try {
-      board.value = await ProjectTaskApi.moveTask(
-        projectId.value,
-        change.element.taskId,
-        {
-          destinationStatusId,
-          previousTaskId: previousTask?.taskId ?? null,
-          nextTaskId: nextTask?.taskId ?? null,
-          version: change.element.version,
-        }
-      );
-      successMessage.value = "Taskを移動しました。";
-    } catch (error: unknown) {
-      restoreBoardSnapshot();
-      await handleApiError(error, "Taskを移動できませんでした。");
-      if (error instanceof ProjectTaskApiError && error.status === 409) {
-        await reloadBoardAfterConflict();
-      }
-    } finally {
-      isMoving.value = false;
-      dragSnapshot.value = null;
+    await executeTaskMove(
+      change.element,
+      destinationStatusId,
+      previousTask,
+      nextTask,
+      dragSnapshot.value
+    );
+  };
+
+  /**
+   * 方向キーから移動先と前後Taskを解決し、dragと同じ移動処理を実行する。
+   * 上下は同じ列で1件移動し、左右は隣接列の末尾へ移動する。
+   *
+   * @param taskId 移動対象Task ID
+   * @param direction 移動方向
+   */
+  const moveTaskByKeyboard = async (
+    taskId: number,
+    direction: TaskMoveDirection
+  ): Promise<void> => {
+    if (!canMoveTask.value || isMoving.value || board.value === null) {
+      return;
     }
+
+    const sourceColumnIndex = board.value.columns.findIndex((column) =>
+      column.tasks.some((task) => task.taskId === taskId)
+    );
+    const sourceColumn = board.value.columns[sourceColumnIndex];
+    const sourceTaskIndex = sourceColumn?.tasks.findIndex(
+      (task) => task.taskId === taskId
+    );
+    if (
+      sourceColumn === undefined ||
+      sourceTaskIndex === undefined ||
+      sourceTaskIndex < 0
+    ) {
+      errorMessages.value = ["Taskの現在位置を特定できませんでした。"];
+      return;
+    }
+
+    const movedTask = sourceColumn.tasks[sourceTaskIndex];
+    const isVertical = direction === "UP" || direction === "DOWN";
+    const destinationColumnIndex = isVertical
+      ? sourceColumnIndex
+      : sourceColumnIndex + (direction === "LEFT" ? -1 : 1);
+    const destinationColumn = board.value.columns[destinationColumnIndex];
+    if (movedTask === undefined || destinationColumn === undefined) {
+      return;
+    }
+
+    const destinationTasks = [...destinationColumn.tasks];
+    let destinationTaskIndex: number;
+    if (isVertical) {
+      destinationTaskIndex =
+        sourceTaskIndex + (direction === "UP" ? -1 : 1);
+      if (
+        destinationTaskIndex < 0 ||
+        destinationTaskIndex >= sourceColumn.tasks.length
+      ) {
+        return;
+      }
+      destinationTasks.splice(sourceTaskIndex, 1);
+      destinationTasks.splice(destinationTaskIndex, 0, movedTask);
+    } else {
+      destinationTaskIndex = destinationTasks.length;
+      destinationTasks.push(movedTask);
+    }
+
+    const snapshot = cloneTaskBoard(board.value);
+    await executeTaskMove(
+      movedTask,
+      destinationColumn.taskStatusId,
+      destinationTasks[destinationTaskIndex - 1] ?? null,
+      destinationTasks[destinationTaskIndex + 1] ?? null,
+      snapshot
+    );
   };
 
   /** 競合後に最新Boardを取得し、古いversionを画面へ残さない。 */
@@ -573,6 +680,7 @@ export const useTaskBoardPage = () => {
     isReadonly,
     isSaving,
     memberOptions,
+    moveTaskByKeyboard,
     openArchiveConfirm,
     openTaskCreator,
     openTaskEditor,
