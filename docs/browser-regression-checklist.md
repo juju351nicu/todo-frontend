@@ -64,3 +64,19 @@ Taskのarchive操作追加後に、`user01`でログインしてProject一覧と
 - 未対応Vuetify部品の`v-empty-state`がProject一覧で警告を出していたため、既存の`v-sheet`、`v-icon`、見出し、案内文で構成する空状態へ変更した。変更後のProject一覧・Board・Dialog操作ではブラウザの`warning`、`error`は0件だった。
 
 既存DBを保持するため、ドラッグ確定とarchive実行はこの表示回帰では行っていない。列移動・列内並び替え・archive APIの成功、権限拒否、409競合、二重送信防止はJUnitまたはVitestで検証する。
+
+## 2026-08-14 専用fixtureによる更新回帰結果
+
+Backendの`scripts/browser-regression`にある`BROWSER-REGRESSION`専用fixtureを使用し、通常のローカルProject・Todoから分離して更新操作を確認した。
+
+- `user01`でログインし、`Browser Regression`の標準3列とTask 3件を表示した。
+- `Browser Move Target`の移動ハンドルへ右方向キーを入力し、成功通知と「Todo」2件・「進行中」1件への更新を確認した。
+- 再読み込み後も`Browser Move Target`が「進行中」列に残り、Backendへ移動結果が永続化されていることを確認した。
+- `Browser Archive Target`を編集Dialogから開き、対象名と注意事項を表示する確認Dialogを経由してarchiveした。
+- archive成功通知の後、再読み込みしても`Browser Archive Target`が表示されず、「Todo」が1件になっていることを確認した。
+- 安定起動後の新規検証タブではブラウザの`warning`、`error`は0件だった。
+- 検証後に専用fixtureのcleanup SQLを実DBで実行し、通常のローカルデータだけへ戻した。
+
+Vite開発サーバーの初回cold startでは、Vuetify依存関係の事前bundle更新と同時にカレンダーへ遷移したため、
+動的importの一時的な失敗が1回記録された。依存関係の最適化完了後は同じ画面・Board操作で再発せず、
+アプリケーションのAPIエラーやproduction buildの不具合ではないことを切り分けた。
