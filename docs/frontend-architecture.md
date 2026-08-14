@@ -2,7 +2,7 @@
 
 ## 方針
 
-Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`task`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、テスト、ビルドを成功させてから次へ進む。
+Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`project`、`task`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、テスト、ビルドを成功させてから次へ進む。
 
 タイピングゲームのcomposable構成は参考にするが、業務画面では最初から細分化しない。画面の状態と操作を`useXxxPage`へまとめ、検索、ページング、フォーム等が独立して再利用できる場合だけ追加分割する。
 
@@ -23,6 +23,7 @@ src/
 │   │   ├── types/
 │   │   └── views/
 │   ├── member/
+│   ├── project/
 │   ├── task/
 │   ├── inquiry/
 │   └── administration/
@@ -92,6 +93,13 @@ src/
 - `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
 - `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
 - `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
+- `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照API
+- `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
+- `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
+- `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
+- `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新API
+- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新、競合回復
+- `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -104,6 +112,8 @@ src/
 2026-08-14にTodo画面をBackendのPrincipal認可へ追従させた。Session APIの`permissionCodes`を型付きでStoreへ保持し、Todo一覧・詳細・カレンダーは`TASK_READ_ALL`または`TASK_READ_OWN`、新規登録は`TASK_WRITE_ALL`または`TASK_WRITE_OWN`をRouterメタデータで事前検査する。メニュー、完了ボタン、登録更新ボタンも同じpermissionで表示を制御し、読取専用利用者の詳細フォームはreadonlyにする。旧数値`role`をTodo Requestと画面判定から削除し、新規Todoの所有者初期値は固定会員IDではなく0としてBackendに認証主体の解決を委ねる。Frontendの制御は利用者向け表示のためであり、最終認可はBackendの`@PreAuthorize`と`TaskAuthorizationLogic`が行う。
 
 管理機能は`src/features/administration`へ追加する。最初はアカウント一覧とロール編集を同じ`useAccountAdministrationPage`で扱い、監査ログ一覧だけを`useAuthorizationAuditListPage`へ分ける。Backend APIとOpenAPI定義が安定してから画面を追加し、Routerの表示制御だけに依存せずBackend permissionで認可する。
+
+2026-08-14にBacklog風MVPのFrontend入口として、Project一覧とProject Boardを追加した。Project一覧は`PROJECT_READ`、Boardは`TASK_READ`をRouterの事前案内に使用する。BoardではBackendから返された標準列とTaskカードを表示し、`TASK_CREATE`または`TASK_UPDATE`を持つ利用者だけがTask Dialogを保存できる。編集開始時はTask詳細APIから最新versionを取得し、409競合時はDialogを閉じて最新Boardを再取得する。列変更は更新APIへ混在させず、次の作業単位で`TASK_MOVE`専用APIとドラッグ操作を接続する。既存Todo画面は移行期間中の互換機能として残し、Project Taskへデータ移行するまでは削除しない。
 
 ## 変更時の確認
 

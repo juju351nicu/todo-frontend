@@ -35,6 +35,16 @@ describe("Vue routes", () => {
     ]);
   });
 
+  it("Project一覧とBoardをBackendの専用permissionで保護する", () => {
+    const projectList = findRoute("ProjectList");
+    const taskBoard = findRoute("TaskBoard");
+
+    expect(projectList.path).toBe("/projects");
+    expect(projectList.meta.requiredAnyPermissions).toEqual(["PROJECT_READ"]);
+    expect(taskBoard.path).toBe("/projects/:projectId/board");
+    expect(taskBoard.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
+  });
+
   it("アカウント・ロール管理画面をACCOUNT_READで保護する", () => {
     const route = findRoute("AccountAdministration");
 

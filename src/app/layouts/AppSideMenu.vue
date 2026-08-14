@@ -35,6 +35,13 @@ const links = computed<NavigationLink[]>(() => {
         { icon: "mdi-account", text: "アカウント", url: "/member/memberList" },
         { icon: "mdi-account-cancel", text: "退会", url: `/member/cancel/${userStore.memberId}` },
     ];
+    if (userStore.hasPermission("PROJECT_READ")) {
+        values.unshift({
+            icon: "mdi-view-dashboard-outline",
+            text: "Project Board",
+            url: "/projects",
+        });
+    }
     if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
         values.unshift(
             { icon: "mdi-calendar", text: "Todoカレンダー", url: "/todo/calendar" },

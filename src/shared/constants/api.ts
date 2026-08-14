@@ -16,6 +16,7 @@ export const API_PATHS = {
   MEMBER_DELETE: "/api/v1/member/deleteMembers",
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",
   MEMBER_CANCEL: "/api/v1/member/cancel",
+  PROJECTS: "/api/v1/projects",
   TODO_LIST: "/api/v1/todo/todoList",
   TODO_DETAIL: "/api/v1/todo",
   TODO_CALENDAR: "/api/v1/todo/calendar",

@@ -66,6 +66,24 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/projects",
+    name: "ProjectList",
+    component: () => import("@/features/project/views/ProjectListPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["PROJECT_READ"],
+    },
+  },
+  {
+    path: "/projects/:projectId/board",
+    name: "TaskBoard",
+    component: () => import("@/features/task/views/TaskBoardPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["TASK_READ"],
+    },
+  },
+  {
     path: "/todo/calendar",
     name: "TodoCalendar",
     component: () => import("@/features/task/views/TodoCalendarPage.vue"),
