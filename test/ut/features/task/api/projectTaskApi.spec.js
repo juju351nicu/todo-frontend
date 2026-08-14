@@ -76,6 +76,28 @@ describe("Project Task API", () => {
     expect(request).not.toHaveProperty("taskStatusId");
   });
 
+  it("Taskの移動先列・前後Task・versionを位置変更APIへ送信する", async () => {
+    const request = {
+      destinationStatusId: 12,
+      previousTaskId: 40,
+      nextTaskId: 41,
+      version: 4,
+    };
+    const movedBoard = { projectId: 5, projectName: "開発", columns: [] };
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(movedBoard),
+    });
+
+    await expect(ProjectTaskApi.moveTask(5, 31, request)).resolves.toEqual(
+      movedBoard
+    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/5/tasks/31/position",
+      request
+    );
+  });
+
   it("409の項目エラーを競合回復用の例外へ保持する", async () => {
     const errorResponse = {
       fieldErrors: [{ field: "version", message: "他の操作で更新されています。" }],

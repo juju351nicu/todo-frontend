@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   projectTaskApi: {
     createTask: vi.fn(),
     getTask: vi.fn(),
+    moveTask: vi.fn(),
     updateTask: vi.fn(),
   },
   route: { params: { projectId: "5" } },
@@ -94,6 +95,37 @@ const board = {
   columns: [{ ...project.taskStatuses[0], tasks: [task] }],
 };
 
+const ownerProject = {
+  ...project,
+  projectRole: "OWNER",
+  members: [{ ...project.members[0], projectRole: "OWNER" }],
+};
+
+const destinationTask = {
+  ...task,
+  taskId: 40,
+  title: "移動先Task",
+  position: 1024,
+  version: 2,
+};
+
+const movableBoard = {
+  projectId: 5,
+  projectName: "開発Project",
+  columns: [
+    { ...project.taskStatuses[0], tasks: [task] },
+    {
+      taskStatusId: 12,
+      statusCode: "IN_PROGRESS",
+      name: "進行中",
+      position: 2048,
+      completed: false,
+      version: 1,
+      tasks: [destinationTask],
+    },
+  ],
+};
+
 describe("useTaskBoardPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -101,12 +133,14 @@ describe("useTaskBoardPage", () => {
     mocks.permissions.add("TASK_READ");
     mocks.permissions.add("TASK_CREATE");
     mocks.permissions.add("TASK_UPDATE");
+    mocks.permissions.add("TASK_MOVE");
     mocks.route.params.projectId = "5";
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.projectApi.getProject.mockResolvedValue(project);
-    mocks.projectApi.getTaskBoard.mockResolvedValue(board);
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(board));
     mocks.projectTaskApi.getTask.mockResolvedValue(task);
     mocks.projectTaskApi.createTask.mockResolvedValue(task);
+    mocks.projectTaskApi.moveTask.mockResolvedValue(structuredClone(movableBoard));
     mocks.projectTaskApi.updateTask.mockResolvedValue({ ...task, version: 5 });
   });
 
@@ -208,5 +242,116 @@ describe("useTaskBoardPage", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("MEMBERはTASK_MOVE permissionを持っていてもドラッグできない", async () => {
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canMoveTask.value).toBe(false);
+  });
+
+  it("OWNERが別列の末尾へ移動すると直前Taskと移動前versionを送信する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(movableBoard));
+    const confirmedBoard = {
+      ...movableBoard,
+      columns: movableBoard.columns.map((column) => ({
+        ...column,
+        tasks:
+          column.taskStatusId === 11
+            ? []
+            : [destinationTask, { ...task, version: 5 }],
+      })),
+    };
+    mocks.projectTaskApi.moveTask.mockResolvedValue(confirmedBoard);
+    const page = useTaskBoardPage();
+    await page.initialize();
+    page.startTaskDrag();
+    const movedTask = page.board.value.columns[0].tasks.shift();
+    page.board.value.columns[1].tasks.push(movedTask);
+
+    await page.handleTaskDrop(
+      { added: { element: movedTask, newIndex: 1 } },
+      12
+    );
+
+    expect(mocks.projectTaskApi.moveTask).toHaveBeenCalledWith(5, 31, {
+      destinationStatusId: 12,
+      previousTaskId: 40,
+      nextTaskId: null,
+      version: 4,
+    });
+    expect(page.board.value).toEqual(confirmedBoard);
+    expect(page.successMessage.value).toBe("Taskを移動しました。");
+  });
+
+  it("source列のremoved eventでは移動APIを送信しない", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(movableBoard));
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.handleTaskDrop(
+      { removed: { element: task, newIndex: 0 } },
+      11
+    );
+
+    expect(mocks.projectTaskApi.moveTask).not.toHaveBeenCalled();
+  });
+
+  it("403で移動できない場合はドラッグ前の列と順序へ戻す", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(movableBoard));
+    mocks.projectTaskApi.moveTask.mockRejectedValue(
+      new ProjectTaskApiError(403, null)
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    const beforeDrag = JSON.parse(JSON.stringify(page.board.value));
+    page.startTaskDrag();
+    const movedTask = page.board.value.columns[0].tasks.shift();
+    page.board.value.columns[1].tasks.push(movedTask);
+
+    await page.handleTaskDrop(
+      { added: { element: movedTask, newIndex: 1 } },
+      12
+    );
+
+    expect(page.board.value).toEqual(beforeDrag);
+    expect(page.errorMessages.value).toEqual([
+      "この操作を実行するpermissionがありません。",
+    ]);
+  });
+
+  it("409競合では楽観表示を破棄してBackendの最新Boardを再取得する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard
+      .mockResolvedValueOnce(structuredClone(movableBoard))
+      .mockResolvedValueOnce(structuredClone(board));
+    mocks.projectTaskApi.moveTask.mockRejectedValue(
+      new ProjectTaskApiError(409, {
+        fieldErrors: [
+          { field: "version", message: "移動中にTaskが更新されました。" },
+        ],
+      })
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    page.startTaskDrag();
+    const movedTask = page.board.value.columns[0].tasks.shift();
+    page.board.value.columns[1].tasks.push(movedTask);
+
+    await page.handleTaskDrop(
+      { added: { element: movedTask, newIndex: 1 } },
+      12
+    );
+
+    expect(page.errorMessages.value).toEqual([
+      "移動中にTaskが更新されました。",
+    ]);
+    expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
+    expect(page.board.value).toEqual(board);
   });
 });

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
+import Draggable from "vuedraggable";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
@@ -9,14 +10,18 @@ import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 const {
   board,
   canCreateTask,
+  canMoveTask,
   canSave,
   closeTaskEditor,
   errorMessages,
+  finishTaskDrag,
   form,
+  handleTaskDrop,
   initialize,
   isEditorOpen,
   isLoading,
   isLoadingTask,
+  isMoving,
   isReadonly,
   isSaving,
   memberOptions,
@@ -26,6 +31,7 @@ const {
   project,
   saveTask,
   statusOptions,
+  startTaskDrag,
   successMessage,
 } = useTaskBoardPage();
 
@@ -42,7 +48,7 @@ onBeforeMount(initialize);
 
 <template>
   <AppHeader />
-  <LoadingIndicator v-if="isLoading || isLoadingTask" />
+  <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving" />
   <v-container fluid class="pa-6 board-page">
     <div class="d-flex align-center flex-wrap ga-3 mb-4">
       <v-btn
@@ -85,6 +91,9 @@ onBeforeMount(initialize);
     <v-alert v-if="project?.status === 'ARCHIVED'" type="info" class="mb-4">
       アーカイブ済みProjectのため、Taskは参照のみ可能です。
     </v-alert>
+    <v-alert v-else-if="canMoveTask" type="info" variant="tonal" class="mb-4">
+      Task右上の移動アイコンをドラッグすると、列移動と列内の並び替えができます。
+    </v-alert>
 
     <div v-if="board" class="board-columns">
       <v-card
@@ -107,36 +116,62 @@ onBeforeMount(initialize);
           />
         </v-card-title>
 
-        <v-card-text class="board-task-list">
-          <v-card
-            v-for="task in column.tasks"
-            :key="task.taskId"
-            class="mb-3 task-card"
-            :class="`priority-${task.priority}`"
-            variant="elevated"
-            tabindex="0"
-            @click="openTaskEditor(task.taskId)"
-            @keydown.enter="openTaskEditor(task.taskId)"
-          >
-            <v-card-title class="text-subtitle-2 text-wrap">
-              {{ task.title }}
-            </v-card-title>
-            <v-card-text class="pb-2">
-              <div class="task-detail text-body-2 mb-3">{{ task.detail }}</div>
-              <div class="d-flex align-center flex-wrap ga-2">
-                <v-chip :color="getPriorityColor(task.priority)" size="x-small">
-                  優先度: {{ getPriorityLabel(task.priority) }}
-                </v-chip>
-                <v-chip size="x-small" prepend-icon="mdi-account-outline">
-                  ID: {{ task.assigneeAccountId }}
-                </v-chip>
-              </div>
-              <div class="text-caption text-medium-emphasis mt-2">
-                {{ task.dateFrom }} ～ {{ task.dateTo }}
-              </div>
-            </v-card-text>
-          </v-card>
-          <div v-if="column.tasks.length === 0" class="text-body-2 text-medium-emphasis pa-3">
+        <Draggable
+          v-model="column.tasks"
+          item-key="taskId"
+          tag="div"
+          class="board-task-list pa-4"
+          group="project-board-tasks"
+          handle=".task-drag-handle"
+          ghost-class="task-card-ghost"
+          drag-class="task-card-dragging"
+          :disabled="!canMoveTask || isMoving"
+          @start="startTaskDrag"
+          @end="finishTaskDrag"
+          @change="handleTaskDrop($event, column.taskStatusId)"
+        >
+          <template #item="{ element: task }">
+            <v-card
+              class="mb-3 task-card"
+              :class="`priority-${task.priority}`"
+              variant="elevated"
+              tabindex="0"
+              @click="openTaskEditor(task.taskId)"
+              @keydown.enter="openTaskEditor(task.taskId)"
+            >
+              <v-card-title class="d-flex align-start text-subtitle-2 text-wrap">
+                <span>{{ task.title }}</span>
+                <v-spacer />
+                <v-btn
+                  v-if="canMoveTask"
+                  class="task-drag-handle"
+                  icon="mdi-drag"
+                  size="x-small"
+                  variant="text"
+                  :disabled="isMoving"
+                  :aria-label="`${task.title}を移動`"
+                  @click.stop
+                />
+              </v-card-title>
+              <v-card-text class="pb-2">
+                <div class="task-detail text-body-2 mb-3">{{ task.detail }}</div>
+                <div class="d-flex align-center flex-wrap ga-2">
+                  <v-chip :color="getPriorityColor(task.priority)" size="x-small">
+                    優先度: {{ getPriorityLabel(task.priority) }}
+                  </v-chip>
+                  <v-chip size="x-small" prepend-icon="mdi-account-outline">
+                    ID: {{ task.assigneeAccountId }}
+                  </v-chip>
+                </div>
+                <div class="text-caption text-medium-emphasis mt-2">
+                  {{ task.dateFrom }} ～ {{ task.dateTo }}
+                </div>
+              </v-card-text>
+            </v-card>
+          </template>
+        </Draggable>
+        <v-card-text v-if="column.tasks.length === 0" class="pt-0">
+          <div class="text-body-2 text-medium-emphasis pa-3">
             Taskはありません。
           </div>
         </v-card-text>
@@ -263,6 +298,7 @@ onBeforeMount(initialize);
 }
 
 .board-task-list {
+  min-height: 96px;
   max-height: calc(100vh - 260px);
   overflow-y: auto;
 }
@@ -270,6 +306,23 @@ onBeforeMount(initialize);
 .task-card {
   cursor: pointer;
   border-left: 4px solid transparent;
+}
+
+.task-drag-handle {
+  cursor: grab;
+}
+
+.task-drag-handle:active {
+  cursor: grabbing;
+}
+
+.task-card-ghost {
+  opacity: 0.35;
+}
+
+.task-card-dragging {
+  transform: rotate(1deg);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
 }
 
 .task-card:focus-visible {

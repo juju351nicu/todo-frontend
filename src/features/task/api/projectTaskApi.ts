@@ -1,6 +1,8 @@
 import type {
+  TaskBoard,
   TaskCreateRequest,
   TaskDetail,
+  TaskMoveRequest,
   TaskUpdateRequest,
 } from "@/features/project/types/project";
 import HttpClient from "@/shared/api/httpClient";
@@ -79,6 +81,28 @@ const getTask = async (projectId: number, taskId: number): Promise<TaskDetail> =
 };
 
 /**
+ * Taskを指定列の隣接Task間へ楽観ロック付きで移動する。
+ *
+ * @param projectId 所属Project ID
+ * @param taskId 移動対象Task ID
+ * @param payload 移動先列、移動後の前後Task ID、移動前version
+ * @returns Backendが再採番を確定したProject Board
+ * @throws ProjectTaskApiError 入力不正、認可失敗、未検出または競合の場合
+ */
+const moveTask = async (
+  projectId: number,
+  taskId: number,
+  payload: TaskMoveRequest
+): Promise<TaskBoard> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}/position`,
+    payload
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as TaskBoard;
+};
+
+/**
  * 楽観ロックversion付きでTaskの列以外の項目を更新する。
  * 列変更はTask移動APIが担当するため、このRequestにはtaskStatusIdを含めない。
  *
@@ -104,5 +128,6 @@ const updateTask = async (
 export default {
   createTask,
   getTask,
+  moveTask,
   updateTask,
 };

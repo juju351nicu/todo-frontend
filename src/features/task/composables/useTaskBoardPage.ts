@@ -8,6 +8,7 @@ import ProjectApi, {
 import type {
   ProjectDetail,
   TaskBoard,
+  TaskCard,
   TaskCreateRequest,
   TaskDetail,
   TaskPriority,
@@ -34,6 +35,17 @@ interface SelectOption<TValue> {
   value: TValue;
 }
 
+interface TaskDragChangeDetail {
+  element: TaskCard;
+  newIndex: number;
+}
+
+interface TaskDragChangeEvent {
+  added?: TaskDragChangeDetail;
+  moved?: TaskDragChangeDetail;
+  removed?: TaskDragChangeDetail;
+}
+
 /** 編集前の値を共有しない、新しいTaskフォームを作る。 */
 const createEmptyTaskForm = (): TaskForm => ({
   taskId: null,
@@ -54,6 +66,15 @@ const getToday = (): string => {
   return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
 };
 
+/** ドラッグ失敗時に復元できるよう、Boardと列・Task配列を複製する。 */
+const cloneTaskBoard = (source: TaskBoard): TaskBoard => ({
+  ...source,
+  columns: source.columns.map((column) => ({
+    ...column,
+    tasks: column.tasks.map((task) => ({ ...task })),
+  })),
+});
+
 /** Project Boardの読込、Task詳細Dialog、登録・更新と競合回復を管理する。 */
 export const useTaskBoardPage = () => {
   const route = useRoute();
@@ -62,10 +83,12 @@ export const useTaskBoardPage = () => {
 
   const board = ref<TaskBoard | null>(null);
   const errorMessages = ref<string[]>([]);
+  const dragSnapshot = ref<TaskBoard | null>(null);
   const form = ref<TaskForm>(createEmptyTaskForm());
   const isEditorOpen = ref(false);
   const isLoading = ref(false);
   const isLoadingTask = ref(false);
+  const isMoving = ref(false);
   const isSaving = ref(false);
   const project = ref<ProjectDetail | null>(null);
   const successMessage = ref("");
@@ -85,6 +108,20 @@ export const useTaskBoardPage = () => {
   const canUpdateTask = computed(
     () => userStore.hasPermission("TASK_UPDATE") && isProjectActive.value
   );
+  const currentProjectRole = computed(
+    () =>
+      project.value?.members.find(
+        (member) => member.accountId === userStore.memberId
+      )?.projectRole ?? null
+  );
+  const canMoveTask = computed(
+    () =>
+      userStore.hasPermission("TASK_MOVE") &&
+      isProjectActive.value &&
+      (userStore.hasRole("SYSTEM_ADMIN") ||
+        currentProjectRole.value === "OWNER" ||
+        currentProjectRole.value === "MANAGER")
+  );
   const isEditing = computed(() => form.value.taskId !== null);
   const isReadonly = computed(() => isEditing.value && !canUpdateTask.value);
   const canSave = computed(
@@ -102,14 +139,11 @@ export const useTaskBoardPage = () => {
   );
 
   const memberOptions = computed<SelectOption<number>[]>(() => {
-    const currentMember = project.value?.members.find(
-      (member) => member.accountId === userStore.memberId
-    );
     const canAssignAnyMember =
       isReadonly.value ||
       userStore.hasRole("SYSTEM_ADMIN") ||
-      currentMember?.projectRole === "OWNER" ||
-      currentMember?.projectRole === "MANAGER";
+      currentProjectRole.value === "OWNER" ||
+      currentProjectRole.value === "MANAGER";
     return (project.value?.members ?? [])
       .filter(
         (member) => canAssignAnyMember || member.accountId === userStore.memberId
@@ -307,6 +341,96 @@ export const useTaskBoardPage = () => {
     }
   };
 
+  /** ドラッグ前のBoardを退避し、API失敗時に表示順を戻せるようにする。 */
+  const startTaskDrag = (): void => {
+    if (!canMoveTask.value || isMoving.value || board.value === null) {
+      return;
+    }
+    dragSnapshot.value = cloneTaskBoard(board.value);
+    errorMessages.value = [];
+    successMessage.value = "";
+  };
+
+  /** 移動が発生しなかったドラッグ操作では不要になった退避状態を破棄する。 */
+  const finishTaskDrag = (): void => {
+    if (!isMoving.value) {
+      dragSnapshot.value = null;
+    }
+  };
+
+  /** 退避したBoardを複製して復元し、失敗した楽観表示を残さない。 */
+  const restoreBoardSnapshot = (): void => {
+    if (dragSnapshot.value !== null) {
+      board.value = cloneTaskBoard(dragSnapshot.value);
+    }
+  };
+
+  /**
+   * vuedraggableが反映した移動順から前後Taskを解決し、専用APIで位置を確定する。
+   * source列のremoved eventは無視し、destination列のaddedまたは同一列のmovedだけを送信する。
+   */
+  const handleTaskDrop = async (
+    event: TaskDragChangeEvent,
+    destinationStatusId: number
+  ): Promise<void> => {
+    const change = event.added ?? event.moved;
+    if (change === undefined) {
+      return;
+    }
+    if (
+      !canMoveTask.value ||
+      isMoving.value ||
+      projectId.value === null ||
+      board.value === null
+    ) {
+      restoreBoardSnapshot();
+      return;
+    }
+    const destinationColumn = board.value.columns.find(
+      (column) => column.taskStatusId === destinationStatusId
+    );
+    const movedTaskIndex = destinationColumn?.tasks.findIndex(
+      (task) => task.taskId === change.element.taskId
+    );
+    if (
+      destinationColumn === undefined ||
+      movedTaskIndex === undefined ||
+      movedTaskIndex < 0
+    ) {
+      restoreBoardSnapshot();
+      errorMessages.value = ["Taskの移動先を特定できませんでした。"];
+      return;
+    }
+
+    const previousTask = destinationColumn.tasks[movedTaskIndex - 1] ?? null;
+    const nextTask = destinationColumn.tasks[movedTaskIndex + 1] ?? null;
+    isMoving.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      board.value = await ProjectTaskApi.moveTask(
+        projectId.value,
+        change.element.taskId,
+        {
+          destinationStatusId,
+          previousTaskId: previousTask?.taskId ?? null,
+          nextTaskId: nextTask?.taskId ?? null,
+          version: change.element.version,
+        }
+      );
+      successMessage.value = "Taskを移動しました。";
+    } catch (error: unknown) {
+      restoreBoardSnapshot();
+      await handleApiError(error, "Taskを移動できませんでした。");
+      if (error instanceof ProjectTaskApiError && error.status === 409) {
+        await reloadBoardAfterConflict();
+      }
+    } finally {
+      isMoving.value = false;
+      dragSnapshot.value = null;
+    }
+  };
+
   /** 競合後に最新Boardを取得し、古いversionを画面へ残さない。 */
   const reloadBoardAfterConflict = async (): Promise<void> => {
     try {
@@ -347,14 +471,18 @@ export const useTaskBoardPage = () => {
   return {
     board,
     canCreateTask,
+    canMoveTask,
     canSave,
     closeTaskEditor,
     errorMessages,
     form,
+    finishTaskDrag,
+    handleTaskDrop,
     initialize,
     isEditorOpen,
     isLoading,
     isLoadingTask,
+    isMoving,
     isReadonly,
     isSaving,
     memberOptions,
@@ -364,6 +492,7 @@ export const useTaskBoardPage = () => {
     project,
     saveTask,
     statusOptions,
+    startTaskDrag,
     successMessage,
   };
 };

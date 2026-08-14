@@ -112,3 +112,11 @@ export interface TaskUpdateRequest {
   priority: TaskPriority;
   version: number;
 }
+
+/** Task移動APIへ送信する移動先列、隣接Task、楽観ロックversion。 */
+export interface TaskMoveRequest {
+  destinationStatusId: number;
+  previousTaskId: number | null;
+  nextTaskId: number | null;
+  version: number;
+}
