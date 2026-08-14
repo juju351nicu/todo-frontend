@@ -78,12 +78,17 @@ onBeforeMount(initialize);
             </v-card>
           </v-col>
         </v-row>
-        <v-empty-state
+        <v-sheet
           v-else-if="!isLoading && !errorMessages.length"
-          icon="mdi-folder-search-outline"
-          title="表示できるProjectがありません"
-          text="検索条件またはProjectへの参加状況を確認してください。"
-        />
+          class="pa-8 text-center"
+          rounded
+        >
+          <v-icon icon="mdi-folder-search-outline" size="48" class="mb-3" />
+          <h2 class="text-h6 mb-2">表示できるProjectがありません</h2>
+          <p class="text-body-2 text-medium-emphasis mb-0">
+            検索条件またはProjectへの参加状況を確認してください。
+          </p>
+        </v-sheet>
       </v-card-text>
     </v-card>
   </v-container>

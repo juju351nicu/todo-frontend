@@ -32,6 +32,11 @@ npm run dev -- --host localhost
 | 7 | ログアウトする | ログイン画面へ遷移する |
 | 8 | ログアウト後に保護ルートを直接開く | ログイン画面へ戻り、保護画面を表示しない |
 | 9 | ブラウザの警告・エラーログを確認する | アプリケーション起因の`warning`、`error`がない |
+| 10 | Project一覧を開く | 参照可能なProjectとProject roleが表示される |
+| 11 | Project Boardを開く | 標準3列と各列のTask件数が表示される |
+| 12 | Taskカードを開く | Task詳細がDialogへ表示され、更新可能な利用者には保存操作が表示される |
+| 13 | Taskの移動操作を確認する | 移動可能な利用者にはカード右上のドラッグハンドルと操作案内が表示される |
+| 14 | Taskのarchive操作を確認する | 許可された利用者にだけarchive操作が表示され、確認Dialogからキャンセルできる |
 
 ## 2026-08-11 実施結果
 
@@ -46,3 +51,16 @@ npm run dev -- --host localhost
 - 一連の操作中にブラウザの`warning`、`error`は記録されなかった。
 
 問い合わせ送信、会員・Todoの登録更新、GitHub OAuth2認可は外部状態を変更するため、この表示回帰では実行していない。各機能を変更する作業単位で、専用テストデータまたは検証用OAuth Appを使用して追加確認する。
+
+## 2026-08-14 Project Board実施結果
+
+Taskのarchive操作追加後に、`user01`でログインしてProject一覧とProject Boardを確認した。
+
+- `/projects`で「Work Management」、Project key、`OWNER` role、利用中statusを表示した。
+- `/projects/1/board`で標準列「Todo」「進行中」「完了」を表示し、既存Todoから移行した18件のTaskを「Todo」列へ表示した。
+- 更新可能な利用者向けのTask追加ボタン、Taskカード右上のドラッグハンドル、ドラッグ操作案内を表示した。
+- 「SESの闇」を開き、タイトル、詳細、期間、担当者、優先度、配置先、保存操作を表示した。
+- archive確認Dialogに対象Task名と注意事項を表示し、キャンセル後もTask編集Dialogが維持されることを確認した。
+- 未対応Vuetify部品の`v-empty-state`がProject一覧で警告を出していたため、既存の`v-sheet`、`v-icon`、見出し、案内文で構成する空状態へ変更した。変更後のProject一覧・Board・Dialog操作ではブラウザの`warning`、`error`は0件だった。
+
+既存DBを保持するため、ドラッグ確定とarchive実行はこの表示回帰では行っていない。列移動・列内並び替え・archive APIの成功、権限拒否、409競合、二重送信防止はJUnitまたはVitestで検証する。

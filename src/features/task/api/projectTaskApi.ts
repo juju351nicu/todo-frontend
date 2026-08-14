@@ -65,6 +65,26 @@ const createTask = async (
 };
 
 /**
+ * Taskを楽観ロックversion付きでarchiveし、通常のBoard取得対象から除外する。
+ *
+ * @param projectId 所属Project ID
+ * @param taskId archive対象Task ID
+ * @param version Task詳細取得時点のversion
+ * @throws ProjectTaskApiError 認可失敗、未検出または競合の場合
+ */
+const archiveTask = async (
+  projectId: number,
+  taskId: number,
+  version: number
+): Promise<void> => {
+  const query = new URLSearchParams({ version: String(version) });
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}?${query}`
+  );
+  await ensureSuccess(response);
+};
+
+/**
  * Task編集時点の最新versionを取得する。
  *
  * @param projectId 所属Project ID
@@ -126,6 +146,7 @@ const updateTask = async (
 };
 
 export default {
+  archiveTask,
   createTask,
   getTask,
   moveTask,

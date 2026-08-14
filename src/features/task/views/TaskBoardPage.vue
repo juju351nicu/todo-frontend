@@ -8,16 +8,21 @@ import type { TaskPriority } from "@/features/project/types/project";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
+  archiveTask,
   board,
+  canArchiveTask,
   canCreateTask,
   canMoveTask,
   canSave,
+  closeArchiveConfirm,
   closeTaskEditor,
   errorMessages,
   finishTaskDrag,
   form,
   handleTaskDrop,
   initialize,
+  isArchiveConfirmOpen,
+  isArchiving,
   isEditorOpen,
   isLoading,
   isLoadingTask,
@@ -25,6 +30,7 @@ const {
   isReadonly,
   isSaving,
   memberOptions,
+  openArchiveConfirm,
   openTaskCreator,
   openTaskEditor,
   priorityOptions,
@@ -48,7 +54,7 @@ onBeforeMount(initialize);
 
 <template>
   <AppHeader />
-  <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving" />
+  <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving || isArchiving" />
   <v-container fluid class="pa-6 board-page">
     <div class="d-flex align-center flex-wrap ga-3 mb-4">
       <v-btn
@@ -259,8 +265,18 @@ onBeforeMount(initialize);
           </v-form>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            v-if="form.taskId !== null && canArchiveTask"
+            color="error"
+            variant="text"
+            prepend-icon="mdi-archive-outline"
+            :disabled="isSaving || isArchiving"
+            @click="openArchiveConfirm"
+          >
+            アーカイブ
+          </v-btn>
           <v-spacer />
-          <v-btn :disabled="isSaving" @click="closeTaskEditor">
+          <v-btn :disabled="isSaving || isArchiving" @click="closeTaskEditor">
             {{ isReadonly ? "閉じる" : "キャンセル" }}
           </v-btn>
           <v-btn
@@ -271,6 +287,36 @@ onBeforeMount(initialize);
             @click="saveTask"
           >
             保存
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog
+      v-model="isArchiveConfirmOpen"
+      max-width="520"
+      :persistent="isArchiving"
+    >
+      <v-card>
+        <v-card-title class="d-flex align-center text-error">
+          <v-icon icon="mdi-archive-alert-outline" class="mr-2" />
+          Taskをアーカイブしますか？
+        </v-card-title>
+        <v-card-text>
+          <p class="mb-3">
+            「{{ form.title }}」をProject Boardから除外します。
+          </p>
+          <v-alert type="warning" variant="tonal">
+            この画面からアーカイブ解除はできません。内容を確認して実行してください。
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :disabled="isArchiving" @click="closeArchiveConfirm">
+            キャンセル
+          </v-btn>
+          <v-btn color="error" :loading="isArchiving" @click="archiveTask">
+            アーカイブする
           </v-btn>
         </v-card-actions>
       </v-card>

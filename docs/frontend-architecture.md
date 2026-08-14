@@ -117,6 +117,8 @@ src/
 
 同日に`vuedraggable 4`を追加し、`TASK_MOVE`専用APIへ列移動と列内並び替えを接続した。Ghost-PDF5と同系統のライブラリだがCDNでは読み込まず、npmとViteでversionを固定してTypeScriptの検査対象にする。ドラッグ開始時にBoardを複製し、移動後の直前・直後Task IDと移動前versionをBackendへ送信する。成功時はFrontend上の仮順序を使い続けず、Backendが再採番して返したBoardへ置き換える。403・接続失敗ではドラッグ前の順序へ戻し、409競合では仮順序を破棄して最新Boardを再取得する。system permissionに加えてProject roleがOWNERまたはMANAGERの利用者だけに移動ハンドルを表示し、MEMBERには表示しない。既存Todo画面は移行期間中の互換機能として残し、Project Taskへデータ移行するまでは削除しない。
 
+Task archiveはTask詳細Dialogから確認Dialogを経由して実行し、`TASK_ARCHIVE`とProject roleの両方で操作表示を制御する。Task詳細取得時点のversionをDELETE APIへ渡し、成功後はBackendからBoardを再取得して対象Taskが除外されたことを確定する。409競合では古いTask詳細を閉じて最新Boardを表示する。物理削除やFrontend配列だけの削除は行わず、Backendの論理archiveを唯一の確定状態とする。
+
 ## 変更時の確認
 
 ```bash

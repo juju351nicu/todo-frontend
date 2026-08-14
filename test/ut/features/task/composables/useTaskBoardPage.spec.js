@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   permissions: new Set(),
   projectApi: { getProject: vi.fn(), getTaskBoard: vi.fn() },
   projectTaskApi: {
+    archiveTask: vi.fn(),
     createTask: vi.fn(),
     getTask: vi.fn(),
     moveTask: vi.fn(),
@@ -134,11 +135,13 @@ describe("useTaskBoardPage", () => {
     mocks.permissions.add("TASK_CREATE");
     mocks.permissions.add("TASK_UPDATE");
     mocks.permissions.add("TASK_MOVE");
+    mocks.permissions.add("TASK_ARCHIVE");
     mocks.route.params.projectId = "5";
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
     mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(board));
     mocks.projectTaskApi.getTask.mockResolvedValue(task);
+    mocks.projectTaskApi.archiveTask.mockResolvedValue(undefined);
     mocks.projectTaskApi.createTask.mockResolvedValue(task);
     mocks.projectTaskApi.moveTask.mockResolvedValue(structuredClone(movableBoard));
     mocks.projectTaskApi.updateTask.mockResolvedValue({ ...task, version: 5 });
@@ -250,6 +253,71 @@ describe("useTaskBoardPage", () => {
     await page.initialize();
 
     expect(page.canMoveTask.value).toBe(false);
+  });
+
+  it("MEMBERはTASK_ARCHIVE permissionを持っていてもarchiveできない", async () => {
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canArchiveTask.value).toBe(false);
+  });
+
+  it("OWNERは確認後にTaskをversion付きでarchiveして最新Boardを取得する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+    page.openArchiveConfirm();
+
+    await page.archiveTask();
+
+    expect(mocks.projectTaskApi.archiveTask).toHaveBeenCalledWith(5, 31, 4);
+    expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
+    expect(page.isArchiveConfirmOpen.value).toBe(false);
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(page.successMessage.value).toBe("Taskをアーカイブしました。");
+  });
+
+  it("archive実行中の再実行ではDELETE APIを二重送信しない", async () => {
+    let resolveRequest;
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectTaskApi.archiveTask.mockImplementation(
+      () => new Promise((resolve) => (resolveRequest = resolve))
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+    page.openArchiveConfirm();
+
+    const firstArchive = page.archiveTask();
+    const secondArchive = page.archiveTask();
+
+    expect(mocks.projectTaskApi.archiveTask).toHaveBeenCalledOnce();
+    resolveRequest();
+    await Promise.all([firstArchive, secondArchive]);
+  });
+
+  it("archiveの409競合では古いDialogを閉じて最新Boardを再取得する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectTaskApi.archiveTask.mockRejectedValue(
+      new ProjectTaskApiError(409, {
+        fieldErrors: [
+          { field: "version", message: "Taskが先に更新されています。" },
+        ],
+      })
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+    page.openArchiveConfirm();
+
+    await page.archiveTask();
+
+    expect(page.errorMessages.value).toEqual(["Taskが先に更新されています。"]);
+    expect(page.isArchiveConfirmOpen.value).toBe(false);
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
   });
 
   it("OWNERが別列の末尾へ移動すると直前Taskと移動前versionを送信する", async () => {

@@ -85,6 +85,8 @@ export const useTaskBoardPage = () => {
   const errorMessages = ref<string[]>([]);
   const dragSnapshot = ref<TaskBoard | null>(null);
   const form = ref<TaskForm>(createEmptyTaskForm());
+  const isArchiveConfirmOpen = ref(false);
+  const isArchiving = ref(false);
   const isEditorOpen = ref(false);
   const isLoading = ref(false);
   const isLoadingTask = ref(false);
@@ -114,19 +116,30 @@ export const useTaskBoardPage = () => {
         (member) => member.accountId === userStore.memberId
       )?.projectRole ?? null
   );
+  const canManageProjectTasks = computed(
+    () =>
+      userStore.hasRole("SYSTEM_ADMIN") ||
+      currentProjectRole.value === "OWNER" ||
+      currentProjectRole.value === "MANAGER"
+  );
   const canMoveTask = computed(
     () =>
       userStore.hasPermission("TASK_MOVE") &&
       isProjectActive.value &&
-      (userStore.hasRole("SYSTEM_ADMIN") ||
-        currentProjectRole.value === "OWNER" ||
-        currentProjectRole.value === "MANAGER")
+      canManageProjectTasks.value
+  );
+  const canArchiveTask = computed(
+    () =>
+      userStore.hasPermission("TASK_ARCHIVE") &&
+      isProjectActive.value &&
+      canManageProjectTasks.value
   );
   const isEditing = computed(() => form.value.taskId !== null);
   const isReadonly = computed(() => isEditing.value && !canUpdateTask.value);
   const canSave = computed(
     () =>
       !isSaving.value &&
+      !isArchiving.value &&
       !isReadonly.value &&
       (isEditing.value ? canUpdateTask.value : canCreateTask.value)
   );
@@ -246,14 +259,16 @@ export const useTaskBoardPage = () => {
 
   /** 保存中でない場合に入力値を破棄してTask Dialogを閉じる。 */
   const closeTaskEditor = (): void => {
-    if (isSaving.value) {
+    if (isSaving.value || isArchiving.value) {
       return;
     }
+    isArchiveConfirmOpen.value = false;
     closeTaskEditorAfterSaving();
   };
 
   /** 保存成功・競合時に、保存中でもTask Dialogの状態を破棄する。 */
   const closeTaskEditorAfterSaving = (): void => {
+    isArchiveConfirmOpen.value = false;
     isEditorOpen.value = false;
     form.value = createEmptyTaskForm();
   };
@@ -338,6 +353,73 @@ export const useTaskBoardPage = () => {
       }
     } finally {
       isSaving.value = false;
+    }
+  };
+
+  /** version取得済みの既存Taskだけを対象にarchive確認Dialogを開く。 */
+  const openArchiveConfirm = (): void => {
+    if (
+      !canArchiveTask.value ||
+      form.value.taskId === null ||
+      form.value.version === null
+    ) {
+      errorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
+      return;
+    }
+    errorMessages.value = [];
+    successMessage.value = "";
+    isArchiveConfirmOpen.value = true;
+  };
+
+  /** archive実行中でない場合に確認Dialogだけを閉じる。 */
+  const closeArchiveConfirm = (): void => {
+    if (!isArchiving.value) {
+      isArchiveConfirmOpen.value = false;
+    }
+  };
+
+  /**
+   * Taskをversion条件付きでarchiveし、成功後のBoardをBackendから再取得する。
+   * 409競合では古いTask Dialogを閉じ、最新Boardを表示して再操作を促す。
+   */
+  const archiveTask = async (): Promise<void> => {
+    const taskId = form.value.taskId;
+    const version = form.value.version;
+    if (
+      isArchiving.value ||
+      !canArchiveTask.value ||
+      taskId === null ||
+      version === null ||
+      projectId.value === null
+    ) {
+      return;
+    }
+
+    isArchiving.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      await ProjectTaskApi.archiveTask(projectId.value, taskId, version);
+      isArchiveConfirmOpen.value = false;
+      closeTaskEditorAfterSaving();
+      successMessage.value = "Taskをアーカイブしました。";
+      try {
+        await loadBoardData();
+      } catch (_error: unknown) {
+        // archive自体は確定済みのため、再実行を促さずBoard再読込だけを案内する。
+        errorMessages.value = [
+          "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
+        ];
+      }
+    } catch (error: unknown) {
+      isArchiveConfirmOpen.value = false;
+      await handleApiError(error, "Taskをアーカイブできませんでした。");
+      if (error instanceof ProjectTaskApiError && error.status === 409) {
+        closeTaskEditorAfterSaving();
+        await reloadBoardAfterConflict();
+      }
+    } finally {
+      isArchiving.value = false;
     }
   };
 
@@ -470,15 +552,20 @@ export const useTaskBoardPage = () => {
 
   return {
     board,
+    archiveTask,
+    canArchiveTask,
     canCreateTask,
     canMoveTask,
     canSave,
+    closeArchiveConfirm,
     closeTaskEditor,
     errorMessages,
     form,
     finishTaskDrag,
     handleTaskDrop,
     initialize,
+    isArchiveConfirmOpen,
+    isArchiving,
     isEditorOpen,
     isLoading,
     isLoadingTask,
@@ -486,6 +573,7 @@ export const useTaskBoardPage = () => {
     isReadonly,
     isSaving,
     memberOptions,
+    openArchiveConfirm,
     openTaskCreator,
     openTaskEditor,
     priorityOptions,

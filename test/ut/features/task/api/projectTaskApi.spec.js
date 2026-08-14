@@ -5,6 +5,7 @@ import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
   default: {
+    deleteRequest: vi.fn(),
     getRequest: vi.fn(),
     postRequest: vi.fn(),
     putRequest: vi.fn(),
@@ -49,6 +50,16 @@ describe("Project Task API", () => {
     await expect(ProjectTaskApi.getTask(5, 31)).resolves.toEqual(task);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/tasks/31"
+    );
+  });
+
+  it("Task詳細取得時点のversionをqueryへ指定してarchiveする", async () => {
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await expect(ProjectTaskApi.archiveTask(5, 31, 4)).resolves.toBeUndefined();
+
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/5/tasks/31?version=4"
     );
   });
 
