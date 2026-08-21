@@ -84,6 +84,15 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/projects/:projectId/wbs",
+    name: "Wbs",
+    component: () => import("@/features/wbs/views/WbsPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["TASK_READ"],
+    },
+  },
+  {
     path: "/todo/calendar",
     name: "TodoCalendar",
     component: () => import("@/features/task/views/TodoCalendarPage.vue"),

@@ -83,6 +83,14 @@ onBeforeMount(initialize);
       >
         {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
       </v-chip>
+      <v-btn
+        v-if="board"
+        :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
+        prepend-icon="mdi-file-tree-outline"
+        variant="tonal"
+      >
+        WBSを開く
+      </v-btn>
       <ProjectSettingsDialog
         v-if="project"
         :project="project"

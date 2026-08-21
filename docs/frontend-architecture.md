@@ -25,6 +25,7 @@ src/
 │   ├── member/
 │   ├── project/
 │   ├── task/
+│   ├── wbs/
 │   ├── inquiry/
 │   └── administration/
 └── shared/
@@ -102,6 +103,11 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
+- `src/features/wbs/api/wbsApi.ts`: Project単位の読取り専用WBS参照API
+- `src/features/wbs/types/wbs.ts`: WBS Response、Task種別、階層表行の型
+- `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化と表示変換
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、認証エラー、Board遷移
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する読取り専用WBS階層表
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -124,6 +130,8 @@ Task archiveはTask詳細Dialogから確認Dialogを経由して実行し、`TAS
 Task移動はpointer操作だけに限定せず、移動ハンドルへフォーカスした方向キー操作にも対応する。上下キーは同じ列で1件移動し、左右キーは隣接列の末尾へ移動する。列または並び順の端ではAPIを呼ばない。keyboard操作もdragと同じ`TASK_MOVE`、Project role、version、前後Task ID、失敗復元、409再取得処理を使用し、Frontend独自の確定状態を作らない。
 
 Project設定とmember管理はTask Boardから開く1つのDialogと`useProjectSettingsDialog`へまとめる。Project名・説明の更新、ACTIVEからARCHIVEDへの変更、member追加・role変更・除外を扱い、操作ごとの小さなcomposableへは分割しない。Project／memberのversionをBackendへ送り、409では古いフォームを確定せず最新Project詳細を再取得する。最後のOWNERの降格・除外は画面でも抑止して理由を表示するが、同時操作を含む最終判定はBackendのtransactionへ委ねる。自己除外は204 Responseを確定結果として扱い、削除後に取得不能となるProject詳細を要求せずProject一覧へ遷移する。archive成功後は親BoardのProject詳細をResponseで差し替え、Task操作を参照専用へ切り替える。
+
+WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。最初は`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。階層表が安定する前にGantt library、編集API、実績工数、依存関係を混在させない。
 
 ## 変更時の確認
 

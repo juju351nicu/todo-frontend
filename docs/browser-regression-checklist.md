@@ -41,6 +41,21 @@ npm run dev -- --host localhost
 | 16 | Project名またはmember roleを更新する | 成功通知とBackend確定後の値が表示され、再読込後も維持される |
 | 17 | Project memberを追加・除外する | ACTIVEなアカウントだけを追加でき、最後のOWNERは降格・除外できない |
 | 18 | 検証用Projectをarchiveする | 確認後に参照専用へ切り替わり、Taskとmemberの更新操作が表示されない |
+| 19 | Project BoardからWBSを開く | Boardと同じTaskが親子順で表示され、再読込後もTask ID・予定・進捗が一致する |
+
+## WBS階層表の初回確認項目
+
+WBSは最初の段階では読取り専用である。通常のProjectデータを変更せず、次を表示確認する。
+
+- `/projects/{projectId}/board`の「WBSを開く」から`/projects/{projectId}/wbs`へ遷移する。
+- Project名、Task／Summary／Milestone件数、WBSコード、予定期間、予定工数、進捗、担当者、優先度が表示される。
+- 親Taskの直後に子Taskが字下げ表示され、孫Taskはさらに1段深く表示される。
+- 「Boardを開く」で同じProjectのBoardへ戻る。
+- 「再読込」後もBackendの確定済みTaskから同じ階層を作り直す。
+- Taskが0件の場合は空状態を表示し、画面エラーを出さない。
+- `TASK_READ`不足は403、未参加Projectは404の案内となり、別Projectの存在やTask件数を表示しない。
+- 横幅が狭い画面では表を横スクロールでき、列が重なって読めなくならない。
+- 一連の操作でブラウザの`warning`、`error`を増やさない。
 
 ## 2026-08-11 実施結果
 

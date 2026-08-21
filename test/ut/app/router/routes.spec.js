@@ -35,14 +35,17 @@ describe("Vue routes", () => {
     ]);
   });
 
-  it("Project一覧とBoardをBackendの専用permissionで保護する", () => {
+  it("Project一覧・Board・WBSをBackendの専用permissionで保護する", () => {
     const projectList = findRoute("ProjectList");
     const taskBoard = findRoute("TaskBoard");
+    const wbs = findRoute("Wbs");
 
     expect(projectList.path).toBe("/projects");
     expect(projectList.meta.requiredAnyPermissions).toEqual(["PROJECT_READ"]);
     expect(taskBoard.path).toBe("/projects/:projectId/board");
     expect(taskBoard.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
+    expect(wbs.path).toBe("/projects/:projectId/wbs");
+    expect(wbs.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
   });
 
   it("アカウント・ロール管理画面をACCOUNT_READで保護する", () => {
