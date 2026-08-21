@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addGanttRangePadding,
   buildWbsGanttData,
+  configureWbsGantt,
 } from "@/features/wbs/utils/wbsGantt";
 
 /** Gantt変換の入力となる安全なWBS階層行を作る。 */
@@ -30,6 +31,22 @@ const buildRow = (overrides = {}) => ({
 });
 
 describe("WBS Gantt変換", () => {
+  it("DHTMLXの拡張初期値に左右されず不正日付Taskをtimelineへ描画しない", () => {
+    const instance = { config: { show_unscheduled: false } };
+
+    configureWbsGantt(instance);
+
+    expect(instance.config).toEqual(
+      expect.objectContaining({
+        readonly: true,
+        show_unscheduled: true,
+        drag_move: false,
+        drag_progress: false,
+        drag_resize: false,
+      })
+    );
+  });
+
   it("Task種別・進捗・表示期間をDHTMLXの読取り専用dataへ変換する", () => {
     const result = buildWbsGanttData([
       buildRow({

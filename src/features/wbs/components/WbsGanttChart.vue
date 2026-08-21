@@ -15,6 +15,7 @@ import type { WbsTreeRow } from "@/features/wbs/types/wbs";
 import {
   addGanttRangePadding,
   buildWbsGanttData,
+  configureWbsGantt,
 } from "@/features/wbs/utils/wbsGantt";
 
 const props = defineProps<{
@@ -25,37 +26,6 @@ const props = defineProps<{
 const ganttContainer = ref<HTMLElement | null>(null);
 const ganttInstance = shallowRef<GanttStatic | null>(null);
 const ganttData = computed(() => buildWbsGanttData(props.rows));
-
-/** 読取り専用MVPに必要なtree、日付scale、操作無効化だけをGanttへ設定する。 */
-const configureGantt = (instance: GanttStatic): void => {
-  instance.config.readonly = true;
-  instance.config.date_format = "%Y-%m-%d";
-  instance.config.row_height = 34;
-  instance.config.scale_height = 56;
-  instance.config.min_column_width = 42;
-  instance.config.grid_width = 360;
-  instance.config.columns = [
-    {
-      name: "text",
-      label: "WBS / Task",
-      tree: true,
-      width: "*",
-      resize: true,
-    },
-  ];
-  instance.config.scales = [
-    { unit: "month", step: 1, format: "%Y年 %m月" },
-    { unit: "day", step: 1, format: "%d" },
-  ];
-  instance.config.show_progress = true;
-  instance.config.show_links = false;
-  instance.config.drag_move = false;
-  instance.config.drag_progress = false;
-  instance.config.drag_resize = false;
-  instance.config.drag_links = false;
-  instance.config.drag_project = false;
-  instance.config.order_branch = false;
-};
 
 /** API再読込で予定期間が変わっても、全Taskを含むtimeline範囲へ更新する。 */
 const updateGanttRange = (instance: GanttStatic): void => {
@@ -77,7 +47,7 @@ const renderGantt = async (): Promise<void> => {
 
   if (ganttInstance.value === null) {
     const instance = Gantt.getGanttInstance();
-    configureGantt(instance);
+    configureWbsGantt(instance);
     updateGanttRange(instance);
     instance.init(container);
     ganttInstance.value = instance;

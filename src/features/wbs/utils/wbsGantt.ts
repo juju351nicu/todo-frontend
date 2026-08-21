@@ -5,9 +5,43 @@ import type {
   WbsTreeRow,
 } from "@/features/wbs/types/wbs";
 import { normalizeProgressPercent } from "@/features/wbs/utils/wbsTree";
+import type { GanttStatic } from "dhtmlx-gantt";
 
 const ISO_LOCAL_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const GANTT_ROOT_ID = 0;
+
+/** 読取り専用MVPに必要なtree、日付scale、操作無効化だけをGanttへ設定する。 */
+export const configureWbsGantt = (instance: GanttStatic): void => {
+  instance.config.readonly = true;
+  instance.config.date_format = "%Y-%m-%d";
+  instance.config.row_height = 34;
+  instance.config.scale_height = 56;
+  instance.config.min_column_width = 42;
+  instance.config.grid_width = 360;
+  instance.config.columns = [
+    {
+      name: "text",
+      label: "WBS / Task",
+      tree: true,
+      width: "*",
+      resize: true,
+    },
+  ];
+  instance.config.scales = [
+    { unit: "month", step: 1, format: "%Y年 %m月" },
+    { unit: "day", step: 1, format: "%d" },
+  ];
+  instance.config.show_progress = true;
+  instance.config.show_links = false;
+  // DHTMLXの拡張初期値に依存せず、不正日付Taskをtimelineへ描画しない。
+  instance.config.show_unscheduled = true;
+  instance.config.drag_move = false;
+  instance.config.drag_progress = false;
+  instance.config.drag_resize = false;
+  instance.config.drag_links = false;
+  instance.config.drag_project = false;
+  instance.config.order_branch = false;
+};
 
 /** yyyy-MM-ddをtimezone変換しないlocal dateとして検証・変換する。 */
 const parseIsoLocalDate = (value: string): Date | null => {

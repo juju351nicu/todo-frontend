@@ -6,14 +6,14 @@ Spring SecurityとSpring Session JDBCを利用するFrontendについて、`JSES
 
 ## 起動条件
 
-- Backend: Spring Boot 4.1.0、Java 25、`local`プロファイル、`http://localhost:8030`
+- Backend: Spring Boot 4.1.0、Java 25、`local,docker`プロファイル、`http://localhost:8030`
 - Frontend: Node.js 24、Vite 8、`http://localhost:8081`
-- MySQL: `todo`データベース
+- MySQL: Docker MySQL 8.4、host `33316`の`todo`データベース
 - BackendとFrontendはCookie送信先を揃えるため、どちらも`localhost`で起動する。
 
 ```bash
 # Backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local,docker
 
 # Frontend
 npm run dev -- --host localhost
@@ -106,7 +106,7 @@ Vite開発サーバーの初回cold startでは、Vuetify依存関係の事前bu
 
 ## 2026-08-21 WBS階層表・Gantt表示回帰結果
 
-Docker MySQLが停止中だったため、通常データを変更しないFrontend API契約fixtureをVite middlewareとして一時使用し、画面描画を確認した。fixtureは配布物・Git差分へ含めない。
+最初に、Codexの隔離環境からDocker socketへ接続できなかったため、通常データを変更しないFrontend API契約fixtureをVite middlewareとして一時使用した。Docker自体はRancher Desktop上で起動していた。fixtureは配布物・Git差分へ含めない。
 
 - Sessionログイン後にProject一覧、標準3列Board、WBSの順で保護ルートを表示した。
 - BoardのTask ID 101・102をWBSでも同じIDとして表示した。
@@ -115,4 +115,15 @@ Docker MySQLが停止中だったため、通常データを変更しないFront
 - Gantt表示中の「再読込」、WBS URLのブラウザ再読込、同じProject Boardへの復帰が正常だった。
 - 一連の操作でFrontendのconsole `warning`、`error`は0件だった。
 
-実MySQL・Spring Session JDBCを使う結合回帰は、Dockerを起動した環境で`local,docker` Backendを使用して再確認する。今回のfixture回帰はFrontendのAPI契約、Router、階層変換、DHTMLX実描画を対象とし、Backend認可やFlywayを代替しない。
+続いてユーザー環境でDocker MySQL、`local,docker` Backend、Frontendを起動し、実MySQL・Spring Session JDBCを使って再確認した。
+
+- `user01`でログインし、`JSESSIONID`を使う保護ルートからTodoカレンダーへ遷移した。
+- Project一覧で`Work Management`、`OWNER`、利用中statusを表示した。
+- Project Boardで既存Todo由来のTask 18件と標準3列を表示した。
+- WBS階層表で同じTask 18件、予定期間、進捗、担当者、優先度を表示した。
+- Ganttへ切り替え、Task tree、予定bar、日付scaleを表示した。
+- 既存データに開始日より終了日が前のTask 1件があり、警告表示で検出した。
+- DHTMLXの拡張初期値により不正日付Taskへ仮barが出たため、`show_unscheduled`を明示して左treeだけへ残すよう修正した。
+- 修正fixtureでは不正日付Taskのbarが0件、tree行が1件であることを確認した。
+
+Viteのcold start中に依存関係の事前bundle更新と重なったdynamic import失敗が一度記録されたが、最適化完了後の新規タブで再ログインしてWBSを直接開いた際は`warning`、`error`とも0件だった。production buildの不具合とは分けて扱う。
