@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeMount } from "vue";
+import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -12,7 +12,14 @@ import {
   getWbsTaskTypeLabel,
   normalizeProgressPercent,
 } from "@/features/wbs/utils/wbsTree";
+import type { WbsViewMode } from "@/features/wbs/types/wbs";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+
+// Gantt libraryは階層表だけを使う利用者へ配信せず、表示切替時に初めて読み込む。
+const WbsGanttChart = defineAsyncComponent(
+  () => import("@/features/wbs/components/WbsGanttChart.vue")
+);
+const activeView = ref<WbsViewMode>("table");
 
 const {
   errorMessages,
@@ -84,7 +91,23 @@ onBeforeMount(initialize);
         </v-chip>
       </v-card-title>
 
-      <v-card-text v-if="rows.length" class="pa-0">
+      <v-card-text v-if="rows.length" class="pb-3">
+        <v-btn-toggle
+          v-model="activeView"
+          color="primary"
+          mandatory
+          divided
+          aria-label="WBS表示形式"
+        >
+          <v-btn value="table" prepend-icon="mdi-table-tree">階層表</v-btn>
+          <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
+        </v-btn-toggle>
+        <p class="text-caption text-medium-emphasis mt-2 mb-0">
+          Ganttは予定期間と進捗の参照専用表示です。日程変更はまだ行いません。
+        </p>
+      </v-card-text>
+
+      <v-card-text v-if="rows.length && activeView === 'table'" class="pa-0">
         <div class="wbs-table-scroll">
           <v-table class="wbs-table" hover>
             <thead>
@@ -172,6 +195,18 @@ onBeforeMount(initialize);
         </div>
       </v-card-text>
 
+      <v-card-text
+        v-else-if="rows.length && activeView === 'gantt'"
+        class="pa-0 wbs-gantt-scroll"
+      >
+        <Suspense>
+          <WbsGanttChart :rows="rows" />
+          <template #fallback>
+            <div class="pa-10 text-center">Ganttを読み込んでいます。</div>
+          </template>
+        </Suspense>
+      </v-card-text>
+
       <v-card-text v-else class="pa-10 text-center">
         <v-icon icon="mdi-file-tree-outline" size="48" class="mb-3" />
         <h2 class="text-h6 mb-2">WBSへ表示するTaskがありません</h2>
@@ -190,6 +225,10 @@ onBeforeMount(initialize);
 }
 
 .wbs-table-scroll {
+  overflow-x: auto;
+}
+
+.wbs-gantt-scroll {
   overflow-x: auto;
 }
 

@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、読取り専用WBS階層表は`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、読取り専用WBS階層表・Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -57,7 +57,7 @@ Router、Session認証ガード、共通ヘッダー・メニューは`src/app`�
 
 Project Boardの設定Dialogでは、Project名・説明・archiveと、member追加・role変更・除外を扱います。Frontendのpermission・Project role判定は操作可否の案内であり、最終認可、最後のOWNER保護、楽観ロックはBackendが行います。409競合では最新Projectを再取得し、自己除外の204成功後は参照権限を失うためProject一覧へ戻ります。
 
-WBS階層表は`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。最初の段階は読取り専用で、Gantt、階層編集、実績工数、依存関係は後続工程として分離します。
+WBSは`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。階層表と参照専用Ganttを切り替えられ、GanttはMIT Licenseの`dhtmlx-gantt` Community 10を使用します。約622KBのlibrary codeはGantt選択時だけ遅延読み込みし、通常のWBS階層表と初期表示へ含めません。日程・進捗・milestoneを表示するだけとし、階層編集、日程更新、実績工数、依存関係、自動scheduleは後続工程へ分離します。
 
 ## 検証
 

@@ -62,3 +62,42 @@ export interface WbsTreeRow extends WbsTask {
   /** 直接の子Taskを1件以上持つ場合はtrue。 */
   hasChildren: boolean;
 }
+
+/** WBS画面で切り替える読取り専用の表示形式。 */
+export type WbsViewMode = "table" | "gantt";
+
+/** DHTMLX Ganttへ渡すTask。Backend DTOをlibrary固有形式へ直接流さないため分離する。 */
+export interface WbsGanttTask {
+  /** Board・WBSと共通のTask ID。 */
+  id: number;
+  /** Gantt左側のtreeへ表示するWBSコード付きタイトル。 */
+  text: string;
+  /** Gantt内で循環しないよう階層行から再構成した親Task ID。最上位は0。 */
+  parent: number;
+  /** 通常Task、summary、milestoneに対応するDHTMLXのTask種別。 */
+  type: "task" | "project" | "milestone";
+  /** yyyy-MM-dd形式の予定開始日。不正日付の場合は省略する。 */
+  start_date?: string;
+  /** yyyy-MM-dd形式の終了境界。不正日付の場合は省略する。 */
+  end_date?: string;
+  /** 0から1へ正規化した進捗率。 */
+  progress: number;
+  /** 初期表示で子Taskを展開するか。 */
+  open: boolean;
+  /** 日付不正時にtimelineへbarを表示しないための指定。 */
+  unscheduled?: boolean;
+  /** 読取り専用MVPでTask個別編集も無効にする。 */
+  readonly: true;
+}
+
+/** WBS階層行をDHTMLX Ganttへ安全に渡す変換結果。 */
+export interface WbsGanttData {
+  /** Ganttのtreeとtimelineへ描画するTask。 */
+  tasks: WbsGanttTask[];
+  /** 不正な予定日でtimelineへbarを描画できなかったTask ID。 */
+  unscheduledTaskIds: number[];
+  /** 描画対象全体の最初の日。予定日が全件不正の場合はnull。 */
+  rangeStart: Date | null;
+  /** 描画対象全体の終了境界。予定日が全件不正の場合はnull。 */
+  rangeEnd: Date | null;
+}

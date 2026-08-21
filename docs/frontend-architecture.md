@@ -104,10 +104,12 @@ src/
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位の読取り専用WBS参照API
-- `src/features/wbs/types/wbs.ts`: WBS Response、Task種別、階層表行の型
+- `src/features/wbs/types/wbs.ts`: WBS Response、Task種別、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化と表示変換
+- `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間への変換
 - `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、認証エラー、Board遷移
-- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する読取り専用WBS階層表
+- `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・進捗・milestoneの読取り専用Gantt
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -131,7 +133,9 @@ Task移動はpointer操作だけに限定せず、移動ハンドルへフォー
 
 Project設定とmember管理はTask Boardから開く1つのDialogと`useProjectSettingsDialog`へまとめる。Project名・説明の更新、ACTIVEからARCHIVEDへの変更、member追加・role変更・除外を扱い、操作ごとの小さなcomposableへは分割しない。Project／memberのversionをBackendへ送り、409では古いフォームを確定せず最新Project詳細を再取得する。最後のOWNERの降格・除外は画面でも抑止して理由を表示するが、同時操作を含む最終判定はBackendのtransactionへ委ねる。自己除外は204 Responseを確定結果として扱い、削除後に取得不能となるProject詳細を要求せずProject一覧へ遷移する。archive成功後は親BoardのProject詳細をResponseで差し替え、Task操作を参照専用へ切り替える。
 
-WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。最初は`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。階層表が安定する前にGantt library、編集API、実績工数、依存関係を混在させない。
+WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。
+
+参照専用GanttはDHTMLX Gantt Community 10をcoreから直接組み込む。Vueの有償wrapperやCDNは使用せず、npm lockとMIT Licenseを確認できる状態にする。`WbsGanttChart`は画面切替時だけdynamic importし、通常の階層表へ約622KBのlibrary codeを含めない。Ganttへ渡す親IDは安全なpreorderのdepthから再構成し、循環したBackend dataをlibraryへ伝播させない。予定終了日は画面上で当日を含むため、DHTMLXの排他的終了境界へ1日加算する。読取り専用設定でdrag、resize、progress変更、link作成を無効にし、編集API、実績工数、依存関係、自動scheduleは後続工程へ分離する。
 
 ## 変更時の確認
 

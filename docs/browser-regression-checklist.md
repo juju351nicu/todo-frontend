@@ -42,8 +42,9 @@ npm run dev -- --host localhost
 | 17 | Project memberを追加・除外する | ACTIVEなアカウントだけを追加でき、最後のOWNERは降格・除外できない |
 | 18 | 検証用Projectをarchiveする | 確認後に参照専用へ切り替わり、Taskとmemberの更新操作が表示されない |
 | 19 | Project BoardからWBSを開く | Boardと同じTaskが親子順で表示され、再読込後もTask ID・予定・進捗が一致する |
+| 20 | WBSをGanttへ切り替える | 親子tree、予定bar、進捗、milestoneが表示され、drag等の編集操作ができない |
 
-## WBS階層表の初回確認項目
+## WBS階層表・Ganttの初回確認項目
 
 WBSは最初の段階では読取り専用である。通常のProjectデータを変更せず、次を表示確認する。
 
@@ -52,6 +53,9 @@ WBSは最初の段階では読取り専用である。通常のProjectデータ�
 - 親Taskの直後に子Taskが字下げ表示され、孫Taskはさらに1段深く表示される。
 - 「Boardを開く」で同じProjectのBoardへ戻る。
 - 「再読込」後もBackendの確定済みTaskから同じ階層を作り直す。
+- 「Gantt」へ切り替え、Summaryを親とするTask bar、進捗、milestone、日付scaleを表示する。
+- Gantt表示中に「再読込」しても二重描画、Task消失、console errorが発生しない。
+- GanttではTask barの移動、期間resize、進捗変更、link作成ができない。
 - Taskが0件の場合は空状態を表示し、画面エラーを出さない。
 - `TASK_READ`不足は403、未参加Projectは404の案内となり、別Projectの存在やTask件数を表示しない。
 - 横幅が狭い画面では表を横スクロールでき、列が重なって読めなくならない。
@@ -99,3 +103,16 @@ Backendの`scripts/browser-regression`にある`BROWSER-REGRESSION`専用fixture
 Vite開発サーバーの初回cold startでは、Vuetify依存関係の事前bundle更新と同時にカレンダーへ遷移したため、
 動的importの一時的な失敗が1回記録された。依存関係の最適化完了後は同じ画面・Board操作で再発せず、
 アプリケーションのAPIエラーやproduction buildの不具合ではないことを切り分けた。
+
+## 2026-08-21 WBS階層表・Gantt表示回帰結果
+
+Docker MySQLが停止中だったため、通常データを変更しないFrontend API契約fixtureをVite middlewareとして一時使用し、画面描画を確認した。fixtureは配布物・Git差分へ含めない。
+
+- Sessionログイン後にProject一覧、標準3列Board、WBSの順で保護ルートを表示した。
+- BoardのTask ID 101・102をWBSでも同じIDとして表示した。
+- Summary 1件、Task 2件、Milestone 1件を親子順に表示し、WBSコード、予定期間、予定工数、進捗、担当者、優先度を確認した。
+- Ganttへ切り替え、Summary bar、子Task bar、進捗、milestone、2026年8月の日付scaleを表示した。
+- Gantt表示中の「再読込」、WBS URLのブラウザ再読込、同じProject Boardへの復帰が正常だった。
+- 一連の操作でFrontendのconsole `warning`、`error`は0件だった。
+
+実MySQL・Spring Session JDBCを使う結合回帰は、Dockerを起動した環境で`local,docker` Backendを使用して再確認する。今回のfixture回帰はFrontendのAPI契約、Router、階層変換、DHTMLX実描画を対象とし、Backend認可やFlywayを代替しない。
