@@ -44,6 +44,7 @@ npm run dev -- --host localhost
 | 19 | Project BoardからWBSを開く | Boardと同じTaskが親子順で表示され、再読込後もTask ID・予定・進捗が一致する |
 | 20 | WBSをGanttへ切り替える | 親子tree、予定bar、進捗、milestoneが表示され、drag等の編集操作ができない |
 | 21 | WBSでTask依存関係を操作する | Finish-to-Startを追加・削除でき、再読込後もBackendの確定一覧と一致する |
+| 22 | 通常Taskの日別実績を操作する | 一覧・合計・登録・編集・削除がBackendの確定値と一致し、Summary・Milestoneには入口が表示されない |
 
 ## WBS階層表・Ganttの初回確認項目
 
@@ -76,6 +77,23 @@ WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを
 - 作成・削除後に再読込しても一覧が一致し、別Project・archive Taskの情報を表示しない。
 - Ganttへ切り替えると登録済みFinish-to-Startだけを依存線として表示し、線を直接作成・変更できない。
 - 2つのtabで同じ依存関係を操作し、古いversionによる削除が409となって最新一覧へ戻る。
+- 一連の操作でブラウザの`warning`、`error`を増やさない。
+
+## Task日別実績工数の初回確認項目
+
+通常データと分離した専用Project・通常Task・Project memberを使用し、次を確認する。
+
+- 通常Taskの実績ボタンからDialogを開き、業務日順の一覧、作業者表示名、分単位工数、version、合計を表示する。
+- Summary・Milestoneには日別実績の入口を表示せず、APIを送信しない。
+- 実績0件では空状態と合計0分を表示する。
+- 通常memberの作業者候補は自分だけ、OWNER・MANAGER・SYSTEM_ADMINはProject member全員となる。
+- 存在しない日付、0分、1441分、小数、未選択・候補外作業者ではAPIを送信せず全理由を表示する。
+- 1分、1440分の境界値を登録でき、同じTask・業務日・作業者の重複は409として最新一覧へ戻る。
+- 登録・更新後はBackendの一覧・合計Responseへ差し替え、更新時は取得済みversionを送る。
+- 削除確認をキャンセルした場合は一覧を維持し、確定時だけ取得済みversionで削除する。
+- 2つのtabで同じ実績を操作し、古いversionによる更新・削除が409となって最新一覧へ戻る。
+- 401はSessionを破棄してログイン画面へ戻り、403は権限不足、404は対象なしとして区別する。
+- 再読込後の一覧・合計とDB inspectが一致し、cleanup後の再inspectが0件となる。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
 ## 2026-08-11 実施結果

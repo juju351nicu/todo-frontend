@@ -1,6 +1,9 @@
 import type {
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
+  TaskWorkLogCreateRequest,
+  TaskWorkLogListResponse,
+  TaskWorkLogUpdateRequest,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
@@ -152,10 +155,114 @@ const deleteTaskDependency = async (
   await ensureSuccess(response);
 };
 
+/** API Responseの欠落したworkLogsを画面へ伝播させず空配列へ正規化する。 */
+const normalizeTaskWorkLogList = (
+  payload: TaskWorkLogListResponse
+): TaskWorkLogListResponse => ({
+  ...payload,
+  workLogs: payload.workLogs ?? [],
+});
+
+/**
+ * 通常Taskへ登録された日別実績工数と合計工数を取得する。
+ *
+ * @param projectId 実績工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @returns 業務日順の日別実績と分単位合計
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加、対象なしまたはBackendエラーの場合
+ */
+const getTaskWorkLogs = async (
+  projectId: number,
+  taskId: number
+): Promise<TaskWorkLogListResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-logs`
+  );
+  await ensureSuccess(response);
+  return normalizeTaskWorkLogList(
+    (await response.json()) as TaskWorkLogListResponse
+  );
+};
+
+/**
+ * 通常Taskへ1作業者・1業務日単位の実績工数を登録する。
+ *
+ * @param projectId 実績工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param request 業務日、実績工数、Project memberの作業者ID
+ * @returns 登録確定後の日別実績工数一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、重複・状態競合またはBackendエラーの場合
+ */
+const createTaskWorkLog = async (
+  projectId: number,
+  taskId: number,
+  request: TaskWorkLogCreateRequest
+): Promise<TaskWorkLogListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-logs`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskWorkLogList(
+    (await response.json()) as TaskWorkLogListResponse
+  );
+};
+
+/**
+ * 保存済みTask日別実績を取得時点version付きで更新する。
+ *
+ * @param projectId 実績工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param workLogId 更新対象の日別実績工数ID
+ * @param request 更新後の値と取得時点version
+ * @returns 更新確定後の日別実績工数一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、重複・version・状態競合またはBackendエラーの場合
+ */
+const updateTaskWorkLog = async (
+  projectId: number,
+  taskId: number,
+  workLogId: number,
+  request: TaskWorkLogUpdateRequest
+): Promise<TaskWorkLogListResponse> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-logs/${workLogId}`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskWorkLogList(
+    (await response.json()) as TaskWorkLogListResponse
+  );
+};
+
+/**
+ * Task日別実績を取得時点version付きで削除する。
+ *
+ * @param projectId 実績工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param workLogId 削除対象の日別実績工数ID
+ * @param version 一覧取得時点の楽観ロックversion
+ * @throws WbsApiError 認可不足、対象なし、version・状態競合またはBackendエラーの場合
+ */
+const deleteTaskWorkLog = async (
+  projectId: number,
+  taskId: number,
+  workLogId: number,
+  version: number
+): Promise<void> => {
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-logs/${workLogId}?version=${encodeURIComponent(String(version))}`
+  );
+  await ensureSuccess(response);
+};
+
 export default {
   createTaskDependency,
+  createTaskWorkLog,
   deleteTaskDependency,
+  deleteTaskWorkLog,
   getTaskDependencies,
+  getTaskWorkLogs,
   getWbs,
+  updateTaskWorkLog,
   updateWbsTask,
 };

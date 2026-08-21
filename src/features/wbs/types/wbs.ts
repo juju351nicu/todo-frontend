@@ -120,6 +120,78 @@ export interface TaskDependencyRow extends TaskDependency {
   successorLabel: string;
 }
 
+/** Taskへ計上された1作業者・1業務日単位の実績工数。 */
+export interface TaskWorkLog {
+  /** Task日別実績工数ID。 */
+  workLogId: number;
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** 実績を計上した業務日。yyyy-MM-dd形式。 */
+  workDate: string;
+  /** 分単位の実績工数。 */
+  actualEffortMinutes: number;
+  /** 実際に作業したProject memberのアカウントID。 */
+  workerAccountId: number;
+  /** 姓名、メール、アカウントIDの順に補完された作業者表示名。 */
+  workerDisplayName: string;
+  /** 実績を最初に登録した認証済みアカウントID。 */
+  createdBy: number;
+  /** ISO-8601形式の作成時刻。 */
+  createdAt: string;
+  /** 実績を最後に更新した認証済みアカウントID。 */
+  updatedBy: number;
+  /** ISO-8601形式の最終更新時刻。 */
+  updatedAt: string;
+  /** 更新・削除時に送る楽観ロックversion。 */
+  version: number;
+}
+
+/** 1 Taskの日別実績と合計工数を返すAPI Response。 */
+export interface TaskWorkLogListResponse {
+  /** 実績工数を所有するProject ID。 */
+  projectId: number;
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** 取得した日別実績の合計工数（分）。 */
+  totalActualEffortMinutes: number;
+  /** 業務日、作業者、実績ID順の日別実績。 */
+  workLogs: TaskWorkLog[];
+}
+
+/** Task日別実績の登録APIへ送信する検証済みRequest。 */
+export interface TaskWorkLogCreateRequest {
+  /** 実績を計上する業務日。yyyy-MM-dd形式。 */
+  workDate: string;
+  /** 1分以上1440分以下の実績工数。 */
+  actualEffortMinutes: number;
+  /** 作業を実施したProject memberのアカウントID。 */
+  workerAccountId: number;
+}
+
+/** Task日別実績の更新APIへ送信する検証済みRequest。 */
+export interface TaskWorkLogUpdateRequest extends TaskWorkLogCreateRequest {
+  /** 一覧取得時点の楽観ロックversion。 */
+  version: number;
+}
+
+/** Task日別実績Dialogが保持する、Backend型へ変換する前の入力値。 */
+export interface TaskWorkLogForm {
+  /** 実績を計上する業務日。未入力時は空文字。 */
+  workDate: string;
+  /** 分単位の実績工数。未入力または数値変換できない場合はnull。 */
+  actualEffortMinutes: number | null;
+  /** 作業者未選択時はnull。 */
+  workerAccountId: number | null;
+}
+
+/** Task日別実績の作業者selectへ表示するProject member候補。 */
+export interface TaskWorkLogWorkerOption {
+  /** アカウントIDとProject roleを含む表示文字列。 */
+  title: string;
+  /** 作業者となるProject memberのアカウントID。 */
+  value: number;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

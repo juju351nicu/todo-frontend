@@ -10,12 +10,22 @@ const mocks = vi.hoisted(() => ({
   userStore: {
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
+    hasRole: vi.fn((code) => mocks.roles.has(code)),
+    memberId: 2,
+  },
+  roles: new Set(),
+  projectApi: {
+    getProject: vi.fn(),
   },
   wbsApi: {
     createTaskDependency: vi.fn(),
+    createTaskWorkLog: vi.fn(),
     deleteTaskDependency: vi.fn(),
+    deleteTaskWorkLog: vi.fn(),
     getTaskDependencies: vi.fn(),
+    getTaskWorkLogs: vi.fn(),
     getWbs: vi.fn(),
+    updateTaskWorkLog: vi.fn(),
     updateWbsTask: vi.fn(),
   },
 }));
@@ -27,6 +37,10 @@ vi.mock("vue-router", () => ({
 vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
+vi.mock("@/features/project/api/projectApi", async () => {
+  const actual = await vi.importActual("@/features/project/api/projectApi");
+  return { ...actual, default: mocks.projectApi };
+});
 vi.mock("@/features/wbs/api/wbsApi", async () => {
   const actual = await vi.importActual("@/features/wbs/api/wbsApi");
   return { ...actual, default: mocks.wbsApi };
@@ -78,6 +92,35 @@ const wbs = {
   ],
 };
 
+const project = {
+  projectId: 7,
+  projectKey: "DEVELOPMENT",
+  name: "開発Project",
+  description: null,
+  status: "ACTIVE",
+  createdBy: 1,
+  createdAt: "2026-08-01T00:00:00Z",
+  updatedAt: "2026-08-01T00:00:00Z",
+  version: 0,
+  members: [
+    {
+      accountId: 1,
+      projectRole: "OWNER",
+      joinedAt: "2026-08-01T00:00:00Z",
+      assignedBy: 1,
+      version: 0,
+    },
+    {
+      accountId: 2,
+      projectRole: "MEMBER",
+      joinedAt: "2026-08-01T00:00:00Z",
+      assignedBy: 1,
+      version: 0,
+    },
+  ],
+  taskStatuses: [],
+};
+
 const updatedWbs = {
   ...wbs,
   tasks: wbs.tasks.map((task) =>
@@ -116,6 +159,37 @@ const updatedDependencyList = {
   ],
 };
 
+const workLogList = {
+  projectId: 7,
+  taskId: 2,
+  totalActualEffortMinutes: 480,
+  workLogs: [
+    {
+      workLogId: 41,
+      taskId: 2,
+      workDate: "2026-08-22",
+      actualEffortMinutes: 480,
+      workerAccountId: 2,
+      workerDisplayName: "担当者",
+      createdBy: 2,
+      createdAt: "2026-08-22T01:00:00Z",
+      updatedBy: 2,
+      updatedAt: "2026-08-22T01:00:00Z",
+      version: 3,
+    },
+  ],
+};
+
+const updatedWorkLogList = {
+  ...workLogList,
+  totalActualEffortMinutes: 510,
+  workLogs: workLogList.workLogs.map((workLog) => ({
+    ...workLog,
+    actualEffortMinutes: 510,
+    version: 4,
+  })),
+};
+
 const buildEditForm = (overrides = {}) => ({
   parentTaskId: 1,
   taskType: "TASK",
@@ -132,18 +206,31 @@ describe("useWbsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.permissions.clear();
+    mocks.roles.clear();
     mocks.permissions.add("TASK_UPDATE");
+    mocks.userStore.memberId = 2;
     mocks.route.params.projectId = "7";
     mocks.router.push.mockResolvedValue(undefined);
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
     mocks.wbsApi.createTaskDependency.mockResolvedValue(
       structuredClone(updatedDependencyList)
     );
+    mocks.wbsApi.createTaskWorkLog.mockResolvedValue(
+      structuredClone(workLogList)
+    );
     mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
+    mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
     mocks.wbsApi.getTaskDependencies.mockResolvedValue(
       structuredClone(dependencyList)
     );
+    mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(
+      structuredClone(workLogList)
+    );
     mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
     mocks.wbsApi.updateWbsTask.mockResolvedValue(structuredClone(updatedWbs));
+    mocks.wbsApi.updateTaskWorkLog.mockResolvedValue(
+      structuredClone(updatedWorkLogList)
+    );
   });
 
   it("初期表示でProject WBSと依存関係を取得して階層行と種別件数を作る", async () => {
@@ -623,4 +710,231 @@ describe("useWbsPage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
+
+  it("通常Taskを選ぶと日別実績一覧と現在利用者の作業者候補を取得する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openWorkLogDialog(2);
+
+    expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledWith(7, 2);
+    expect(page.isWorkLogDialogOpen.value).toBe(true);
+    expect(page.workLogTask.value).toMatchObject({ taskId: 2, taskType: "TASK" });
+    expect(page.workLogList.value).toEqual(workLogList);
+    expect(page.workLogWorkerOptions.value).toEqual([
+      { title: "アカウントID: 2（MEMBER）", value: 2 },
+    ]);
+  });
+
+  it("Summaryでは日別実績APIを呼ばず通常Taskだけが対象だと案内する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openWorkLogDialog(1);
+
+    expect(mocks.wbsApi.getTaskWorkLogs).not.toHaveBeenCalled();
+    expect(page.isWorkLogDialogOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "日別実績工数を登録できるのは通常Taskだけです。",
+    ]);
+  });
+
+  it("業務日・工数・作業者を送信してBackendの確定一覧へ差し替える", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+    const form = {
+      workDate: "2026-08-22",
+      actualEffortMinutes: 480,
+      workerAccountId: 2,
+    };
+
+    await page.saveWorkLog(form);
+
+    expect(mocks.wbsApi.createTaskWorkLog).toHaveBeenCalledWith(7, 2, form);
+    expect(page.workLogList.value).toEqual(workLogList);
+    expect(page.workLogSuccessMessage.value).toBe(
+      "Task日別実績を登録しました。"
+    );
+  });
+
+  it("取得時点version付きで日別実績を更新する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+    page.editWorkLog(41);
+
+    await page.saveWorkLog({
+      workDate: "2026-08-22",
+      actualEffortMinutes: 510,
+      workerAccountId: 2,
+    });
+
+    expect(mocks.wbsApi.updateTaskWorkLog).toHaveBeenCalledWith(7, 2, 41, {
+      workDate: "2026-08-22",
+      actualEffortMinutes: 510,
+      workerAccountId: 2,
+      version: 3,
+    });
+    expect(page.workLogList.value).toEqual(updatedWorkLogList);
+    expect(page.editingWorkLog.value).toBeNull();
+    expect(page.workLogSuccessMessage.value).toBe(
+      "Task日別実績を更新しました。"
+    );
+  });
+
+  it("入力不正では日別実績APIを呼ばずDialogへ全理由を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+
+    await page.saveWorkLog({
+      workDate: "2026-02-30",
+      actualEffortMinutes: 0,
+      workerAccountId: 1,
+    });
+
+    expect(mocks.wbsApi.createTaskWorkLog).not.toHaveBeenCalled();
+    expect(page.workLogEditorErrorMessages.value).toEqual([
+      "業務日を入力してください。",
+      "実績工数は1分以上1440分以下の整数で入力してください。",
+      "Projectへ参加している作業者を選択してください。",
+    ]);
+  });
+
+  it("保存中の再実行では日別実績APIを二重送信しない", async () => {
+    let resolveRequest;
+    mocks.wbsApi.createTaskWorkLog.mockImplementation(
+      () => new Promise((resolve) => (resolveRequest = resolve))
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+    const form = {
+      workDate: "2026-08-22",
+      actualEffortMinutes: 480,
+      workerAccountId: 2,
+    };
+
+    const firstSave = page.saveWorkLog(form);
+    const secondSave = page.saveWorkLog(form);
+
+    expect(mocks.wbsApi.createTaskWorkLog).toHaveBeenCalledOnce();
+    resolveRequest(workLogList);
+    await Promise.all([firstSave, secondSave]);
+  });
+
+  it("日別実績の409競合では編集を破棄して最新一覧を再取得する", async () => {
+    mocks.wbsApi.updateTaskWorkLog.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "version", message: "更新されています。" }],
+      })
+    );
+    mocks.wbsApi.getTaskWorkLogs
+      .mockResolvedValueOnce(structuredClone(workLogList))
+      .mockResolvedValueOnce(structuredClone(updatedWorkLogList));
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+    page.editWorkLog(41);
+
+    await page.saveWorkLog({
+      workDate: "2026-08-22",
+      actualEffortMinutes: 510,
+      workerAccountId: 2,
+    });
+
+    expect(page.editingWorkLog.value).toBeNull();
+    expect(page.workLogEditorErrorMessages.value).toEqual([
+      "更新されています。",
+    ]);
+    expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledTimes(2);
+    expect(page.workLogList.value).toEqual(updatedWorkLogList);
+  });
+
+  it("取得時点versionで削除し204確定後だけ一覧と合計を更新する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+
+    page.requestWorkLogDelete(41);
+    await page.confirmWorkLogDelete();
+
+    expect(mocks.wbsApi.deleteTaskWorkLog).toHaveBeenCalledWith(7, 2, 41, 3);
+    expect(page.workLogList.value).toMatchObject({
+      totalActualEffortMinutes: 0,
+      workLogs: [],
+    });
+    expect(page.workLogPendingDelete.value).toBeNull();
+    expect(page.workLogSuccessMessage.value).toBe(
+      "Task日別実績を削除しました。"
+    );
+  });
+
+  it("管理者はProject全memberを候補にでき、通常memberは他者実績を変更しない", async () => {
+    const ownerProject = structuredClone(project);
+    ownerProject.members[1].projectRole = "OWNER";
+    mocks.projectApi.getProject.mockResolvedValue(ownerProject);
+    const ownerPage = useWbsPage();
+    await ownerPage.initialize();
+    await ownerPage.openWorkLogDialog(2);
+
+    expect(ownerPage.canManageAnyWorkLog.value).toBe(true);
+    expect(ownerPage.workLogWorkerOptions.value.map((option) => option.value)).toEqual([
+      1,
+      2,
+    ]);
+
+    const otherWorkLogList = structuredClone(workLogList);
+    otherWorkLogList.workLogs[0].workerAccountId = 1;
+    mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(otherWorkLogList);
+    const memberPage = useWbsPage();
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
+    await memberPage.initialize();
+    await memberPage.openWorkLogDialog(2);
+    memberPage.editWorkLog(41);
+
+    expect(memberPage.editingWorkLog.value).toBeNull();
+    expect(memberPage.workLogEditorErrorMessages.value).toEqual([
+      "この日別実績工数を更新する権限がありません。",
+    ]);
+  });
+
+  it("通常memberは他者担当Taskを参照できても日別実績を登録しない", async () => {
+    const otherAssigneeWbs = structuredClone(wbs);
+    otherAssigneeWbs.tasks.find((task) => task.taskId === 2).assigneeAccountId = 1;
+    mocks.wbsApi.getWbs.mockResolvedValue(otherAssigneeWbs);
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+
+    await page.saveWorkLog({
+      workDate: "2026-08-22",
+      actualEffortMinutes: 480,
+      workerAccountId: 2,
+    });
+
+    expect(page.canEditSelectedWorkLogTask.value).toBe(false);
+    expect(mocks.wbsApi.createTaskWorkLog).not.toHaveBeenCalled();
+    expect(page.workLogEditorErrorMessages.value).toEqual([
+      "このTaskの日別実績を更新する権限がありません。",
+    ]);
+  });
+
+  it("日別実績参照APIの401はDialogとSessionを破棄してログインへ戻す", async () => {
+    mocks.wbsApi.getTaskWorkLogs.mockRejectedValue(
+      new WbsApiError(401, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openWorkLogDialog(2);
+
+    expect(page.isWorkLogDialogOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
 });
+    mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(
+      structuredClone(workLogList)
+    );

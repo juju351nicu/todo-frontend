@@ -2,6 +2,7 @@
 import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -25,10 +26,17 @@ const activeView = ref<WbsViewMode>("table");
 
 const {
   cancelDependencyDelete,
+  cancelWorkLogDelete,
+  cancelWorkLogEdit,
+  canEditSelectedWorkLogTask,
   canEditWbs,
+  canManageAnyWorkLog,
   closeDependencyEditor,
   closeTaskEditor,
+  closeWorkLogDialog,
   confirmDependencyDelete,
+  confirmWorkLogDelete,
+  currentAccountId,
   dependencies,
   dependencyEditorErrorMessages,
   dependencyPendingDelete,
@@ -36,35 +44,57 @@ const {
   dependencyRows,
   dependencyTaskOptions,
   editingTask,
+  editingWorkLog,
+  editWorkLog,
   editorErrorMessages,
   errorMessages,
   initialize,
   isDeletingDependency,
+  isDeletingWorkLog,
   isDependencyEditorOpen,
   isDependencyMutating,
   isEditorOpen,
   isLoading,
+  isLoadingWorkLogs,
   isSavingDependency,
   isSaving,
+  isSavingWorkLog,
+  isWorkLogDialogOpen,
   milestoneCount,
   openBoard,
   openDependencyEditor,
   openTaskEditor,
+  openWorkLogDialog,
   parentOptions,
   requestDependencyDelete,
+  requestWorkLogDelete,
   rows,
   saveDependency,
   saveWbsTask,
+  saveWorkLog,
   successMessage,
   summaryCount,
   taskCount,
   wbs,
+  workLogEditorErrorMessages,
+  workLogList,
+  workLogPendingDelete,
+  workLogSuccessMessage,
+  workLogTask,
+  workLogWorkerOptions,
 } = useWbsPage();
 
 /** Vuetifyが削除確認Dialogを閉じる場合だけ未確定の削除対象を破棄する。 */
 const handleDependencyDeleteDialogModelValue = (value: boolean): void => {
   if (!value) {
     cancelDependencyDelete();
+  }
+};
+
+/** Vuetifyが日別実績の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
+const handleWorkLogDeleteDialogModelValue = (value: boolean): void => {
+  if (!value) {
+    cancelWorkLogDelete();
   }
 };
 
@@ -85,7 +115,7 @@ onBeforeMount(initialize);
       <div>
         <h1 class="text-h5">{{ wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-body-2 text-medium-emphasis">
-          Boardと同じTaskを使用する階層・予定・進捗管理
+          Boardと同じTaskを使用する階層・予定・進捗・日別実績管理
         </div>
       </div>
       <v-spacer />
@@ -141,7 +171,7 @@ onBeforeMount(initialize);
           <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
         </v-btn-toggle>
         <p class="text-caption text-medium-emphasis mt-2 mb-0">
-          階層表の編集ボタンから予定と進捗を更新できます。Gantt上の直接変更はまだ行いません。
+          階層表から予定・進捗と通常Taskの日別実績を管理できます。Gantt上の直接変更はまだ行いません。
         </p>
       </v-card-text>
 
@@ -159,7 +189,7 @@ onBeforeMount(initialize);
                 <th scope="col">進捗</th>
                 <th scope="col">担当者</th>
                 <th scope="col">優先度</th>
-                <th v-if="canEditWbs" scope="col">操作</th>
+                <th scope="col">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -228,15 +258,28 @@ onBeforeMount(initialize);
                     {{ getWbsPriorityLabel(row.priority) }}
                   </v-chip>
                 </td>
-                <td v-if="canEditWbs">
-                  <v-btn
-                    icon="mdi-pencil-outline"
-                    size="small"
-                    variant="text"
-                    :disabled="isSaving"
-                    :aria-label="`${row.title}のWBS情報を編集`"
-                    @click="openTaskEditor(row.taskId)"
-                  />
+                <td>
+                  <div class="d-flex ga-1">
+                    <v-btn
+                      v-if="row.taskType === 'TASK'"
+                      icon="mdi-timer-edit-outline"
+                      color="primary"
+                      size="small"
+                      variant="text"
+                      :disabled="isLoadingWorkLogs"
+                      :aria-label="`${row.title}の日別実績工数を開く`"
+                      @click="openWorkLogDialog(row.taskId)"
+                    />
+                    <v-btn
+                      v-if="canEditWbs"
+                      icon="mdi-pencil-outline"
+                      size="small"
+                      variant="text"
+                      :disabled="isSaving"
+                      :aria-label="`${row.title}のWBS情報を編集`"
+                      @click="openTaskEditor(row.taskId)"
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -355,6 +398,58 @@ onBeforeMount(initialize);
       @close="closeDependencyEditor"
       @save="saveDependency"
     />
+
+    <TaskWorkLogDialog
+      :open="isWorkLogDialogOpen"
+      :task="workLogTask"
+      :work-log-list="workLogList"
+      :editing-work-log="editingWorkLog"
+      :worker-options="workLogWorkerOptions"
+      :current-account-id="currentAccountId"
+      :can-edit="canEditSelectedWorkLogTask"
+      :can-manage-any-work-log="canManageAnyWorkLog"
+      :is-loading="isLoadingWorkLogs"
+      :is-saving="isSavingWorkLog"
+      :is-deleting="isDeletingWorkLog"
+      :error-messages="workLogEditorErrorMessages"
+      :success-message="workLogSuccessMessage"
+      @close="closeWorkLogDialog"
+      @save="saveWorkLog"
+      @edit="editWorkLog"
+      @cancel-edit="cancelWorkLogEdit"
+      @request-delete="requestWorkLogDelete"
+    />
+
+    <v-dialog
+      :model-value="workLogPendingDelete !== null"
+      max-width="560"
+      :persistent="isDeletingWorkLog"
+      @update:model-value="handleWorkLogDeleteDialogModelValue"
+    >
+      <v-card>
+        <v-card-title>Task日別実績を削除</v-card-title>
+        <v-card-text>
+          <template v-if="workLogPendingDelete">
+            {{ workLogPendingDelete.workDate }}・{{ workLogPendingDelete.workerDisplayName }}の
+            {{ workLogPendingDelete.actualEffortMinutes }}分を削除します。
+          </template>
+          <template v-else>選択したTask日別実績を削除します。</template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :disabled="isDeletingWorkLog" @click="cancelWorkLogDelete">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="isDeletingWorkLog"
+            @click="confirmWorkLogDelete"
+          >
+            削除
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog
       :model-value="dependencyPendingDelete !== null"

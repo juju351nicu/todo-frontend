@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・日別実績工数・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -57,7 +57,7 @@ Router、Session認証ガード、共通ヘッダー・メニューは`src/app`�
 
 Project Boardの設定Dialogでは、Project名・説明・archiveと、member追加・role変更・除外を扱います。Frontendのpermission・Project role判定は操作可否の案内であり、最終認可、最後のOWNER保護、楽観ロックはBackendが行います。409競合では最新Projectを再取得し、自己除外の204成功後は参照権限を失うためProject一覧へ戻ります。
 
-WBSは`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。`TASK_UPDATE`を持つ利用者は階層表から親、Task種別、WBSコード、予定日、予定工数、進捗率をversion付きで更新できます。Task依存関係はFinish-to-Startと0以上の分単位待ち時間を追加でき、削除時は一覧取得時点のversionを送ります。作成・削除の409競合では古いDialogを閉じて最新WBSと依存関係を再取得します。参照専用GanttはMIT Licenseの`dhtmlx-gantt` Community 10を使用し、約622KBのlibrary codeをGantt選択時だけ遅延読み込みます。Backendで確定したFinish-to-Startは読取り専用の依存線として表示します。Gantt上の直接編集・link作成、lagによる自動日程計算、実績工数は後続工程へ分離します。2026-08-22に専用fixtureで依存線1本、link編集control 0件、二種類の再読込、console warning・error 0件、DB cleanup後0件まで確認しました。
+WBSは`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。`TASK_UPDATE`を持つ利用者は階層表から親、Task種別、WBSコード、予定日、予定工数、進捗率をversion付きで更新できます。通常Taskの日別実績Dialogでは業務日、1分以上1440分以下の工数、Project memberの作業者を登録・編集し、取得時点versionで更新・削除します。通常memberは自分の実績だけ、OWNER・MANAGER・SYSTEM_ADMINはProject member全員の実績を操作する画面制御とし、最終認可はBackendへ委ねます。Task依存関係はFinish-to-Startと0以上の分単位待ち時間を追加でき、削除時は一覧取得時点のversionを送ります。409競合では古い編集対象を破棄して最新一覧を再取得します。参照専用GanttはMIT Licenseの`dhtmlx-gantt` Community 10を使用し、約622KBのlibrary codeをGantt選択時だけ遅延読み込みます。Backendで確定したFinish-to-Startは読取り専用の依存線として表示し、Gantt上の直接編集・link作成、lagによる自動日程計算は後続工程へ分離します。2026-08-22に専用fixtureで依存線1本、link編集control 0件、二種類の再読込、console warning・error 0件、DB cleanup後0件まで確認しました。
 
 ## 検証
 

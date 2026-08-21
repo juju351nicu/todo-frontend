@@ -103,16 +103,18 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係API
-- `src/features/wbs/types/wbs.ts`: WBS Response、更新Request、編集Form、Task依存関係、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別実績API
+- `src/features/wbs/types/wbs.ts`: WBS Response、更新Request、編集Form、Task依存関係、日別実績、階層表行、Gantt adapterの型
+- `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化と表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間・読取り専用依存線への変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係編集、409再取得、認証エラー、Board遷移
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別実績編集、409再取得、認証エラー、Board遷移
 - `src/features/wbs/components/WbsDependencyCreateDialog.vue`: Finish-to-Start依存関係を追加する入力Dialog
 - `src/features/wbs/components/WbsTaskEditDialog.vue`: 階層・Task種別・予定・進捗を更新するDialog
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
-- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替画面
+- `src/features/wbs/components/TaskWorkLogDialog.vue`: 通常Taskの日別実績一覧・合計・登録・編集Dialog
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別実績入口画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -144,11 +146,15 @@ WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`p
 
 参照専用GanttはDHTMLX Gantt Community 10をcoreから直接組み込む。Vueの有償wrapperやCDNは使用せず、npm lockとMIT Licenseを確認できる状態にする。`WbsGanttChart`は画面切替時だけdynamic importし、通常の階層表へ約622KBのlibrary codeを含めない。Ganttへ渡す親IDは安全なpreorderのdepthから再構成し、循環したBackend dataをlibraryへ伝播させない。予定終了日は画面上で当日を含むため、DHTMLXの排他的終了境界へ1日加算する。
 
-Task依存関係の画面回帰完了後、Backendで確定したFinish-to-StartをDHTMLXのtype `0`へ変換して読取り専用線として表示する。両端Taskのどちらかが現在のWBSにない不整合データは、未解決IDをlibraryへ渡さず除外する。drag、resize、progress変更、link作成は無効のままとし、線の追加・削除は一覧Dialogに限定する。Backendの待ち時間は分単位、DHTMLXの`lag`はGantt duration unitで解釈されるため、単位変換規則が未確定の段階では線へ渡さず一覧へ表示する。実績工数と自動scheduleは後続工程へ分離する。
+Task依存関係の画面回帰完了後、Backendで確定したFinish-to-StartをDHTMLXのtype `0`へ変換して読取り専用線として表示する。両端Taskのどちらかが現在のWBSにない不整合データは、未解決IDをlibraryへ渡さず除外する。drag、resize、progress変更、link作成は無効のままとし、線の追加・削除は一覧Dialogに限定する。Backendの待ち時間は分単位、DHTMLXの`lag`はGantt duration unitで解釈されるため、単位変換規則が未確定の段階では線へ渡さず一覧へ表示する。自動scheduleは後続工程へ分離する。
 
 2026-08-22に専用fixtureで参照専用Gantt線を実ブラウザ確認した。3件のWBS Taskに対してTask bar 3本、
 Finish-to-Start線1本、link作成・編集control 0件を確認し、画面内再読込とブラウザ再読込後も線は1本のままだった。
 consoleはwarning 0件、error 0件で、DB cleanup後の再inspectも0件だった。
+
+同日にTask日別実績工数APIへFrontendを接続した。階層表の通常Taskだけに実績Dialog入口を表示し、Dialogを開いたときだけ`GET /api/v1/projects/{projectId}/wbs/tasks/{taskId}/work-logs`を実行する。初期WBS読込ではProject詳細も並行取得し、通常memberには自分、OWNER・MANAGER・SYSTEM_ADMINには全Project memberを作業者候補として提示する。Frontend判定は操作可否の案内であり、Project参加、Task担当、Project role、Task種別の最終認可はBackendが行う。
+
+日別実績Formは存在する業務日、1分以上1440分以下の整数工数、画面へ提示したProject memberを送信前に検証する。新規登録と更新はBackendが返した一覧・合計Responseで差し替え、削除は204確定後だけ対象行を除外して合計を再計算する。更新・削除には一覧取得時点versionを送り、404・409では古い編集・削除対象を破棄して選択中Taskの最新一覧を再取得する。二重送信防止、401 Session破棄、403案内、接続失敗も`useWbsPage`で統一した。実ブラウザ・Docker MySQL回帰は専用fixtureを用意して別作業で実施する。
 
 ## 変更時の確認
 
