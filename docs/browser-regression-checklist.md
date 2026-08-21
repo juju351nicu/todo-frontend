@@ -157,5 +157,16 @@ Backendの`BROWSER-WBS-DEPENDENCY`専用fixtureをDocker MySQLへ投入し、`us
 - 安定表示後のブラウザconsoleはwarning 0件、error 0件だった。
 - DB inspectでは初期依存だけが残り、cleanup後の再inspectは0件だった。
 
-通常のProject、Todo、account、Sessionおよび他のブラウザ回帰fixtureは変更していない。依存線表示はこの回帰後に
-独立実装したため、Frontendへ反映後に同じfixtureを再投入し、Gantt上の線表示と編集不可状態を追加確認する。
+通常のProject、Todo、account、Sessionおよび他のブラウザ回帰fixtureは変更していない。
+
+依存線表示をFrontendへ反映した後、同じfixtureを再投入してProject ID 5で追加回帰を行った。
+
+- WBSの3行とGanttの3本のTask barに対し、初期依存線を1本だけ表示した。
+- 依存線のアクセシブル名が`1 Browser Dependency Design (end) 2 Browser Dependency Implementation (start)`であり、Finish-to-Startの向きと両端Taskを確認できた。
+- Gantt上のlink作成・編集controlは0件で、依存関係の編集経路が一覧Dialogだけに限定されていた。
+- 画面内の「再読込」とブラウザ再読込後も依存線は1本のままで、重複しなかった。
+- 安定表示後のブラウザconsoleはwarning 0件、error 0件だった。
+- DB inspectではdependency ID 3の初期依存だけが残り、cleanup後の再inspectは0件だった。
+
+これにより、Task依存関係V3の一覧編集と参照専用Gantt線の実ブラウザ回帰を完了した。採番値は実施記録の識別用であり、
+fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を使用する。

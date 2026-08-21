@@ -146,6 +146,10 @@ WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`p
 
 Task依存関係の画面回帰完了後、Backendで確定したFinish-to-StartをDHTMLXのtype `0`へ変換して読取り専用線として表示する。両端Taskのどちらかが現在のWBSにない不整合データは、未解決IDをlibraryへ渡さず除外する。drag、resize、progress変更、link作成は無効のままとし、線の追加・削除は一覧Dialogに限定する。Backendの待ち時間は分単位、DHTMLXの`lag`はGantt duration unitで解釈されるため、単位変換規則が未確定の段階では線へ渡さず一覧へ表示する。実績工数と自動scheduleは後続工程へ分離する。
 
+2026-08-22に専用fixtureで参照専用Gantt線を実ブラウザ確認した。3件のWBS Taskに対してTask bar 3本、
+Finish-to-Start線1本、link作成・編集control 0件を確認し、画面内再読込とブラウザ再読込後も線は1本のままだった。
+consoleはwarning 0件、error 0件で、DB cleanup後の再inspectも0件だった。
+
 ## 変更時の確認
 
 ```bash
