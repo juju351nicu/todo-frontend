@@ -29,6 +29,7 @@ const {
   closeDependencyEditor,
   closeTaskEditor,
   confirmDependencyDelete,
+  dependencies,
   dependencyEditorErrorMessages,
   dependencyPendingDelete,
   dependencyPendingDeleteRow,
@@ -248,7 +249,7 @@ onBeforeMount(initialize);
         class="pa-0 wbs-gantt-scroll"
       >
         <Suspense>
-          <WbsGanttChart :rows="rows" />
+          <WbsGanttChart :rows="rows" :dependencies="dependencies" />
           <template #fallback>
             <div class="pa-10 text-center">Ganttを読み込んでいます。</div>
           </template>

@@ -54,7 +54,7 @@ WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを
 - 親Taskの直後に子Taskが字下げ表示され、孫Taskはさらに1段深く表示される。
 - 「Boardを開く」で同じProjectのBoardへ戻る。
 - 「再読込」後もBackendの確定済みTaskから同じ階層を作り直す。
-- 「Gantt」へ切り替え、Summaryを親とするTask bar、進捗、milestone、日付scaleを表示する。
+- 「Gantt」へ切り替え、Summaryを親とするTask bar、進捗、milestone、日付scale、登録済みFinish-to-Start依存線を表示する。
 - Gantt表示中に「再読込」しても二重描画、Task消失、console errorが発生しない。
 - GanttではTask barの移動、期間resize、進捗変更、link作成ができない。
 - Taskが0件の場合は空状態を表示し、画面エラーを出さない。
@@ -74,6 +74,7 @@ WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを
 - 403はpermission不足、404は対象なし、409は状態・version競合として区別する。
 - 削除確認をキャンセルした場合は依存関係を維持し、確定時だけ取得済みversionで削除する。
 - 作成・削除後に再読込しても一覧が一致し、別Project・archive Taskの情報を表示しない。
+- Ganttへ切り替えると登録済みFinish-to-Startだけを依存線として表示し、線を直接作成・変更できない。
 - 2つのtabで同じ依存関係を操作し、古いversionによる削除が409となって最新一覧へ戻る。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
@@ -143,3 +144,18 @@ Vite開発サーバーの初回cold startでは、Vuetify依存関係の事前bu
 - 修正fixtureでは不正日付Taskのbarが0件、tree行が1件であることを確認した。
 
 Viteのcold start中に依存関係の事前bundle更新と重なったdynamic import失敗が一度記録されたが、最適化完了後の新規タブで再ログインしてWBSを直接開いた際は`warning`、`error`とも0件だった。production buildの不具合とは分けて扱う。
+
+## 2026-08-22 Task依存関係の実施結果
+
+Backendの`BROWSER-WBS-DEPENDENCY`専用fixtureをDocker MySQLへ投入し、`user01`で実ブラウザ回帰を行った。
+
+- 初期`Design -> Implementation`、Finish-to-Start、待ち時間30分を1件表示した。
+- 自己参照と初期依存の同方向重複はAPI送信前に拒否した。
+- `Implementation -> Verification`、待ち時間60分を追加し、一覧を2件へ更新した。
+- `Implementation -> Design`は循環としてBackendが拒否し、登録済み一覧を維持した。
+- 追加した依存関係だけをversion付きで削除し、再読込後も初期1件だけを表示した。
+- 安定表示後のブラウザconsoleはwarning 0件、error 0件だった。
+- DB inspectでは初期依存だけが残り、cleanup後の再inspectは0件だった。
+
+通常のProject、Todo、account、Sessionおよび他のブラウザ回帰fixtureは変更していない。依存線表示はこの回帰後に
+独立実装したため、Frontendへ反映後に同じfixtureを再投入し、Gantt上の線表示と編集不可状態を追加確認する。

@@ -203,6 +203,20 @@ export interface WbsGanttTask {
   readonly: true;
 }
 
+/** BackendのTask依存関係をDHTMLX Ganttへ渡す読取り専用link。 */
+export interface WbsGanttLink {
+  /** Task依存関係ID。Gantt内でも一意なlink IDとして使用する。 */
+  id: number;
+  /** 先行Task ID。 */
+  source: number;
+  /** 後続Task ID。 */
+  target: number;
+  /** DHTMLXがFinish-to-Startへ割り当てるlink type。 */
+  type: "0";
+  /** Gantt上でlinkを直接変更できないようにする。 */
+  readonly: true;
+}
+
 /** WBS階層行をDHTMLX Ganttへ安全に渡す変換結果。 */
 export interface WbsGanttData {
   /** Ganttのtreeとtimelineへ描画するTask。 */

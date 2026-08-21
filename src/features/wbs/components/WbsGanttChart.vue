@@ -11,21 +11,30 @@ import {
 import { Gantt, type GanttStatic } from "dhtmlx-gantt";
 import "dhtmlx-gantt/codebase/dhtmlxgantt.css";
 
-import type { WbsTreeRow } from "@/features/wbs/types/wbs";
+import type {
+  TaskDependency,
+  WbsTreeRow,
+} from "@/features/wbs/types/wbs";
 import {
   addGanttRangePadding,
   buildWbsGanttData,
+  buildWbsGanttLinks,
   configureWbsGantt,
 } from "@/features/wbs/utils/wbsGantt";
 
 const props = defineProps<{
   /** 階層表と同じ並び・Task IDを持つGantt描画元。 */
   rows: readonly WbsTreeRow[];
+  /** Project内Task間の依存線を描画するBackend依存関係。 */
+  dependencies: readonly TaskDependency[];
 }>();
 
 const ganttContainer = ref<HTMLElement | null>(null);
 const ganttInstance = shallowRef<GanttStatic | null>(null);
 const ganttData = computed(() => buildWbsGanttData(props.rows));
+const ganttLinks = computed(() =>
+  buildWbsGanttLinks(props.rows, props.dependencies)
+);
 
 /** API再読込で予定期間が変わっても、全Taskを含むtimeline範囲へ更新する。 */
 const updateGanttRange = (instance: GanttStatic): void => {
@@ -37,7 +46,7 @@ const updateGanttRange = (instance: GanttStatic): void => {
     rangeEnd === null ? undefined : addGanttRangePadding(rangeEnd, 7);
 };
 
-/** 最新のWBS行を既存Gantt instanceへ再投入し、Frontendだけの確定状態を残さない。 */
+/** 最新のWBS行と依存関係を既存Gantt instanceへ再投入し、Frontendだけの確定状態を残さない。 */
 const renderGantt = async (): Promise<void> => {
   await nextTick();
   const container = ganttContainer.value;
@@ -55,12 +64,17 @@ const renderGantt = async (): Promise<void> => {
 
   updateGanttRange(ganttInstance.value);
   ganttInstance.value.clearAll();
-  ganttInstance.value.parse({ data: ganttData.value.tasks, links: [] });
+  ganttInstance.value.parse({
+    data: ganttData.value.tasks,
+    links: ganttLinks.value,
+  });
   ganttInstance.value.render();
 };
 
 onMounted(renderGantt);
-watch(() => props.rows, renderGantt, { deep: true });
+watch([() => props.rows, () => props.dependencies], renderGantt, {
+  deep: true,
+});
 onBeforeUnmount(() => {
   ganttInstance.value?.destructor();
   ganttInstance.value = null;

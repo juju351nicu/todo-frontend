@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addGanttRangePadding,
   buildWbsGanttData,
+  buildWbsGanttLinks,
   configureWbsGantt,
 } from "@/features/wbs/utils/wbsGantt";
 
@@ -30,6 +31,17 @@ const buildRow = (overrides = {}) => ({
   ...overrides,
 });
 
+/** Gantt依存線の入力となるBackend Task依存関係を作る。 */
+const buildDependency = (overrides = {}) => ({
+  dependencyId: 101,
+  predecessorTaskId: 1,
+  successorTaskId: 2,
+  dependencyType: "FINISH_TO_START",
+  lagMinutes: 30,
+  version: 0,
+  ...overrides,
+});
+
 describe("WBS Gantt変換", () => {
   it("DHTMLXの拡張初期値に左右されず不正日付Taskをtimelineへ描画しない", () => {
     const instance = { config: { show_unscheduled: false } };
@@ -39,12 +51,42 @@ describe("WBS Gantt変換", () => {
     expect(instance.config).toEqual(
       expect.objectContaining({
         readonly: true,
+        show_links: true,
         show_unscheduled: true,
         drag_move: false,
         drag_progress: false,
         drag_resize: false,
+        drag_links: false,
       })
     );
+  });
+
+  it("表示中Task間のFinish-to-Startを編集不可の依存線へ変換する", () => {
+    const links = buildWbsGanttLinks(
+      [buildRow({ taskId: 1 }), buildRow({ taskId: 2 })],
+      [buildDependency()]
+    );
+
+    expect(links).toEqual([
+      {
+        id: 101,
+        source: 1,
+        target: 2,
+        type: "0",
+        readonly: true,
+      },
+    ]);
+    // DHTMLXのlagはGantt duration unitで解釈されるため、Backendの分値を誤変換しない。
+    expect(links[0]).not.toHaveProperty("lag");
+  });
+
+  it("依存関係の片方がWBS表示対象にない場合は未解決の依存線を作らない", () => {
+    const links = buildWbsGanttLinks(
+      [buildRow({ taskId: 1 })],
+      [buildDependency({ successorTaskId: 999 })]
+    );
+
+    expect(links).toEqual([]);
   });
 
   it("Task種別・進捗・表示期間をDHTMLXの読取り専用dataへ変換する", () => {

@@ -1,5 +1,7 @@
 import type {
+  TaskDependency,
   WbsGanttData,
+  WbsGanttLink,
   WbsGanttTask,
   WbsTaskType,
   WbsTreeRow,
@@ -32,7 +34,7 @@ export const configureWbsGantt = (instance: GanttStatic): void => {
     { unit: "day", step: 1, format: "%d" },
   ];
   instance.config.show_progress = true;
-  instance.config.show_links = false;
+  instance.config.show_links = true;
   // DHTMLXの拡張初期値に依存せず、不正日付Taskをtimelineへ描画しない。
   instance.config.show_unscheduled = true;
   instance.config.drag_move = false;
@@ -162,6 +164,35 @@ export const buildWbsGanttData = (
     rangeStart: range.start,
     rangeEnd: range.end,
   };
+};
+
+/**
+ * WBSに表示中のTask間にあるFinish-to-Start依存関係を、読取り専用Gantt linkへ変換する。
+ * 片方のTaskが表示対象にない不整合データは、DHTMLXへ未解決IDを渡さず除外する。
+ *
+ * @param rows Ganttへ表示するWBS階層行
+ * @param dependencies Backendから取得したProject内Task依存関係
+ * @returns 表示対象Task間で成立する読取り専用Gantt link
+ */
+export const buildWbsGanttLinks = (
+  rows: readonly WbsTreeRow[],
+  dependencies: readonly TaskDependency[]
+): WbsGanttLink[] => {
+  const taskIds = new Set(rows.map((row) => row.taskId));
+  return dependencies
+    .filter(
+      (dependency) =>
+        dependency.dependencyType === "FINISH_TO_START" &&
+        taskIds.has(dependency.predecessorTaskId) &&
+        taskIds.has(dependency.successorTaskId)
+    )
+    .map((dependency) => ({
+      id: dependency.dependencyId,
+      source: dependency.predecessorTaskId,
+      target: dependency.successorTaskId,
+      type: "0",
+      readonly: true,
+    }));
 };
 
 /** 表示期間の前後へ余白日を追加し、先頭・末尾のTask barを確認しやすくする。 */
