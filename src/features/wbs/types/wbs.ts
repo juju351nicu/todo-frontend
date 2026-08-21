@@ -41,11 +41,11 @@ export interface WbsTask {
   taskStatusName: string;
   /** 同じ親配下の初期表示順。 */
   position: number;
-  /** 将来の編集APIで使用する楽観ロックversion。 */
+  /** WBS Task更新APIで使用する楽観ロックversion。 */
   version: number;
 }
 
-/** Project単位の読取り専用WBS API Response。 */
+/** Project単位のWBS参照・更新API Response。 */
 export interface WbsResponse {
   /** WBSを所有するProject ID。 */
   projectId: number;
@@ -53,6 +53,54 @@ export interface WbsResponse {
   projectName: string;
   /** 親Task IDを持つflat list。Taskがない場合は空配列。 */
   tasks: WbsTask[];
+}
+
+/** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
+export interface WbsTaskEditForm {
+  /** 親Task ID。最上位へ移動する場合はnull。 */
+  parentTaskId: number | null;
+  /** 通常Task、summary、milestoneの構造種別。 */
+  taskType: WbsTaskType;
+  /** 画面表示用WBSコード。空欄は保存時にnullへ変換する。 */
+  wbsCode: string;
+  /** 予定開始日。yyyy-MM-dd形式。 */
+  plannedStartDate: string;
+  /** 予定終了日。yyyy-MM-dd形式。 */
+  plannedEndDate: string;
+  /** 分単位の予定工数。未入力または不正入力はnull。 */
+  plannedEffortMinutes: number | null;
+  /** 0から100までの進捗率。未入力または不正入力はnull。 */
+  progressPercent: number | null;
+  /** Dialogを開いたWBS取得時点の楽観ロックversion。 */
+  version: number;
+}
+
+/** WBS Task更新APIへ送信する、検証・正規化済みRequest。 */
+export interface WbsTaskUpdateRequest {
+  /** 更新後の親Task ID。最上位へ移動する場合はnull。 */
+  parentTaskId: number | null;
+  /** 更新後のTask構造種別。 */
+  taskType: WbsTaskType;
+  /** 正規化済みWBSコード。空欄はnull。 */
+  wbsCode: string | null;
+  /** 更新後の予定開始日。 */
+  plannedStartDate: string;
+  /** 更新後の予定終了日。 */
+  plannedEndDate: string;
+  /** 更新後の分単位予定工数。 */
+  plannedEffortMinutes: number;
+  /** 更新後の0から100までの進捗率。 */
+  progressPercent: number;
+  /** 更新対象を取得した時点の楽観ロックversion。 */
+  version: number;
+}
+
+/** 親Task selectへ表示するsummary Taskまたは最上位の候補。 */
+export interface WbsParentOption {
+  /** WBSコードを含む利用者向け表示名。 */
+  title: string;
+  /** 親Task ID。最上位を選ぶ場合はnull。 */
+  value: number | null;
 }
 
 /** flat listを階層表へ表示するために深さと子Task有無を加えた行。 */
@@ -63,7 +111,7 @@ export interface WbsTreeRow extends WbsTask {
   hasChildren: boolean;
 }
 
-/** WBS画面で切り替える読取り専用の表示形式。 */
+/** WBS画面で切り替える階層表・参照専用Ganttの表示形式。 */
 export type WbsViewMode = "table" | "gantt";
 
 /** DHTMLX Ganttへ渡すTask。Backend DTOをlibrary固有形式へ直接流さないため分離する。 */

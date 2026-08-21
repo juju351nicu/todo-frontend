@@ -1,4 +1,7 @@
-import type { WbsResponse } from "@/features/wbs/types/wbs";
+import type {
+  WbsResponse,
+  WbsTaskUpdateRequest,
+} from "@/features/wbs/types/wbs";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
@@ -36,7 +39,7 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 /**
- * Projectの非archive Taskを読取り専用WBSとして取得する。
+ * Projectの非archive TaskをWBS表示・編集開始用スナップショットとして取得する。
  *
  * @param projectId 参照対象Project ID
  * @returns Boardと共通のTask IDを持つWBS。Task未登録時は空配列
@@ -55,4 +58,30 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
   };
 };
 
-export default { getWbs };
+/**
+ * 既存TaskのWBS固有項目を楽観ロック付きで更新する。
+ *
+ * @param projectId 更新対象Taskが所属するProject ID
+ * @param taskId 更新対象Task ID
+ * @param request 階層、種別、予定、進捗と取得時点のversion
+ * @returns 更新確定後のProject WBS全体
+ * @throws WbsApiError 入力不正、認可不足、対象なし、version競合またはBackendエラーの場合
+ */
+const updateWbsTask = async (
+  projectId: number,
+  taskId: number,
+  request: WbsTaskUpdateRequest
+): Promise<WbsResponse> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}`,
+    request
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as WbsResponse;
+  return {
+    ...payload,
+    tasks: payload.tasks ?? [],
+  };
+};
+
+export default { getWbs, updateWbsTask };

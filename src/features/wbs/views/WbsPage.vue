@@ -2,6 +2,7 @@
 import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
   formatPlannedEffort,
@@ -22,12 +23,22 @@ const WbsGanttChart = defineAsyncComponent(
 const activeView = ref<WbsViewMode>("table");
 
 const {
+  canEditWbs,
+  closeTaskEditor,
+  editingTask,
+  editorErrorMessages,
   errorMessages,
   initialize,
+  isEditorOpen,
   isLoading,
+  isSaving,
   milestoneCount,
   openBoard,
+  openTaskEditor,
+  parentOptions,
   rows,
+  saveWbsTask,
+  successMessage,
   summaryCount,
   taskCount,
   wbs,
@@ -50,7 +61,7 @@ onBeforeMount(initialize);
       <div>
         <h1 class="text-h5">{{ wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-body-2 text-medium-emphasis">
-          Boardと同じTaskを使用する読取り専用の階層表
+          Boardと同じTaskを使用する階層・予定・進捗管理
         </div>
       </div>
       <v-spacer />
@@ -75,6 +86,9 @@ onBeforeMount(initialize);
 
     <v-alert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+    </v-alert>
+    <v-alert v-if="successMessage" type="success" class="mb-4">
+      {{ successMessage }}
     </v-alert>
 
     <v-card v-if="wbs" max-width="1600" class="mx-auto">
@@ -103,7 +117,7 @@ onBeforeMount(initialize);
           <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
         </v-btn-toggle>
         <p class="text-caption text-medium-emphasis mt-2 mb-0">
-          Ganttは予定期間と進捗の参照専用表示です。日程変更はまだ行いません。
+          階層表の編集ボタンから予定と進捗を更新できます。Gantt上の直接変更はまだ行いません。
         </p>
       </v-card-text>
 
@@ -121,6 +135,7 @@ onBeforeMount(initialize);
                 <th scope="col">進捗</th>
                 <th scope="col">担当者</th>
                 <th scope="col">優先度</th>
+                <th v-if="canEditWbs" scope="col">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -189,6 +204,16 @@ onBeforeMount(initialize);
                     {{ getWbsPriorityLabel(row.priority) }}
                   </v-chip>
                 </td>
+                <td v-if="canEditWbs">
+                  <v-btn
+                    icon="mdi-pencil-outline"
+                    size="small"
+                    variant="text"
+                    :disabled="isSaving"
+                    :aria-label="`${row.title}のWBS情報を編集`"
+                    @click="openTaskEditor(row.taskId)"
+                  />
+                </td>
               </tr>
             </tbody>
           </v-table>
@@ -215,6 +240,16 @@ onBeforeMount(initialize);
         </p>
       </v-card-text>
     </v-card>
+
+    <WbsTaskEditDialog
+      :open="isEditorOpen"
+      :task="editingTask"
+      :parent-options="parentOptions"
+      :is-saving="isSaving"
+      :error-messages="editorErrorMessages"
+      @close="closeTaskEditor"
+      @save="saveWbsTask"
+    />
   </v-container>
 </template>
 
