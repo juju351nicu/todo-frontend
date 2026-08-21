@@ -4,7 +4,12 @@ import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
-  default: { getRequest: vi.fn(), putRequest: vi.fn() },
+  default: {
+    deleteRequest: vi.fn(),
+    getRequest: vi.fn(),
+    postRequest: vi.fn(),
+    putRequest: vi.fn(),
+  },
 }));
 
 describe("WBS API", () => {
@@ -113,5 +118,72 @@ describe("WBS API", () => {
         version: 4,
       })
     ).rejects.toMatchObject({ status: 400, errorResponse });
+  });
+
+  it("Project IDを含む依存関係APIから未登録時も空配列を取得する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ projectId: 7 }),
+    });
+
+    await expect(WbsApi.getTaskDependencies(7)).resolves.toEqual({
+      projectId: 7,
+      dependencies: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/dependencies"
+    );
+  });
+
+  it("Finish-to-Start依存関係をPOSTして確定後の一覧を返す", async () => {
+    const request = {
+      predecessorTaskId: 11,
+      successorTaskId: 12,
+      dependencyType: "FINISH_TO_START",
+      lagMinutes: 30,
+    };
+    const response = {
+      projectId: 7,
+      dependencies: [
+        { dependencyId: 31, ...request, version: 0 },
+      ],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createTaskDependency(7, request)).resolves.toEqual(
+      response
+    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/dependencies",
+      request
+    );
+  });
+
+  it("Task依存関係IDとversionをDELETE queryへ含めて204を確定結果にする", async () => {
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await expect(WbsApi.deleteTaskDependency(7, 31, 4)).resolves.toBeUndefined();
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/dependencies/31?version=4"
+    );
+  });
+
+  it("削除競合のBackend本文をstatus付きWbsApiErrorへ保持する", async () => {
+    const errorResponse = {
+      fieldErrors: [{ field: "version", message: "更新されています。" }],
+    };
+    HttpClient.deleteRequest.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: vi.fn().mockResolvedValue(errorResponse),
+    });
+
+    await expect(WbsApi.deleteTaskDependency(7, 31, 4)).rejects.toMatchObject({
+      status: 409,
+      errorResponse,
+    });
   });
 });

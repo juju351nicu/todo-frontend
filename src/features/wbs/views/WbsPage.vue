@@ -2,6 +2,7 @@
 import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
@@ -23,26 +24,48 @@ const WbsGanttChart = defineAsyncComponent(
 const activeView = ref<WbsViewMode>("table");
 
 const {
+  cancelDependencyDelete,
   canEditWbs,
+  closeDependencyEditor,
   closeTaskEditor,
+  confirmDependencyDelete,
+  dependencyEditorErrorMessages,
+  dependencyPendingDelete,
+  dependencyPendingDeleteRow,
+  dependencyRows,
+  dependencyTaskOptions,
   editingTask,
   editorErrorMessages,
   errorMessages,
   initialize,
+  isDeletingDependency,
+  isDependencyEditorOpen,
+  isDependencyMutating,
   isEditorOpen,
   isLoading,
+  isSavingDependency,
   isSaving,
   milestoneCount,
   openBoard,
+  openDependencyEditor,
   openTaskEditor,
   parentOptions,
+  requestDependencyDelete,
   rows,
+  saveDependency,
   saveWbsTask,
   successMessage,
   summaryCount,
   taskCount,
   wbs,
 } = useWbsPage();
+
+/** Vuetifyが削除確認Dialogを閉じる場合だけ未確定の削除対象を破棄する。 */
+const handleDependencyDeleteDialogModelValue = (value: boolean): void => {
+  if (!value) {
+    cancelDependencyDelete();
+  }
+};
 
 onBeforeMount(initialize);
 </script>
@@ -241,6 +264,78 @@ onBeforeMount(initialize);
       </v-card-text>
     </v-card>
 
+    <v-card v-if="wbs" max-width="1600" class="mx-auto mt-4">
+      <v-card-title class="d-flex align-center flex-wrap ga-2">
+        <v-icon icon="mdi-vector-link" />
+        Task依存関係
+        <v-chip size="small" variant="outlined">
+          {{ dependencyRows.length }}件
+        </v-chip>
+        <v-spacer />
+        <v-btn
+          v-if="canEditWbs"
+          prepend-icon="mdi-link-plus"
+          color="primary"
+          variant="tonal"
+          :disabled="dependencyTaskOptions.length < 2 || isDependencyMutating"
+          @click="openDependencyEditor"
+        >
+          依存関係を追加
+        </v-btn>
+      </v-card-title>
+
+      <v-card-text v-if="dependencyRows.length" class="pa-0">
+        <div class="wbs-dependency-scroll">
+          <v-table class="wbs-dependency-table" hover>
+            <thead>
+              <tr>
+                <th scope="col">先行Task</th>
+                <th scope="col">後続Task</th>
+                <th scope="col">依存種別</th>
+                <th scope="col">待ち時間</th>
+                <th v-if="canEditWbs" scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="dependency in dependencyRows"
+                :key="dependency.dependencyId"
+              >
+                <td>{{ dependency.predecessorLabel }}</td>
+                <td>
+                  <v-icon icon="mdi-arrow-right" size="small" class="mr-2" />
+                  {{ dependency.successorLabel }}
+                </td>
+                <td>
+                  <v-chip size="x-small" variant="outlined">
+                    Finish-to-Start
+                  </v-chip>
+                </td>
+                <td>{{ dependency.lagMinutes }}分</td>
+                <td v-if="canEditWbs">
+                  <v-btn
+                    icon="mdi-link-variant-remove"
+                    color="error"
+                    size="small"
+                    variant="text"
+                    :disabled="isDependencyMutating"
+                    :aria-label="`${dependency.predecessorLabel}から${dependency.successorLabel}への依存関係を削除`"
+                    @click="requestDependencyDelete(dependency.dependencyId)"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+        </div>
+      </v-card-text>
+      <v-card-text v-else class="pa-8 text-center">
+        <v-icon icon="mdi-vector-link" size="40" class="mb-2" />
+        <p class="text-body-2 text-medium-emphasis mb-0">
+          Task依存関係はまだ登録されていません。
+        </p>
+      </v-card-text>
+    </v-card>
+
     <WbsTaskEditDialog
       :open="isEditorOpen"
       :task="editingTask"
@@ -250,6 +345,48 @@ onBeforeMount(initialize);
       @close="closeTaskEditor"
       @save="saveWbsTask"
     />
+
+    <WbsDependencyCreateDialog
+      :open="isDependencyEditorOpen"
+      :task-options="dependencyTaskOptions"
+      :is-saving="isSavingDependency"
+      :error-messages="dependencyEditorErrorMessages"
+      @close="closeDependencyEditor"
+      @save="saveDependency"
+    />
+
+    <v-dialog
+      :model-value="dependencyPendingDelete !== null"
+      max-width="560"
+      :persistent="isDeletingDependency"
+      @update:model-value="handleDependencyDeleteDialogModelValue"
+    >
+      <v-card>
+        <v-card-title>Task依存関係を削除</v-card-title>
+        <v-card-text>
+          <template v-if="dependencyPendingDeleteRow">
+            「{{ dependencyPendingDeleteRow.predecessorLabel }}」から
+            「{{ dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
+          </template>
+          <template v-else>
+            選択したTask依存関係を削除します。
+          </template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :disabled="isDeletingDependency" @click="cancelDependencyDelete">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="isDeletingDependency"
+            @click="confirmDependencyDelete"
+          >
+            削除
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -265,6 +402,14 @@ onBeforeMount(initialize);
 
 .wbs-gantt-scroll {
   overflow-x: auto;
+}
+
+.wbs-dependency-scroll {
+  overflow-x: auto;
+}
+
+.wbs-dependency-table {
+  min-width: 820px;
 }
 
 .wbs-table {

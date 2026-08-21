@@ -103,12 +103,13 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新API
-- `src/features/wbs/types/wbs.ts`: WBS Response、更新Request、編集Form、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係API
+- `src/features/wbs/types/wbs.ts`: WBS Response、更新Request、編集Form、Task依存関係、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/wbsForm.ts`: 編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化と表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間への変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task編集、409再取得、認証エラー、Board遷移
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係編集、409再取得、認証エラー、Board遷移
+- `src/features/wbs/components/WbsDependencyCreateDialog.vue`: Finish-to-Start依存関係を追加する入力Dialog
 - `src/features/wbs/components/WbsTaskEditDialog.vue`: 階層・Task種別・予定・進捗を更新するDialog
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・進捗・milestoneの読取り専用Gantt
 - `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替画面
@@ -139,7 +140,9 @@ WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`p
 
 2026-08-22にWBS階層表へTask編集Dialogを追加した。親候補はSummaryだけとし、編集中Task自身と全子孫を除いて明らかな循環をFrontendでも抑止する。予定日、整数分の予定工数、0から100まで小数第2位の進捗率、Milestoneの同日・0分制約を送信前に検証するが、Project状態、親Taskの最新状態、子Task有無、同時更新はBackendを最終判定とする。更新は取得時点のversionを含む`PUT /api/v1/projects/{projectId}/wbs/tasks/{taskId}`を使用し、成功時はResponse全体、409時は再取得した最新WBSで画面を差し替える。Ganttのdrag・resize・progress直接変更は引き続き無効とする。
 
-参照専用GanttはDHTMLX Gantt Community 10をcoreから直接組み込む。Vueの有償wrapperやCDNは使用せず、npm lockとMIT Licenseを確認できる状態にする。`WbsGanttChart`は画面切替時だけdynamic importし、通常の階層表へ約622KBのlibrary codeを含めない。Ganttへ渡す親IDは安全なpreorderのdepthから再構成し、循環したBackend dataをlibraryへ伝播させない。予定終了日は画面上で当日を含むため、DHTMLXの排他的終了境界へ1日加算する。読取り専用設定でdrag、resize、progress変更、link作成を無効にし、Gantt上の直接編集、実績工数、依存関係、自動scheduleは後続工程へ分離する。
+同日にTask依存関係V3へFrontendを接続した。一覧はWBS Taskと並行取得し、`TASK_UPDATE`を持つ利用者だけがFinish-to-Startと0以上の整数分待ち時間を追加・削除できる。未選択、自己参照、同方向重複、待ち時間不正は送信前に案内するが、直接・間接循環、別Project、archive状態、同時操作はBackendを最終判定とする。作成成功時はBackendの一覧Response、削除成功時は204を確定結果とし、削除には取得時点versionを使用する。404・409では古い確認対象を破棄してWBSと依存関係を再取得する。Gantt依存線への変換は一覧編集のブラウザ回帰後に独立して追加する。
+
+参照専用GanttはDHTMLX Gantt Community 10をcoreから直接組み込む。Vueの有償wrapperやCDNは使用せず、npm lockとMIT Licenseを確認できる状態にする。`WbsGanttChart`は画面切替時だけdynamic importし、通常の階層表へ約622KBのlibrary codeを含めない。Ganttへ渡す親IDは安全なpreorderのdepthから再構成し、循環したBackend dataをlibraryへ伝播させない。予定終了日は画面上で当日を含むため、DHTMLXの排他的終了境界へ1日加算する。読取り専用設定でdrag、resize、progress変更、link作成を無効にし、Gantt上の直接編集、依存線表示、実績工数、自動scheduleは後続工程へ分離する。
 
 ## 変更時の確認
 

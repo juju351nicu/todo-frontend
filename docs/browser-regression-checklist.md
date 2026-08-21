@@ -43,10 +43,11 @@ npm run dev -- --host localhost
 | 18 | 検証用Projectをarchiveする | 確認後に参照専用へ切り替わり、Taskとmemberの更新操作が表示されない |
 | 19 | Project BoardからWBSを開く | Boardと同じTaskが親子順で表示され、再読込後もTask ID・予定・進捗が一致する |
 | 20 | WBSをGanttへ切り替える | 親子tree、予定bar、進捗、milestoneが表示され、drag等の編集操作ができない |
+| 21 | WBSでTask依存関係を操作する | Finish-to-Startを追加・削除でき、再読込後もBackendの確定一覧と一致する |
 
 ## WBS階層表・Ganttの初回確認項目
 
-WBSは最初の段階では読取り専用である。通常のProjectデータを変更せず、次を表示確認する。
+WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを変更せず次を表示確認する。
 
 - `/projects/{projectId}/board`の「WBSを開く」から`/projects/{projectId}/wbs`へ遷移する。
 - Project名、Task／Summary／Milestone件数、WBSコード、予定期間、予定工数、進捗、担当者、優先度が表示される。
@@ -59,6 +60,21 @@ WBSは最初の段階では読取り専用である。通常のProjectデータ�
 - Taskが0件の場合は空状態を表示し、画面エラーを出さない。
 - `TASK_READ`不足は403、未参加Projectは404の案内となり、別Projectの存在やTask件数を表示しない。
 - 横幅が狭い画面では表を横スクロールでき、列が重なって読めなくならない。
+- 一連の操作でブラウザの`warning`、`error`を増やさない。
+
+## Task依存関係の初回確認項目
+
+通常データと分離した専用Project・Taskを使用し、次を確認する。
+
+- 依存関係0件では空状態を表示し、Taskが2件未満の場合は追加操作を無効にする。
+- `TASK_UPDATE`を持つ利用者だけに追加・削除操作を表示する。
+- 先行Task、後続Task、0以上の整数分待ち時間を指定し、Finish-to-Startを追加できる。
+- 未選択、同じTask、負数・小数の待ち時間、同方向重複ではAPIを送信せず理由を表示する。
+- 直接または間接循環をBackendが400で拒否し、入力Dialogへ理由を表示する。
+- 403はpermission不足、404は対象なし、409は状態・version競合として区別する。
+- 削除確認をキャンセルした場合は依存関係を維持し、確定時だけ取得済みversionで削除する。
+- 作成・削除後に再読込しても一覧が一致し、別Project・archive Taskの情報を表示しない。
+- 2つのtabで同じ依存関係を操作し、古いversionによる削除が409となって最新一覧へ戻る。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
 ## 2026-08-11 実施結果

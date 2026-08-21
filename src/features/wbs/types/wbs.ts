@@ -55,6 +55,71 @@ export interface WbsResponse {
   tasks: WbsTask[];
 }
 
+/** WBS Task間の日程依存種別。初期契約ではFinish-to-Startだけを使用する。 */
+export type TaskDependencyType = "FINISH_TO_START";
+
+/** BackendがProject単位で返す、有効Task間の依存関係。 */
+export interface TaskDependency {
+  /** Task依存関係を一意に識別するID。 */
+  dependencyId: number;
+  /** 先に完了するTask ID。 */
+  predecessorTaskId: number;
+  /** 後から開始するTask ID。 */
+  successorTaskId: number;
+  /** 日程依存種別。 */
+  dependencyType: TaskDependencyType;
+  /** 先行Task終了から後続Task開始までの待ち時間（分）。 */
+  lagMinutes: number;
+  /** 削除時に送る楽観ロックversion。 */
+  version: number;
+}
+
+/** Project単位のTask依存関係一覧API Response。 */
+export interface TaskDependencyListResponse {
+  /** 依存関係を所有するProject ID。 */
+  projectId: number;
+  /** Task依存関係ID順の有効な依存関係。 */
+  dependencies: TaskDependency[];
+}
+
+/** Task依存関係作成APIへ送る検証済みRequest。 */
+export interface TaskDependencyCreateRequest {
+  /** 先に完了するTask ID。 */
+  predecessorTaskId: number;
+  /** 後から開始するTask ID。 */
+  successorTaskId: number;
+  /** 初期契約で固定するFinish-to-Start。 */
+  dependencyType: TaskDependencyType;
+  /** 0以上の分単位待ち時間。 */
+  lagMinutes: number;
+}
+
+/** Task依存関係追加Dialogが保持する未検証の入力値。 */
+export interface TaskDependencyCreateForm {
+  /** 先行Task未選択時はnull。 */
+  predecessorTaskId: number | null;
+  /** 後続Task未選択時はnull。 */
+  successorTaskId: number | null;
+  /** 未入力または数値変換できない場合はnull。 */
+  lagMinutes: number | null;
+}
+
+/** Task依存関係のselectへ表示するTask候補。 */
+export interface TaskDependencyTaskOption {
+  /** WBSコードとTask名を含む表示文字列。 */
+  title: string;
+  /** Board・WBSと共通のTask ID。 */
+  value: number;
+}
+
+/** Task依存関係一覧へTask名を加えた画面表示行。 */
+export interface TaskDependencyRow extends TaskDependency {
+  /** 先行TaskのWBSコード付き表示名。 */
+  predecessorLabel: string;
+  /** 後続TaskのWBSコード付き表示名。 */
+  successorLabel: string;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

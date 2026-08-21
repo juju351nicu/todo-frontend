@@ -1,4 +1,6 @@
 import type {
+  TaskDependencyCreateRequest,
+  TaskDependencyListResponse,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
@@ -84,4 +86,76 @@ const updateWbsTask = async (
   };
 };
 
-export default { getWbs, updateWbsTask };
+/**
+ * Project内の非archive Task間に保存された依存関係を取得する。
+ *
+ * @param projectId 参照対象Project ID
+ * @returns Task依存関係ID順の一覧。未登録時は空配列
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
+ */
+const getTaskDependencies = async (
+  projectId: number
+): Promise<TaskDependencyListResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/dependencies`
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as TaskDependencyListResponse;
+  return {
+    ...payload,
+    dependencies: payload.dependencies ?? [],
+  };
+};
+
+/**
+ * 同じProjectの2つのTaskへFinish-to-Start依存関係を追加する。
+ * 共通HTTP clientがSession CookieとCSRF headerを設定する。
+ *
+ * @param projectId 依存関係を所有するProject ID
+ * @param request 先行Task、後続Task、待ち時間を含む検証済みRequest
+ * @returns 作成確定後のProject内Task依存関係一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、重複・循環・状態競合またはBackendエラーの場合
+ */
+const createTaskDependency = async (
+  projectId: number,
+  request: TaskDependencyCreateRequest
+): Promise<TaskDependencyListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/dependencies`,
+    request
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as TaskDependencyListResponse;
+  return {
+    ...payload,
+    dependencies: payload.dependencies ?? [],
+  };
+};
+
+/**
+ * Task依存関係を取得時点version付きで削除する。
+ * 204 Responseを削除確定として扱い、Response bodyは読み取らない。
+ *
+ * @param projectId 依存関係を所有するProject ID
+ * @param dependencyId 削除するTask依存関係ID
+ * @param version 一覧取得時点の楽観ロックversion
+ * @throws WbsApiError 認可不足、対象なし、version・状態競合またはBackendエラーの場合
+ */
+const deleteTaskDependency = async (
+  projectId: number,
+  dependencyId: number,
+  version: number
+): Promise<void> => {
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/dependencies/${dependencyId}?version=${encodeURIComponent(String(version))}`
+  );
+  await ensureSuccess(response);
+};
+
+export default {
+  createTaskDependency,
+  deleteTaskDependency,
+  getTaskDependencies,
+  getWbs,
+  updateWbsTask,
+};

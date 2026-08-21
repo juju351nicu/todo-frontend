@@ -11,7 +11,13 @@ const mocks = vi.hoisted(() => ({
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
   },
-  wbsApi: { getWbs: vi.fn(), updateWbsTask: vi.fn() },
+  wbsApi: {
+    createTaskDependency: vi.fn(),
+    deleteTaskDependency: vi.fn(),
+    getTaskDependencies: vi.fn(),
+    getWbs: vi.fn(),
+    updateWbsTask: vi.fn(),
+  },
 }));
 
 vi.mock("vue-router", () => ({
@@ -81,6 +87,35 @@ const updatedWbs = {
   ),
 };
 
+const dependencyList = {
+  projectId: 7,
+  dependencies: [
+    {
+      dependencyId: 31,
+      predecessorTaskId: 1,
+      successorTaskId: 2,
+      dependencyType: "FINISH_TO_START",
+      lagMinutes: 0,
+      version: 3,
+    },
+  ],
+};
+
+const updatedDependencyList = {
+  projectId: 7,
+  dependencies: [
+    ...dependencyList.dependencies,
+    {
+      dependencyId: 32,
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      dependencyType: "FINISH_TO_START",
+      lagMinutes: 30,
+      version: 0,
+    },
+  ],
+};
+
 const buildEditForm = (overrides = {}) => ({
   parentTaskId: 1,
   taskType: "TASK",
@@ -100,16 +135,24 @@ describe("useWbsPage", () => {
     mocks.permissions.add("TASK_UPDATE");
     mocks.route.params.projectId = "7";
     mocks.router.push.mockResolvedValue(undefined);
+    mocks.wbsApi.createTaskDependency.mockResolvedValue(
+      structuredClone(updatedDependencyList)
+    );
+    mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
+    mocks.wbsApi.getTaskDependencies.mockResolvedValue(
+      structuredClone(dependencyList)
+    );
     mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
     mocks.wbsApi.updateWbsTask.mockResolvedValue(structuredClone(updatedWbs));
   });
 
-  it("初期表示でProject WBSを取得して階層行と種別件数を作る", async () => {
+  it("初期表示でProject WBSと依存関係を取得して階層行と種別件数を作る", async () => {
     const page = useWbsPage();
 
     await page.initialize();
 
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledWith(7);
+    expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledWith(7);
     expect(page.rows.value.map((row) => [row.taskId, row.depth])).toEqual([
       [1, 0],
       [2, 1],
@@ -118,6 +161,13 @@ describe("useWbsPage", () => {
     expect(page.taskCount.value).toBe(1);
     expect(page.summaryCount.value).toBe(1);
     expect(page.milestoneCount.value).toBe(1);
+    expect(page.dependencyRows.value).toEqual([
+      expect.objectContaining({
+        dependencyId: 31,
+        predecessorLabel: "1 Phase 1",
+        successorLabel: "1.1 実装",
+      }),
+    ]);
   });
 
   it("不正なProject IDではAPIを呼ばず画面へ理由を表示する", async () => {
@@ -320,6 +370,256 @@ describe("useWbsPage", () => {
     await page.saveWbsTask(buildEditForm());
 
     expect(page.isEditorOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("TASK_UPDATEと2件以上のTaskがあれば依存関係追加Dialogを開く", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.openDependencyEditor();
+
+    expect(page.isDependencyEditorOpen.value).toBe(true);
+    expect(page.dependencyTaskOptions.value).toEqual([
+      { title: "1 Phase 1", value: 1 },
+      { title: "1.1 実装", value: 2 },
+      { title: "1.2 完了判定", value: 3 },
+    ]);
+  });
+
+  it("TASK_UPDATEがなければ依存関係追加Dialogを開かない", async () => {
+    mocks.permissions.delete("TASK_UPDATE");
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.openDependencyEditor();
+
+    expect(page.isDependencyEditorOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "Task依存関係を更新するpermissionがありません。",
+    ]);
+  });
+
+  it("Finish-to-Startと待ち時間を送信してBackendの依存関係一覧へ差し替える", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+
+    await page.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 30,
+    });
+
+    expect(mocks.wbsApi.createTaskDependency).toHaveBeenCalledWith(7, {
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      dependencyType: "FINISH_TO_START",
+      lagMinutes: 30,
+    });
+    expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
+    expect(page.isDependencyEditorOpen.value).toBe(false);
+    expect(page.successMessage.value).toBe("Task依存関係を追加しました。");
+  });
+
+  it("同じTask・負の待ち時間・重複方向では作成APIを呼ばない", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+
+    await page.saveDependency({
+      predecessorTaskId: 1,
+      successorTaskId: 1,
+      lagMinutes: -1,
+    });
+    expect(page.dependencyEditorErrorMessages.value).toEqual([
+      "先行Taskと後続Taskには別のTaskを選択してください。",
+      "待ち時間は0以上の整数で入力してください。",
+    ]);
+
+    await page.saveDependency({
+      predecessorTaskId: 1,
+      successorTaskId: 2,
+      lagMinutes: 0,
+    });
+    expect(page.dependencyEditorErrorMessages.value).toEqual([
+      "同じ向きのTask依存関係はすでに登録されています。",
+    ]);
+    expect(mocks.wbsApi.createTaskDependency).not.toHaveBeenCalled();
+  });
+
+  it("作成APIの400項目エラーをDialogへ表示して入力を保持する", async () => {
+    mocks.wbsApi.createTaskDependency.mockRejectedValue(
+      new WbsApiError(400, {
+        fieldErrors: [
+          { field: "successorTaskId", message: "循環するため登録できません。" },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+
+    await page.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    });
+
+    expect(page.dependencyEditorErrorMessages.value).toEqual([
+      "循環するため登録できません。",
+    ]);
+    expect(page.isDependencyEditorOpen.value).toBe(true);
+  });
+
+  it("作成APIの403と404をpermission不足・対象なしとして区別する", async () => {
+    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(
+      new WbsApiError(403, null)
+    );
+    const forbiddenPage = useWbsPage();
+    await forbiddenPage.initialize();
+    forbiddenPage.openDependencyEditor();
+    await forbiddenPage.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    });
+
+    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(
+      new WbsApiError(404, null)
+    );
+    const missingPage = useWbsPage();
+    await missingPage.initialize();
+    missingPage.openDependencyEditor();
+    await missingPage.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    });
+
+    expect(forbiddenPage.dependencyEditorErrorMessages.value).toEqual([
+      "Task依存関係を更新するpermissionがありません。",
+    ]);
+    expect(missingPage.dependencyEditorErrorMessages.value).toEqual([
+      "対象のProjectまたはTaskが見つかりません。",
+    ]);
+    expect(forbiddenPage.isDependencyEditorOpen.value).toBe(true);
+    expect(missingPage.isDependencyEditorOpen.value).toBe(true);
+  });
+
+  it("作成APIの409ではDialogを閉じてWBSと依存関係を再取得する", async () => {
+    mocks.wbsApi.createTaskDependency.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "taskId", message: "Taskが更新されています。" }],
+      })
+    );
+    mocks.wbsApi.getWbs
+      .mockResolvedValueOnce(structuredClone(wbs))
+      .mockResolvedValueOnce(structuredClone(updatedWbs));
+    mocks.wbsApi.getTaskDependencies
+      .mockResolvedValueOnce(structuredClone(dependencyList))
+      .mockResolvedValueOnce(structuredClone(updatedDependencyList));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+
+    await page.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    });
+
+    expect(page.isDependencyEditorOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual(["Taskが更新されています。"]);
+    expect(mocks.wbsApi.getWbs).toHaveBeenCalledTimes(2);
+    expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledTimes(2);
+    expect(page.wbs.value).toEqual(updatedWbs);
+    expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
+  });
+
+  it("依存関係保存中の再実行では作成APIを二重送信しない", async () => {
+    let resolveRequest;
+    mocks.wbsApi.createTaskDependency.mockImplementation(
+      () => new Promise((resolve) => (resolveRequest = resolve))
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+    const form = {
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    };
+
+    const firstSave = page.saveDependency(form);
+    const secondSave = page.saveDependency(form);
+
+    expect(mocks.wbsApi.createTaskDependency).toHaveBeenCalledOnce();
+    resolveRequest(updatedDependencyList);
+    await Promise.all([firstSave, secondSave]);
+  });
+
+  it("取得時点versionを確認後に削除し204確定後だけ一覧から除外する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.requestDependencyDelete(31);
+    expect(page.dependencyPendingDelete.value).toMatchObject({
+      dependencyId: 31,
+      version: 3,
+    });
+    await page.confirmDependencyDelete();
+
+    expect(mocks.wbsApi.deleteTaskDependency).toHaveBeenCalledWith(7, 31, 3);
+    expect(page.dependencies.value).toEqual([]);
+    expect(page.dependencyPendingDelete.value).toBeNull();
+    expect(page.successMessage.value).toBe("Task依存関係を削除しました。");
+  });
+
+  it("削除確認をキャンセルした場合はAPIを呼ばない", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.requestDependencyDelete(31);
+    page.cancelDependencyDelete();
+
+    expect(page.dependencyPendingDelete.value).toBeNull();
+    expect(mocks.wbsApi.deleteTaskDependency).not.toHaveBeenCalled();
+  });
+
+  it("削除APIの409では確認対象を破棄して最新一覧を再取得する", async () => {
+    mocks.wbsApi.deleteTaskDependency.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "version", message: "更新されています。" }],
+      })
+    );
+    mocks.wbsApi.getTaskDependencies
+      .mockResolvedValueOnce(structuredClone(dependencyList))
+      .mockResolvedValueOnce(structuredClone(updatedDependencyList));
+    const page = useWbsPage();
+    await page.initialize();
+    page.requestDependencyDelete(31);
+
+    await page.confirmDependencyDelete();
+
+    expect(page.dependencyPendingDelete.value).toBeNull();
+    expect(page.errorMessages.value).toEqual(["更新されています。"]);
+    expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledTimes(2);
+    expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
+  });
+
+  it("削除APIの401は確認対象とSessionを破棄してログインへ戻す", async () => {
+    mocks.wbsApi.deleteTaskDependency.mockRejectedValue(
+      new WbsApiError(401, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.requestDependencyDelete(31);
+
+    await page.confirmDependencyDelete();
+
+    expect(page.dependencyPendingDelete.value).toBeNull();
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
