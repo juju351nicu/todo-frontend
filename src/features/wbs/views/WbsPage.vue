@@ -5,6 +5,8 @@ import AppHeader from "@/app/layouts/AppHeader.vue";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
+import WorkingCalendarCard from "@/features/wbs/components/WorkingCalendarCard.vue";
+import WorkingDayEditDialog from "@/features/wbs/components/WorkingDayEditDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -33,6 +35,8 @@ const {
   cancelEffortPlanEdit,
   cancelWorkLogDelete,
   cancelWorkLogEdit,
+  cancelWorkingDayDelete,
+  canEditSelectedWorkingCalendarTarget,
   canEditSelectedEffortPlanTask,
   canEditSelectedWorkLogTask,
   canEditWbs,
@@ -42,9 +46,11 @@ const {
   closeEffortPlanDialog,
   closeTaskEditor,
   closeWorkLogDialog,
+  closeWorkingDayEditor,
   confirmDependencyDelete,
   confirmEffortPlanDelete,
   confirmWorkLogDelete,
+  confirmWorkingDayDelete,
   currentAccountId,
   dependencies,
   dependencyEditorErrorMessages,
@@ -69,6 +75,7 @@ const {
   isDeletingDependency,
   isDeletingEffortPlan,
   isDeletingWorkLog,
+  isDeletingWorkingDay,
   isDependencyEditorOpen,
   isDependencyMutating,
   isEditorOpen,
@@ -77,26 +84,33 @@ const {
   isLoadingEffortPlans,
   isLoadingWorkload,
   isLoadingWorkLogs,
+  isLoadingWorkingCalendar,
   isSavingDependency,
   isSavingEffortPlan,
   isSaving,
   isSavingWorkLog,
+  isSavingWorkingDay,
   isWorkLogDialogOpen,
+  isWorkingCalendarMutating,
+  isWorkingDayEditorOpen,
   milestoneCount,
   openBoard,
   openDependencyEditor,
   openEffortPlanDialog,
   openTaskEditor,
   openWorkLogDialog,
+  openWorkingDayEditor,
   parentOptions,
   requestDependencyDelete,
   requestEffortPlanDelete,
   requestWorkLogDelete,
+  requestWorkingDayDelete,
   rows,
   saveDependency,
   saveEffortPlan,
   saveWbsTask,
   saveWorkLog,
+  saveWorkingDay,
   successMessage,
   summaryCount,
   taskCount,
@@ -111,6 +125,17 @@ const {
   workloadDateRange,
   workloadErrorMessages,
   loadTaskWorkload,
+  loadWorkingCalendar,
+  selectedWorkingCalendarTarget,
+  workingCalendar,
+  workingCalendarDateRange,
+  workingCalendarEditorErrorMessages,
+  workingCalendarErrorMessages,
+  workingCalendarSelectedTargetKey,
+  workingCalendarSuccessMessage,
+  workingCalendarTargetOptions,
+  workingDayEditingDay,
+  workingDayPendingDelete,
 } = useWbsPage();
 
 /** Vuetifyが削除確認Dialogを閉じる場合だけ未確定の削除対象を破棄する。 */
@@ -131,6 +156,13 @@ const handleEffortPlanDeleteDialogModelValue = (value: boolean): void => {
 const handleWorkLogDeleteDialogModelValue = (value: boolean): void => {
   if (!value) {
     cancelWorkLogDelete();
+  }
+};
+
+/** Vuetifyが稼働日例外の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
+const handleWorkingDayDeleteDialogModelValue = (value: boolean): void => {
+  if (!value) {
+    cancelWorkingDayDelete();
   }
 };
 
@@ -358,6 +390,22 @@ onBeforeMount(initialize);
       </v-card-text>
     </v-card>
 
+    <WorkingCalendarCard
+      v-if="wbs"
+      :date-range="workingCalendarDateRange"
+      :calendar="workingCalendar"
+      :target-options="workingCalendarTargetOptions"
+      :selected-target-key="workingCalendarSelectedTargetKey"
+      :can-edit-selected-target="canEditSelectedWorkingCalendarTarget"
+      :is-loading="isLoadingWorkingCalendar"
+      :is-mutating="isWorkingCalendarMutating"
+      :error-messages="workingCalendarErrorMessages"
+      :success-message="workingCalendarSuccessMessage"
+      @load="loadWorkingCalendar"
+      @edit="openWorkingDayEditor"
+      @request-delete="requestWorkingDayDelete"
+    />
+
     <TaskWorkloadCard
       v-if="wbs"
       :date-range="workloadDateRange"
@@ -499,6 +547,46 @@ onBeforeMount(initialize);
       @cancel-edit="cancelWorkLogEdit"
       @request-delete="requestWorkLogDelete"
     />
+
+    <WorkingDayEditDialog
+      :open="isWorkingDayEditorOpen"
+      :day="workingDayEditingDay"
+      :target="selectedWorkingCalendarTarget"
+      :is-saving="isSavingWorkingDay"
+      :error-messages="workingCalendarEditorErrorMessages"
+      @close="closeWorkingDayEditor"
+      @save="saveWorkingDay"
+    />
+
+    <v-dialog
+      :model-value="workingDayPendingDelete !== null"
+      max-width="560"
+      :persistent="isDeletingWorkingDay"
+      @update:model-value="handleWorkingDayDeleteDialogModelValue"
+    >
+      <v-card>
+        <v-card-title>稼働日例外を削除</v-card-title>
+        <v-card-text>
+          <template v-if="workingDayPendingDelete">
+            {{ workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
+          </template>
+          <template v-else>選択した稼働日例外を削除します。</template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :disabled="isDeletingWorkingDay" @click="cancelWorkingDayDelete">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="isDeletingWorkingDay"
+            @click="confirmWorkingDayDelete"
+          >
+            削除
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog
       :model-value="effortPlanPendingDelete !== null"

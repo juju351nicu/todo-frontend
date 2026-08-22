@@ -316,6 +316,113 @@ export interface TaskWorkloadDateRange {
   dateTo: string;
 }
 
+/** 稼働日calendarの1日を稼働日または休日として扱う種別。Backendコードと一致する。 */
+export type WorkingDayType = "WORKING_DAY" | "HOLIDAY";
+
+/** 有効な稼働条件を決定した既定値・Project共通・member固有の設定階層。 */
+export type WorkingDaySource = "DEFAULT" | "PROJECT" | "MEMBER";
+
+/** Project共通またはProject member固有として保存された日別例外。 */
+export interface WorkingDayOverride {
+  /** Project共通・member固有テーブル内の稼働日設定ID。 */
+  workingDayId: number;
+  /** member固有設定の対象アカウントID。Project共通設定ではnull。 */
+  accountId: number | null;
+  /** 例外設定を適用する日付。yyyy-MM-dd形式。 */
+  workDate: string;
+  /** 保存された稼働日種別。 */
+  dayType: WorkingDayType;
+  /** 保存された稼働可能時間（分）。 */
+  availableMinutes: number;
+  /** 設定を最初に登録した認証済みアカウントID。 */
+  createdBy: number;
+  /** ISO-8601形式の設定作成時刻。 */
+  createdAt: string;
+  /** 設定を最後に更新した認証済みアカウントID。 */
+  updatedBy: number;
+  /** ISO-8601形式の最終更新時刻。 */
+  updatedAt: string;
+  /** 更新・削除時に送る楽観ロックversion。 */
+  version: number;
+}
+
+/** 既定値と保存済み例外の優先順位を解決した稼働日calendarの1日。 */
+export interface WorkingCalendarDay {
+  /** calendar上の日付。yyyy-MM-dd形式。 */
+  workDate: string;
+  /** 最終的に有効な稼働日種別。 */
+  dayType: WorkingDayType;
+  /** 最終的に有効な稼働可能時間（分）。 */
+  availableMinutes: number;
+  /** 有効値を決定した設定階層。 */
+  source: WorkingDaySource;
+  /** 同日に保存されたProject共通例外。未設定時はnull。 */
+  projectOverride: WorkingDayOverride | null;
+  /** 同日に保存されたmember固有例外。Project共通参照または未設定時はnull。 */
+  memberOverride: WorkingDayOverride | null;
+}
+
+/** Project共通または指定Project memberの稼働日calendar API Response。 */
+export interface WorkingCalendarResponse {
+  /** calendarを所有するProject ID。 */
+  projectId: number;
+  /** member calendarの対象アカウントID。Project共通参照ではnull。 */
+  accountId: number | null;
+  /** 検索開始日。yyyy-MM-dd形式。 */
+  dateFrom: string;
+  /** 検索終了日。yyyy-MM-dd形式。 */
+  dateTo: string;
+  /** 検索期間の全日付へ既定値を補完した日付順一覧。 */
+  days: WorkingCalendarDay[];
+}
+
+/** 稼働日calendar検索欄が保持する開始日・終了日。 */
+export interface WorkingCalendarDateRange {
+  /** 検索開始日。yyyy-MM-dd形式。 */
+  dateFrom: string;
+  /** 検索終了日。yyyy-MM-dd形式。 */
+  dateTo: string;
+}
+
+/** 稼働日calendarで表示・編集するProject共通またはmember固有の対象。 */
+export type WorkingCalendarTarget =
+  | { kind: "PROJECT"; accountId: null }
+  | { kind: "MEMBER"; accountId: number };
+
+/** 稼働日calendarの対象selectへ表示するProject共通またはProject member候補。 */
+export interface WorkingCalendarTargetOption {
+  /** 利用者へ表示する対象名。 */
+  title: string;
+  /** Project共通またはmemberアカウントIDを復元できる画面内識別子。 */
+  value: string;
+}
+
+/** 稼働日例外の登録・更新欄が保持するBackend型変換前の入力値。 */
+export interface WorkingDayForm {
+  /** 例外を適用する日付。未入力時は空文字。 */
+  workDate: string;
+  /** 稼働日または休日。 */
+  dayType: WorkingDayType;
+  /** 分単位の稼働可能時間。未入力または数値変換できない場合はnull。 */
+  availableMinutes: number | null;
+}
+
+/** 稼働日例外登録APIへ送信する検証済みRequest。 */
+export interface WorkingDayCreateRequest {
+  /** 例外を適用する日付。 */
+  workDate: string;
+  /** 稼働日または休日。 */
+  dayType: WorkingDayType;
+  /** 休日は0、稼働日は1分以上1440分以下の稼働可能時間。 */
+  availableMinutes: number;
+}
+
+/** 稼働日例外更新APIへ送信する検証済みRequest。 */
+export interface WorkingDayUpdateRequest extends WorkingDayCreateRequest {
+  /** calendar取得時点の楽観ロックversion。 */
+  version: number;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

@@ -439,4 +439,124 @@ describe("WBS API", () => {
       "/api/v1/projects/7/wbs/workload?dateFrom=2026-08-01&dateTo=2026-08-31"
     );
   });
+
+  it("Project共通calendarではaccountIdを付けず期間内の全日付を取得する", async () => {
+    const response = {
+      projectId: 7,
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-31",
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(
+      WbsApi.getWorkingCalendar(7, "2026-08-01", "2026-08-31", null)
+    ).resolves.toEqual({ ...response, accountId: null, days: [] });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar?dateFrom=2026-08-01&dateTo=2026-08-31"
+    );
+  });
+
+  it("member calendarでは対象accountIdをqueryへ追加する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        accountId: 2,
+        dateFrom: "2026-08-01",
+        dateTo: "2026-08-31",
+        days: [],
+      }),
+    });
+
+    await WbsApi.getWorkingCalendar(7, "2026-08-01", "2026-08-31", 2);
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar?dateFrom=2026-08-01&dateTo=2026-08-31&accountId=2"
+    );
+  });
+
+  it("Project共通例外を登録しID・version付きで更新削除する", async () => {
+    const createRequest = {
+      workDate: "2026-08-22",
+      dayType: "HOLIDAY",
+      availableMinutes: 0,
+    };
+    const updateRequest = { ...createRequest, version: 3 };
+    const response = {
+      projectId: 7,
+      accountId: null,
+      dateFrom: "2026-08-22",
+      dateTo: "2026-08-22",
+      days: [],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await WbsApi.createProjectWorkingDay(7, createRequest);
+    await WbsApi.updateProjectWorkingDay(7, 11, updateRequest);
+    await WbsApi.deleteProjectWorkingDay(7, 11, 4);
+
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/project-days",
+      createRequest
+    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/project-days/11",
+      updateRequest
+    );
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/project-days/11?version=4"
+    );
+  });
+
+  it("member固有例外を対象accountId配下へ登録しID・version付きで更新削除する", async () => {
+    const createRequest = {
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 300,
+    };
+    const updateRequest = { ...createRequest, version: 2 };
+    const response = {
+      projectId: 7,
+      accountId: 2,
+      dateFrom: "2026-08-22",
+      dateTo: "2026-08-22",
+      days: [],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await WbsApi.createMemberWorkingDay(7, 2, createRequest);
+    await WbsApi.updateMemberWorkingDay(7, 2, 21, updateRequest);
+    await WbsApi.deleteMemberWorkingDay(7, 2, 21, 3);
+
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/members/2/days",
+      createRequest
+    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/members/2/days/21",
+      updateRequest
+    );
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/calendar/members/2/days/21?version=3"
+    );
+  });
 });

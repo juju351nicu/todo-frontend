@@ -8,6 +8,9 @@ import type {
   TaskWorkLogListResponse,
   TaskWorkLogUpdateRequest,
   TaskWorkloadResponse,
+  WorkingCalendarResponse,
+  WorkingDayCreateRequest,
+  WorkingDayUpdateRequest,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
@@ -389,19 +392,200 @@ const getTaskWorkload = async (
   };
 };
 
+/** API Responseで欠落したcalendar日付一覧を画面へ伝播させず空配列へ正規化する。 */
+const normalizeWorkingCalendar = (
+  payload: WorkingCalendarResponse
+): WorkingCalendarResponse => ({
+  ...payload,
+  accountId: payload.accountId ?? null,
+  days: payload.days ?? [],
+});
+
+/**
+ * Project共通または指定Project memberの有効な稼働日calendarを取得する。
+ *
+ * @param projectId calendarを所有するProject ID
+ * @param dateFrom 検索開始日。境界を含むyyyy-MM-dd
+ * @param dateTo 検索終了日。境界を含むyyyy-MM-dd
+ * @param accountId member固有calendarの対象。Project共通参照ではnull
+ * @returns 既定値、Project例外、member例外を優先順位解決した全日付
+ * @throws WbsApiError 期間・member不正、認証・認可不足、Project未参加またはBackendエラーの場合
+ */
+const getWorkingCalendar = async (
+  projectId: number,
+  dateFrom: string,
+  dateTo: string,
+  accountId: number | null
+): Promise<WorkingCalendarResponse> => {
+  const query = new URLSearchParams({ dateFrom, dateTo });
+  if (accountId !== null) {
+    query.set("accountId", String(accountId));
+  }
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  return normalizeWorkingCalendar(
+    (await response.json()) as WorkingCalendarResponse
+  );
+};
+
+/**
+ * Project共通の日別稼働条件を登録する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param request 設定日、稼働日種別、分単位稼働可能時間
+ * @returns 登録した1日分のProject共通calendar
+ * @throws WbsApiError 入力不正、認可不足、Project未参加、同日重複・状態競合またはBackendエラーの場合
+ */
+const createProjectWorkingDay = async (
+  projectId: number,
+  request: WorkingDayCreateRequest
+): Promise<WorkingCalendarResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/project-days`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeWorkingCalendar(
+    (await response.json()) as WorkingCalendarResponse
+  );
+};
+
+/**
+ * Project共通の日別稼働条件を取得時点version付きで更新する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param workingDayId 更新対象のProject共通例外ID
+ * @param request 更新値とcalendar取得時点version
+ * @returns 更新した1日分のProject共通calendar
+ * @throws WbsApiError 入力不正、認可不足、対象なし、同日重複・version・状態競合またはBackendエラーの場合
+ */
+const updateProjectWorkingDay = async (
+  projectId: number,
+  workingDayId: number,
+  request: WorkingDayUpdateRequest
+): Promise<WorkingCalendarResponse> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/project-days/${workingDayId}`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeWorkingCalendar(
+    (await response.json()) as WorkingCalendarResponse
+  );
+};
+
+/**
+ * Project共通の日別稼働条件を取得時点version付きで削除する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param workingDayId 削除対象のProject共通例外ID
+ * @param version calendar取得時点の楽観ロックversion
+ * @throws WbsApiError 認可不足、対象なし、version・状態競合またはBackendエラーの場合
+ */
+const deleteProjectWorkingDay = async (
+  projectId: number,
+  workingDayId: number,
+  version: number
+): Promise<void> => {
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/project-days/${workingDayId}?version=${encodeURIComponent(String(version))}`
+  );
+  await ensureSuccess(response);
+};
+
+/**
+ * Project member固有の日別稼働条件を本人またはProject管理者として登録する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param accountId 個人例外の対象Project memberアカウントID
+ * @param request 設定日、稼働日種別、分単位稼働可能時間
+ * @returns 登録した1日分のmember calendar
+ * @throws WbsApiError 入力不正、認可不足、対象memberなし、同日重複・状態競合またはBackendエラーの場合
+ */
+const createMemberWorkingDay = async (
+  projectId: number,
+  accountId: number,
+  request: WorkingDayCreateRequest
+): Promise<WorkingCalendarResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/members/${accountId}/days`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeWorkingCalendar(
+    (await response.json()) as WorkingCalendarResponse
+  );
+};
+
+/**
+ * Project member固有の日別稼働条件を取得時点version付きで更新する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param accountId 個人例外の対象Project memberアカウントID
+ * @param workingDayId 更新対象のmember固有例外ID
+ * @param request 更新値とcalendar取得時点version
+ * @returns 更新した1日分のmember calendar
+ * @throws WbsApiError 入力不正、認可不足、対象なし、同日重複・version・状態競合またはBackendエラーの場合
+ */
+const updateMemberWorkingDay = async (
+  projectId: number,
+  accountId: number,
+  workingDayId: number,
+  request: WorkingDayUpdateRequest
+): Promise<WorkingCalendarResponse> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/members/${accountId}/days/${workingDayId}`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeWorkingCalendar(
+    (await response.json()) as WorkingCalendarResponse
+  );
+};
+
+/**
+ * Project member固有の日別稼働条件を取得時点version付きで削除する。
+ *
+ * @param projectId 例外を所有するProject ID
+ * @param accountId 個人例外の対象Project memberアカウントID
+ * @param workingDayId 削除対象のmember固有例外ID
+ * @param version calendar取得時点の楽観ロックversion
+ * @throws WbsApiError 認可不足、対象なし、version・状態競合またはBackendエラーの場合
+ */
+const deleteMemberWorkingDay = async (
+  projectId: number,
+  accountId: number,
+  workingDayId: number,
+  version: number
+): Promise<void> => {
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar/members/${accountId}/days/${workingDayId}?version=${encodeURIComponent(String(version))}`
+  );
+  await ensureSuccess(response);
+};
+
 export default {
+  createMemberWorkingDay,
+  createProjectWorkingDay,
   createTaskDependency,
   createTaskEffortPlan,
   createTaskWorkLog,
   deleteTaskDependency,
   deleteTaskEffortPlan,
   deleteTaskWorkLog,
+  deleteMemberWorkingDay,
+  deleteProjectWorkingDay,
   getTaskDependencies,
   getTaskEffortPlans,
   getTaskWorkLogs,
   getTaskWorkload,
+  getWorkingCalendar,
   getWbs,
   updateTaskEffortPlan,
   updateTaskWorkLog,
+  updateMemberWorkingDay,
+  updateProjectWorkingDay,
   updateWbsTask,
 };

@@ -46,6 +46,7 @@ npm run dev -- --host localhost
 | 21 | WBSでTask依存関係を操作する | Finish-to-Startを追加・削除でき、再読込後もBackendの確定一覧と一致する |
 | 22 | 通常Taskの日別実績を操作する | 一覧・合計・登録・編集・削除がBackendの確定値と一致し、Summary・Milestoneには入口が表示されない |
 | 23 | WBS Taskの実績期間を更新する | 未着手・作業中・完了期間が一覧とGantt tooltipへ表示され、再読込後も一致する |
+| 24 | WBSの稼働日calendarを操作する | Project共通・個人例外の優先順位、登録・更新・削除、role別操作表示がBackend確定値と一致する |
 
 ## WBS階層表・Ganttの初回確認項目
 

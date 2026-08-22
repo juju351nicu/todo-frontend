@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -60,6 +60,8 @@ Project Boardの設定Dialogでは、Project名・説明・archiveと、member�
 WBSは`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。`TASK_UPDATE`を持つ利用者は階層表から親、Task種別、WBSコード、予定日、予定工数、進捗率、nullableな実績開始日・終了日をversion付きで更新できます。未着手は実績日なし、作業中は開始日だけ、完了期間は開始日と終了日で表示し、実績日の保存では進捗率やBoard列を自動変更しません。
 
 通常Taskの日別予定・実績Dialogでは、1日・Project member単位の分工数を取得時点versionで登録・更新・削除します。Project workloadは指定期間の日付・担当者単位で予定、実績、差分を表示します。通常memberとOWNER・MANAGER・SYSTEM_ADMINの操作範囲は画面でも案内しますが、最終認可はBackendへ委ねます。Task依存関係はFinish-to-Startと0以上の分単位待ち時間を追加でき、409競合では古い編集対象を破棄して最新一覧を再取得します。
+
+稼働日calendarは平日480分・土日0分を曜日既定値とし、Project共通例外、Project member固有例外の順で上書きした有効値を表示します。Project共通例外はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が取得時点version付きで登録・更新・削除します。Frontendの操作表示は案内であり、最終認可とProject状態・同日重複・楽観ロックはBackendが判定します。現段階ではcalendar設定画面までを接続し、workloadの稼働可能時間・過配賦判定への反映は次の変更単位とします。
 
 参照専用GanttはMIT Licenseの`dhtmlx-gantt` Community 10を使用し、約622KBのlibrary codeをGantt選択時だけ遅延読み込みます。予定bar・依存線に加えてtooltipへ予定期間と実績期間を表示します。Gantt上の直接編集・link作成、lagによる自動日程計算は後続工程へ分離します。
 

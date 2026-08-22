@@ -18,19 +18,26 @@ const mocks = vi.hoisted(() => ({
     getProject: vi.fn(),
   },
   wbsApi: {
+    createMemberWorkingDay: vi.fn(),
+    createProjectWorkingDay: vi.fn(),
     createTaskDependency: vi.fn(),
     createTaskEffortPlan: vi.fn(),
     createTaskWorkLog: vi.fn(),
     deleteTaskDependency: vi.fn(),
     deleteTaskEffortPlan: vi.fn(),
     deleteTaskWorkLog: vi.fn(),
+    deleteMemberWorkingDay: vi.fn(),
+    deleteProjectWorkingDay: vi.fn(),
     getTaskDependencies: vi.fn(),
     getTaskEffortPlans: vi.fn(),
     getTaskWorkLogs: vi.fn(),
     getTaskWorkload: vi.fn(),
+    getWorkingCalendar: vi.fn(),
     getWbs: vi.fn(),
     updateTaskEffortPlan: vi.fn(),
     updateTaskWorkLog: vi.fn(),
+    updateMemberWorkingDay: vi.fn(),
+    updateProjectWorkingDay: vi.fn(),
     updateWbsTask: vi.fn(),
   },
 }));
@@ -256,6 +263,69 @@ const workloadResponse = {
   ],
 };
 
+const workingCalendarResponse = {
+  projectId: 7,
+  accountId: null,
+  dateFrom: "2026-08-01",
+  dateTo: "2026-08-31",
+  days: [
+    {
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 360,
+      source: "PROJECT",
+      projectOverride: {
+        workingDayId: 11,
+        accountId: null,
+        workDate: "2026-08-22",
+        dayType: "WORKING_DAY",
+        availableMinutes: 360,
+        createdBy: 1,
+        createdAt: "2026-08-20T00:00:00Z",
+        updatedBy: 1,
+        updatedAt: "2026-08-20T00:00:00Z",
+        version: 3,
+      },
+      memberOverride: null,
+    },
+    {
+      workDate: "2026-08-23",
+      dayType: "HOLIDAY",
+      availableMinutes: 0,
+      source: "DEFAULT",
+      projectOverride: null,
+      memberOverride: null,
+    },
+  ],
+};
+
+const memberWorkingCalendarResponse = {
+  ...workingCalendarResponse,
+  accountId: 2,
+  days: workingCalendarResponse.days.map((day) =>
+    day.workDate === "2026-08-22"
+      ? {
+          ...day,
+          dayType: "HOLIDAY",
+          availableMinutes: 0,
+          source: "MEMBER",
+          memberOverride: {
+            workingDayId: 21,
+            accountId: 2,
+            workDate: "2026-08-22",
+            dayType: "HOLIDAY",
+            availableMinutes: 0,
+            createdBy: 2,
+            createdAt: "2026-08-21T00:00:00Z",
+            updatedBy: 2,
+            updatedAt: "2026-08-21T00:00:00Z",
+            version: 4,
+          },
+        }
+      : day
+  ),
+};
+
 const buildEditForm = (overrides = {}) => ({
   parentTaskId: 1,
   taskType: "TASK",
@@ -289,9 +359,17 @@ describe("useWbsPage", () => {
     mocks.wbsApi.createTaskWorkLog.mockResolvedValue(
       structuredClone(workLogList)
     );
+    mocks.wbsApi.createMemberWorkingDay.mockResolvedValue(
+      structuredClone(memberWorkingCalendarResponse)
+    );
+    mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(
+      structuredClone(workingCalendarResponse)
+    );
     mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
     mocks.wbsApi.deleteTaskEffortPlan.mockResolvedValue(undefined);
     mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
+    mocks.wbsApi.deleteMemberWorkingDay.mockResolvedValue(undefined);
+    mocks.wbsApi.deleteProjectWorkingDay.mockResolvedValue(undefined);
     mocks.wbsApi.getTaskDependencies.mockResolvedValue(
       structuredClone(dependencyList)
     );
@@ -304,6 +382,9 @@ describe("useWbsPage", () => {
     mocks.wbsApi.getTaskWorkload.mockResolvedValue(
       structuredClone(workloadResponse)
     );
+    mocks.wbsApi.getWorkingCalendar.mockResolvedValue(
+      structuredClone(workingCalendarResponse)
+    );
     mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
     mocks.wbsApi.updateTaskEffortPlan.mockResolvedValue(
       structuredClone(updatedEffortPlanList)
@@ -311,6 +392,12 @@ describe("useWbsPage", () => {
     mocks.wbsApi.updateWbsTask.mockResolvedValue(structuredClone(updatedWbs));
     mocks.wbsApi.updateTaskWorkLog.mockResolvedValue(
       structuredClone(updatedWorkLogList)
+    );
+    mocks.wbsApi.updateMemberWorkingDay.mockResolvedValue(
+      structuredClone(memberWorkingCalendarResponse)
+    );
+    mocks.wbsApi.updateProjectWorkingDay.mockResolvedValue(
+      structuredClone(workingCalendarResponse)
     );
   });
 
@@ -1255,5 +1342,149 @@ describe("useWbsPage", () => {
     expect(page.isEffortPlanDialogOpen.value).toBe(false);
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("初期表示でProject共通calendarを取得し通常memberには本人の対象だけを提示する", async () => {
+    const page = useWbsPage();
+
+    await page.initialize();
+
+    expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenCalledWith(
+      7,
+      page.workingCalendarDateRange.value.dateFrom,
+      page.workingCalendarDateRange.value.dateTo,
+      null
+    );
+    expect(page.workingCalendarTargetOptions.value).toEqual([
+      { title: "Project共通", value: "PROJECT" },
+      {
+        title: "個人例外: アカウントID 2（MEMBER）",
+        value: "MEMBER:2",
+      },
+    ]);
+    expect(page.canEditSelectedWorkingCalendarTarget.value).toBe(false);
+  });
+
+  it("通常memberは自分のcalendarを選ぶと個人例外を登録できる", async () => {
+    mocks.wbsApi.getWorkingCalendar
+      .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
+      .mockResolvedValue(structuredClone(memberWorkingCalendarResponse));
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.loadWorkingCalendar(
+      page.workingCalendarDateRange.value,
+      "MEMBER:2"
+    );
+    page.openWorkingDayEditor("2026-08-23");
+    await page.saveWorkingDay({
+      workDate: "2026-08-23",
+      dayType: "WORKING_DAY",
+      availableMinutes: 420,
+    });
+
+    expect(page.canEditSelectedWorkingCalendarTarget.value).toBe(true);
+    expect(mocks.wbsApi.createMemberWorkingDay).toHaveBeenCalledWith(7, 2, {
+      workDate: "2026-08-23",
+      dayType: "WORKING_DAY",
+      availableMinutes: 420,
+    });
+    expect(page.isWorkingDayEditorOpen.value).toBe(false);
+    expect(page.workingCalendarSuccessMessage.value).toBe(
+      "稼働日例外を登録しました。"
+    );
+  });
+
+  it("SYSTEM_ADMINは全memberを選択できProject共通例外をversion付きで更新する", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.openWorkingDayEditor("2026-08-22");
+    await page.saveWorkingDay({
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+    });
+
+    expect(
+      page.workingCalendarTargetOptions.value.map((option) => option.value)
+    ).toEqual(["PROJECT", "MEMBER:1", "MEMBER:2"]);
+    expect(mocks.wbsApi.updateProjectWorkingDay).toHaveBeenCalledWith(7, 11, {
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+      version: 3,
+    });
+  });
+
+  it("不正な稼働日FormではAPIを呼ばず全理由をDialogへ表示する", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+    page.openWorkingDayEditor("2026-08-22");
+
+    await page.saveWorkingDay({
+      workDate: "2026-02-30",
+      dayType: "HOLIDAY",
+      availableMinutes: 60,
+    });
+
+    expect(mocks.wbsApi.updateProjectWorkingDay).not.toHaveBeenCalled();
+    expect(page.workingCalendarEditorErrorMessages.value).toEqual([
+      "設定日を入力してください。",
+      "休日の稼働可能時間は0分にしてください。",
+    ]);
+    expect(page.isWorkingDayEditorOpen.value).toBe(true);
+  });
+
+  it("稼働日例外の409競合では古いDialogを閉じ最新calendarを再取得する", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    mocks.wbsApi.updateProjectWorkingDay.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "version", message: "更新されています。" }],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openWorkingDayEditor("2026-08-22");
+
+    await page.saveWorkingDay({
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+    });
+
+    expect(page.isWorkingDayEditorOpen.value).toBe(false);
+    expect(page.workingCalendarErrorMessages.value).toEqual([
+      "更新されています。",
+    ]);
+    expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenCalledTimes(2);
+  });
+
+  it("本人の個人例外を取得時点versionで削除しcalendarを再取得する", async () => {
+    mocks.wbsApi.getWorkingCalendar
+      .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
+      .mockResolvedValue(structuredClone(memberWorkingCalendarResponse));
+    const page = useWbsPage();
+    await page.initialize();
+    await page.loadWorkingCalendar(
+      page.workingCalendarDateRange.value,
+      "MEMBER:2"
+    );
+
+    page.requestWorkingDayDelete("2026-08-22");
+    await page.confirmWorkingDayDelete();
+
+    expect(mocks.wbsApi.deleteMemberWorkingDay).toHaveBeenCalledWith(
+      7,
+      2,
+      21,
+      4
+    );
+    expect(page.workingDayPendingDelete.value).toBeNull();
+    expect(page.workingCalendarSuccessMessage.value).toBe(
+      "稼働日例外を削除しました。"
+    );
   });
 });

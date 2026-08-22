@@ -103,20 +103,23 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload API
-- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar API
+- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 実績期間を含む編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化とnullableな実績期間を含む表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間・予定実績tooltip・読取り専用依存線への変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績編集、workload、409再取得、認証エラー、Board遷移
+- `src/features/wbs/utils/workingCalendar.ts`: calendar期間・対象変換、例外Form、主要制約検証、登録更新Request、表示名変換
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、409再取得、認証エラー、Board遷移
 - `src/features/wbs/components/WbsDependencyCreateDialog.vue`: Finish-to-Start依存関係を追加する入力Dialog
 - `src/features/wbs/components/WbsTaskEditDialog.vue`: 階層・Task種別・予定・進捗・実績期間を更新するDialog
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・実績期間tooltip・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
 - `src/features/wbs/components/TaskWorkLogDialog.vue`: 通常Taskの日別実績一覧・合計・登録・編集Dialog
 - `src/features/wbs/components/TaskEffortPlanDialog.vue`: 通常Taskの日別予定・配賦状況・登録・編集Dialog
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
-- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload入口画面
+- `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
+- `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar入口画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -161,6 +164,8 @@ consoleはwarning 0件、error 0件で、DB cleanup後の再inspectも0件だっ
 Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Taskの予定担当者・予定日・分工数と、Projectの期間・担当者別workloadを扱う。Task全体予定との差は未配賦または過配賦として表示し、予定・実績変更後はworkloadを再取得する。専用fixtureで登録・更新・重複拒否・代理配賦・過配賦・409・再読込・DB inspect・cleanupまで確認済みである。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
+
+稼働日calendar V7は同じ`useWbsPage`へ統合し、Project共通と個人例外を同じcardで対象切替する。初期値は現在月のProject共通calendarとし、通常memberにはProject共通と本人、OWNER・MANAGER・SYSTEM_ADMINには全Project memberを選択肢として提示する。Project共通は管理者だけ、個人例外は本人または管理者だけに編集操作を表示するが、最終認可はBackendへ委ねる。期間は境界を含む366日以内、休日は0分、稼働日は1〜1440分を送信前に検証する。登録・更新Responseは変更した1日だけなので、成功後と404・409競合後は表示期間全体を再取得し、古い例外ID・versionを残さない。workloadの稼働可能時間列と過配賦警告への反映は次の変更単位とする。
 
 ## 変更時の確認
 
