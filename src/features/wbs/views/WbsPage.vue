@@ -9,6 +9,7 @@ import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCr
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
+  formatActualPeriod,
   formatPlannedEffort,
   formatProgressPercent,
   getWbsPriorityColor,
@@ -150,7 +151,7 @@ onBeforeMount(initialize);
       <div>
         <h1 class="text-h5">{{ wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-body-2 text-medium-emphasis">
-          Boardと同じTaskを使用する階層・予定・進捗・日別予定実績管理
+          Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理
         </div>
       </div>
       <v-spacer />
@@ -206,7 +207,7 @@ onBeforeMount(initialize);
           <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
         </v-btn-toggle>
         <p class="text-caption text-medium-emphasis mt-2 mb-0">
-          階層表から予定・進捗と通常Taskの日別予定・実績を管理できます。Gantt上の直接変更はまだ行いません。
+          階層表から予定・進捗・実績期間と通常Taskの日別予定・実績を管理できます。Gantt上の直接変更はまだ行いません。
         </p>
       </v-card-text>
 
@@ -220,6 +221,7 @@ onBeforeMount(initialize);
                 <th scope="col">種別</th>
                 <th scope="col">Board列</th>
                 <th scope="col">予定期間</th>
+                <th scope="col">実績期間</th>
                 <th scope="col">予定工数</th>
                 <th scope="col">進捗</th>
                 <th scope="col">担当者</th>
@@ -267,6 +269,9 @@ onBeforeMount(initialize);
                   <span class="text-medium-emphasis">
                     ～ {{ row.plannedEndDate }}
                   </span>
+                </td>
+                <td class="text-no-wrap">
+                  {{ formatActualPeriod(row.actualStartDate, row.actualEndDate) }}
                 </td>
                 <td class="text-no-wrap">
                   {{ formatPlannedEffort(row.plannedEffortMinutes) }}

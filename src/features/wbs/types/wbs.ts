@@ -7,6 +7,7 @@ export type WbsTaskPriority = 1 | 2 | 3;
 /**
  * Boardと同じTask IDを使用するWBS参照APIの1行。
  * 日付はISO local date、予定工数は分、進捗率は0から100で受け取る。
+ * 実績開始日・終了日は未着手または作業中を表すためnullableである。
  */
 export interface WbsTask {
   /** Boardと共通のTask ID。 */
@@ -29,6 +30,10 @@ export interface WbsTask {
   plannedEffortMinutes: number;
   /** 0から100の進捗率。 */
   progressPercent: number;
+  /** 実績開始日。未着手の場合はnull。 */
+  actualStartDate: string | null;
+  /** 実績終了日。作業中または未着手の場合はnull。 */
+  actualEndDate: string | null;
   /** 担当アカウントID。 */
   assigneeAccountId: number;
   /** Task優先度。 */
@@ -327,6 +332,10 @@ export interface WbsTaskEditForm {
   plannedEffortMinutes: number | null;
   /** 0から100までの進捗率。未入力または不正入力はnull。 */
   progressPercent: number | null;
+  /** 実績開始日。未着手へ戻す場合は空文字。 */
+  actualStartDate: string;
+  /** 実績終了日。未完了または未着手の場合は空文字。 */
+  actualEndDate: string;
   /** Dialogを開いたWBS取得時点の楽観ロックversion。 */
   version: number;
 }
@@ -347,6 +356,10 @@ export interface WbsTaskUpdateRequest {
   plannedEffortMinutes: number;
   /** 更新後の0から100までの進捗率。 */
   progressPercent: number;
+  /** 更新後の実績開始日。未着手の場合はnull。 */
+  actualStartDate: string | null;
+  /** 更新後の実績終了日。作業中または未着手の場合はnull。 */
+  actualEndDate: string | null;
   /** 更新対象を取得した時点の楽観ロックversion。 */
   version: number;
 }
@@ -384,6 +397,14 @@ export interface WbsGanttTask {
   start_date?: string;
   /** yyyy-MM-dd形式の終了境界。不正日付の場合は省略する。 */
   end_date?: string;
+  /** tooltipへ予定開始日を排他的終了境界へ変換せず表示するための値。 */
+  plannedStartDate: string;
+  /** tooltipへ予定終了日を当日を含む業務日として表示するための値。 */
+  plannedEndDate: string;
+  /** tooltipへ表示する実績開始日。未着手の場合はnull。 */
+  actualStartDate: string | null;
+  /** tooltipへ表示する実績終了日。作業中または未着手の場合はnull。 */
+  actualEndDate: string | null;
   /** 0から1へ正規化した進捗率。 */
   progress: number;
   /** 初期表示で子Taskを展開するか。 */

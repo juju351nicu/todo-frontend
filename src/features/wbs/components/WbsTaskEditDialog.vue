@@ -161,6 +161,32 @@ const submitForm = (): void => {
             </v-col>
           </v-row>
 
+          <v-divider class="my-4" />
+          <div class="text-subtitle-2 mb-2">実績期間（任意）</div>
+          <v-row>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.actualStartDate"
+                label="実績開始日"
+                type="date"
+                :disabled="isSaving"
+                clearable
+              />
+            </v-col>
+            <v-col cols="12" sm="6">
+              <v-text-field
+                v-model="form.actualEndDate"
+                label="実績終了日"
+                type="date"
+                :disabled="isSaving"
+                clearable
+              />
+            </v-col>
+          </v-row>
+          <p class="text-caption text-medium-emphasis mt-n2 mb-4">
+            開始日だけで作業中を表します。実績日の保存では進捗率やBoard列を自動変更しません。
+          </p>
+
           <v-alert
             v-if="form.taskType === 'MILESTONE'"
             type="info"

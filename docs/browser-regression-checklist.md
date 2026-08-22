@@ -45,13 +45,14 @@ npm run dev -- --host localhost
 | 20 | WBSをGanttへ切り替える | 親子tree、予定bar、進捗、milestoneが表示され、drag等の編集操作ができない |
 | 21 | WBSでTask依存関係を操作する | Finish-to-Startを追加・削除でき、再読込後もBackendの確定一覧と一致する |
 | 22 | 通常Taskの日別実績を操作する | 一覧・合計・登録・編集・削除がBackendの確定値と一致し、Summary・Milestoneには入口が表示されない |
+| 23 | WBS Taskの実績期間を更新する | 未着手・作業中・完了期間が一覧とGantt tooltipへ表示され、再読込後も一致する |
 
 ## WBS階層表・Ganttの初回確認項目
 
 WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを変更せず次を表示確認する。
 
 - `/projects/{projectId}/board`の「WBSを開く」から`/projects/{projectId}/wbs`へ遷移する。
-- Project名、Task／Summary／Milestone件数、WBSコード、予定期間、予定工数、進捗、担当者、優先度が表示される。
+- Project名、Task／Summary／Milestone件数、WBSコード、予定期間、実績期間、予定工数、進捗、担当者、優先度が表示される。
 - 親Taskの直後に子Taskが字下げ表示され、孫Taskはさらに1段深く表示される。
 - 「Boardを開く」で同じProjectのBoardへ戻る。
 - 「再読込」後もBackendの確定済みTaskから同じ階層を作り直す。
@@ -61,6 +62,22 @@ WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを
 - Taskが0件の場合は空状態を表示し、画面エラーを出さない。
 - `TASK_READ`不足は403、未参加Projectは404の案内となり、別Projectの存在やTask件数を表示しない。
 - 横幅が狭い画面では表を横スクロールでき、列が重なって読めなくならない。
+- 一連の操作でブラウザの`warning`、`error`を増やさない。
+
+## Task実績期間V6の初回確認項目
+
+通常データと分離した専用Project・WBS Taskを使用し、次を確認する。
+
+- 実績開始日・終了日が両方未入力の場合は「未着手」と表示する。
+- 実績開始日だけを保存すると「作業中」と表示し、再読込後も開始日を維持する。
+- 同日または開始日より後の実績終了日を保存すると完了期間として表示する。
+- 終了日だけ、存在しない日付、開始日より前の終了日はAPIを送信せず理由を表示する。
+- 実績期間を予定期間外へ設定でき、遅延した実績をそのまま記録できる。
+- 実績期間の保存だけでは進捗率、Board列、完了flag、日別実績工数を変更しない。
+- 階層表の実績期間とGantt tooltipの実績期間がBackend Responseと一致する。
+- GanttのTask barは予定期間を維持し、実績期間によって移動・伸縮しない。
+- 2つのtabで同じTaskを更新し、古いversionが409となって最新WBSへ戻る。
+- 401・403・404・409を区別し、再読込後の画面とDB inspectが一致する。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
 ## Task依存関係の初回確認項目

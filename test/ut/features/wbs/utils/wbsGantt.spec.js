@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   addGanttRangePadding,
   buildWbsGanttData,
   buildWbsGanttLinks,
+  buildWbsGanttTooltipText,
   configureWbsGantt,
 } from "@/features/wbs/utils/wbsGantt";
 
@@ -19,6 +20,8 @@ const buildRow = (overrides = {}) => ({
   plannedEndDate: "2026-08-02",
   plannedEffortMinutes: 60,
   progressPercent: 25,
+  actualStartDate: null,
+  actualEndDate: null,
   assigneeAccountId: 1,
   priority: 2,
   taskStatusId: 1,
@@ -44,7 +47,11 @@ const buildDependency = (overrides = {}) => ({
 
 describe("WBS Gantt変換", () => {
   it("DHTMLXの拡張初期値に左右されず不正日付Taskをtimelineへ描画しない", () => {
-    const instance = { config: { show_unscheduled: false } };
+    const instance = {
+      config: { show_unscheduled: false },
+      templates: {},
+      plugins: vi.fn(),
+    };
 
     configureWbsGantt(instance);
 
@@ -58,6 +65,24 @@ describe("WBS Gantt変換", () => {
         drag_resize: false,
         drag_links: false,
       })
+    );
+    expect(instance.plugins).toHaveBeenCalledWith({ tooltip: true });
+    expect(instance.templates.tooltip_text).toBeTypeOf("function");
+  });
+
+  it("予定期間とnullableな実績期間をHTML escape済みtooltipへ変換する", () => {
+    expect(
+      buildWbsGanttTooltipText({
+        text: "<設計&実装>",
+        plannedStartDate: "2026-08-20",
+        plannedEndDate: "2026-08-24",
+        actualStartDate: "2026-08-22",
+        actualEndDate: null,
+      })
+    ).toBe(
+      "<strong>&lt;設計&amp;実装&gt;</strong><br>" +
+        "予定: 2026-08-20 ～ 2026-08-24<br>" +
+        "実績: 2026-08-22 ～ 作業中"
     );
   });
 
@@ -119,6 +144,10 @@ describe("WBS Gantt変換", () => {
         type: "project",
         start_date: "2026-08-01",
         end_date: "2026-08-03",
+        plannedStartDate: "2026-08-01",
+        plannedEndDate: "2026-08-02",
+        actualStartDate: null,
+        actualEndDate: null,
         progress: 1,
         readonly: true,
       }),

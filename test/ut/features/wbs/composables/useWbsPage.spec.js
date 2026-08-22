@@ -62,6 +62,8 @@ const buildTask = (overrides = {}) => ({
   plannedEndDate: "2026-08-24",
   plannedEffortMinutes: 480,
   progressPercent: 25,
+  actualStartDate: null,
+  actualEndDate: null,
   assigneeAccountId: 2,
   priority: 2,
   taskStatusId: 11,
@@ -130,7 +132,13 @@ const updatedWbs = {
   ...wbs,
   tasks: wbs.tasks.map((task) =>
     task.taskId === 2
-      ? { ...task, progressPercent: 50, version: 5 }
+      ? {
+          ...task,
+          progressPercent: 50,
+          actualStartDate: "2026-08-22",
+          actualEndDate: "2026-08-24",
+          version: 5,
+        }
       : task
   ),
 };
@@ -256,6 +264,8 @@ const buildEditForm = (overrides = {}) => ({
   plannedEndDate: "2026-08-24",
   plannedEffortMinutes: 480,
   progressPercent: 50,
+  actualStartDate: "2026-08-22",
+  actualEndDate: "2026-08-24",
   version: 4,
   ...overrides,
 });
@@ -433,6 +443,8 @@ describe("useWbsPage", () => {
       plannedEndDate: "2026-08-24",
       plannedEffortMinutes: 480,
       progressPercent: 50,
+      actualStartDate: "2026-08-22",
+      actualEndDate: "2026-08-24",
       version: 4,
     });
     expect(page.wbs.value).toEqual(updatedWbs);
@@ -455,6 +467,22 @@ describe("useWbsPage", () => {
     expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
     expect(page.editorErrorMessages.value).toEqual([
       "予定終了日は予定開始日以降にしてください。",
+    ]);
+    expect(page.isEditorOpen.value).toBe(true);
+  });
+
+  it("実績終了日だけの入力では更新APIを呼ばない", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(
+      buildEditForm({ actualStartDate: "", actualEndDate: "2026-08-24" })
+    );
+
+    expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
+    expect(page.editorErrorMessages.value).toEqual([
+      "実績終了日を入力する場合は実績開始日も入力してください。",
     ]);
     expect(page.isEditorOpen.value).toBe(true);
   });

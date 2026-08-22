@@ -17,6 +17,8 @@ export const buildWbsTaskEditForm = (task: WbsTask): WbsTaskEditForm => ({
   plannedEndDate: task.plannedEndDate,
   plannedEffortMinutes: task.plannedEffortMinutes,
   progressPercent: task.progressPercent,
+  actualStartDate: task.actualStartDate ?? "",
+  actualEndDate: task.actualEndDate ?? "",
   version: task.version,
 });
 
@@ -134,6 +136,32 @@ export const validateWbsTaskEditForm = (
   ) {
     messages.push("進捗率は0から100まで、小数第2位以内で入力してください。");
   }
+  // Vuetifyのclearableは実行時にnullを渡すため、API境界へ進む前に空文字へ統一する。
+  const actualStartDate = form.actualStartDate ?? "";
+  const actualEndDate = form.actualEndDate ?? "";
+  const hasActualStartDate = actualStartDate !== "";
+  const hasActualEndDate = actualEndDate !== "";
+  const isActualStartDateValid =
+    !hasActualStartDate || isValidIsoLocalDate(actualStartDate);
+  const isActualEndDateValid =
+    !hasActualEndDate || isValidIsoLocalDate(actualEndDate);
+  if (!isActualStartDateValid) {
+    messages.push("実績開始日は正しい日付を入力してください。");
+  }
+  if (!isActualEndDateValid) {
+    messages.push("実績終了日は正しい日付を入力してください。");
+  }
+  if (hasActualEndDate && !hasActualStartDate) {
+    messages.push("実績終了日を入力する場合は実績開始日も入力してください。");
+  } else if (
+    isActualStartDateValid &&
+    isActualEndDateValid &&
+    hasActualStartDate &&
+    hasActualEndDate &&
+    actualStartDate > actualEndDate
+  ) {
+    messages.push("実績終了日は実績開始日以降にしてください。");
+  }
   if (
     form.taskType === "MILESTONE" &&
     (form.plannedStartDate !== form.plannedEndDate ||
@@ -155,5 +183,7 @@ export const buildWbsTaskUpdateRequest = (
   plannedEndDate: form.plannedEndDate,
   plannedEffortMinutes: form.plannedEffortMinutes as number,
   progressPercent: form.progressPercent as number,
+  actualStartDate: form.actualStartDate || null,
+  actualEndDate: form.actualEndDate || null,
   version: form.version,
 });

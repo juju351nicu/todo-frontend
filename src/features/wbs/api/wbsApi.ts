@@ -48,6 +48,19 @@ const ensureSuccess = async (response: Response): Promise<void> => {
 };
 
 /**
+ * WBS ResponseのTask配列とV6 nullable実績日を画面で扱う確定値へ正規化する。
+ * V6適用前に作成したmock・fixtureから項目が欠けても、undefinedを表示層へ伝播させない。
+ */
+const normalizeWbsResponse = (payload: WbsResponse): WbsResponse => ({
+  ...payload,
+  tasks: (payload.tasks ?? []).map((task) => ({
+    ...task,
+    actualStartDate: task.actualStartDate ?? null,
+    actualEndDate: task.actualEndDate ?? null,
+  })),
+});
+
+/**
  * Projectの非archive TaskをWBS表示・編集開始用スナップショットとして取得する。
  *
  * @param projectId 参照対象Project ID
@@ -59,12 +72,7 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
     `${API_PATHS.PROJECTS}/${projectId}/wbs`
   );
   await ensureSuccess(response);
-  const payload = (await response.json()) as WbsResponse;
-  return {
-    ...payload,
-    // 古いfixtureやTask未登録Responseでも、画面側へundefinedを伝播させない。
-    tasks: payload.tasks ?? [],
-  };
+  return normalizeWbsResponse((await response.json()) as WbsResponse);
 };
 
 /**
@@ -72,7 +80,7 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
  *
  * @param projectId 更新対象Taskが所属するProject ID
  * @param taskId 更新対象Task ID
- * @param request 階層、種別、予定、進捗と取得時点のversion
+ * @param request 階層、種別、予定、進捗、nullableな実績期間と取得時点のversion
  * @returns 更新確定後のProject WBS全体
  * @throws WbsApiError 入力不正、認可不足、対象なし、version競合またはBackendエラーの場合
  */
@@ -86,11 +94,7 @@ const updateWbsTask = async (
     request
   );
   await ensureSuccess(response);
-  const payload = (await response.json()) as WbsResponse;
-  return {
-    ...payload,
-    tasks: payload.tasks ?? [],
-  };
+  return normalizeWbsResponse((await response.json()) as WbsResponse);
 };
 
 /**

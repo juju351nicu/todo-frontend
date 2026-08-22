@@ -95,6 +95,29 @@ export const formatProgressPercent = (progressPercent: number): string => {
   return normalized.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
 };
 
+/**
+ * nullableな実績開始日・終了日をWBS一覧とGantt tooltipの共通表示へ変換する。
+ * Backend契約にない終了日だけの状態も隠さず、データ不整合として判別できる表示を返す。
+ *
+ * @param actualStartDate 実績開始日。未着手の場合はnull
+ * @param actualEndDate 実績終了日。作業中または未着手の場合はnull
+ * @returns 未着手、作業中、完了期間または開始日欠損を表す文字列
+ */
+export const formatActualPeriod = (
+  actualStartDate: string | null,
+  actualEndDate: string | null
+): string => {
+  if (actualStartDate === null && actualEndDate === null) {
+    return "未着手";
+  }
+  if (actualStartDate === null) {
+    return `開始日未設定 ～ ${actualEndDate}`;
+  }
+  return actualEndDate === null
+    ? `${actualStartDate} ～ 作業中`
+    : `${actualStartDate} ～ ${actualEndDate}`;
+};
+
 /** BackendのTask種別コードをWBS階層表の日本語表示へ変換する。 */
 export const getWbsTaskTypeLabel = (taskType: WbsTaskType): string =>
   ({ TASK: "Task", SUMMARY: "Summary", MILESTONE: "Milestone" })[taskType];

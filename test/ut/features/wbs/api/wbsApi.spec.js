@@ -21,7 +21,15 @@ describe("WBS API", () => {
     const wbs = {
       projectId: 7,
       projectName: "開発Project",
-      tasks: [{ taskId: 11, parentTaskId: null, title: "設計" }],
+      tasks: [
+        {
+          taskId: 11,
+          parentTaskId: null,
+          title: "設計",
+          actualStartDate: null,
+          actualEndDate: null,
+        },
+      ],
     };
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
@@ -46,6 +54,26 @@ describe("WBS API", () => {
       projectName: "空Project",
       tasks: [],
     });
+  });
+
+  it("V6以前のTask fixtureで実績日が欠けてもnullへ正規化する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        projectName: "開発Project",
+        tasks: [{ taskId: 11, title: "設計" }],
+      }),
+    });
+
+    const response = await WbsApi.getWbs(7);
+
+    expect(response.tasks[0]).toEqual(
+      expect.objectContaining({
+        actualStartDate: null,
+        actualEndDate: null,
+      })
+    );
   });
 
   it("JSON本文のない404をstatus付きWbsApiErrorへ変換する", async () => {
@@ -73,6 +101,8 @@ describe("WBS API", () => {
       plannedEndDate: "2026-08-24",
       plannedEffortMinutes: 480,
       progressPercent: 37.5,
+      actualStartDate: "2026-08-22",
+      actualEndDate: null,
       version: 4,
     };
     const updatedWbs = {
@@ -115,6 +145,8 @@ describe("WBS API", () => {
         plannedEndDate: "2026-08-22",
         plannedEffortMinutes: 0,
         progressPercent: 0,
+        actualStartDate: null,
+        actualEndDate: null,
         version: 4,
       })
     ).rejects.toMatchObject({ status: 400, errorResponse });

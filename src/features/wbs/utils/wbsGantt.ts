@@ -6,14 +6,50 @@ import type {
   WbsTaskType,
   WbsTreeRow,
 } from "@/features/wbs/types/wbs";
-import { normalizeProgressPercent } from "@/features/wbs/utils/wbsTree";
-import type { GanttStatic } from "dhtmlx-gantt";
+import {
+  formatActualPeriod,
+  normalizeProgressPercent,
+} from "@/features/wbs/utils/wbsTree";
+import type { GanttStatic, Task } from "dhtmlx-gantt";
 
 const ISO_LOCAL_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const GANTT_ROOT_ID = 0;
 
+/** Gantt tooltipへ渡すWBS固有項目。DHTMLXのTask型へ業務項目を混在させない。 */
+type WbsGanttTooltipTask = Pick<
+  WbsGanttTask,
+  | "text"
+  | "plannedStartDate"
+  | "plannedEndDate"
+  | "actualStartDate"
+  | "actualEndDate"
+>;
+
+/** Backend由来のTask名をtooltip HTMLへ安全に埋め込む。 */
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+/**
+ * WBS Taskの予定期間と実績期間をGanttの読取り専用tooltip HTMLへ変換する。
+ *
+ * @param task DHTMLXへ渡したWBS固有表示項目
+ * @returns HTML escape済みTask名、予定期間、nullableな実績期間
+ */
+export const buildWbsGanttTooltipText = (
+  task: WbsGanttTooltipTask
+): string =>
+  `<strong>${escapeHtml(task.text)}</strong><br>` +
+  `予定: ${escapeHtml(task.plannedStartDate)} ～ ${escapeHtml(task.plannedEndDate)}<br>` +
+  `実績: ${escapeHtml(formatActualPeriod(task.actualStartDate, task.actualEndDate))}`;
+
 /** 読取り専用MVPに必要なtree、日付scale、操作無効化だけをGanttへ設定する。 */
 export const configureWbsGantt = (instance: GanttStatic): void => {
+  instance.plugins({ tooltip: true });
   instance.config.readonly = true;
   instance.config.date_format = "%Y-%m-%d";
   instance.config.row_height = 34;
@@ -43,6 +79,8 @@ export const configureWbsGantt = (instance: GanttStatic): void => {
   instance.config.drag_links = false;
   instance.config.drag_project = false;
   instance.config.order_branch = false;
+  instance.templates.tooltip_text = (_start, _end, task: Task) =>
+    buildWbsGanttTooltipText(task as Task & WbsGanttTooltipTask);
 };
 
 /** yyyy-MM-ddをtimezone変換しないlocal dateとして検証・変換する。 */
@@ -135,6 +173,10 @@ export const buildWbsGanttData = (
       parent,
       type: toGanttTaskType(row.taskType),
       progress: normalizeProgressPercent(row.progressPercent) / 100,
+      plannedStartDate: row.plannedStartDate,
+      plannedEndDate: row.plannedEndDate,
+      actualStartDate: row.actualStartDate,
+      actualEndDate: row.actualEndDate,
       open: true,
       readonly: true,
     };

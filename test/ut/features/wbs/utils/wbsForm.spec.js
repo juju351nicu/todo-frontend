@@ -18,6 +18,8 @@ const buildTask = (overrides = {}) => ({
   plannedEndDate: "2026-08-24",
   plannedEffortMinutes: 480,
   progressPercent: 25,
+  actualStartDate: null,
+  actualEndDate: null,
   assigneeAccountId: 2,
   priority: 2,
   taskStatusId: 11,
@@ -43,6 +45,8 @@ describe("WBS Task編集フォーム", () => {
       plannedEndDate: "2026-08-24",
       plannedEffortMinutes: 60,
       progressPercent: 25,
+      actualStartDate: "",
+      actualEndDate: "",
       version: 4,
     });
     expect(task.plannedEffortMinutes).toBe(480);
@@ -121,11 +125,43 @@ describe("WBS Task編集フォーム", () => {
     expect(validateWbsTaskEditForm(form)).toEqual([]);
   });
 
+  it("実績期間は未着手・作業中・同日完了・複数日完了を許可する", () => {
+    const form = buildWbsTaskEditForm(buildTask());
+
+    expect(validateWbsTaskEditForm(form)).toEqual([]);
+    form.actualStartDate = "2026-08-22";
+    expect(validateWbsTaskEditForm(form)).toEqual([]);
+    form.actualEndDate = "2026-08-22";
+    expect(validateWbsTaskEditForm(form)).toEqual([]);
+    form.actualEndDate = "2026-08-25";
+    expect(validateWbsTaskEditForm(form)).toEqual([]);
+  });
+
+  it("実績終了日だけ・存在しない日付・開始日より前の終了日を拒否する", () => {
+    const form = buildWbsTaskEditForm(buildTask());
+    form.actualEndDate = "2026-08-24";
+    expect(validateWbsTaskEditForm(form)).toContain(
+      "実績終了日を入力する場合は実績開始日も入力してください。"
+    );
+
+    form.actualStartDate = "2026-02-30";
+    expect(validateWbsTaskEditForm(form)).toContain(
+      "実績開始日は正しい日付を入力してください。"
+    );
+
+    form.actualStartDate = "2026-08-25";
+    expect(validateWbsTaskEditForm(form)).toContain(
+      "実績終了日は実績開始日以降にしてください。"
+    );
+  });
+
   it("検証済みフォームの空白WBSコードをnullへ正規化してversionを保持する", () => {
     const form = buildWbsTaskEditForm(buildTask());
     form.parentTaskId = 9;
     form.wbsCode = "   ";
     form.progressPercent = 37.5;
+    form.actualStartDate = "2026-08-22";
+    form.actualEndDate = "2026-08-24";
 
     expect(buildWbsTaskUpdateRequest(form)).toEqual({
       parentTaskId: 9,
@@ -135,7 +171,18 @@ describe("WBS Task編集フォーム", () => {
       plannedEndDate: "2026-08-24",
       plannedEffortMinutes: 480,
       progressPercent: 37.5,
+      actualStartDate: "2026-08-22",
+      actualEndDate: "2026-08-24",
       version: 4,
     });
+  });
+
+  it("空の実績期間をBackendのnullable項目へ正規化する", () => {
+    const request = buildWbsTaskUpdateRequest(
+      buildWbsTaskEditForm(buildTask())
+    );
+
+    expect(request.actualStartDate).toBeNull();
+    expect(request.actualEndDate).toBeNull();
   });
 });
