@@ -192,6 +192,125 @@ export interface TaskWorkLogWorkerOption {
   value: number;
 }
 
+/** Task全体予定を1予定担当者・1業務日へ配賦した日別予定工数。 */
+export interface TaskEffortPlan {
+  /** Task日別予定工数ID。 */
+  effortPlanId: number;
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** 予定工数を配賦した業務日。yyyy-MM-dd形式。 */
+  planDate: string;
+  /** 分単位の日別予定工数。 */
+  plannedEffortMinutes: number;
+  /** 予定工数を割り当てたProject memberのアカウントID。 */
+  assigneeAccountId: number;
+  /** 姓名、メール、アカウントIDの順に補完された予定担当者表示名。 */
+  assigneeDisplayName: string;
+  /** 日別予定を最初に登録した認証済みアカウントID。 */
+  createdBy: number;
+  /** ISO-8601形式の作成時刻。 */
+  createdAt: string;
+  /** 日別予定を最後に更新した認証済みアカウントID。 */
+  updatedBy: number;
+  /** ISO-8601形式の最終更新時刻。 */
+  updatedAt: string;
+  /** 更新・削除時に送る楽観ロックversion。 */
+  version: number;
+}
+
+/** 1 Taskの日別予定、Task全体予定、配賦状況を返すAPI Response。 */
+export interface TaskEffortPlanListResponse {
+  /** 日別予定工数を所有するProject ID。 */
+  projectId: number;
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** Task本体へ設定した全体予定工数（分）。 */
+  taskPlannedEffortMinutes: number;
+  /** 取得した日別予定工数の合計（分）。 */
+  totalDailyPlannedEffortMinutes: number;
+  /** 全体予定から日別予定合計を引いた未配賦工数。負数は過配賦。 */
+  unallocatedEffortMinutes: number;
+  /** 予定日、予定担当者、予定工数ID順の日別予定。 */
+  effortPlans: TaskEffortPlan[];
+}
+
+/** Task日別予定の登録APIへ送信する検証済みRequest。 */
+export interface TaskEffortPlanCreateRequest {
+  /** 予定工数を配賦する業務日。yyyy-MM-dd形式。 */
+  planDate: string;
+  /** 1分以上1440分以下の日別予定工数。 */
+  plannedEffortMinutes: number;
+  /** 予定担当者となるProject memberのアカウントID。 */
+  assigneeAccountId: number;
+}
+
+/** Task日別予定の更新APIへ送信する検証済みRequest。 */
+export interface TaskEffortPlanUpdateRequest
+  extends TaskEffortPlanCreateRequest {
+  /** 一覧取得時点の楽観ロックversion。 */
+  version: number;
+}
+
+/** Task日別予定Dialogが保持する、Backend型へ変換する前の入力値。 */
+export interface TaskEffortPlanForm {
+  /** 予定工数を配賦する業務日。未入力時は空文字。 */
+  planDate: string;
+  /** 分単位の日別予定工数。未入力または数値変換できない場合はnull。 */
+  plannedEffortMinutes: number | null;
+  /** 予定担当者未選択時はnull。 */
+  assigneeAccountId: number | null;
+}
+
+/** Task日別予定の予定担当者selectへ表示するProject member候補。 */
+export interface TaskEffortPlanAssigneeOption {
+  /** アカウントIDとProject roleを含む表示文字列。 */
+  title: string;
+  /** 予定担当者となるProject memberのアカウントID。 */
+  value: number;
+}
+
+/** Project workloadの日付・担当者単位の予定実績比較行。 */
+export interface TaskWorkloadRow {
+  /** 予定または実績を集計した業務日。yyyy-MM-dd形式。 */
+  workDate: string;
+  /** 予定担当者または実績作業者のアカウントID。 */
+  accountId: number;
+  /** 姓名、メール、アカウントIDの順に補完された担当者表示名。 */
+  accountDisplayName: string;
+  /** 日付・担当者単位の予定工数合計（分）。 */
+  plannedEffortMinutes: number;
+  /** 日付・担当者単位の実績工数合計（分）。 */
+  actualEffortMinutes: number;
+  /** 実績から予定を引いた差分。正数は予定超過、負数は予定未消化。 */
+  varianceEffortMinutes: number;
+}
+
+/** Project内の指定期間における担当者別workload API Response。 */
+export interface TaskWorkloadResponse {
+  /** workloadを所有するProject ID。 */
+  projectId: number;
+  /** 集計開始日。境界を含む。 */
+  dateFrom: string;
+  /** 集計終了日。境界を含む。 */
+  dateTo: string;
+  /** 期間内の日別予定工数合計（分）。 */
+  totalPlannedEffortMinutes: number;
+  /** 期間内の日別実績工数合計（分）。 */
+  totalActualEffortMinutes: number;
+  /** 期間内実績から予定を引いた差分（分）。 */
+  totalVarianceEffortMinutes: number;
+  /** 業務日、アカウントID順の担当者別workload。 */
+  workloads: TaskWorkloadRow[];
+}
+
+/** workload検索欄が保持する開始日・終了日。 */
+export interface TaskWorkloadDateRange {
+  /** 集計開始日。yyyy-MM-dd形式。 */
+  dateFrom: string;
+  /** 集計終了日。yyyy-MM-dd形式。 */
+  dateTo: string;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

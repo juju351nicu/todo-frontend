@@ -292,4 +292,119 @@ describe("WBS API", () => {
       })
     ).rejects.toMatchObject({ status: 409, errorResponse });
   });
+
+  it("Task IDを含む日別予定APIから配賦合計と未登録時の空配列を取得する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        taskId: 11,
+        taskPlannedEffortMinutes: 480,
+        totalDailyPlannedEffortMinutes: 0,
+        unallocatedEffortMinutes: 480,
+      }),
+    });
+
+    await expect(WbsApi.getTaskEffortPlans(7, 11)).resolves.toEqual({
+      projectId: 7,
+      taskId: 11,
+      taskPlannedEffortMinutes: 480,
+      totalDailyPlannedEffortMinutes: 0,
+      unallocatedEffortMinutes: 480,
+      effortPlans: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/effort-plans"
+    );
+  });
+
+  it("予定日・工数・担当者をPOSTして確定後の日別予定一覧を返す", async () => {
+    const request = {
+      planDate: "2026-08-22",
+      plannedEffortMinutes: 300,
+      assigneeAccountId: 2,
+    };
+    const response = {
+      projectId: 7,
+      taskId: 11,
+      taskPlannedEffortMinutes: 480,
+      totalDailyPlannedEffortMinutes: 300,
+      unallocatedEffortMinutes: 180,
+      effortPlans: [{ effortPlanId: 51, taskId: 11, ...request, version: 0 }],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createTaskEffortPlan(7, 11, request)).resolves.toEqual(
+      response
+    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/effort-plans",
+      request
+    );
+  });
+
+  it("日別予定IDとversionを含むRequestで登録済み予定を更新する", async () => {
+    const request = {
+      planDate: "2026-08-23",
+      plannedEffortMinutes: 360,
+      assigneeAccountId: 2,
+      version: 3,
+    };
+    const response = {
+      projectId: 7,
+      taskId: 11,
+      taskPlannedEffortMinutes: 480,
+      totalDailyPlannedEffortMinutes: 360,
+      unallocatedEffortMinutes: 120,
+      effortPlans: [{ effortPlanId: 51, taskId: 11, ...request, version: 4 }],
+    };
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(
+      WbsApi.updateTaskEffortPlan(7, 11, 51, request)
+    ).resolves.toEqual(response);
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/effort-plans/51",
+      request
+    );
+  });
+
+  it("日別予定IDとversionをDELETE queryへ含めて204を確定結果にする", async () => {
+    HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
+
+    await expect(
+      WbsApi.deleteTaskEffortPlan(7, 11, 51, 3)
+    ).resolves.toBeUndefined();
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/effort-plans/51?version=3"
+    );
+  });
+
+  it("Project workloadの検索期間をURL queryへ含め予定・実績行を取得する", async () => {
+    const response = {
+      projectId: 7,
+      dateFrom: "2026-08-01",
+      dateTo: "2026-08-31",
+      totalPlannedEffortMinutes: 300,
+      totalActualEffortMinutes: 480,
+      totalVarianceEffortMinutes: 180,
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(
+      WbsApi.getTaskWorkload(7, "2026-08-01", "2026-08-31")
+    ).resolves.toEqual({ ...response, workloads: [] });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/workload?dateFrom=2026-08-01&dateTo=2026-08-31"
+    );
+  });
 });

@@ -1,9 +1,13 @@
 import type {
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
+  TaskEffortPlanCreateRequest,
+  TaskEffortPlanListResponse,
+  TaskEffortPlanUpdateRequest,
   TaskWorkLogCreateRequest,
   TaskWorkLogListResponse,
   TaskWorkLogUpdateRequest,
+  TaskWorkloadResponse,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
@@ -255,14 +259,145 @@ const deleteTaskWorkLog = async (
   await ensureSuccess(response);
 };
 
+/** API Responseの欠落したeffortPlansを画面へ伝播させず空配列へ正規化する。 */
+const normalizeTaskEffortPlanList = (
+  payload: TaskEffortPlanListResponse
+): TaskEffortPlanListResponse => ({
+  ...payload,
+  effortPlans: payload.effortPlans ?? [],
+});
+
+/**
+ * 通常Taskへ登録された日別予定工数、Task全体予定、未配賦工数を取得する。
+ *
+ * @param projectId 日別予定工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @returns 予定日順の日別予定と分単位の配賦状況
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加、対象なしまたはBackendエラーの場合
+ */
+const getTaskEffortPlans = async (
+  projectId: number,
+  taskId: number
+): Promise<TaskEffortPlanListResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/effort-plans`
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEffortPlanList(
+    (await response.json()) as TaskEffortPlanListResponse
+  );
+};
+
+/**
+ * 通常Taskへ1予定担当者・1業務日単位の日別予定工数を登録する。
+ *
+ * @param projectId 日別予定工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param request 予定日、予定工数、Project memberの予定担当者ID
+ * @returns 登録確定後の日別予定工数一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、重複・状態競合またはBackendエラーの場合
+ */
+const createTaskEffortPlan = async (
+  projectId: number,
+  taskId: number,
+  request: TaskEffortPlanCreateRequest
+): Promise<TaskEffortPlanListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/effort-plans`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEffortPlanList(
+    (await response.json()) as TaskEffortPlanListResponse
+  );
+};
+
+/**
+ * 保存済みTask日別予定を取得時点version付きで更新する。
+ *
+ * @param projectId 日別予定工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param effortPlanId 更新対象の日別予定工数ID
+ * @param request 更新後の値と取得時点version
+ * @returns 更新確定後の日別予定工数一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、重複・version・状態競合またはBackendエラーの場合
+ */
+const updateTaskEffortPlan = async (
+  projectId: number,
+  taskId: number,
+  effortPlanId: number,
+  request: TaskEffortPlanUpdateRequest
+): Promise<TaskEffortPlanListResponse> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/effort-plans/${effortPlanId}`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEffortPlanList(
+    (await response.json()) as TaskEffortPlanListResponse
+  );
+};
+
+/**
+ * Task日別予定を取得時点version付きで削除する。
+ *
+ * @param projectId 日別予定工数を所有するProject ID
+ * @param taskId Board・WBSと共通の通常Task ID
+ * @param effortPlanId 削除対象の日別予定工数ID
+ * @param version 一覧取得時点の楽観ロックversion
+ * @throws WbsApiError 認可不足、対象なし、version・状態競合またはBackendエラーの場合
+ */
+const deleteTaskEffortPlan = async (
+  projectId: number,
+  taskId: number,
+  effortPlanId: number,
+  version: number
+): Promise<void> => {
+  const response = await HttpClient.deleteRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/effort-plans/${effortPlanId}?version=${encodeURIComponent(String(version))}`
+  );
+  await ensureSuccess(response);
+};
+
+/**
+ * Project内の日別予定・実績を指定期間の日付・担当者単位で比較する。
+ *
+ * @param projectId workloadを所有するProject ID
+ * @param dateFrom 集計開始日。境界を含むyyyy-MM-dd
+ * @param dateTo 集計終了日。境界を含むyyyy-MM-dd
+ * @returns 予定・実績・差分の期間合計と担当者別日次行
+ * @throws WbsApiError 期間不正、未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
+ */
+const getTaskWorkload = async (
+  projectId: number,
+  dateFrom: string,
+  dateTo: string
+): Promise<TaskWorkloadResponse> => {
+  const query = new URLSearchParams({ dateFrom, dateTo });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/workload?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as TaskWorkloadResponse;
+  return {
+    ...payload,
+    workloads: payload.workloads ?? [],
+  };
+};
+
 export default {
   createTaskDependency,
+  createTaskEffortPlan,
   createTaskWorkLog,
   deleteTaskDependency,
+  deleteTaskEffortPlan,
   deleteTaskWorkLog,
   getTaskDependencies,
+  getTaskEffortPlans,
   getTaskWorkLogs,
+  getTaskWorkload,
   getWbs,
+  updateTaskEffortPlan,
   updateTaskWorkLog,
   updateWbsTask,
 };

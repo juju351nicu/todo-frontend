@@ -19,12 +19,17 @@ const mocks = vi.hoisted(() => ({
   },
   wbsApi: {
     createTaskDependency: vi.fn(),
+    createTaskEffortPlan: vi.fn(),
     createTaskWorkLog: vi.fn(),
     deleteTaskDependency: vi.fn(),
+    deleteTaskEffortPlan: vi.fn(),
     deleteTaskWorkLog: vi.fn(),
     getTaskDependencies: vi.fn(),
+    getTaskEffortPlans: vi.fn(),
     getTaskWorkLogs: vi.fn(),
+    getTaskWorkload: vi.fn(),
     getWbs: vi.fn(),
+    updateTaskEffortPlan: vi.fn(),
     updateTaskWorkLog: vi.fn(),
     updateWbsTask: vi.fn(),
   },
@@ -190,6 +195,59 @@ const updatedWorkLogList = {
   })),
 };
 
+const effortPlanList = {
+  projectId: 7,
+  taskId: 2,
+  taskPlannedEffortMinutes: 480,
+  totalDailyPlannedEffortMinutes: 300,
+  unallocatedEffortMinutes: 180,
+  effortPlans: [
+    {
+      effortPlanId: 51,
+      taskId: 2,
+      planDate: "2026-08-22",
+      plannedEffortMinutes: 300,
+      assigneeAccountId: 2,
+      assigneeDisplayName: "担当者",
+      createdBy: 2,
+      createdAt: "2026-08-22T01:00:00Z",
+      updatedBy: 2,
+      updatedAt: "2026-08-22T01:00:00Z",
+      version: 3,
+    },
+  ],
+};
+
+const updatedEffortPlanList = {
+  ...effortPlanList,
+  totalDailyPlannedEffortMinutes: 360,
+  unallocatedEffortMinutes: 120,
+  effortPlans: effortPlanList.effortPlans.map((effortPlan) => ({
+    ...effortPlan,
+    plannedEffortMinutes: 360,
+    version: 4,
+  })),
+};
+
+const workloadResponse = {
+  projectId: 7,
+  dateFrom: "2026-08-01",
+  dateTo: "2026-08-31",
+  totalPlannedEffortMinutes: 300,
+  totalActualEffortMinutes: 480,
+  totalVarianceEffortMinutes: 180,
+  workloads: [
+    {
+      workDate: "2026-08-22",
+      accountId: 2,
+      accountDisplayName: "担当者",
+      plannedEffortMinutes: 300,
+      actualEffortMinutes: 480,
+      varianceEffortMinutes: 180,
+    },
+  ],
+};
+
 const buildEditForm = (overrides = {}) => ({
   parentTaskId: 1,
   taskType: "TASK",
@@ -215,18 +273,31 @@ describe("useWbsPage", () => {
     mocks.wbsApi.createTaskDependency.mockResolvedValue(
       structuredClone(updatedDependencyList)
     );
+    mocks.wbsApi.createTaskEffortPlan.mockResolvedValue(
+      structuredClone(effortPlanList)
+    );
     mocks.wbsApi.createTaskWorkLog.mockResolvedValue(
       structuredClone(workLogList)
     );
     mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
+    mocks.wbsApi.deleteTaskEffortPlan.mockResolvedValue(undefined);
     mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
     mocks.wbsApi.getTaskDependencies.mockResolvedValue(
       structuredClone(dependencyList)
     );
+    mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(
+      structuredClone(effortPlanList)
+    );
     mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(
       structuredClone(workLogList)
     );
+    mocks.wbsApi.getTaskWorkload.mockResolvedValue(
+      structuredClone(workloadResponse)
+    );
     mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
+    mocks.wbsApi.updateTaskEffortPlan.mockResolvedValue(
+      structuredClone(updatedEffortPlanList)
+    );
     mocks.wbsApi.updateWbsTask.mockResolvedValue(structuredClone(updatedWbs));
     mocks.wbsApi.updateTaskWorkLog.mockResolvedValue(
       structuredClone(updatedWorkLogList)
@@ -934,7 +1005,227 @@ describe("useWbsPage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
-});
-    mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(
-      structuredClone(workLogList)
+
+  it("初期表示で当月workloadを取得して予定・実績・差分を保持する", async () => {
+    const page = useWbsPage();
+
+    await page.initialize();
+
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(
+      7,
+      page.workloadDateRange.value.dateFrom,
+      page.workloadDateRange.value.dateTo
     );
+    expect(page.workload.value).toEqual(workloadResponse);
+    expect(page.workloadErrorMessages.value).toEqual([]);
+  });
+
+  it("不正なworkload期間では再取得せず全検証理由を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    mocks.wbsApi.getTaskWorkload.mockClear();
+
+    await page.loadTaskWorkload({
+      dateFrom: "2026-08-31",
+      dateTo: "2026-08-01",
+    });
+
+    expect(mocks.wbsApi.getTaskWorkload).not.toHaveBeenCalled();
+    expect(page.workloadErrorMessages.value).toEqual([
+      "集計終了日は集計開始日以降にしてください。",
+    ]);
+    expect(page.workload.value).toEqual(workloadResponse);
+  });
+
+  it("通常Taskを選ぶと日別予定一覧と現在利用者の予定担当者候補を取得する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openEffortPlanDialog(2);
+
+    expect(mocks.wbsApi.getTaskEffortPlans).toHaveBeenCalledWith(7, 2);
+    expect(page.isEffortPlanDialogOpen.value).toBe(true);
+    expect(page.effortPlanTask.value).toMatchObject({
+      taskId: 2,
+      taskType: "TASK",
+    });
+    expect(page.effortPlanList.value).toEqual(effortPlanList);
+    expect(page.effortPlanAssigneeOptions.value).toEqual([
+      { title: "アカウントID: 2（MEMBER）", value: 2 },
+    ]);
+  });
+
+  it("Summaryでは日別予定APIを呼ばず通常Taskだけが対象だと案内する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openEffortPlanDialog(1);
+
+    expect(mocks.wbsApi.getTaskEffortPlans).not.toHaveBeenCalled();
+    expect(page.isEffortPlanDialogOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "日別予定工数を登録できるのは通常Taskだけです。",
+    ]);
+  });
+
+  it("予定日・予定工数・予定担当者を送信しworkloadも再取得する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openEffortPlanDialog(2);
+    mocks.wbsApi.getTaskWorkload.mockClear();
+    const form = {
+      planDate: "2026-08-23",
+      plannedEffortMinutes: 180,
+      assigneeAccountId: 2,
+    };
+
+    await page.saveEffortPlan(form);
+
+    expect(mocks.wbsApi.createTaskEffortPlan).toHaveBeenCalledWith(7, 2, form);
+    expect(page.effortPlanList.value).toEqual(effortPlanList);
+    expect(page.effortPlanSuccessMessage.value).toBe(
+      "Task日別予定を登録しました。"
+    );
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(
+      7,
+      page.workloadDateRange.value.dateFrom,
+      page.workloadDateRange.value.dateTo
+    );
+  });
+
+  it("取得時点version付きでTask日別予定を更新する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openEffortPlanDialog(2);
+    page.editEffortPlan(51);
+
+    await page.saveEffortPlan({
+      planDate: "2026-08-22",
+      plannedEffortMinutes: 360,
+      assigneeAccountId: 2,
+    });
+
+    expect(mocks.wbsApi.updateTaskEffortPlan).toHaveBeenCalledWith(7, 2, 51, {
+      planDate: "2026-08-22",
+      plannedEffortMinutes: 360,
+      assigneeAccountId: 2,
+      version: 3,
+    });
+    expect(page.effortPlanList.value).toEqual(updatedEffortPlanList);
+    expect(page.editingEffortPlan.value).toBeNull();
+    expect(page.effortPlanSuccessMessage.value).toBe(
+      "Task日別予定を更新しました。"
+    );
+  });
+
+  it("入力不正ではTask日別予定APIを呼ばずDialogへ全理由を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openEffortPlanDialog(2);
+
+    await page.saveEffortPlan({
+      planDate: "2026-02-30",
+      plannedEffortMinutes: 0,
+      assigneeAccountId: 1,
+    });
+
+    expect(mocks.wbsApi.createTaskEffortPlan).not.toHaveBeenCalled();
+    expect(page.effortPlanEditorErrorMessages.value).toEqual([
+      "予定日を入力してください。",
+      "予定工数は1分以上1440分以下の整数で入力してください。",
+      "Projectへ参加している予定担当者を選択してください。",
+    ]);
+  });
+
+  it("Task日別予定の409競合では編集を破棄して最新一覧とworkloadを再取得する", async () => {
+    mocks.wbsApi.updateTaskEffortPlan.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "version", message: "更新されています。" }],
+      })
+    );
+    mocks.wbsApi.getTaskEffortPlans
+      .mockResolvedValueOnce(structuredClone(effortPlanList))
+      .mockResolvedValueOnce(structuredClone(updatedEffortPlanList));
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openEffortPlanDialog(2);
+    page.editEffortPlan(51);
+
+    await page.saveEffortPlan({
+      planDate: "2026-08-22",
+      plannedEffortMinutes: 360,
+      assigneeAccountId: 2,
+    });
+
+    expect(page.editingEffortPlan.value).toBeNull();
+    expect(page.effortPlanEditorErrorMessages.value).toEqual([
+      "更新されています。",
+    ]);
+    expect(mocks.wbsApi.getTaskEffortPlans).toHaveBeenCalledTimes(2);
+    expect(page.effortPlanList.value).toEqual(updatedEffortPlanList);
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
+  });
+
+  it("取得時点versionで日別予定を削除し確定後だけ配賦集計を更新する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openEffortPlanDialog(2);
+
+    page.requestEffortPlanDelete(51);
+    await page.confirmEffortPlanDelete();
+
+    expect(mocks.wbsApi.deleteTaskEffortPlan).toHaveBeenCalledWith(7, 2, 51, 3);
+    expect(page.effortPlanList.value).toMatchObject({
+      taskPlannedEffortMinutes: 480,
+      totalDailyPlannedEffortMinutes: 0,
+      unallocatedEffortMinutes: 480,
+      effortPlans: [],
+    });
+    expect(page.effortPlanPendingDelete.value).toBeNull();
+    expect(page.effortPlanSuccessMessage.value).toBe(
+      "Task日別予定を削除しました。"
+    );
+  });
+
+  it("管理者は全Project memberを予定担当者にでき通常memberは他者予定を変更しない", async () => {
+    const ownerProject = structuredClone(project);
+    ownerProject.members[1].projectRole = "OWNER";
+    mocks.projectApi.getProject.mockResolvedValue(ownerProject);
+    const ownerPage = useWbsPage();
+    await ownerPage.initialize();
+    await ownerPage.openEffortPlanDialog(2);
+
+    expect(ownerPage.canManageAnyEffortPlan.value).toBe(true);
+    expect(
+      ownerPage.effortPlanAssigneeOptions.value.map((option) => option.value)
+    ).toEqual([1, 2]);
+
+    const otherEffortPlanList = structuredClone(effortPlanList);
+    otherEffortPlanList.effortPlans[0].assigneeAccountId = 1;
+    mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(otherEffortPlanList);
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
+    const memberPage = useWbsPage();
+    await memberPage.initialize();
+    await memberPage.openEffortPlanDialog(2);
+    memberPage.editEffortPlan(51);
+
+    expect(memberPage.editingEffortPlan.value).toBeNull();
+    expect(memberPage.effortPlanEditorErrorMessages.value).toEqual([
+      "この日別予定工数を更新する権限がありません。",
+    ]);
+  });
+
+  it("日別予定参照APIの401はDialogとSessionを破棄してログインへ戻す", async () => {
+    mocks.wbsApi.getTaskEffortPlans.mockRejectedValue(
+      new WbsApiError(401, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.openEffortPlanDialog(2);
+
+    expect(page.isEffortPlanDialogOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+});

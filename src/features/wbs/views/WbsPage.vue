@@ -2,7 +2,9 @@
 import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
+import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -26,15 +28,21 @@ const activeView = ref<WbsViewMode>("table");
 
 const {
   cancelDependencyDelete,
+  cancelEffortPlanDelete,
+  cancelEffortPlanEdit,
   cancelWorkLogDelete,
   cancelWorkLogEdit,
+  canEditSelectedEffortPlanTask,
   canEditSelectedWorkLogTask,
   canEditWbs,
+  canManageAnyEffortPlan,
   canManageAnyWorkLog,
   closeDependencyEditor,
+  closeEffortPlanDialog,
   closeTaskEditor,
   closeWorkLogDialog,
   confirmDependencyDelete,
+  confirmEffortPlanDelete,
   confirmWorkLogDelete,
   currentAccountId,
   dependencies,
@@ -43,33 +51,49 @@ const {
   dependencyPendingDeleteRow,
   dependencyRows,
   dependencyTaskOptions,
+  editingEffortPlan,
   editingTask,
   editingWorkLog,
+  editEffortPlan,
+  effortPlanAssigneeOptions,
+  effortPlanEditorErrorMessages,
+  effortPlanList,
+  effortPlanPendingDelete,
+  effortPlanSuccessMessage,
+  effortPlanTask,
   editWorkLog,
   editorErrorMessages,
   errorMessages,
   initialize,
   isDeletingDependency,
+  isDeletingEffortPlan,
   isDeletingWorkLog,
   isDependencyEditorOpen,
   isDependencyMutating,
   isEditorOpen,
+  isEffortPlanDialogOpen,
   isLoading,
+  isLoadingEffortPlans,
+  isLoadingWorkload,
   isLoadingWorkLogs,
   isSavingDependency,
+  isSavingEffortPlan,
   isSaving,
   isSavingWorkLog,
   isWorkLogDialogOpen,
   milestoneCount,
   openBoard,
   openDependencyEditor,
+  openEffortPlanDialog,
   openTaskEditor,
   openWorkLogDialog,
   parentOptions,
   requestDependencyDelete,
+  requestEffortPlanDelete,
   requestWorkLogDelete,
   rows,
   saveDependency,
+  saveEffortPlan,
   saveWbsTask,
   saveWorkLog,
   successMessage,
@@ -82,12 +106,23 @@ const {
   workLogSuccessMessage,
   workLogTask,
   workLogWorkerOptions,
+  workload,
+  workloadDateRange,
+  workloadErrorMessages,
+  loadTaskWorkload,
 } = useWbsPage();
 
 /** Vuetifyが削除確認Dialogを閉じる場合だけ未確定の削除対象を破棄する。 */
 const handleDependencyDeleteDialogModelValue = (value: boolean): void => {
   if (!value) {
     cancelDependencyDelete();
+  }
+};
+
+/** Vuetifyが日別予定の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
+const handleEffortPlanDeleteDialogModelValue = (value: boolean): void => {
+  if (!value) {
+    cancelEffortPlanDelete();
   }
 };
 
@@ -115,7 +150,7 @@ onBeforeMount(initialize);
       <div>
         <h1 class="text-h5">{{ wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-body-2 text-medium-emphasis">
-          Boardと同じTaskを使用する階層・予定・進捗・日別実績管理
+          Boardと同じTaskを使用する階層・予定・進捗・日別予定実績管理
         </div>
       </div>
       <v-spacer />
@@ -171,7 +206,7 @@ onBeforeMount(initialize);
           <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
         </v-btn-toggle>
         <p class="text-caption text-medium-emphasis mt-2 mb-0">
-          階層表から予定・進捗と通常Taskの日別実績を管理できます。Gantt上の直接変更はまだ行いません。
+          階層表から予定・進捗と通常Taskの日別予定・実績を管理できます。Gantt上の直接変更はまだ行いません。
         </p>
       </v-card-text>
 
@@ -262,6 +297,16 @@ onBeforeMount(initialize);
                   <div class="d-flex ga-1">
                     <v-btn
                       v-if="row.taskType === 'TASK'"
+                      icon="mdi-calendar-clock-outline"
+                      color="secondary"
+                      size="small"
+                      variant="text"
+                      :disabled="isLoadingEffortPlans"
+                      :aria-label="`${row.title}の日別予定工数を開く`"
+                      @click="openEffortPlanDialog(row.taskId)"
+                    />
+                    <v-btn
+                      v-if="row.taskType === 'TASK'"
                       icon="mdi-timer-edit-outline"
                       color="primary"
                       size="small"
@@ -307,6 +352,15 @@ onBeforeMount(initialize);
         </p>
       </v-card-text>
     </v-card>
+
+    <TaskWorkloadCard
+      v-if="wbs"
+      :date-range="workloadDateRange"
+      :workload="workload"
+      :is-loading="isLoadingWorkload"
+      :error-messages="workloadErrorMessages"
+      @load="loadTaskWorkload"
+    />
 
     <v-card v-if="wbs" max-width="1600" class="mx-auto mt-4">
       <v-card-title class="d-flex align-center flex-wrap ga-2">
@@ -399,6 +453,27 @@ onBeforeMount(initialize);
       @save="saveDependency"
     />
 
+    <TaskEffortPlanDialog
+      :open="isEffortPlanDialogOpen"
+      :task="effortPlanTask"
+      :effort-plan-list="effortPlanList"
+      :editing-effort-plan="editingEffortPlan"
+      :assignee-options="effortPlanAssigneeOptions"
+      :current-account-id="currentAccountId"
+      :can-edit="canEditSelectedEffortPlanTask"
+      :can-manage-any-effort-plan="canManageAnyEffortPlan"
+      :is-loading="isLoadingEffortPlans"
+      :is-saving="isSavingEffortPlan"
+      :is-deleting="isDeletingEffortPlan"
+      :error-messages="effortPlanEditorErrorMessages"
+      :success-message="effortPlanSuccessMessage"
+      @close="closeEffortPlanDialog"
+      @save="saveEffortPlan"
+      @edit="editEffortPlan"
+      @cancel-edit="cancelEffortPlanEdit"
+      @request-delete="requestEffortPlanDelete"
+    />
+
     <TaskWorkLogDialog
       :open="isWorkLogDialogOpen"
       :task="workLogTask"
@@ -419,6 +494,37 @@ onBeforeMount(initialize);
       @cancel-edit="cancelWorkLogEdit"
       @request-delete="requestWorkLogDelete"
     />
+
+    <v-dialog
+      :model-value="effortPlanPendingDelete !== null"
+      max-width="560"
+      :persistent="isDeletingEffortPlan"
+      @update:model-value="handleEffortPlanDeleteDialogModelValue"
+    >
+      <v-card>
+        <v-card-title>Task日別予定を削除</v-card-title>
+        <v-card-text>
+          <template v-if="effortPlanPendingDelete">
+            {{ effortPlanPendingDelete.planDate }}・{{ effortPlanPendingDelete.assigneeDisplayName }}の
+            {{ effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
+          </template>
+          <template v-else>選択したTask日別予定を削除します。</template>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn :disabled="isDeletingEffortPlan" @click="cancelEffortPlanDelete">
+            キャンセル
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="isDeletingEffortPlan"
+            @click="confirmEffortPlanDelete"
+          >
+            削除
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog
       :model-value="workLogPendingDelete !== null"
