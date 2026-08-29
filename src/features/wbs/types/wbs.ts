@@ -288,6 +288,12 @@ export interface TaskWorkloadRow {
   actualEffortMinutes: number;
   /** 実績から予定を引いた差分。正数は予定超過、負数は予定未消化。 */
   varianceEffortMinutes: number;
+  /** member、Project、曜日既定値の順で解決された稼働可能時間（分）。 */
+  availableMinutes: number;
+  /** 稼働可能時間から予定工数を引いた残容量（分）。負数は過配賦。 */
+  remainingMinutes: number;
+  /** 予定工数が稼働可能時間を超える場合はtrue。休日への予定配賦も含む。 */
+  overAllocated: boolean;
 }
 
 /** Project内の指定期間における担当者別workload API Response。 */

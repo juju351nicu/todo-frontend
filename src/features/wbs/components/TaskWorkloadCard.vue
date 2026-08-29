@@ -4,11 +4,16 @@ import { ref, watch } from "vue";
 import type {
   TaskWorkloadDateRange,
   TaskWorkloadResponse,
+  TaskWorkloadRow,
 } from "@/features/wbs/types/wbs";
 import {
   formatEffortMinutes,
   formatSignedEffortMinutes,
 } from "@/features/wbs/utils/effort";
+import {
+  resolveWorkloadCapacityStatus,
+  type WorkloadCapacityStatus,
+} from "@/features/wbs/utils/taskWorkload";
 
 /** Project workload cardへ親画面から渡す検索条件と確定結果。 */
 interface Props {
@@ -47,6 +52,23 @@ const getVarianceColor = (varianceEffortMinutes: number): string => {
   }
   return varianceEffortMinutes < 0 ? "warning" : "success";
 };
+
+/** 容量状態を警告の強さへ変換する。 */
+const getCapacityColor = (workload: Readonly<TaskWorkloadRow>): string => {
+  return resolveWorkloadCapacityStatus(workload) === "WITHIN_CAPACITY"
+    ? "success"
+    : "error";
+};
+
+/** 容量状態を担当者が判断できる日本語表示へ変換する。 */
+const getCapacityLabel = (workload: Readonly<TaskWorkloadRow>): string => {
+  const labels: Record<WorkloadCapacityStatus, string> = {
+    WITHIN_CAPACITY: "配賦内",
+    OVER_ALLOCATED: "過配賦",
+    HOLIDAY_ALLOCATION: "休日配賦",
+  };
+  return labels[resolveWorkloadCapacityStatus(workload)];
+};
 </script>
 
 <template>
@@ -61,7 +83,8 @@ const getVarianceColor = (varianceEffortMinutes: number): string => {
     </v-card-title>
     <v-card-text>
       <p class="text-body-2 text-medium-emphasis mb-4">
-        Task日別予定と日別実績を日付・担当者単位で比較します。差分は「実績 - 予定」で、正数は予定超過です。
+        Task日別予定と日別実績を日付・担当者単位で比較します。残容量は「稼働可能 - 予定」です。
+        稼働可能時間は個人例外、Project共通例外、曜日既定値の順で決まります。
       </p>
       <v-alert v-if="errorMessages.length" type="error" class="mb-4">
         <div v-for="message in errorMessages" :key="message">
@@ -126,6 +149,9 @@ const getVarianceColor = (varianceEffortMinutes: number): string => {
                 <th scope="col">日付</th>
                 <th scope="col">担当者</th>
                 <th scope="col">予定</th>
+                <th scope="col">稼働可能</th>
+                <th scope="col">残容量</th>
+                <th scope="col">配賦状態</th>
                 <th scope="col">実績</th>
                 <th scope="col">差分</th>
               </tr>
@@ -144,6 +170,21 @@ const getVarianceColor = (varianceEffortMinutes: number): string => {
                 </td>
                 <td class="text-no-wrap">
                   {{ formatEffortMinutes(row.plannedEffortMinutes) }}
+                </td>
+                <td class="text-no-wrap">
+                  {{ formatEffortMinutes(row.availableMinutes) }}
+                </td>
+                <td class="text-no-wrap">
+                  {{ formatSignedEffortMinutes(row.remainingMinutes) }}
+                </td>
+                <td class="text-no-wrap">
+                  <v-chip
+                    :color="getCapacityColor(row)"
+                    size="small"
+                    variant="tonal"
+                  >
+                    {{ getCapacityLabel(row) }}
+                  </v-chip>
                 </td>
                 <td class="text-no-wrap">
                   {{ formatEffortMinutes(row.actualEffortMinutes) }}
@@ -175,6 +216,6 @@ const getVarianceColor = (varianceEffortMinutes: number): string => {
 }
 
 .workload-table {
-  min-width: 760px;
+  min-width: 1080px;
 }
 </style>

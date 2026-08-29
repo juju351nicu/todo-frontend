@@ -259,6 +259,9 @@ const workloadResponse = {
       plannedEffortMinutes: 300,
       actualEffortMinutes: 480,
       varianceEffortMinutes: 180,
+      availableMinutes: 360,
+      remainingMinutes: 60,
+      overAllocated: false,
     },
   ],
 };

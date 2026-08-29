@@ -426,6 +426,19 @@ describe("WBS API", () => {
       totalPlannedEffortMinutes: 300,
       totalActualEffortMinutes: 480,
       totalVarianceEffortMinutes: 180,
+      workloads: [
+        {
+          workDate: "2026-08-22",
+          accountId: 2,
+          accountDisplayName: "担当者",
+          plannedEffortMinutes: 300,
+          actualEffortMinutes: 480,
+          varianceEffortMinutes: 180,
+          availableMinutes: 360,
+          remainingMinutes: 60,
+          overAllocated: false,
+        },
+      ],
     };
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
@@ -434,7 +447,7 @@ describe("WBS API", () => {
 
     await expect(
       WbsApi.getTaskWorkload(7, "2026-08-01", "2026-08-31")
-    ).resolves.toEqual({ ...response, workloads: [] });
+    ).resolves.toEqual(response);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/workload?dateFrom=2026-08-01&dateTo=2026-08-31"
     );

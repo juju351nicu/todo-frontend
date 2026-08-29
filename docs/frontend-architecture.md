@@ -165,7 +165,11 @@ Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Task�
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 
-稼働日calendar V7は同じ`useWbsPage`へ統合し、Project共通と個人例外を同じcardで対象切替する。初期値は現在月のProject共通calendarとし、通常memberにはProject共通と本人、OWNER・MANAGER・SYSTEM_ADMINには全Project memberを選択肢として提示する。Project共通は管理者だけ、個人例外は本人または管理者だけに編集操作を表示するが、最終認可はBackendへ委ねる。期間は境界を含む366日以内、休日は0分、稼働日は1〜1440分を送信前に検証する。登録・更新Responseは変更した1日だけなので、成功後と404・409競合後は表示期間全体を再取得し、古い例外ID・versionを残さない。workloadの稼働可能時間列と過配賦警告への反映は次の変更単位とする。
+稼働日calendar V7は同じ`useWbsPage`へ統合し、Project共通と個人例外を同じcardで対象切替する。初期値は現在月のProject共通calendarとし、通常memberにはProject共通と本人、OWNER・MANAGER・SYSTEM_ADMINには全Project memberを選択肢として提示する。Project共通は管理者だけ、個人例外は本人または管理者だけに編集操作を表示するが、最終認可はBackendへ委ねる。期間は境界を含む366日以内、休日は0分、稼働日は1〜1440分を送信前に検証する。登録・更新Responseは変更した1日だけなので、成功後と404・409競合後は表示期間全体を再取得し、古い例外ID・versionを残さない。
+
+workload容量統合では、Backendが同じ優先順位で解決した`availableMinutes`と、`availableMinutes - plannedEffortMinutes`の`remainingMinutes`、過配賦flagを既存workload行へ追加する。Frontendは稼働可能時間と残容量を分表示し、残容量が負の場合を過配賦、稼働可能0分へ予定がある場合を休日配賦として区別する。予定または実績が存在しない全member・全日付の行は生成せず、既存workloadの応答件数と検索期間上限を維持する。
+
+容量状態の判定は`src/features/wbs/utils/taskWorkload.ts`へ集約し、表示component内へ条件を重複させない。`配賦内`、`過配賦`、`休日配賦`の境界はVitestで個別に固定する。2026-08-29時点で型検査、44 test file・301 Vitest、production buildが成功している。実ブラウザ回帰はBackend／Frontend反映後に専用fixtureで実施する。
 
 ## 変更時の確認
 
