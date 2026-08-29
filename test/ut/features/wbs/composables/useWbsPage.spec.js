@@ -1368,7 +1368,7 @@ describe("useWbsPage", () => {
     expect(page.canEditSelectedWorkingCalendarTarget.value).toBe(false);
   });
 
-  it("通常memberは自分のcalendarを選ぶと個人例外を登録できる", async () => {
+  it("通常memberは本人の個人例外を登録しcalendarとworkload容量を再取得する", async () => {
     mocks.wbsApi.getWorkingCalendar
       .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
       .mockResolvedValue(structuredClone(memberWorkingCalendarResponse));
@@ -1396,9 +1396,10 @@ describe("useWbsPage", () => {
     expect(page.workingCalendarSuccessMessage.value).toBe(
       "稼働日例外を登録しました。"
     );
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
   });
 
-  it("SYSTEM_ADMINは全memberを選択できProject共通例外をversion付きで更新する", async () => {
+  it("SYSTEM_ADMINはProject共通例外をversion付きで更新しworkload容量を再取得する", async () => {
     mocks.roles.add("SYSTEM_ADMIN");
     const page = useWbsPage();
     await page.initialize();
@@ -1419,6 +1420,7 @@ describe("useWbsPage", () => {
       availableMinutes: 480,
       version: 3,
     });
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
   });
 
   it("不正な稼働日FormではAPIを呼ばず全理由をDialogへ表示する", async () => {
@@ -1441,7 +1443,7 @@ describe("useWbsPage", () => {
     expect(page.isWorkingDayEditorOpen.value).toBe(true);
   });
 
-  it("稼働日例外の409競合では古いDialogを閉じ最新calendarを再取得する", async () => {
+  it("稼働日例外の409競合では古いDialogを閉じ最新calendarとworkloadを再取得する", async () => {
     mocks.roles.add("SYSTEM_ADMIN");
     mocks.wbsApi.updateProjectWorkingDay.mockRejectedValue(
       new WbsApiError(409, {
@@ -1463,9 +1465,10 @@ describe("useWbsPage", () => {
       "更新されています。",
     ]);
     expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenCalledTimes(2);
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
   });
 
-  it("本人の個人例外を取得時点versionで削除しcalendarを再取得する", async () => {
+  it("本人の個人例外を取得時点versionで削除しcalendarとworkloadを再取得する", async () => {
     mocks.wbsApi.getWorkingCalendar
       .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
       .mockResolvedValue(structuredClone(memberWorkingCalendarResponse));
@@ -1489,5 +1492,6 @@ describe("useWbsPage", () => {
     expect(page.workingCalendarSuccessMessage.value).toBe(
       "稼働日例外を削除しました。"
     );
+    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
   });
 });

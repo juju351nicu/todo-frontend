@@ -171,6 +171,8 @@ workload容量統合では、Backendが同じ優先順位で解決した`availab
 
 容量状態の判定は`src/features/wbs/utils/taskWorkload.ts`へ集約し、表示component内へ条件を重複させない。`配賦内`、`過配賦`、`休日配賦`の境界はVitestで個別に固定する。2026-08-29時点で型検査、44 test file・301 Vitest、production buildが成功している。実ブラウザ回帰はBackend／Frontend反映後に専用fixtureで実施する。
 
+稼働日例外の登録・更新・削除が確定した場合、および404・409から最新状態へ回復する場合は、表示中calendarだけでなく現在の検索期間のworkloadも並行再取得する。workloadの稼働可能時間はcalendarから算出されるため、片方だけを更新して古い残容量・過配賦表示を残してはならない。
+
 ## 変更時の確認
 
 ```bash

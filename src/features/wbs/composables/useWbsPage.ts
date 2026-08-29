@@ -892,7 +892,7 @@ export const useWbsPage = () => {
 
   /**
    * 稼働日例外Formを検証し、選択中のProject共通・member固有階層の登録または更新へ振り分ける。
-   * Backendの変更Responseは対象日だけなので、保存後は表示期間全体を再取得する。
+   * Backendの変更Responseは対象日だけなので、保存後はcalendar全体と容量計算済みworkloadを再取得する。
    *
    * @param form 設定日、種別、分単位稼働可能時間を含む未検証入力
    */
@@ -957,7 +957,7 @@ export const useWbsPage = () => {
         currentOverride === null
           ? "稼働日例外を登録しました。"
           : "稼働日例外を更新しました。";
-      await reloadWorkingCalendar();
+      await reloadWorkingCalendarAndWorkload();
     } catch (error: unknown) {
       await handleWorkingDayMutationError(error);
     } finally {
@@ -999,7 +999,7 @@ export const useWbsPage = () => {
                 ? "稼働日例外が他の操作と競合しました。最新情報を確認してください。"
                 : "対象のProject、memberまたは稼働日例外が見つかりません。",
             ];
-      await reloadWorkingCalendar();
+      await reloadWorkingCalendarAndWorkload();
       return;
     }
     workingCalendarEditorErrorMessages.value =
@@ -1042,7 +1042,7 @@ export const useWbsPage = () => {
     }
   };
 
-  /** 選択階層の稼働日例外を取得時点versionで削除し、表示期間全体を再取得する。 */
+  /** 選択階層の稼働日例外を取得時点versionで削除し、calendar全体とworkloadを再取得する。 */
   const confirmWorkingDayDelete = async (): Promise<void> => {
     const target = selectedWorkingCalendarTarget.value;
     const override = workingDayPendingDelete.value;
@@ -1081,7 +1081,7 @@ export const useWbsPage = () => {
       }
       workingDayPendingDelete.value = null;
       workingCalendarSuccessMessage.value = "稼働日例外を削除しました。";
-      await reloadWorkingCalendar();
+      await reloadWorkingCalendarAndWorkload();
     } catch (error: unknown) {
       await handleWorkingDayDeleteError(error);
     } finally {
@@ -1118,7 +1118,7 @@ export const useWbsPage = () => {
           : [
               "稼働日例外が更新または削除されています。最新情報を確認してください。",
             ];
-      await reloadWorkingCalendar();
+      await reloadWorkingCalendarAndWorkload();
       return;
     }
     workingCalendarErrorMessages.value = [
@@ -1143,6 +1143,19 @@ export const useWbsPage = () => {
         "最新の稼働日calendarを再取得できませんでした。再読込してください。"
       );
     }
+  };
+
+  /**
+   * calendar変更後に有効な稼働可能時間とworkload容量を同じBackend状態へ揃える。
+   *
+   * workloadはcalendar例外から稼働可能時間を算出するため、calendarだけを再取得すると
+   * 稼働可能時間・残容量・過配賦表示が次回の手動集計まで古い値になる。
+   */
+  const reloadWorkingCalendarAndWorkload = async (): Promise<void> => {
+    await Promise.all([
+      reloadWorkingCalendar(),
+      loadTaskWorkload(workloadDateRange.value),
+    ]);
   };
 
   /** 通常Taskだけを選択し、日別予定Dialogを開いて最新の配賦状況を取得する。 */
