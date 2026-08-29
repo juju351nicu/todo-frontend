@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
     getProject: vi.fn(),
   },
   wbsApi: {
+    activateWbsBaseline: vi.fn(),
+    createWbsBaseline: vi.fn(),
     createMemberWorkingDay: vi.fn(),
     createProjectWorkingDay: vi.fn(),
     createTaskDependency: vi.fn(),
@@ -33,6 +35,8 @@ const mocks = vi.hoisted(() => ({
     getTaskWorkLogs: vi.fn(),
     getTaskWorkload: vi.fn(),
     getWorkingCalendar: vi.fn(),
+    getWbsBaseline: vi.fn(),
+    getWbsBaselines: vi.fn(),
     getWbs: vi.fn(),
     updateTaskEffortPlan: vi.fn(),
     updateTaskWorkLog: vi.fn(),
@@ -133,6 +137,69 @@ const project = {
     },
   ],
   taskStatuses: [],
+};
+
+const baselineSummary = {
+  baselineId: 21,
+  baselineNumber: 1,
+  name: "8月計画",
+  description: "顧客合意時点",
+  active: true,
+  createdBy: 1,
+  createdAt: "2026-08-20T01:00:00Z",
+  updatedBy: 1,
+  updatedAt: "2026-08-20T01:00:00Z",
+  version: 0,
+};
+
+const inactiveBaselineSummary = {
+  ...baselineSummary,
+  baselineId: 20,
+  baselineNumber: 0,
+  name: "初期計画",
+  active: false,
+  version: 2,
+};
+
+const baselineList = {
+  projectId: 7,
+  baselines: [baselineSummary, inactiveBaselineSummary],
+};
+
+const baselineDetail = {
+  projectId: 7,
+  baseline: baselineSummary,
+  tasks: wbs.tasks.map((task) => ({
+    sourceTaskId: task.taskId,
+    parentSourceTaskId: task.parentTaskId,
+    taskType: task.taskType,
+    wbsCode: task.wbsCode,
+    position: task.position,
+    title: task.title,
+    detail: task.detail,
+    priority: task.priority,
+    plannedStartDate: task.plannedStartDate,
+    plannedEndDate: task.plannedEndDate,
+    plannedEffortMinutes:
+      task.taskId === 2 ? task.plannedEffortMinutes - 60 : task.plannedEffortMinutes,
+    assigneeAccountId: task.assigneeAccountId,
+    sourceTaskVersion: task.version,
+  })),
+  dependencies: [],
+  effortPlans: [],
+  plannedEffortMinutes: 900,
+  allocatedEffortMinutes: 600,
+  unallocatedEffortMinutes: 300,
+};
+
+const baselineCreateResponse = {
+  baseline: { ...baselineSummary, baselineId: 22, baselineNumber: 2 },
+  taskCount: 3,
+  dependencyCount: 1,
+  effortPlanCount: 2,
+  plannedEffortMinutes: 960,
+  allocatedEffortMinutes: 600,
+  unallocatedEffortMinutes: 360,
 };
 
 const updatedWbs = {
@@ -353,6 +420,12 @@ describe("useWbsPage", () => {
     mocks.route.params.projectId = "7";
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
+    mocks.wbsApi.activateWbsBaseline.mockResolvedValue(
+      structuredClone({ ...inactiveBaselineSummary, active: true, version: 3 })
+    );
+    mocks.wbsApi.createWbsBaseline.mockResolvedValue(
+      structuredClone(baselineCreateResponse)
+    );
     mocks.wbsApi.createTaskDependency.mockResolvedValue(
       structuredClone(updatedDependencyList)
     );
@@ -388,6 +461,12 @@ describe("useWbsPage", () => {
     mocks.wbsApi.getWorkingCalendar.mockResolvedValue(
       structuredClone(workingCalendarResponse)
     );
+    mocks.wbsApi.getWbsBaseline.mockResolvedValue(
+      structuredClone(baselineDetail)
+    );
+    mocks.wbsApi.getWbsBaselines.mockResolvedValue(
+      structuredClone(baselineList)
+    );
     mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
     mocks.wbsApi.updateTaskEffortPlan.mockResolvedValue(
       structuredClone(updatedEffortPlanList)
@@ -411,6 +490,8 @@ describe("useWbsPage", () => {
 
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledWith(7);
     expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledWith(7);
+    expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledWith(7);
+    expect(mocks.wbsApi.getWbsBaseline).toHaveBeenCalledWith(7, 21);
     expect(page.rows.value.map((row) => [row.taskId, row.depth])).toEqual([
       [1, 0],
       [2, 1],
@@ -424,6 +505,13 @@ describe("useWbsPage", () => {
         dependencyId: 31,
         predecessorLabel: "1 Phase 1",
         successorLabel: "1.1 実装",
+      }),
+    ]);
+    expect(page.baselineChangedRows.value).toEqual([
+      expect.objectContaining({
+        sourceTaskId: 2,
+        status: "CHANGED",
+        plannedEffortDifferenceMinutes: 60,
       }),
     ]);
   });
@@ -1493,5 +1581,101 @@ describe("useWbsPage", () => {
       "稼働日例外を削除しました。"
     );
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
+  });
+
+  it("Project MANAGERは現在計画をtrim済みbaselineとして保存する", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(
+      structuredClone({
+        ...project,
+        members: project.members.map((member) =>
+          member.accountId === 2
+            ? { ...member, projectRole: "MANAGER" }
+            : member
+        ),
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.openBaselineCreateDialog();
+    await page.saveWbsBaseline({
+      name: "  8月再計画  ",
+      description: "  仕様確定後  ",
+    });
+
+    expect(mocks.wbsApi.createWbsBaseline).toHaveBeenCalledWith(7, {
+      name: "8月再計画",
+      description: "仕様確定後",
+    });
+    expect(page.isBaselineCreateDialogOpen.value).toBe(false);
+    expect(page.baselineSuccessMessage.value).toContain(
+      "Task 3件、依存関係 1件、日別予定 2件"
+    );
+    expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
+  });
+
+  it("通常Project memberはbaseline作成Dialogを開けない", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.openBaselineCreateDialog();
+
+    expect(page.isBaselineCreateDialogOpen.value).toBe(false);
+    expect(page.baselineErrorMessages.value).toEqual([
+      "baselineを作成するにはProjectのOWNERまたはMANAGER権限が必要です。",
+    ]);
+    expect(mocks.wbsApi.createWbsBaseline).not.toHaveBeenCalled();
+  });
+
+  it("不正なbaseline FormはAPIへ送らずDialogへ全理由を表示する", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+    page.openBaselineCreateDialog();
+
+    await page.saveWbsBaseline({
+      name: " ",
+      description: "a".repeat(1001),
+    });
+
+    expect(mocks.wbsApi.createWbsBaseline).not.toHaveBeenCalled();
+    expect(page.baselineEditorErrorMessages.value).toEqual([
+      "baseline名を入力してください。",
+      "説明は1000文字以内で入力してください。",
+    ]);
+    expect(page.isBaselineCreateDialogOpen.value).toBe(true);
+  });
+
+  it("Project OWNERは取得時点versionで保存済みbaselineを比較対象へ切り替える", async () => {
+    mocks.userStore.memberId = 1;
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.activateWbsBaseline(inactiveBaselineSummary);
+
+    expect(mocks.wbsApi.activateWbsBaseline).toHaveBeenCalledWith(7, 20, {
+      version: 2,
+    });
+    expect(page.baselineSuccessMessage.value).toBe(
+      "baseline「初期計画」を有効化しました。"
+    );
+    expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
+  });
+
+  it("baseline有効化の409競合では理由を表示して最新一覧を再取得する", async () => {
+    mocks.userStore.memberId = 1;
+    mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [{ field: "version", message: "更新されています。" }],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.activateWbsBaseline(inactiveBaselineSummary);
+
+    expect(page.baselineErrorMessages.value).toEqual(["更新されています。"]);
+    expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
+    expect(page.activatingBaselineId.value).toBeNull();
   });
 });

@@ -429,6 +429,193 @@ export interface WorkingDayUpdateRequest extends WorkingDayCreateRequest {
   version: number;
 }
 
+/** Project内で固定したWBS baseline header。 */
+export interface WbsBaselineSummary {
+  /** WBS baselineを一意に識別するID。 */
+  baselineId: number;
+  /** Project内で作成順に採番した表示用連番。 */
+  baselineNumber: number;
+  /** 利用者が比較対象を識別するbaseline名。 */
+  name: string;
+  /** 作成理由または計画上の前提。未設定時はnull。 */
+  description: string | null;
+  /** 現在計画との比較対象として選択されている場合はtrue。 */
+  active: boolean;
+  /** baselineを作成した認証済みアカウントID。 */
+  createdBy: number;
+  /** ISO-8601形式の作成時刻。 */
+  createdAt: string;
+  /** active状態を最後に変更した認証済みアカウントID。 */
+  updatedBy: number;
+  /** ISO-8601形式の最終更新時刻。 */
+  updatedAt: string;
+  /** 比較対象切替Requestへ渡す楽観ロックversion。 */
+  version: number;
+}
+
+/** Projectに保存されたWBS baseline header一覧Response。 */
+export interface WbsBaselineListResponse {
+  /** baselineを所有するProject ID。 */
+  projectId: number;
+  /** Project内baseline連番の降順一覧。未登録時は空配列。 */
+  baselines: WbsBaselineSummary[];
+}
+
+/** baseline作成時点から変更しないTask計画snapshot。 */
+export interface WbsBaselineTask {
+  /** Board・現在WBSと突合するsnapshot元Task ID。 */
+  sourceTaskId: number;
+  /** baseline内の親Task ID。最上位Taskはnull。 */
+  parentSourceTaskId: number | null;
+  /** baseline作成時点のTask構造種別。 */
+  taskType: WbsTaskType;
+  /** baseline作成時点の画面表示用WBSコード。 */
+  wbsCode: string | null;
+  /** baseline作成時点の同一親配下表示順。 */
+  position: number;
+  /** baseline作成時点のTaskタイトル。 */
+  title: string;
+  /** baseline作成時点のTask詳細。 */
+  detail: string;
+  /** baseline作成時点のTask優先度。 */
+  priority: WbsTaskPriority;
+  /** baseline作成時点の予定開始日。yyyy-MM-dd形式。 */
+  plannedStartDate: string;
+  /** baseline作成時点の予定終了日。yyyy-MM-dd形式。 */
+  plannedEndDate: string;
+  /** baseline作成時点の予定工数（分）。 */
+  plannedEffortMinutes: number;
+  /** baseline作成時点の担当アカウントID。 */
+  assigneeAccountId: number;
+  /** snapshot元Taskのbaseline作成時点version。 */
+  sourceTaskVersion: number;
+}
+
+/** baseline作成時点から変更しないTask依存snapshot。 */
+export interface WbsBaselineDependency {
+  /** snapshot元Task依存関係ID。 */
+  sourceDependencyId: number;
+  /** 先行Taskのsnapshot元Task ID。 */
+  predecessorSourceTaskId: number;
+  /** 後続Taskのsnapshot元Task ID。 */
+  successorSourceTaskId: number;
+  /** baseline作成時点の依存種別。 */
+  dependencyType: TaskDependencyType;
+  /** 先行Task終了から後続Task開始までの待ち時間（分）。 */
+  lagMinutes: number;
+  /** snapshot元依存関係のbaseline作成時点version。 */
+  sourceDependencyVersion: number;
+}
+
+/** baseline作成時点から変更しない日別予定工数snapshot。 */
+export interface WbsBaselineEffortPlan {
+  /** snapshot元Task日別予定工数ID。 */
+  sourceEffortPlanId: number;
+  /** Board・現在WBSと突合するsnapshot元Task ID。 */
+  sourceTaskId: number;
+  /** baseline作成時点の予定日。yyyy-MM-dd形式。 */
+  planDate: string;
+  /** baseline作成時点の日別予定工数（分）。 */
+  plannedEffortMinutes: number;
+  /** baseline作成時点の予定担当アカウントID。 */
+  assigneeAccountId: number;
+  /** snapshot元日別予定工数のbaseline作成時点version。 */
+  sourceEffortPlanVersion: number;
+}
+
+/** WBS baseline headerと変更不能なTask・依存・日別予定snapshotの詳細Response。 */
+export interface WbsBaselineDetailResponse {
+  /** baselineを所有するProject ID。 */
+  projectId: number;
+  /** 取得したbaseline header。 */
+  baseline: WbsBaselineSummary;
+  /** baseline作成時点のTask計画。 */
+  tasks: WbsBaselineTask[];
+  /** baseline作成時点のTask依存関係。 */
+  dependencies: WbsBaselineDependency[];
+  /** baseline作成時点の日別予定工数。 */
+  effortPlans: WbsBaselineEffortPlan[];
+  /** snapshot Taskの予定工数合計（分）。 */
+  plannedEffortMinutes: number;
+  /** 日別・担当者別へ配賦済みの予定工数合計（分）。 */
+  allocatedEffortMinutes: number;
+  /** Task予定から配賦済み予定を引いた差（分）。過配賦時は負数。 */
+  unallocatedEffortMinutes: number;
+}
+
+/** baseline作成Dialogが保持するBackend正規化前の入力値。 */
+export interface WbsBaselineCreateForm {
+  /** 前後空白を除いて1文字以上100文字以下とするbaseline名。 */
+  name: string;
+  /** 前後空白を除いて1000文字以下とする任意説明。 */
+  description: string;
+}
+
+/** 現在計画をWBS baselineへ固定する作成Request。 */
+export interface WbsBaselineCreateRequest {
+  /** 正規化済みbaseline名。 */
+  name: string;
+  /** 正規化済み任意説明。空欄はnull。 */
+  description: string | null;
+}
+
+/** WBS baseline作成結果とsnapshot件数・予定工数集計。 */
+export interface WbsBaselineCreateResponse {
+  /** 作成したactive baseline header。 */
+  baseline: WbsBaselineSummary;
+  /** snapshot化したTask件数。 */
+  taskCount: number;
+  /** snapshot化したTask依存件数。 */
+  dependencyCount: number;
+  /** snapshot化した日別予定工数件数。 */
+  effortPlanCount: number;
+  /** snapshot Taskの予定工数合計（分）。 */
+  plannedEffortMinutes: number;
+  /** 日別・担当者別へ配賦済みの予定工数合計（分）。 */
+  allocatedEffortMinutes: number;
+  /** Task予定から配賦済み予定を引いた差（分）。過配賦時は負数。 */
+  unallocatedEffortMinutes: number;
+}
+
+/** 過去baselineを現在の比較対象へ切り替えるRequest。 */
+export interface WbsBaselineActivationRequest {
+  /** baseline一覧取得時点のheader version。 */
+  version: number;
+}
+
+/** 現在計画とactive baselineのTask単位比較状態。 */
+export type WbsBaselineComparisonStatus =
+  | "UNCHANGED"
+  | "CHANGED"
+  | "CURRENT_ONLY"
+  | "BASELINE_ONLY";
+
+/** 現在計画とactive baselineの予定期間・予定工数をTask IDで突合した表示行。 */
+export interface WbsBaselineComparisonRow {
+  /** Board・現在WBSと共通のTask ID。 */
+  sourceTaskId: number;
+  /** 現在計画を優先し、存在しない場合はbaselineから補完したWBSコード。 */
+  wbsCode: string | null;
+  /** 現在計画を優先し、存在しない場合はbaselineから補完したTaskタイトル。 */
+  title: string;
+  /** 予定値の一致、変更、追加、除外を表す比較状態。 */
+  status: WbsBaselineComparisonStatus;
+  /** baseline側予定開始日。現在計画だけに存在する場合はnull。 */
+  baselinePlannedStartDate: string | null;
+  /** baseline側予定終了日。現在計画だけに存在する場合はnull。 */
+  baselinePlannedEndDate: string | null;
+  /** baseline側予定工数（分）。現在計画だけに存在する場合はnull。 */
+  baselinePlannedEffortMinutes: number | null;
+  /** 現在側予定開始日。baseline後に除外された場合はnull。 */
+  currentPlannedStartDate: string | null;
+  /** 現在側予定終了日。baseline後に除外された場合はnull。 */
+  currentPlannedEndDate: string | null;
+  /** 現在側予定工数（分）。baseline後に除外された場合はnull。 */
+  currentPlannedEffortMinutes: number | null;
+  /** 現在予定工数からbaseline予定工数を引いた差（分）。 */
+  plannedEffortDifferenceMinutes: number;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

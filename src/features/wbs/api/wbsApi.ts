@@ -11,6 +11,12 @@ import type {
   WorkingCalendarResponse,
   WorkingDayCreateRequest,
   WorkingDayUpdateRequest,
+  WbsBaselineActivationRequest,
+  WbsBaselineCreateRequest,
+  WbsBaselineCreateResponse,
+  WbsBaselineDetailResponse,
+  WbsBaselineListResponse,
+  WbsBaselineSummary,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
@@ -76,6 +82,107 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
   );
   await ensureSuccess(response);
   return normalizeWbsResponse((await response.json()) as WbsResponse);
+};
+
+/** API Responseで欠落したbaseline header一覧を空配列へ正規化する。 */
+const normalizeWbsBaselineList = (
+  payload: WbsBaselineListResponse
+): WbsBaselineListResponse => ({
+  ...payload,
+  baselines: payload.baselines ?? [],
+});
+
+/** API Responseで欠落したbaseline snapshot配列を空配列へ正規化する。 */
+const normalizeWbsBaselineDetail = (
+  payload: WbsBaselineDetailResponse
+): WbsBaselineDetailResponse => ({
+  ...payload,
+  tasks: payload.tasks ?? [],
+  dependencies: payload.dependencies ?? [],
+  effortPlans: payload.effortPlans ?? [],
+});
+
+/**
+ * Projectへ保存されたWBS baseline headerを連番の新しい順で取得する。
+ *
+ * @param projectId baselineを所有するProject ID
+ * @returns baseline未作成時は空配列を持つ一覧Response
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
+ */
+const getWbsBaselines = async (
+  projectId: number
+): Promise<WbsBaselineListResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines`
+  );
+  await ensureSuccess(response);
+  return normalizeWbsBaselineList(
+    (await response.json()) as WbsBaselineListResponse
+  );
+};
+
+/**
+ * 指定baselineの変更不能なTask・依存・日別予定snapshotと配賦集計を取得する。
+ *
+ * @param projectId baselineを所有するProject ID
+ * @param baselineId 取得対象WBS baseline ID
+ * @returns headerとsnapshot子行、予定工数集計
+ * @throws WbsApiError 未認証、認可不足、対象なしまたはBackendエラーの場合
+ */
+const getWbsBaseline = async (
+  projectId: number,
+  baselineId: number
+): Promise<WbsBaselineDetailResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines/${baselineId}`
+  );
+  await ensureSuccess(response);
+  return normalizeWbsBaselineDetail(
+    (await response.json()) as WbsBaselineDetailResponse
+  );
+};
+
+/**
+ * 現在のWBS Task・依存・日別予定を新しいactive baselineへ一括固定する。
+ * 共通HTTP clientがSpring Session CookieとCSRF headerを設定する。
+ *
+ * @param projectId snapshot元Project ID
+ * @param request 正規化済みbaseline名とnullable説明
+ * @returns 作成したheader、snapshot件数、予定工数集計
+ * @throws WbsApiError 入力不正、認可不足、対象なし、作成競合またはBackendエラーの場合
+ */
+const createWbsBaseline = async (
+  projectId: number,
+  request: WbsBaselineCreateRequest
+): Promise<WbsBaselineCreateResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines`,
+    request
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as WbsBaselineCreateResponse;
+};
+
+/**
+ * 過去baselineを取得時点version付きで現在計画との比較対象へ切り替える。
+ *
+ * @param projectId baselineを所有するProject ID
+ * @param baselineId activeへ切り替えるWBS baseline ID
+ * @param request baseline一覧取得時点の楽観ロックversion
+ * @returns active切替後のbaseline header
+ * @throws WbsApiError 認可不足、対象なし、version競合またはBackendエラーの場合
+ */
+const activateWbsBaseline = async (
+  projectId: number,
+  baselineId: number,
+  request: WbsBaselineActivationRequest
+): Promise<WbsBaselineSummary> => {
+  const response = await HttpClient.putRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines/${baselineId}/activation`,
+    request
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as WbsBaselineSummary;
 };
 
 /**
@@ -567,6 +674,8 @@ const deleteMemberWorkingDay = async (
 };
 
 export default {
+  activateWbsBaseline,
+  createWbsBaseline,
   createMemberWorkingDay,
   createProjectWorkingDay,
   createTaskDependency,
@@ -583,6 +692,8 @@ export default {
   getTaskWorkload,
   getWorkingCalendar,
   getWbs,
+  getWbsBaseline,
+  getWbsBaselines,
   updateTaskEffortPlan,
   updateTaskWorkLog,
   updateMemberWorkingDay,

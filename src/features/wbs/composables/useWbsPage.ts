@@ -30,6 +30,11 @@ import type {
   WorkingCalendarTargetOption,
   WorkingDayForm,
   WorkingDayOverride,
+  WbsBaselineComparisonRow,
+  WbsBaselineCreateForm,
+  WbsBaselineDetailResponse,
+  WbsBaselineListResponse,
+  WbsBaselineSummary,
   WbsResponse,
   WbsTask,
   WbsTaskEditForm,
@@ -46,6 +51,11 @@ import {
   buildTaskWorkLogUpdateRequest,
   validateTaskWorkLogForm,
 } from "@/features/wbs/utils/taskWorkLog";
+import {
+  buildWbsBaselineComparisonRows,
+  buildWbsBaselineCreateRequest,
+  validateWbsBaselineCreateForm,
+} from "@/features/wbs/utils/wbsBaseline";
 import {
   buildWbsParentOptions,
   buildWbsTaskUpdateRequest,
@@ -73,6 +83,12 @@ export const useWbsPage = () => {
   const userStore = useUserStore();
 
   const dependencyEditorErrorMessages = ref<string[]>([]);
+  const activeBaselineDetail = ref<WbsBaselineDetailResponse | null>(null);
+  const activatingBaselineId = ref<number | null>(null);
+  const baselineEditorErrorMessages = ref<string[]>([]);
+  const baselineErrorMessages = ref<string[]>([]);
+  const baselineList = ref<WbsBaselineListResponse | null>(null);
+  const baselineSuccessMessage = ref("");
   const dependencyList = ref<TaskDependencyListResponse | null>(null);
   const dependencyPendingDelete = ref<TaskDependency | null>(null);
   const editingEffortPlan = ref<TaskEffortPlan | null>(null);
@@ -85,6 +101,8 @@ export const useWbsPage = () => {
   const isEditorOpen = ref(false);
   const isEffortPlanDialogOpen = ref(false);
   const isLoading = ref(false);
+  const isBaselineCreateDialogOpen = ref(false);
+  const isCreatingBaseline = ref(false);
   const isLoadingEffortPlans = ref(false);
   const isLoadingWorkload = ref(false);
   const isSavingDependency = ref(false);
@@ -158,6 +176,27 @@ export const useWbsPage = () => {
       userStore.hasRole("SYSTEM_ADMIN") ||
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER"
+  );
+  const canManageBaselines = computed(
+    () =>
+      canEditWbs.value &&
+      project.value?.status === "ACTIVE" &&
+      canManageProject.value
+  );
+  const activeBaseline = computed(
+    () => baselineList.value?.baselines.find((baseline) => baseline.active) ?? null
+  );
+  const isBaselineMutating = computed(
+    () => isCreatingBaseline.value || activatingBaselineId.value !== null
+  );
+  const baselineComparisonRows = computed<WbsBaselineComparisonRow[]>(() =>
+    buildWbsBaselineComparisonRows(
+      wbs.value?.tasks ?? [],
+      activeBaselineDetail.value?.tasks ?? []
+    )
+  );
+  const baselineChangedRows = computed(() =>
+    baselineComparisonRows.value.filter((row) => row.status !== "UNCHANGED")
   );
   const canManageAnyWorkLog = computed(() => canManageProject.value);
   const canManageAnyEffortPlan = computed(
@@ -300,7 +339,25 @@ export const useWbsPage = () => {
     wbs.value = await WbsApi.getWbs(projectId.value);
   };
 
-  /** Project member、WBS Task、依存関係を同じ読込時点の画面スナップショットとして並行取得する。 */
+  /** baseline一覧を取得し、比較に必要なactive baselineの詳細だけを追加取得する。 */
+  const loadWbsBaselines = async (): Promise<void> => {
+    if (projectId.value === null) {
+      throw new Error("Project IDが不正です。");
+    }
+    const loadedList = await WbsApi.getWbsBaselines(projectId.value);
+    baselineList.value = loadedList;
+    const loadedActiveBaseline = loadedList.baselines.find(
+      (baseline) => baseline.active
+    );
+    activeBaselineDetail.value = loadedActiveBaseline
+      ? await WbsApi.getWbsBaseline(
+          projectId.value,
+          loadedActiveBaseline.baselineId
+        )
+      : null;
+  };
+
+  /** Project member、WBS Task、依存関係、baseline一覧を同じ画面スナップショットとして取得する。 */
   const loadPageSnapshot = async (): Promise<void> => {
     if (projectId.value === null) {
       throw new Error("Project IDが不正です。");
@@ -309,6 +366,7 @@ export const useWbsPage = () => {
       ProjectApi.getProject(projectId.value),
       WbsApi.getWbs(projectId.value),
       WbsApi.getTaskDependencies(projectId.value),
+      loadWbsBaselines(),
     ]);
     project.value = loadedProject;
     wbs.value = loadedWbs;
@@ -325,12 +383,17 @@ export const useWbsPage = () => {
     workloadErrorMessages.value = [];
     workingCalendarErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
+    baselineEditorErrorMessages.value = [];
+    baselineErrorMessages.value = [];
+    baselineSuccessMessage.value = "";
     if (projectId.value === null) {
       project.value = null;
       wbs.value = null;
       dependencyList.value = null;
       workload.value = null;
       workingCalendar.value = null;
+      baselineList.value = null;
+      activeBaselineDetail.value = null;
       errorMessages.value = ["Project IDが不正です。"];
       return;
     }
@@ -351,6 +414,8 @@ export const useWbsPage = () => {
       dependencyList.value = null;
       workload.value = null;
       workingCalendar.value = null;
+      baselineList.value = null;
+      activeBaselineDetail.value = null;
       await handleReadApiError(error);
     } finally {
       isLoading.value = false;
@@ -2022,6 +2087,179 @@ export const useWbsPage = () => {
         : ["WBS Taskを更新できませんでした。"];
   };
 
+  /** baseline作成Dialogを、Project管理権限と更新可能状態を確認して開く。 */
+  const openBaselineCreateDialog = (): void => {
+    baselineErrorMessages.value = [];
+    baselineSuccessMessage.value = "";
+    baselineEditorErrorMessages.value = [];
+    if (!canManageBaselines.value) {
+      baselineErrorMessages.value = [
+        "baselineを作成するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      ];
+      return;
+    }
+    isBaselineCreateDialogOpen.value = true;
+  };
+
+  /** 保存処理中でなければbaseline作成Dialogを閉じる。 */
+  const closeBaselineCreateDialog = (): void => {
+    if (!isCreatingBaseline.value) {
+      isBaselineCreateDialogOpen.value = false;
+      baselineEditorErrorMessages.value = [];
+    }
+  };
+
+  /** API成功またはSession失効後にbaseline作成Dialogを強制的に閉じる。 */
+  const closeBaselineCreateDialogAfterSaving = (): void => {
+    isBaselineCreateDialogOpen.value = false;
+    baselineEditorErrorMessages.value = [];
+  };
+
+  /** baseline API競合後にも一覧とactive baseline詳細を最新状態へ戻す。 */
+  const reloadWbsBaselines = async (): Promise<void> => {
+    try {
+      await loadWbsBaselines();
+    } catch (_error: unknown) {
+      baselineErrorMessages.value.push(
+        "最新のbaselineを再取得できませんでした。画面を再読込してください。"
+      );
+    }
+  };
+
+  /** baseline更新APIの認証・認可・対象なし・競合を共通の画面動作へ変換する。 */
+  const handleBaselineMutationError = async (
+    error: unknown,
+    fallbackMessage: string,
+    editorTarget: boolean
+  ): Promise<void> => {
+    const target = editorTarget
+      ? baselineEditorErrorMessages
+      : baselineErrorMessages;
+    if (!(error instanceof WbsApiError)) {
+      target.value = ["Backendへ接続できませんでした。"];
+      return;
+    }
+    if (error.status === 401) {
+      userStore.clearSession();
+      closeBaselineCreateDialogAfterSaving();
+      await router.push({ name: "Login" });
+      return;
+    }
+    if (error.status === 403) {
+      target.value = [
+        "baselineを更新するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      ];
+      return;
+    }
+    const fieldMessages = getFieldErrorMessages(error);
+    if (error.status === 404) {
+      target.value =
+        fieldMessages.length > 0
+          ? fieldMessages
+          : ["対象のProjectまたはbaselineが見つかりません。"];
+      return;
+    }
+    if (error.status === 409) {
+      target.value =
+        fieldMessages.length > 0
+          ? fieldMessages
+          : ["baselineが他の操作で更新されました。最新情報を確認してください。"];
+      await reloadWbsBaselines();
+      return;
+    }
+    target.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
+  };
+
+  /** 現在計画のTask・依存関係・日別予定工数を新しいbaselineへ保存する。 */
+  const saveWbsBaseline = async (
+    form: Readonly<WbsBaselineCreateForm>
+  ): Promise<void> => {
+    if (
+      isCreatingBaseline.value ||
+      !isBaselineCreateDialogOpen.value ||
+      projectId.value === null
+    ) {
+      return;
+    }
+    if (!canManageBaselines.value) {
+      baselineEditorErrorMessages.value = [
+        "baselineを作成するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      ];
+      return;
+    }
+    const validationMessages = validateWbsBaselineCreateForm(form);
+    if (validationMessages.length > 0) {
+      baselineEditorErrorMessages.value = validationMessages;
+      return;
+    }
+
+    isCreatingBaseline.value = true;
+    baselineEditorErrorMessages.value = [];
+    baselineErrorMessages.value = [];
+    baselineSuccessMessage.value = "";
+    try {
+      const created = await WbsApi.createWbsBaseline(
+        projectId.value,
+        buildWbsBaselineCreateRequest(form)
+      );
+      closeBaselineCreateDialogAfterSaving();
+      baselineSuccessMessage.value =
+        `baseline「${created.baseline.name}」を作成しました` +
+        `（Task ${created.taskCount}件、依存関係 ${created.dependencyCount}件、日別予定 ${created.effortPlanCount}件）。`;
+      // baseline作成自体は確定済みのため、再取得失敗を作成失敗として誤表示しない。
+      await reloadWbsBaselines();
+    } catch (error: unknown) {
+      await handleBaselineMutationError(
+        error,
+        "baselineを作成できませんでした。",
+        true
+      );
+    } finally {
+      isCreatingBaseline.value = false;
+    }
+  };
+
+  /** 選択baselineをactiveへ切り替え、比較対象をBackendの最新Responseへ更新する。 */
+  const activateWbsBaseline = async (
+    baseline: Readonly<WbsBaselineSummary>
+  ): Promise<void> => {
+    if (
+      baseline.active ||
+      isBaselineMutating.value ||
+      projectId.value === null
+    ) {
+      return;
+    }
+    baselineErrorMessages.value = [];
+    baselineSuccessMessage.value = "";
+    if (!canManageBaselines.value) {
+      baselineErrorMessages.value = [
+        "baselineを有効化するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      ];
+      return;
+    }
+
+    activatingBaselineId.value = baseline.baselineId;
+    try {
+      const activated = await WbsApi.activateWbsBaseline(
+        projectId.value,
+        baseline.baselineId,
+        { version: baseline.version }
+      );
+      baselineSuccessMessage.value = `baseline「${activated.name}」を有効化しました。`;
+      // active切替成功後の一覧取得失敗は、切替失敗ではなく再読込案内として扱う。
+      await reloadWbsBaselines();
+    } catch (error: unknown) {
+      await handleBaselineMutationError(
+        error,
+        "baselineを有効化できませんでした。",
+        false
+      );
+    } finally {
+      activatingBaselineId.value = null;
+    }
+  };
+
   /** 現在のProject IDを保持したままTask Boardへ遷移する。 */
   const openBoard = async (): Promise<void> => {
     if (projectId.value === null) {
@@ -2034,6 +2272,16 @@ export const useWbsPage = () => {
   };
 
   return {
+    activateWbsBaseline,
+    activeBaseline,
+    activeBaselineDetail,
+    activatingBaselineId,
+    baselineChangedRows,
+    baselineComparisonRows,
+    baselineEditorErrorMessages,
+    baselineErrorMessages,
+    baselineList,
+    baselineSuccessMessage,
     cancelDependencyDelete,
     cancelEffortPlanDelete,
     cancelEffortPlanEdit,
@@ -2045,8 +2293,10 @@ export const useWbsPage = () => {
     canEditSelectedWorkLogTask,
     canManageAnyEffortPlan,
     canManageAnyWorkLog,
+    canManageBaselines,
     canEditSelectedWorkingCalendarTarget,
     closeDependencyEditor,
+    closeBaselineCreateDialog,
     closeEffortPlanDialog,
     closeTaskEditor,
     closeWorkLogDialog,
@@ -2079,6 +2329,9 @@ export const useWbsPage = () => {
     isDeletingEffortPlan,
     isDeletingWorkLog,
     isDeletingWorkingDay,
+    isBaselineCreateDialogOpen,
+    isBaselineMutating,
+    isCreatingBaseline,
     isDependencyEditorOpen,
     isDependencyMutating,
     isEditorOpen,
@@ -2098,6 +2351,7 @@ export const useWbsPage = () => {
     isWorkingCalendarMutating,
     isWorkingDayEditorOpen,
     milestoneCount,
+    openBaselineCreateDialog,
     openBoard,
     openDependencyEditor,
     openEffortPlanDialog,
@@ -2112,6 +2366,7 @@ export const useWbsPage = () => {
     requestWorkingDayDelete,
     rows,
     saveDependency,
+    saveWbsBaseline,
     saveEffortPlan,
     saveWbsTask,
     saveWorkLog,

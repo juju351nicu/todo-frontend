@@ -572,4 +572,85 @@ describe("WBS API", () => {
       "/api/v1/projects/7/wbs/calendar/members/2/days/21?version=3"
     );
   });
+
+  it("baseline一覧で欠けた配列を空配列へ正規化する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ projectId: 7 }),
+    });
+
+    await expect(WbsApi.getWbsBaselines(7)).resolves.toEqual({
+      projectId: 7,
+      baselines: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/baselines"
+    );
+  });
+
+  it("active baseline詳細で欠けたsnapshot配列を空配列へ正規化する", async () => {
+    const response = {
+      projectId: 7,
+      baseline: { baselineId: 21, name: "8月計画", active: true },
+      plannedEffortMinutes: 480,
+      allocatedEffortMinutes: 300,
+      unallocatedEffortMinutes: 180,
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.getWbsBaseline(7, 21)).resolves.toEqual({
+      ...response,
+      tasks: [],
+      dependencies: [],
+      effortPlans: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/baselines/21"
+    );
+  });
+
+  it("現在計画のbaseline名と説明をProject配下へPOSTする", async () => {
+    const request = { name: "8月計画", description: "顧客合意時点" };
+    const response = {
+      baseline: { baselineId: 21, name: "8月計画", active: true },
+      taskCount: 3,
+      dependencyCount: 1,
+      effortPlanCount: 2,
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createWbsBaseline(7, request)).resolves.toEqual(response);
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/baselines",
+      request
+    );
+  });
+
+  it("保存済みbaselineを取得時点version付きでactiveへ切り替える", async () => {
+    const request = { version: 4 };
+    const response = {
+      baselineId: 21,
+      name: "8月計画",
+      active: true,
+      version: 5,
+    };
+    HttpClient.putRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(
+      WbsApi.activateWbsBaseline(7, 21, request)
+    ).resolves.toEqual(response);
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/baselines/21/activation",
+      request
+    );
+  });
 });

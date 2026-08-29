@@ -7,6 +7,8 @@ import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
 import WorkingCalendarCard from "@/features/wbs/components/WorkingCalendarCard.vue";
 import WorkingDayEditDialog from "@/features/wbs/components/WorkingDayEditDialog.vue";
+import WbsBaselineCard from "@/features/wbs/components/WbsBaselineCard.vue";
+import WbsBaselineCreateDialog from "@/features/wbs/components/WbsBaselineCreateDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -30,6 +32,14 @@ const WbsGanttChart = defineAsyncComponent(
 const activeView = ref<WbsViewMode>("table");
 
 const {
+  activateWbsBaseline,
+  activeBaselineDetail,
+  activatingBaselineId,
+  baselineChangedRows,
+  baselineEditorErrorMessages,
+  baselineErrorMessages,
+  baselineList,
+  baselineSuccessMessage,
   cancelDependencyDelete,
   cancelEffortPlanDelete,
   cancelEffortPlanEdit,
@@ -42,6 +52,8 @@ const {
   canEditWbs,
   canManageAnyEffortPlan,
   canManageAnyWorkLog,
+  canManageBaselines,
+  closeBaselineCreateDialog,
   closeDependencyEditor,
   closeEffortPlanDialog,
   closeTaskEditor,
@@ -76,6 +88,9 @@ const {
   isDeletingEffortPlan,
   isDeletingWorkLog,
   isDeletingWorkingDay,
+  isBaselineCreateDialogOpen,
+  isBaselineMutating,
+  isCreatingBaseline,
   isDependencyEditorOpen,
   isDependencyMutating,
   isEditorOpen,
@@ -94,6 +109,7 @@ const {
   isWorkingCalendarMutating,
   isWorkingDayEditorOpen,
   milestoneCount,
+  openBaselineCreateDialog,
   openBoard,
   openDependencyEditor,
   openEffortPlanDialog,
@@ -107,6 +123,7 @@ const {
   requestWorkingDayDelete,
   rows,
   saveDependency,
+  saveWbsBaseline,
   saveEffortPlan,
   saveWbsTask,
   saveWorkLog,
@@ -390,6 +407,21 @@ onBeforeMount(initialize);
       </v-card-text>
     </v-card>
 
+    <WbsBaselineCard
+      v-if="wbs"
+      :baseline-list="baselineList"
+      :active-baseline-detail="activeBaselineDetail"
+      :comparison-rows="baselineChangedRows"
+      :can-manage="canManageBaselines"
+      :is-loading="isLoading"
+      :is-mutating="isBaselineMutating"
+      :activating-baseline-id="activatingBaselineId"
+      :error-messages="baselineErrorMessages"
+      :success-message="baselineSuccessMessage"
+      @create="openBaselineCreateDialog"
+      @activate="activateWbsBaseline"
+    />
+
     <WorkingCalendarCard
       v-if="wbs"
       :date-range="workingCalendarDateRange"
@@ -495,6 +527,14 @@ onBeforeMount(initialize);
       :error-messages="editorErrorMessages"
       @close="closeTaskEditor"
       @save="saveWbsTask"
+    />
+
+    <WbsBaselineCreateDialog
+      :open="isBaselineCreateDialogOpen"
+      :is-saving="isCreatingBaseline"
+      :error-messages="baselineEditorErrorMessages"
+      @close="closeBaselineCreateDialog"
+      @save="saveWbsBaseline"
     />
 
     <WbsDependencyCreateDialog
