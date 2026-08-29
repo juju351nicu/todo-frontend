@@ -10,6 +10,7 @@ import WorkingDayEditDialog from "@/features/wbs/components/WorkingDayEditDialog
 import WbsBaselineCard from "@/features/wbs/components/WbsBaselineCard.vue";
 import WbsBaselineCreateDialog from "@/features/wbs/components/WbsBaselineCreateDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
+import WbsEarnedValueCard from "@/features/wbs/components/WbsEarnedValueCard.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
@@ -70,6 +71,9 @@ const {
   dependencyPendingDeleteRow,
   dependencyRows,
   dependencyTaskOptions,
+  earnedValue,
+  earnedValueErrorMessages,
+  earnedValueStatusDate,
   editingEffortPlan,
   editingTask,
   editingWorkLog,
@@ -96,6 +100,7 @@ const {
   isEditorOpen,
   isEffortPlanDialogOpen,
   isLoading,
+  isLoadingEarnedValue,
   isLoadingEffortPlans,
   isLoadingWorkload,
   isLoadingWorkLogs,
@@ -142,6 +147,7 @@ const {
   workloadDateRange,
   workloadErrorMessages,
   loadTaskWorkload,
+  loadEarnedValueMetrics,
   loadWorkingCalendar,
   selectedWorkingCalendarTarget,
   workingCalendar,
@@ -420,6 +426,15 @@ onBeforeMount(initialize);
       :success-message="baselineSuccessMessage"
       @create="openBaselineCreateDialog"
       @activate="activateWbsBaseline"
+    />
+
+    <WbsEarnedValueCard
+      v-if="wbs"
+      :status-date="earnedValueStatusDate"
+      :metrics="earnedValue"
+      :is-loading="isLoadingEarnedValue"
+      :error-messages="earnedValueErrorMessages"
+      @load="loadEarnedValueMetrics"
     />
 
     <WorkingCalendarCard

@@ -103,14 +103,16 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar API
-- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM API
+- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 実績期間を含む編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化とnullableな実績期間を含む表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間・予定実績tooltip・読取り専用依存線への変換
 - `src/features/wbs/utils/workingCalendar.ts`: calendar期間・対象変換、例外Form、主要制約検証、登録更新Request、表示名変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、409再取得、認証エラー、Board遷移
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、baseline、EVM、409再取得、認証エラー、Board遷移
+- `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
+- `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形
 - `src/features/wbs/components/WbsDependencyCreateDialog.vue`: Finish-to-Start依存関係を追加する入力Dialog
 - `src/features/wbs/components/WbsTaskEditDialog.vue`: 階層・Task種別・予定・進捗・実績期間を更新するDialog
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・実績期間tooltip・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
@@ -119,7 +121,7 @@ src/
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
-- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar入口画面
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar・baseline・EVM入口画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -172,6 +174,17 @@ workload容量統合では、Backendが同じ優先順位で解決した`availab
 容量状態の判定は`src/features/wbs/utils/taskWorkload.ts`へ集約し、表示component内へ条件を重複させない。`配賦内`、`過配賦`、`休日配賦`の境界はVitestで個別に固定する。2026-08-29時点で型検査、44 test file・301 Vitest、production buildが成功している。実ブラウザ回帰はBackend／Frontend反映後に専用fixtureで実施する。
 
 稼働日例外の登録・更新・削除が確定した場合、および404・409から最新状態へ回復する場合は、表示中calendarだけでなく現在の検索期間のworkloadも並行再取得する。workloadの稼働可能時間はcalendarから算出されるため、片方だけを更新して古い残容量・過配賦表示を残してはならない。
+
+2026-08-30にStage 7CのEVM参照画面を同じ`useWbsPage`へ追加した。利用者が基準日を指定した場合だけ
+`GET /api/v1/projects/{projectId}/wbs/metrics?statusDate=YYYY-MM-DD`を呼び、BAC、PV、EV、AC、SV、CV、
+SPI、CPI、計画・出来高進捗率、警告、Task明細を表示する。active baselineがないProjectへ初期表示から409を
+出さないため自動集計は行わない。baselineを作成またはactive切替した場合は旧baselineのEVM結果を破棄する。
+EVM式と丸めはBackendを正本とし、Frontend utilityは日付検証と表示整形だけを担当する。
+
+EVM APIは警告・Task配列の欠落をAPI境界で空配列へ正規化する。401はSessionを破棄してLoginへ戻し、403、404、
+active baselineなしの409、入力エラー、接続失敗はEVM card内へ表示する。TypeScript／Vue型検査、46 test file・
+322 Vitest、production buildが成功している。Stage 7C完了には専用fixtureによる実ブラウザ、DB inspect、cleanup、
+0件再inspectが残る。
 
 ## 変更時の確認
 

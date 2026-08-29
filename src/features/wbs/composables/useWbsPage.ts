@@ -8,6 +8,7 @@ import ProjectApi, {
 import type { ProjectDetail } from "@/features/project/types/project";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type {
+  EarnedValueResponse,
   TaskDependency,
   TaskDependencyCreateForm,
   TaskDependencyCreateRequest,
@@ -39,6 +40,8 @@ import type {
   WbsTask,
   WbsTaskEditForm,
 } from "@/features/wbs/types/wbs";
+import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
+import { getToday } from "@/features/wbs/utils/effort";
 import {
   buildDefaultWorkloadDateRange,
   buildTaskEffortPlanCreateRequest,
@@ -83,6 +86,9 @@ export const useWbsPage = () => {
   const userStore = useUserStore();
 
   const dependencyEditorErrorMessages = ref<string[]>([]);
+  const earnedValue = ref<EarnedValueResponse | null>(null);
+  const earnedValueErrorMessages = ref<string[]>([]);
+  const earnedValueStatusDate = ref(getToday());
   const activeBaselineDetail = ref<WbsBaselineDetailResponse | null>(null);
   const activatingBaselineId = ref<number | null>(null);
   const baselineEditorErrorMessages = ref<string[]>([]);
@@ -96,6 +102,7 @@ export const useWbsPage = () => {
   const editorErrorMessages = ref<string[]>([]);
   const errorMessages = ref<string[]>([]);
   const isDeletingDependency = ref(false);
+  const isLoadingEarnedValue = ref(false);
   const isDeletingEffortPlan = ref(false);
   const isDependencyEditorOpen = ref(false);
   const isEditorOpen = ref(false);
@@ -379,6 +386,8 @@ export const useWbsPage = () => {
       return;
     }
     errorMessages.value = [];
+    earnedValue.value = null;
+    earnedValueErrorMessages.value = [];
     successMessage.value = "";
     workloadErrorMessages.value = [];
     workingCalendarErrorMessages.value = [];
@@ -394,6 +403,7 @@ export const useWbsPage = () => {
       workingCalendar.value = null;
       baselineList.value = null;
       activeBaselineDetail.value = null;
+      earnedValue.value = null;
       errorMessages.value = ["Project IDが不正です。"];
       return;
     }
@@ -416,10 +426,80 @@ export const useWbsPage = () => {
       workingCalendar.value = null;
       baselineList.value = null;
       activeBaselineDetail.value = null;
+      earnedValue.value = null;
       await handleReadApiError(error);
     } finally {
       isLoading.value = false;
     }
+  };
+
+  /**
+   * 基準日を検証してactive baseline基準のEVMを取得する。
+   * 計算式と丸めはBackendへ委ね、FrontendではResponseをそのまま確定値として保持する。
+   *
+   * @param statusDate 集計対象に含めるyyyy-MM-dd形式の業務日
+   */
+  const loadEarnedValueMetrics = async (statusDate: string): Promise<void> => {
+    if (projectId.value === null || isLoadingEarnedValue.value) {
+      return;
+    }
+    const validationMessages = validateEarnedValueStatusDate(statusDate);
+    if (validationMessages.length > 0) {
+      earnedValueErrorMessages.value = validationMessages;
+      return;
+    }
+
+    isLoadingEarnedValue.value = true;
+    earnedValueErrorMessages.value = [];
+    earnedValueStatusDate.value = statusDate;
+    try {
+      earnedValue.value = await WbsApi.getEarnedValueMetrics(
+        projectId.value,
+        statusDate
+      );
+    } catch (error: unknown) {
+      earnedValue.value = null;
+      await handleEarnedValueReadError(error);
+    } finally {
+      isLoadingEarnedValue.value = false;
+    }
+  };
+
+  /** EVM参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
+  const handleEarnedValueReadError = async (error: unknown): Promise<void> => {
+    if (!(error instanceof WbsApiError)) {
+      earnedValueErrorMessages.value = ["Backendへ接続できませんでした。"];
+      return;
+    }
+    if (error.status === 401) {
+      userStore.clearSession();
+      await router.push({ name: "Login" });
+      return;
+    }
+    if (error.status === 403) {
+      earnedValueErrorMessages.value = [
+        "EVMを参照するpermissionがありません。",
+      ];
+      return;
+    }
+    if (error.status === 404) {
+      earnedValueErrorMessages.value = [
+        "Projectが見つからないか、このProjectへ参加していません。",
+      ];
+      return;
+    }
+    const fieldMessages = getFieldErrorMessages(error);
+    if (error.status === 409) {
+      earnedValueErrorMessages.value =
+        fieldMessages.length > 0
+          ? fieldMessages
+          : ["EVMを集計するにはactive baselineが必要です。"];
+      return;
+    }
+    earnedValueErrorMessages.value =
+      fieldMessages.length > 0
+        ? fieldMessages
+        : ["EVMを取得できませんでした。"];
   };
 
   /** WBS APIのstatusを、認証状態を含む参照画面の案内へ変換する。 */
@@ -2206,6 +2286,9 @@ export const useWbsPage = () => {
       baselineSuccessMessage.value =
         `baseline「${created.baseline.name}」を作成しました` +
         `（Task ${created.taskCount}件、依存関係 ${created.dependencyCount}件、日別予定 ${created.effortPlanCount}件）。`;
+      // EVMはactive baselineへ紐づくため、作成前の集計結果を新しい基準計画として表示し続けない。
+      earnedValue.value = null;
+      earnedValueErrorMessages.value = [];
       // baseline作成自体は確定済みのため、再取得失敗を作成失敗として誤表示しない。
       await reloadWbsBaselines();
     } catch (error: unknown) {
@@ -2247,6 +2330,9 @@ export const useWbsPage = () => {
         { version: baseline.version }
       );
       baselineSuccessMessage.value = `baseline「${activated.name}」を有効化しました。`;
+      // 切替前baselineの指標は意味が変わるため、利用者が新しい基準日で再集計するまで破棄する。
+      earnedValue.value = null;
+      earnedValueErrorMessages.value = [];
       // active切替成功後の一覧取得失敗は、切替失敗ではなく再読込案内として扱う。
       await reloadWbsBaselines();
     } catch (error: unknown) {
@@ -2312,6 +2398,9 @@ export const useWbsPage = () => {
     dependencyPendingDeleteRow,
     dependencyRows,
     dependencyTaskOptions,
+    earnedValue,
+    earnedValueErrorMessages,
+    earnedValueStatusDate,
     editingEffortPlan,
     editingTask,
     editingWorkLog,
@@ -2338,6 +2427,7 @@ export const useWbsPage = () => {
     isEffortPlanDialogOpen,
     isEffortPlanMutating,
     isLoading,
+    isLoadingEarnedValue,
     isLoadingEffortPlans,
     isLoadingWorkload,
     isLoadingWorkingCalendar,
@@ -2385,6 +2475,7 @@ export const useWbsPage = () => {
     workloadDateRange,
     workloadErrorMessages,
     loadTaskWorkload,
+    loadEarnedValueMetrics,
     editWorkLog,
     loadWorkingCalendar,
     selectedWorkingCalendarTarget,

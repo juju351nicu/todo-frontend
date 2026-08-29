@@ -1,4 +1,5 @@
 import type {
+  EarnedValueResponse,
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
   TaskEffortPlanCreateRequest,
@@ -102,6 +103,15 @@ const normalizeWbsBaselineDetail = (
   effortPlans: payload.effortPlans ?? [],
 });
 
+/** API Responseで欠落したEVM警告・Task明細を空配列へ正規化する。 */
+const normalizeEarnedValueResponse = (
+  payload: EarnedValueResponse
+): EarnedValueResponse => ({
+  ...payload,
+  warnings: payload.warnings ?? [],
+  tasks: payload.tasks ?? [],
+});
+
 /**
  * Projectへ保存されたWBS baseline headerを連番の新しい順で取得する。
  *
@@ -183,6 +193,29 @@ const activateWbsBaseline = async (
   );
   await ensureSuccess(response);
   return (await response.json()) as WbsBaselineSummary;
+};
+
+/**
+ * active baselineを基準に指定業務日までのProject EVM指標を取得する。
+ * PV、EV、AC、SV、CV、SPI、CPIと丸めはBackendのResponseを確定値として扱う。
+ *
+ * @param projectId EVMを参照するProject ID
+ * @param statusDate 集計対象に含める基準日。yyyy-MM-dd形式
+ * @returns Project集計、Task明細、集計値を解釈する警告
+ * @throws WbsApiError 入力不正、認証・認可不足、active baselineなしまたはBackendエラーの場合
+ */
+const getEarnedValueMetrics = async (
+  projectId: number,
+  statusDate: string
+): Promise<EarnedValueResponse> => {
+  const query = new URLSearchParams({ statusDate });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/metrics?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  return normalizeEarnedValueResponse(
+    (await response.json()) as EarnedValueResponse
+  );
 };
 
 /**
@@ -687,6 +720,7 @@ export default {
   deleteMemberWorkingDay,
   deleteProjectWorkingDay,
   getTaskDependencies,
+  getEarnedValueMetrics,
   getTaskEffortPlans,
   getTaskWorkLogs,
   getTaskWorkload,

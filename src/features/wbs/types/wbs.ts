@@ -616,6 +616,98 @@ export interface WbsBaselineComparisonRow {
   plannedEffortDifferenceMinutes: number;
 }
 
+/** EVM集計値の解釈に必要なBackend確定済み警告。 */
+export interface EarnedValueWarning {
+  /** 警告種別を機械判定する安定したコード。 */
+  code: string;
+  /** 警告対象Task ID。Project全体の警告ではnull。 */
+  taskId: number | null;
+  /** 利用者へ表示するBackend確定済みメッセージ。 */
+  message: string;
+  /** 警告対象工数（分）。工数を伴わない警告ではnull。 */
+  minutes: number | null;
+}
+
+/** active baselineの通常Task単位でBackendが算出した基準日時点のEVM指標。 */
+export interface EarnedValueTask {
+  /** baseline snapshot元のBoard・WBS共通Task ID。 */
+  sourceTaskId: number;
+  /** baseline作成時点の画面表示用WBSコード。 */
+  wbsCode: string | null;
+  /** baseline作成時点のTaskタイトル。 */
+  title: string;
+  /** baseline作成時点の予定開始日。yyyy-MM-dd形式。 */
+  plannedStartDate: string;
+  /** baseline作成時点の予定終了日。yyyy-MM-dd形式。 */
+  plannedEndDate: string;
+  /** baseline Taskの予定工数（分）。 */
+  plannedEffortMinutes: number;
+  /** 基準日までのPV（分）。 */
+  pv: number;
+  /** EVへ適用した進捗snapshot日。履歴がない場合はnull。 */
+  progressSnapshotDate: string | null;
+  /** EVへ適用した進捗率。履歴がない場合はnull。 */
+  progressPercent: number | null;
+  /** Backendが小数第2位へ丸めたEV（分）。 */
+  ev: number;
+  /** 基準日までのAC（分）。 */
+  ac: number;
+  /** Backendが小数第2位へ丸めたSV（分）。 */
+  sv: number;
+  /** Backendが小数第2位へ丸めたCV（分）。 */
+  cv: number;
+}
+
+/** active baselineを基準にBackendが算出したProject単位のEVM Response。 */
+export interface EarnedValueResponse {
+  /** EVM対象Project ID。 */
+  projectId: number;
+  /** 計算へ使用したactive baseline ID。 */
+  baselineId: number;
+  /** Project内のbaseline表示用連番。 */
+  baselineNumber: number;
+  /** 計算へ使用したbaseline名。 */
+  baselineName: string;
+  /** baseline作成日時を業務timezoneへ変換した日付。 */
+  baselineDate: string;
+  /** EVM計算の基準日。yyyy-MM-dd形式。 */
+  statusDate: string;
+  /** 日付境界の判定に使用したIANA timezone ID。 */
+  businessZoneId: string;
+  /** EVM価値単位。初期契約では常にMINUTES。 */
+  valueUnit: "MINUTES";
+  /** BAC（分）。 */
+  bac: number;
+  /** PV（分）。 */
+  pv: number;
+  /** Backendが小数第2位へ丸めたEV（分）。 */
+  ev: number;
+  /** AC（分）。 */
+  ac: number;
+  /** Backendが小数第2位へ丸めたSV（分）。 */
+  sv: number;
+  /** Backendが小数第2位へ丸めたCV（分）。 */
+  cv: number;
+  /** Backendが小数第4位へ丸めたSPI。PVが0の場合はnull。 */
+  spi: number | null;
+  /** Backendが小数第4位へ丸めたCPI。ACが0の場合はnull。 */
+  cpi: number | null;
+  /** 計画進捗率。BACが0の場合はnull。 */
+  plannedProgressPercent: number | null;
+  /** 出来高進捗率。BACが0の場合はnull。 */
+  earnedProgressPercent: number | null;
+  /** baseline日別予定工数の全期間合計（分）。 */
+  baselineAllocatedEffortMinutes: number;
+  /** BACから全期間配賦工数を引いた差（分）。過配賦時は負数。 */
+  baselineAllocationVarianceMinutes: number;
+  /** baseline外TaskからACへ算入しなかった実績工数（分）。 */
+  excludedActualEffortMinutes: number;
+  /** 集計値の判断に必要な業務警告。警告なしでは空配列。 */
+  warnings: EarnedValueWarning[];
+  /** baselineの通常Task単位のEVM明細。 */
+  tasks: EarnedValueTask[];
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

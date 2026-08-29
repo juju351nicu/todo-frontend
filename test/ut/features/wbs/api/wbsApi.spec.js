@@ -653,4 +653,64 @@ describe("WBS API", () => {
       request
     );
   });
+
+  it("EVM基準日をqueryへ含めBackend確定済み指標と明細を取得する", async () => {
+    const response = {
+      projectId: 7,
+      baselineId: 21,
+      baselineNumber: 1,
+      baselineName: "8月計画",
+      baselineDate: "2026-08-20",
+      statusDate: "2026-08-30",
+      businessZoneId: "Asia/Tokyo",
+      valueUnit: "MINUTES",
+      bac: 960,
+      pv: 480,
+      ev: 360,
+      ac: 300,
+      sv: -120,
+      cv: 60,
+      spi: 0.75,
+      cpi: 1.2,
+      plannedProgressPercent: 50,
+      earnedProgressPercent: 37.5,
+      baselineAllocatedEffortMinutes: 960,
+      baselineAllocationVarianceMinutes: 0,
+      excludedActualEffortMinutes: 0,
+      warnings: [],
+      tasks: [{ sourceTaskId: 11, title: "実装", pv: 480, ev: 360, ac: 300 }],
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(
+      WbsApi.getEarnedValueMetrics(7, "2026-08-30")
+    ).resolves.toEqual(response);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/metrics?statusDate=2026-08-30"
+    );
+  });
+
+  it("古いEVM fixtureで警告・Task明細が欠けても空配列へ正規化する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        baselineId: 21,
+        statusDate: "2026-08-30",
+      }),
+    });
+
+    await expect(
+      WbsApi.getEarnedValueMetrics(7, "2026-08-30")
+    ).resolves.toEqual({
+      projectId: 7,
+      baselineId: 21,
+      statusDate: "2026-08-30",
+      warnings: [],
+      tasks: [],
+    });
+  });
 });

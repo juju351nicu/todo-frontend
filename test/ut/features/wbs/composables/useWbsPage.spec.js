@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => ({
     deleteMemberWorkingDay: vi.fn(),
     deleteProjectWorkingDay: vi.fn(),
     getTaskDependencies: vi.fn(),
+    getEarnedValueMetrics: vi.fn(),
     getTaskEffortPlans: vi.fn(),
     getTaskWorkLogs: vi.fn(),
     getTaskWorkload: vi.fn(),
@@ -200,6 +201,32 @@ const baselineCreateResponse = {
   plannedEffortMinutes: 960,
   allocatedEffortMinutes: 600,
   unallocatedEffortMinutes: 360,
+};
+
+const earnedValueResponse = {
+  projectId: 7,
+  baselineId: 21,
+  baselineNumber: 1,
+  baselineName: "8月計画",
+  baselineDate: "2026-08-20",
+  statusDate: "2026-08-30",
+  businessZoneId: "Asia/Tokyo",
+  valueUnit: "MINUTES",
+  bac: 960,
+  pv: 480,
+  ev: 360,
+  ac: 300,
+  sv: -120,
+  cv: 60,
+  spi: 0.75,
+  cpi: 1.2,
+  plannedProgressPercent: 50,
+  earnedProgressPercent: 37.5,
+  baselineAllocatedEffortMinutes: 960,
+  baselineAllocationVarianceMinutes: 0,
+  excludedActualEffortMinutes: 0,
+  warnings: [],
+  tasks: [],
 };
 
 const updatedWbs = {
@@ -448,6 +475,9 @@ describe("useWbsPage", () => {
     mocks.wbsApi.deleteProjectWorkingDay.mockResolvedValue(undefined);
     mocks.wbsApi.getTaskDependencies.mockResolvedValue(
       structuredClone(dependencyList)
+    );
+    mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(
+      structuredClone(earnedValueResponse)
     );
     mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(
       structuredClone(effortPlanList)
@@ -1677,5 +1707,63 @@ describe("useWbsPage", () => {
     expect(page.baselineErrorMessages.value).toEqual(["更新されています。"]);
     expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
     expect(page.activatingBaselineId.value).toBeNull();
+  });
+
+  it("指定基準日のEVMを取得しBackend確定値を画面状態へ保持する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    expect(mocks.wbsApi.getEarnedValueMetrics).not.toHaveBeenCalled();
+    await page.loadEarnedValueMetrics("2026-08-30");
+
+    expect(mocks.wbsApi.getEarnedValueMetrics).toHaveBeenCalledWith(
+      7,
+      "2026-08-30"
+    );
+    expect(page.earnedValueStatusDate.value).toBe("2026-08-30");
+    expect(page.earnedValue.value).toEqual(earnedValueResponse);
+    expect(page.earnedValueErrorMessages.value).toEqual([]);
+  });
+
+  it("不正なEVM基準日ではAPIを呼ばず入力理由を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.loadEarnedValueMetrics("2026-02-29");
+
+    expect(mocks.wbsApi.getEarnedValueMetrics).not.toHaveBeenCalled();
+    expect(page.earnedValueErrorMessages.value).toEqual([
+      "EVM基準日を入力してください。",
+    ]);
+  });
+
+  it("active baselineがない409では古いEVMを破棄して作成案内を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.loadEarnedValueMetrics("2026-08-30");
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValueOnce(
+      new WbsApiError(409, null)
+    );
+
+    await page.loadEarnedValueMetrics("2026-08-31");
+
+    expect(page.earnedValue.value).toBeNull();
+    expect(page.earnedValueErrorMessages.value).toEqual([
+      "EVMを集計するにはactive baselineが必要です。",
+    ]);
+  });
+
+  it("EVM取得の401ではSessionを破棄してログイン画面へ遷移する", async () => {
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValue(
+      new WbsApiError(401, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.loadEarnedValueMetrics("2026-08-30");
+
+    expect(mocks.userStore.clearSession).toHaveBeenCalledTimes(1);
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(page.earnedValue.value).toBeNull();
   });
 });
