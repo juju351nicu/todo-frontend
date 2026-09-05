@@ -63,6 +63,8 @@ EVMはactive baselineと指定基準日からBackendが算出したBAC、PV、EV
 
 週次／月次ExcelはEVMと同じ基準日を使用し、WBS画面から`.xlsx`を直接ダウンロードします。実行中は両方のボタンを無効化し、BackendがCORSで公開する安全な`Content-Disposition` file nameを優先します。binaryと一時URLはStoreやWeb Storageへ保存せず、Blob URLは処理後に必ず解放します。認証は既存の`JSESSIONID`を使用し、参照専用GETへCSRF headerは付けません。
 
+2026-09-05に専用Projectで週次・月次Excelの実ブラウザ回帰を完了しました。2 fileのdownload、ページ再読込、EVM表示、console warning・error 0件を確認し、Backend側のApache POI再読込とDB照合も成功しています。これによりWBS Stage 7のFrontend実装と回帰は完了です。
+
 通常Taskの日別予定・実績Dialogでは、1日・Project member単位の分工数を取得時点versionで登録・更新・削除します。Project workloadは指定期間の日付・担当者単位で予定、実績、差分を表示します。通常memberとOWNER・MANAGER・SYSTEM_ADMINの操作範囲は画面でも案内しますが、最終認可はBackendへ委ねます。Task依存関係はFinish-to-Startと0以上の分単位待ち時間を追加でき、409競合では古い編集対象を破棄して最新一覧を再取得します。
 
 稼働日calendarは平日480分・土日0分を曜日既定値とし、Project共通例外、Project member固有例外の順で上書きした有効値を表示します。Project共通例外はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が取得時点version付きで登録・更新・削除します。Frontendの操作表示は案内であり、最終認可とProject状態・同日重複・楽観ロックはBackendが判定します。現段階ではcalendar設定画面までを接続し、workloadの稼働可能時間・過配賦判定への反映は次の変更単位とします。

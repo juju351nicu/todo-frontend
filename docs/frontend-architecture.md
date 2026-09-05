@@ -199,6 +199,12 @@ URL解放、401・409を固定した。全46 test file・332 Vitest、TypeScript
 すべて成功した。実browser download、
 Apache POI再読込、DB照合、cleanupはStage 7D-6へ分離する。
 
+2026-09-05にProject ID 14の専用fixtureでStage 7D-6を完了した。WBS画面から基準日`2026-09-05`の
+週次・月次Excelを各1回downloadし、ページ再読込後もWBSとEVMを表示できた。安定表示後のbrowser consoleは
+warning 0件、error 0件だった。2 fileはBackendの手動JUnitでApache POI再読込に成功し、固定5 sheet、
+週次・月次の期間差、EVM、workload、警告、cell型、formula不在がDB集計値と一致した。fixture cleanup後の
+再inspectも0件である。これによりWBS Stage 7のFrontend実装・自動テスト・実ブラウザ回帰は完了した。
+
 ## 変更時の確認
 
 ```bash
