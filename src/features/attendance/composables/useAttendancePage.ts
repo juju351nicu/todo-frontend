@@ -6,6 +6,7 @@ import AttendanceApi, {
 } from "@/features/attendance/api/attendanceApi";
 import type {
   AttendanceDayResponse,
+  AttendanceMonthResponse,
   AttendancePunchAction,
 } from "@/features/attendance/types/attendance";
 import {
@@ -36,7 +37,9 @@ export const useAttendancePage = () => {
   const isLoadingDay = ref(false);
   const isLoadingMonth = ref(false);
   const isPunching = ref(false);
+  const isSubmittingMonth = ref(false);
   const monthDays = ref<AttendanceDayResponse[]>([]);
+  const monthSummary = ref<AttendanceMonthResponse | null>(null);
   const selectedDay = ref<AttendanceDayResponse | null>(null);
   const selectedMonth = ref(today.slice(0, 7));
   const selectedWorkDate = ref(today);
@@ -71,6 +74,13 @@ export const useAttendancePage = () => {
   );
   const isLoading = computed(
     () => isLoadingMonth.value || isLoadingDay.value
+  );
+  const canSubmitMonth = computed(
+    () =>
+      canWriteAttendance.value &&
+      !isSubmittingMonth.value &&
+      !monthSummary.value?.hasIncompletePeriod &&
+      ["DRAFT", "REJECTED"].includes(monthSummary.value?.statusCode ?? "")
   );
 
   /** 初期表示月と本日の詳細をBackendから取得する。 */
@@ -130,6 +140,31 @@ export const useAttendancePage = () => {
     }
   };
 
+  /** 表示月を最新versionで提出または再提出し、Backend確定状態へ同期する。 */
+  const submitMonth = async (): Promise<void> => {
+    if (!canSubmitMonth.value || monthSummary.value === null) {
+      return;
+    }
+    isSubmittingMonth.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      monthSummary.value = await AttendanceApi.submitMonth(
+        selectedMonth.value,
+        monthSummary.value.version
+      );
+      monthDays.value = monthSummary.value.days;
+      successMessage.value = "月次勤怠を提出しました。";
+    } catch (error: unknown) {
+      await handleApiError(error, "月次勤怠を提出できませんでした。");
+      if (error instanceof AttendanceApiError && error.status === 409) {
+        await reloadAfterConflict();
+      }
+    } finally {
+      isSubmittingMonth.value = false;
+    }
+  };
+
   /** 現在の表示月一覧と選択日詳細を同時に取得する。 */
   const loadMonthAndSelectedDay = async (): Promise<void> => {
     if (isLoading.value) {
@@ -141,12 +176,14 @@ export const useAttendancePage = () => {
     successMessage.value = "";
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
-      const [listResponse, dayResponse] = await Promise.all([
+      const [listResponse, dayResponse, monthResponse] = await Promise.all([
         AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
         AttendanceApi.getDay(selectedWorkDate.value),
+        AttendanceApi.getMonth(selectedMonth.value),
       ]);
       monthDays.value = listResponse.days;
       selectedDay.value = dayResponse;
+      monthSummary.value = monthResponse;
     } catch (error: unknown) {
       await handleApiError(error, "勤怠情報を取得できませんでした。");
     } finally {
@@ -160,11 +197,12 @@ export const useAttendancePage = () => {
     isLoadingMonth.value = true;
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
-      const response = await AttendanceApi.getDays(
-        dateRange.dateFrom,
-        dateRange.dateTo
-      );
-      monthDays.value = response.days;
+      const [listResponse, monthResponse] = await Promise.all([
+        AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
+        AttendanceApi.getMonth(selectedMonth.value),
+      ]);
+      monthDays.value = listResponse.days;
+      monthSummary.value = monthResponse;
     } catch (error: unknown) {
       await handleApiError(error, "月間勤怠を更新できませんでした。");
     } finally {
@@ -193,12 +231,14 @@ export const useAttendancePage = () => {
   const reloadAfterConflict = async (): Promise<void> => {
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
-      const [listResponse, dayResponse] = await Promise.all([
+      const [listResponse, dayResponse, monthResponse] = await Promise.all([
         AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
         AttendanceApi.getDay(selectedWorkDate.value),
+        AttendanceApi.getMonth(selectedMonth.value),
       ]);
       monthDays.value = listResponse.days;
       selectedDay.value = dayResponse;
+      monthSummary.value = monthResponse;
     } catch (_refreshError: unknown) {
       // 最初の409理由を残し、復旧取得失敗による曖昧な上書きを避ける。
     }
@@ -234,6 +274,7 @@ export const useAttendancePage = () => {
   };
 
   return {
+    canSubmitMonth,
     canClockIn,
     canClockOut,
     canEndBreak,
@@ -242,9 +283,12 @@ export const useAttendancePage = () => {
     changeMonth,
     errorMessages,
     executePunch,
+    submitMonth,
     initialize,
     isLoading,
     isPunching,
+    isSubmittingMonth,
+    monthSummary,
     monthRows,
     selectWorkDate,
     selectedDay,

@@ -76,8 +76,12 @@ EVMはactive baselineと指定基準日からBackendが算出したBAC、PV、EV
 確定済みの勤務・休憩・差引時間を表示し、未終了区間は合計へ含めず「集計中」と案内します。
 `ATTENDANCE_WRITE_OWN`を持つ利用者は出勤・退勤・休憩開始・休憩終了を実行できます。Client時刻は送信せず、
 打刻中は二重送信を防ぎます。成功時はBackendが返す勤務日へ同期し、409時は状態を推測せず月一覧と日詳細を
-再取得します。49 test file・350 Vitest、TypeScript／Vue型検査、production buildは成功しています。
-専用fixtureによる実ブラウザ・DB回帰はStage 8A-4で実施します。
+再取得します。専用fixtureによる本人打刻の実ブラウザ・DB回帰はStage 8A-4で完了しています。
+
+Stage 8B-2では本人画面へ月次状態、月合計、提出・再提出、差戻し理由を追加しました。管理者は
+`/attendance/administration`で対象月・状態を検索し、選択accountの詳細を確認して承認・理由付き差戻し・締めを
+実行します。確認者と締め担当のpermissionを分離し、更新中の二重送信を防止し、409時は最新詳細と一覧を再取得します。
+全50 test file・363 Vitest、TypeScript／Vue型検査、production buildの成功後、専用3 accountによる実ブラウザ・DB回帰を行います。
 
 ## 検証
 

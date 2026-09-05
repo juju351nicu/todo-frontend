@@ -114,6 +114,21 @@ WBSのTask階層とGanttを参照し、専用fixture以外のProjectデータを
 - 再読込後の一覧・合計とDB inspectが一致し、cleanup後の再inspectが0件となる。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
+## 勤怠月次workflowの初回確認項目
+
+Backendの`attendance-month`専用fixtureを使用し、通常accountや通常業務データから分離して次を確認する。
+
+- `USER`本人はDRAFT月の合計を確認して提出でき、提出済み・承認済み・締め済みは再送信できない。
+- 未終了勤務・休憩がある月は画面で提出を抑止し、Backendも409で最終拒否する。
+- `ATTENDANCE_MANAGER`は対象月・状態で一覧検索し、提出済みaccountの月合計と日別明細を確認できる。
+- 空白だけの差戻し理由はAPI送信前に拒否し、理由付き差戻し後は本人画面へ理由を表示する。
+- 差戻し月を本人が再提出し、確認者が任意コメント付きで承認できる。
+- `ATTENDANCE_MANAGER`には締め操作を表示せず、`ATTENDANCE_CLOSE`を持つ担当だけが承認済み月を締められる。
+- 更新buttonの連打で二重送信せず、古いversionの409後は詳細と一覧をBackend最新値へ戻す。
+- 各roleの再ログインとページ再読込後も同じ状態を維持し、Spring SessionとCSRF以外の認証状態を保存しない。
+- DB監査が提出・差戻し・再提出・承認・締めの順で5件となり、cleanup後の専用データが0件になる。
+- 一連の操作でブラウザの`warning`、`error`を増やさない。
+
 ## 2026-08-11 実施結果
 
 すべての確認項目が正常だった。

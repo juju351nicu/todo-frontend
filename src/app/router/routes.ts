@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 
 import {
+  ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
   ATTENDANCE_READ_PERMISSION_CODES,
   TASK_READ_PERMISSION_CODES,
   TASK_WRITE_PERMISSION_CODES,
@@ -23,6 +24,18 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ATTENDANCE_READ_PERMISSION_CODES,
+    },
+  },
+  {
+    path: "/attendance/administration",
+    name: "AttendanceAdministration",
+    component: () =>
+      import(
+        "@/features/attendance/views/AttendanceAdministrationPage.vue"
+      ),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
     },
   },
   {

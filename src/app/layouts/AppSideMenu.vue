@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
 import {
+    ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
     ATTENDANCE_READ_PERMISSION_CODES,
     TASK_READ_PERMISSION_CODES,
     TASK_WRITE_PERMISSION_CODES,
@@ -41,6 +42,13 @@ const links = computed<NavigationLink[]>(() => {
             icon: "mdi-clock-outline",
             text: "勤怠",
             url: "/attendance",
+        });
+    }
+    if (userStore.hasAnyPermission(ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES)) {
+        values.unshift({
+            icon: "mdi-calendar-account-outline",
+            text: "勤怠月次確認",
+            url: "/attendance/administration",
         });
     }
     if (userStore.hasPermission("PROJECT_READ")) {

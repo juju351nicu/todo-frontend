@@ -7,7 +7,9 @@ const mocks = vi.hoisted(() => ({
   attendanceApi: {
     getDay: vi.fn(),
     getDays: vi.fn(),
+    getMonth: vi.fn(),
     punch: vi.fn(),
+    submitMonth: vi.fn(),
   },
   router: { push: vi.fn() },
   userStore: {
@@ -37,6 +39,27 @@ const buildDay = (workDate, punchState = "OFF_DUTY") => ({
   workPeriods: [],
 });
 
+const buildMonth = (yearMonth, statusCode = "DRAFT", overrides = {}) => ({
+  attendanceMonthId: statusCode === "DRAFT" ? null : 31,
+  accountId: 1,
+  yearMonth,
+  statusCode,
+  submittedBy: null,
+  submittedAt: null,
+  reviewedBy: null,
+  reviewedAt: null,
+  reviewComment: null,
+  closedBy: null,
+  closedAt: null,
+  grossWorkMinutes: 480,
+  breakMinutes: 60,
+  netWorkMinutes: 420,
+  hasIncompletePeriod: false,
+  version: 0,
+  days: [],
+  ...overrides,
+});
+
 describe("useAttendancePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,6 +73,9 @@ describe("useAttendancePage", () => {
     mocks.attendanceApi.getDay.mockImplementation((workDate) =>
       Promise.resolve(buildDay(workDate))
     );
+    mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
+      Promise.resolve(buildMonth(yearMonth))
+    );
   });
 
   it("初期表示で東京の当日詳細と表示月一覧を並列取得する", async () => {
@@ -62,6 +88,9 @@ describe("useAttendancePage", () => {
       expect.stringMatching(new RegExp(`^${page.selectedMonth.value}-`))
     );
     expect(mocks.attendanceApi.getDay).toHaveBeenCalledWith(page.today);
+    expect(mocks.attendanceApi.getMonth).toHaveBeenCalledWith(
+      page.selectedMonth.value
+    );
     expect(page.selectedDay.value.workDate).toBe(page.today);
     expect(page.canClockIn.value).toBe(true);
   });
@@ -127,6 +156,43 @@ describe("useAttendancePage", () => {
     await Promise.all([first, second]);
   });
 
+  it("DRAFT月を最新versionで提出しBackend確定状態へ同期する", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.submitMonth.mockResolvedValue(
+      buildMonth(page.selectedMonth.value, "SUBMITTED", {
+        attendanceMonthId: 31,
+        submittedAt: "2026-09-06T01:00:00Z",
+        version: 1,
+      })
+    );
+
+    await page.submitMonth();
+
+    expect(mocks.attendanceApi.submitMonth).toHaveBeenCalledWith(
+      page.selectedMonth.value,
+      0
+    );
+    expect(page.monthSummary.value.statusCode).toBe("SUBMITTED");
+    expect(page.canSubmitMonth.value).toBe(false);
+    expect(page.successMessage.value).toBe("月次勤怠を提出しました。");
+  });
+
+  it("未終了区間がある月は提出APIを呼ばない", async () => {
+    mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
+      Promise.resolve(
+        buildMonth(yearMonth, "DRAFT", { hasIncompletePeriod: true })
+      )
+    );
+    const page = useAttendancePage();
+    await page.initialize();
+
+    await page.submitMonth();
+
+    expect(page.canSubmitMonth.value).toBe(false);
+    expect(mocks.attendanceApi.submitMonth).not.toHaveBeenCalled();
+  });
+
   it("409はBackendメッセージを表示して月一覧と選択日を再取得する", async () => {
     const page = useAttendancePage();
     await page.initialize();
@@ -147,6 +213,7 @@ describe("useAttendancePage", () => {
     expect(page.errorMessages.value).toEqual(["すでに出勤しています。"]);
     expect(mocks.attendanceApi.getDays).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getDay).toHaveBeenCalledTimes(2);
+    expect(mocks.attendanceApi.getMonth).toHaveBeenCalledTimes(2);
   });
 
   it("401はSessionを破棄してログイン画面へ戻す", async () => {

@@ -44,6 +44,15 @@ describe("Vue routes", () => {
     ]);
   });
 
+  it("管理者勤怠月画面をATTENDANCE_READ_ALLで保護する", () => {
+    const route = findRoute("AttendanceAdministration");
+
+    expect(route.path).toBe("/attendance/administration");
+    expect(route.meta.requiredAnyPermissions).toEqual([
+      "ATTENDANCE_READ_ALL",
+    ]);
+  });
+
   it("Project一覧・Board・WBSをBackendの専用permissionで保護する", () => {
     const projectList = findRoute("ProjectList");
     const taskBoard = findRoute("TaskBoard");

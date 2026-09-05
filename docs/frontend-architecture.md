@@ -225,6 +225,16 @@ API client、東京日付、閏月、複数勤務区間集計、未終了区間�
 Vitestで固定した。全49 test file・350件、TypeScript／Vue型検査、production buildは成功した。
 実データfixture、実browser、DB inspect、cleanupはStage 8A-4へ分離する。
 
+2026-09-06にStage 8B-2として、本人勤怠の月次提出と管理者向け月次確認画面を追加した。本人画面は既存の
+`useAttendancePage`へ月次状態、合計、提出・再提出、差戻し理由を統合し、打刻と月次workflowを別Storeへ
+二重保持しない。管理画面は`useAttendanceAdministrationPage`ひとつで月・状態検索、account詳細、承認、
+必須理由付き差戻し、締めを扱い、操作ごとの小さなcomposableへ分割しない。
+
+Routerとside menuは管理画面を`ATTENDANCE_READ_ALL`で案内する。承認・差戻しは`ATTENDANCE_REVIEW`、締めは
+`ATTENDANCE_CLOSE`の有無で操作を表示するが、最終認可はBackendのMethod Securityへ委ねる。全更新は共通HTTP
+clientがSession CookieとCSRFを付け、取得時点versionを送る。成功Responseを確定状態とし、409時は古いversionを
+残さず詳細と一覧を再取得する。API path・body、差戻し理由必須、二重送信、401、409、RouterをVitestで固定した。
+
 ## 変更時の確認
 
 ```bash

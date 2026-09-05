@@ -5,14 +5,18 @@ import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
+  formatAttendanceInstant,
   formatAttendanceMinutes,
   formatAttendanceTime,
   getAttendancePunchStateColor,
   getAttendancePunchStateLabel,
+  getAttendanceMonthStatusColor,
+  getAttendanceMonthStatusLabel,
 } from "@/features/attendance/utils/attendance";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
+  canSubmitMonth,
   canClockIn,
   canClockOut,
   canEndBreak,
@@ -24,6 +28,8 @@ const {
   initialize,
   isLoading,
   isPunching,
+  isSubmittingMonth,
+  monthSummary,
   monthRows,
   selectWorkDate,
   selectedDay,
@@ -31,6 +37,7 @@ const {
   selectedMonth,
   selectedWorkDate,
   successMessage,
+  submitMonth,
   today,
 } = useAttendancePage();
 
@@ -65,6 +72,64 @@ onBeforeMount(initialize);
         <v-alert v-if="successMessage" type="success" class="mb-4" closable>
           {{ successMessage }}
         </v-alert>
+
+        <v-card v-if="monthSummary" variant="tonal" class="mb-4">
+          <v-card-title class="d-flex align-center flex-wrap ga-3">
+            月次申請
+            <v-chip :color="getAttendanceMonthStatusColor(monthSummary.statusCode)" size="small">
+              {{ getAttendanceMonthStatusLabel(monthSummary.statusCode) }}
+            </v-chip>
+            <v-spacer />
+            <v-btn
+              v-if="canSubmitMonth"
+              color="primary"
+              prepend-icon="mdi-send"
+              :loading="isSubmittingMonth"
+              @click="submitMonth"
+            >
+              {{ monthSummary.statusCode === "REJECTED" ? "再提出" : "提出" }}
+            </v-btn>
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">総勤務</div>
+                <strong>{{ formatAttendanceMinutes(monthSummary.grossWorkMinutes) }}</strong>
+              </v-col>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">休憩</div>
+                <strong>{{ formatAttendanceMinutes(monthSummary.breakMinutes) }}</strong>
+              </v-col>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">差引勤務</div>
+                <strong>{{ formatAttendanceMinutes(monthSummary.netWorkMinutes) }}</strong>
+              </v-col>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">最終提出</div>
+                <strong>{{ formatAttendanceInstant(monthSummary.submittedAt) }}</strong>
+              </v-col>
+            </v-row>
+            <v-alert
+              v-if="monthSummary.hasIncompletePeriod"
+              type="warning"
+              density="compact"
+              class="mt-3"
+            >
+              未終了の勤務・休憩区間があるため提出できません。
+            </v-alert>
+            <v-alert
+              v-if="monthSummary.statusCode === 'REJECTED'"
+              type="warning"
+              density="compact"
+              class="mt-3"
+            >
+              差戻し理由: {{ monthSummary.reviewComment || "理由は登録されていません。" }}
+            </v-alert>
+            <div v-if="monthSummary.statusCode === 'CLOSED'" class="text-body-2 mt-3">
+              締め日時: {{ formatAttendanceInstant(monthSummary.closedAt) }}
+            </div>
+          </v-card-text>
+        </v-card>
 
         <v-row>
           <v-col cols="12" lg="7">

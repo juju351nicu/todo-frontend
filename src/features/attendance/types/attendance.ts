@@ -1,6 +1,14 @@
 /** 本人勤怠日の打刻状態。 */
 export type AttendancePunchState = "OFF_DUTY" | "WORKING" | "ON_BREAK";
 
+/** 月次勤怠の提出・審査・締め状態。 */
+export type AttendanceMonthStatus =
+  | "DRAFT"
+  | "SUBMITTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "CLOSED";
+
 /** 勤務・休憩区間を登録した業務経路。 */
 export type AttendanceEntrySource =
   | "SELF_PUNCH"
@@ -38,6 +46,48 @@ export interface AttendanceDayListResponse {
   dateFrom: string;
   dateTo: string;
   days: AttendanceDayResponse[];
+}
+
+/** 本人または管理者が参照する月次workflow状態、集計値、日別明細。 */
+export interface AttendanceMonthResponse {
+  attendanceMonthId: number | null;
+  accountId: number;
+  yearMonth: string;
+  statusCode: AttendanceMonthStatus;
+  submittedBy: number | null;
+  submittedAt: string | null;
+  reviewedBy: number | null;
+  reviewedAt: string | null;
+  reviewComment: string | null;
+  closedBy: number | null;
+  closedAt: string | null;
+  grossWorkMinutes: number;
+  breakMinutes: number;
+  netWorkMinutes: number;
+  hasIncompletePeriod: boolean;
+  version: number;
+  days: AttendanceDayResponse[];
+}
+
+/** 管理者向け月次確認一覧の1アカウント分。 */
+export interface AttendanceMonthListItem {
+  attendanceMonthId: number;
+  accountId: number;
+  loginId: string | null;
+  displayName: string;
+  yearMonth: string;
+  statusCode: AttendanceMonthStatus;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  reviewComment: string | null;
+  closedAt: string | null;
+  version: number;
+}
+
+/** 管理者向け月次確認一覧と検索対象月。 */
+export interface AttendanceMonthListResponse {
+  yearMonth: string;
+  months: AttendanceMonthListItem[];
 }
 
 /** yyyy-MMから解決した月初日と月末日。 */

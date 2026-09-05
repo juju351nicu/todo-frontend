@@ -3,6 +3,7 @@ import type {
   AttendanceDaySummary,
   AttendanceMonthDateRange,
   AttendanceMonthRow,
+  AttendanceMonthStatus,
   AttendancePunchState,
 } from "@/features/attendance/types/attendance";
 
@@ -142,6 +143,49 @@ export const getAttendancePunchStateColor = (
   state: AttendancePunchState
 ): string =>
   ({ OFF_DUTY: "default", WORKING: "success", ON_BREAK: "warning" })[state];
+
+/** 月次workflow状態を本人・管理画面共通の日本語へ変換する。 */
+export const getAttendanceMonthStatusLabel = (
+  status: AttendanceMonthStatus
+): string =>
+  ({
+    DRAFT: "下書き",
+    SUBMITTED: "提出済み",
+    APPROVED: "承認済み",
+    REJECTED: "差戻し",
+    CLOSED: "締め済み",
+  })[status];
+
+/** 月次workflow状態をVuetify chip色へ変換する。 */
+export const getAttendanceMonthStatusColor = (
+  status: AttendanceMonthStatus
+): string =>
+  ({
+    DRAFT: "default",
+    SUBMITTED: "info",
+    APPROVED: "success",
+    REJECTED: "warning",
+    CLOSED: "secondary",
+  })[status];
+
+/** APIのISO時刻をAsia/Tokyoの年月日時分へ変換する。 */
+export const formatAttendanceInstant = (instant: string | null): string => {
+  if (instant === null) {
+    return "—";
+  }
+  const date = new Date(instant);
+  return Number.isNaN(date.getTime())
+    ? "—"
+    : new Intl.DateTimeFormat("ja-JP", {
+        timeZone: TOKYO_TIME_ZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(date);
+};
 
 /** yyyy-MM-dd形式の日付を曜日付き日本語へ変換する。 */
 export const formatAttendanceDate = (workDate: string): string => {

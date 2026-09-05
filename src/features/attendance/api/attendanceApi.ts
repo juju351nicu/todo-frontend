@@ -1,6 +1,9 @@
 import type {
   AttendanceDayListResponse,
   AttendanceDayResponse,
+  AttendanceMonthListResponse,
+  AttendanceMonthResponse,
+  AttendanceMonthStatus,
   AttendancePunchAction,
 } from "@/features/attendance/types/attendance";
 import HttpClient from "@/shared/api/httpClient";
@@ -64,6 +67,22 @@ const normalizeAttendanceDay = (
   })),
 });
 
+/** 月次Responseのnullable項目と日別配列を画面用確定値へ正規化する。 */
+const normalizeAttendanceMonth = (
+  payload: AttendanceMonthResponse
+): AttendanceMonthResponse => ({
+  ...payload,
+  attendanceMonthId: payload.attendanceMonthId ?? null,
+  submittedBy: payload.submittedBy ?? null,
+  submittedAt: payload.submittedAt ?? null,
+  reviewedBy: payload.reviewedBy ?? null,
+  reviewedAt: payload.reviewedAt ?? null,
+  reviewComment: payload.reviewComment ?? null,
+  closedBy: payload.closedBy ?? null,
+  closedAt: payload.closedAt ?? null,
+  days: (payload.days ?? []).map(normalizeAttendanceDay),
+});
+
 /**
  * 指定期間に登録済みの本人勤怠日を一括取得する。
  *
@@ -125,8 +144,119 @@ const punch = async (
   );
 };
 
+/** 指定月の本人月次状態、合計、登録済み日別明細を取得する。 */
+const getMonth = async (yearMonth: string): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/months/${encodeURIComponent(yearMonth)}`
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
+/** DRAFTまたはREJECTEDの本人月次勤怠を最新versionで提出する。 */
+const submitMonth = async (
+  yearMonth: string,
+  version: number
+): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/months/${encodeURIComponent(yearMonth)}/submit`,
+    { version }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
+/** 管理対象月の永続化済み勤怠月を任意の状態で絞り込む。 */
+const getAdministrationMonths = async (
+  yearMonth: string,
+  status: AttendanceMonthStatus | null
+): Promise<AttendanceMonthListResponse> => {
+  const query = new URLSearchParams({ yearMonth });
+  if (status !== null) {
+    query.set("status", status);
+  }
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/administration/months?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as AttendanceMonthListResponse;
+  return { ...payload, months: payload.months ?? [] };
+};
+
+/** 管理対象accountの月次状態、合計、登録済み日別明細を取得する。 */
+const getAdministrationMonth = async (
+  accountId: number,
+  yearMonth: string
+): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/administration/accounts/${accountId}/months/${encodeURIComponent(yearMonth)}`
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
+/** SUBMITTED月を任意コメント付きで承認する。 */
+const approveMonth = async (
+  attendanceMonthId: number,
+  version: number,
+  reviewComment: string | null
+): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/administration/months/${attendanceMonthId}/approve`,
+    { version, reviewComment }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
+/** SUBMITTED月を必須理由付きで本人へ差し戻す。 */
+const rejectMonth = async (
+  attendanceMonthId: number,
+  version: number,
+  reason: string
+): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/administration/months/${attendanceMonthId}/reject`,
+    { version, reason }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
+/** APPROVED月を最新versionで締める。 */
+const closeMonth = async (
+  attendanceMonthId: number,
+  version: number
+): Promise<AttendanceMonthResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/administration/months/${attendanceMonthId}/close`,
+    { version }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceMonth(
+    (await response.json()) as AttendanceMonthResponse
+  );
+};
+
 export default {
+  approveMonth,
+  closeMonth,
+  getAdministrationMonth,
+  getAdministrationMonths,
   getDay,
   getDays,
+  getMonth,
   punch,
+  rejectMonth,
+  submitMonth,
 };

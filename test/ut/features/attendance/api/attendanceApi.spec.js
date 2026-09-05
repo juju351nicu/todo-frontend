@@ -117,4 +117,117 @@ describe("本人勤怠API", () => {
       expect(error).toBeInstanceOf(AttendanceApiError)
     );
   });
+
+  it("本人月次を取得しnullable項目と日別配列を正規化する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        accountId: 1,
+        yearMonth: "2026-09",
+        statusCode: "DRAFT",
+        grossWorkMinutes: 0,
+        breakMinutes: 0,
+        netWorkMinutes: 0,
+        hasIncompletePeriod: false,
+        version: 0,
+      }),
+    });
+
+    await expect(AttendanceApi.getMonth("2026-09")).resolves.toMatchObject({
+      attendanceMonthId: null,
+      submittedAt: null,
+      reviewComment: null,
+      days: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/months/2026-09"
+    );
+  });
+
+  it("管理一覧の状態絞込みをqueryへ設定する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ yearMonth: "2026-09" }),
+    });
+
+    await expect(
+      AttendanceApi.getAdministrationMonths("2026-09", "SUBMITTED")
+    ).resolves.toEqual({ yearMonth: "2026-09", months: [] });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/administration/months?yearMonth=2026-09&status=SUBMITTED"
+    );
+  });
+
+  it("本人月次提出と管理対象account詳細をAPI契約どおり呼び出す", async () => {
+    const payload = {
+      attendanceMonthId: 31,
+      accountId: 21,
+      yearMonth: "2026-09",
+      statusCode: "SUBMITTED",
+      grossWorkMinutes: 480,
+      breakMinutes: 60,
+      netWorkMinutes: 420,
+      hasIncompletePeriod: false,
+      version: 1,
+      days: [],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(payload),
+    });
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(payload),
+    });
+
+    await AttendanceApi.submitMonth("2026-09", 0);
+    await AttendanceApi.getAdministrationMonth(21, "2026-09");
+
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/months/2026-09/submit",
+      { version: 0 }
+    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/administration/accounts/21/months/2026-09"
+    );
+  });
+
+  it("承認・差戻し・締めを最新version付きPOSTへ渡す", async () => {
+    const response = {
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        attendanceMonthId: 31,
+        accountId: 1,
+        yearMonth: "2026-09",
+        statusCode: "APPROVED",
+        grossWorkMinutes: 480,
+        breakMinutes: 60,
+        netWorkMinutes: 420,
+        hasIncompletePeriod: false,
+        version: 2,
+        days: [],
+      }),
+    };
+    HttpClient.postRequest.mockResolvedValue(response);
+
+    await AttendanceApi.approveMonth(31, 1, "確認済み");
+    await AttendanceApi.rejectMonth(31, 1, "打刻を確認してください");
+    await AttendanceApi.closeMonth(31, 2);
+
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/attendance/administration/months/31/approve",
+      { version: 1, reviewComment: "確認済み" }
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/attendance/administration/months/31/reject",
+      { version: 1, reason: "打刻を確認してください" }
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      3,
+      "/api/v1/attendance/administration/months/31/close",
+      { version: 2 }
+    );
+  });
 });
