@@ -35,6 +35,15 @@ describe("Vue routes", () => {
     ]);
   });
 
+  it("本人勤怠画面をATTENDANCE_READ_OWNで保護する", () => {
+    const route = findRoute("Attendance");
+
+    expect(route.path).toBe("/attendance");
+    expect(route.meta.requiredAnyPermissions).toEqual([
+      "ATTENDANCE_READ_OWN",
+    ]);
+  });
+
   it("Project一覧・Board・WBSをBackendの専用permissionで保護する", () => {
     const projectList = findRoute("ProjectList");
     const taskBoard = findRoute("TaskBoard");

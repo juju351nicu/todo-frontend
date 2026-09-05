@@ -2,7 +2,9 @@
 
 ## 方針
 
-Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`project`、`task`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、テスト、ビルドを成功させてから次へ進む。
+Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`project`、`task`、`wbs`、
+`attendance`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、
+テスト、ビルドを成功させてから次へ進む。
 
 タイピングゲームのcomposable構成は参考にするが、業務画面では最初から細分化しない。画面の状態と操作を`useXxxPage`へまとめ、検索、ページング、フォーム等が独立して再利用できる場合だけ追加分割する。
 
@@ -204,6 +206,24 @@ Apache POI再読込、DB照合、cleanupはStage 7D-6へ分離する。
 warning 0件、error 0件だった。2 fileはBackendの手動JUnitでApache POI再読込に成功し、固定5 sheet、
 週次・月次の期間差、EVM、workload、警告、cell型、formula不在がDB集計値と一致した。fixture cleanup後の
 再inspectも0件である。これによりWBS Stage 7のFrontend実装・自動テスト・実ブラウザ回帰は完了した。
+
+2026-09-06にStage 8A-3として`src/features/attendance`を追加した。本人日・月画面は次の5責務を
+`useAttendancePage`ひとつへまとめ、画面限定状態のため勤怠専用Pinia Storeは作成しない。
+
+- 表示月の期間一覧と選択日詳細を並行取得する。
+- 未打刻日を含む月内全日を画面表示用rowへ変換する。
+- 完了済み勤務・休憩区間だけから分単位集計を作り、未終了区間を明示する。
+- 出勤・退勤・休憩開始・休憩終了の二重送信を防止する。
+- 401でSession破棄、409で最新一覧・日詳細の再取得を行う。
+
+Backendの期間一覧は勤怠日・勤務区間・休憩区間を一括取得するため、Frontendから日数分の詳細Requestを
+送らない。未打刻日はDBやAPIで仮作成せず`buildAttendanceMonthRows`が表示だけを補完する。打刻時刻、actor、
+対象accountはRequestへ含めず、Backendの確定Responseを正本にする。Router／side menuの
+`ATTENDANCE_READ_OWN`とbuttonの`ATTENDANCE_WRITE_OWN`は案内であり、最終認可はBackendへ委ねる。
+
+API client、東京日付、閏月、複数勤務区間集計、未終了区間、composable、二重送信、401、409、routeを
+Vitestで固定した。全49 test file・350件、TypeScript／Vue型検査、production buildは成功した。
+実データfixture、実browser、DB inspect、cleanupはStage 8A-4へ分離する。
 
 ## 変更時の確認
 

@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
 import {
+    ATTENDANCE_READ_PERMISSION_CODES,
     TASK_READ_PERMISSION_CODES,
     TASK_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
@@ -35,6 +36,13 @@ const links = computed<NavigationLink[]>(() => {
         { icon: "mdi-account", text: "アカウント", url: "/member/memberList" },
         { icon: "mdi-account-cancel", text: "退会", url: `/member/cancel/${userStore.memberId}` },
     ];
+    if (userStore.hasAnyPermission(ATTENDANCE_READ_PERMISSION_CODES)) {
+        values.unshift({
+            icon: "mdi-clock-outline",
+            text: "勤怠",
+            url: "/attendance",
+        });
+    }
     if (userStore.hasPermission("PROJECT_READ")) {
         values.unshift({
             icon: "mdi-view-dashboard-outline",

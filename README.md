@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -70,6 +70,14 @@ EVMはactive baselineと指定基準日からBackendが算出したBAC、PV、EV
 稼働日calendarは平日480分・土日0分を曜日既定値とし、Project共通例外、Project member固有例外の順で上書きした有効値を表示します。Project共通例外はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が取得時点version付きで登録・更新・削除します。Frontendの操作表示は案内であり、最終認可とProject状態・同日重複・楽観ロックはBackendが判定します。現段階ではcalendar設定画面までを接続し、workloadの稼働可能時間・過配賦判定への反映は次の変更単位とします。
 
 参照専用GanttはMIT Licenseの`dhtmlx-gantt` Community 10を使用し、約622KBのlibrary codeをGantt選択時だけ遅延読み込みます。予定bar・依存線に加えてtooltipへ予定期間と実績期間を表示します。Gantt上の直接編集・link作成、lagによる自動日程計算は後続工程へ分離します。
+
+本人勤怠は`/attendance`で開き、`ATTENDANCE_READ_OWN`を持つ利用者だけをRouterとside menuで案内します。
+月一覧は期間APIを1回だけ呼び、APIが返す登録済み勤怠と月内全日を結合します。選択日には複数の勤務・休憩区間と
+確定済みの勤務・休憩・差引時間を表示し、未終了区間は合計へ含めず「集計中」と案内します。
+`ATTENDANCE_WRITE_OWN`を持つ利用者は出勤・退勤・休憩開始・休憩終了を実行できます。Client時刻は送信せず、
+打刻中は二重送信を防ぎます。成功時はBackendが返す勤務日へ同期し、409時は状態を推測せず月一覧と日詳細を
+再取得します。49 test file・350 Vitest、TypeScript／Vue型検査、production buildは成功しています。
+専用fixtureによる実ブラウザ・DB回帰はStage 8A-4で実施します。
 
 ## 検証
 

@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from "vue-router";
 
 import {
+  ATTENDANCE_READ_PERMISSION_CODES,
   TASK_READ_PERMISSION_CODES,
   TASK_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
@@ -14,6 +15,15 @@ export const routes: RouteRecordRaw[] = [
     path: "/",
     name: "Login",
     component: () => import("@/features/auth/views/LoginPage.vue"),
+  },
+  {
+    path: "/attendance",
+    name: "Attendance",
+    component: () => import("@/features/attendance/views/AttendancePage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ATTENDANCE_READ_PERMISSION_CODES,
+    },
   },
   {
     path: "/administration/accounts",

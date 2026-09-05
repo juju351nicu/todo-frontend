@@ -5,7 +5,11 @@ export interface LoginRequest {
 }
 
 /** Backendで定義している初期ロールコード。 */
-export type RoleCode = "SYSTEM_ADMIN" | "READ_ONLY_ADMIN" | "USER";
+export type RoleCode =
+  | "SYSTEM_ADMIN"
+  | "READ_ONLY_ADMIN"
+  | "ATTENDANCE_MANAGER"
+  | "USER";
 
 /** Backendの認可テーブルで管理するpermissionコード。 */
 export type PermissionCode =
@@ -25,7 +29,24 @@ export type PermissionCode =
   | "TASK_READ_ALL"
   | "TASK_WRITE_ALL"
   | "TASK_READ_OWN"
-  | "TASK_WRITE_OWN";
+  | "TASK_WRITE_OWN"
+  | "ATTENDANCE_READ_OWN"
+  | "ATTENDANCE_WRITE_OWN"
+  | "ATTENDANCE_READ_ALL"
+  | "ATTENDANCE_REVIEW"
+  | "ATTENDANCE_CLOSE"
+  | "ATTENDANCE_EXPORT"
+  | "ATTENDANCE_AUDIT_READ";
+
+/** 本人勤怠の日・月表示に必要なpermission。 */
+export const ATTENDANCE_READ_PERMISSION_CODES = [
+  "ATTENDANCE_READ_OWN",
+] as const satisfies readonly PermissionCode[];
+
+/** 本人の出退勤・休憩打刻に必要なpermission。 */
+export const ATTENDANCE_WRITE_PERMISSION_CODES = [
+  "ATTENDANCE_WRITE_OWN",
+] as const satisfies readonly PermissionCode[];
 
 /** Todo一覧・詳細・カレンダーのいずれかを参照できるpermission。 */
 export const TASK_READ_PERMISSION_CODES = [
