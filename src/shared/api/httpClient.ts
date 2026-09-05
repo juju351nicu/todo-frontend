@@ -11,6 +11,7 @@ type HttpMethod = (typeof METHOD)[keyof typeof METHOD];
 
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
+const JSON_MEDIA_TYPE = "application/json";
 const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
   METHOD.POST,
   METHOD.PUT,
@@ -85,16 +86,18 @@ const clearCsrfToken = (): void => {
  * @param uri Backend APIの相対path
  * @param method HTTP method
  * @param requestData JSON body。GETまたはbodyなしの場合はnull
+ * @param accept Responseとして受け取るmedia type
  * @returns BackendのResponse
  */
 const request = async <TRequest = unknown>(
   uri: string,
   method: HttpMethod,
-  requestData: TRequest | null = null
+  requestData: TRequest | null = null,
+  accept = JSON_MEDIA_TYPE
 ): Promise<Response> => {
   const headers = new Headers({
-    Accept: "application/json",
-    "Content-Type": "application/json",
+    Accept: accept,
+    "Content-Type": JSON_MEDIA_TYPE,
   });
   if (MUTATING_METHODS.has(method)) {
     headers.set(CSRF_HEADER_NAME, await ensureCsrfToken());
@@ -111,8 +114,12 @@ const request = async <TRequest = unknown>(
   return fetch(apiUrl(uri), options);
 };
 
-/** Session Cookie付きGET Requestを送信する。 */
-const getRequest = (uri: string): Promise<Response> => request(uri, METHOD.GET);
+/**
+ * Session Cookie付きGET Requestを送信する。
+ * JSON以外をdownloadするAPIはacceptへ期待するmedia typeを明示する。
+ */
+const getRequest = (uri: string, accept = JSON_MEDIA_TYPE): Promise<Response> =>
+  request(uri, METHOD.GET, null, accept);
 
 /** Session Cookie・CSRF token付きPOST Requestを送信する。 */
 const postRequest = <TRequest = unknown>(

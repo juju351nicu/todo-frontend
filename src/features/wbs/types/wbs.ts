@@ -708,6 +708,17 @@ export interface EarnedValueResponse {
   tasks: EarnedValueTask[];
 }
 
+/** WBS Excel帳票の集計期間種別。Backendのexport pathと一致する。 */
+export type WbsReportType = "weekly" | "monthly";
+
+/** WBS Excel download APIから受け取った保存前のbinary file。 */
+export interface WbsReportDownload {
+  /** `.xlsx`形式のbinary body。 */
+  content: Blob;
+  /** Content-Dispositionから検証済みのfile名、またはFrontendの安定fallback名。 */
+  fileName: string;
+}
+
 /** WBS Task編集Dialogが保持する、Backend型へ変換する前の入力値。 */
 export interface WbsTaskEditForm {
   /** 親Task ID。最上位へ移動する場合はnull。 */

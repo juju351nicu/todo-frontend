@@ -103,15 +103,16 @@ src/
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM API
-- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
+- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 実績期間を含む編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化とnullableな実績期間を含む表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間・予定実績tooltip・読取り専用依存線への変換
 - `src/features/wbs/utils/workingCalendar.ts`: calendar期間・対象変換、例外Form、主要制約検証、登録更新Request、表示名変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、baseline、EVM、409再取得、認証エラー、Board遷移
+- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、baseline、EVM、Excel帳票、409再取得、認証エラー、Board遷移
 - `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
+- `src/features/wbs/components/WbsReportExportCard.vue`: EVMと共有する基準日、週次／月次Excel download、処理中・error表示
 - `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形
 - `src/features/wbs/components/WbsDependencyCreateDialog.vue`: Finish-to-Start依存関係を追加する入力Dialog
 - `src/features/wbs/components/WbsTaskEditDialog.vue`: 階層・Task種別・予定・進捗・実績期間を更新するDialog
@@ -121,7 +122,7 @@ src/
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
-- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar・baseline・EVM入口画面
+- `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar・baseline・EVM・Excel帳票入口画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -185,6 +186,18 @@ EVM APIは警告・Task配列の欠落をAPI境界で空配列へ正規化する
 active baselineなしの409、入力エラー、接続失敗はEVM card内へ表示する。TypeScript／Vue型検査、46 test file・
 322 Vitest、production buildが成功している。Stage 7C完了には専用fixtureによる実ブラウザ、DB inspect、cleanup、
 0件再inspectが残る。
+
+2026-09-05にStage 7D-5の週次／月次Excel downloadを同じ`useWbsPage`へ追加した。帳票cardはEVMの
+`earnedValueStatusDate`を共有し、APIへ`.xlsx`の`Accept`と`credentials: 'include'`を指定する。参照専用GETのため
+CSRF headerは付けない。BackendがCORSで公開する`Content-Disposition`は安全なASCII `.xlsx`名だけを採用し、欠落・不正時は
+Project・期間・基準日から安定fallback名を作る。
+
+download中は週次・月次buttonを両方無効化する。Blob URLは一時anchorのclick後に必ずrevokeし、Blob、URL、
+Session情報をPinia・localStorage・sessionStorageへ保存しない。401はSession破棄とLogin遷移、403、404、409、
+入力不正、接続失敗は帳票card内へ表示する。API・composable Vitestでbinary request、file name、二重送信防止、
+URL解放、401・409を固定した。全46 test file・332 Vitest、TypeScript／Vue型検査、production buildは
+すべて成功した。実browser download、
+Apache POI再読込、DB照合、cleanupはStage 7D-6へ分離する。
 
 ## 変更時の確認
 

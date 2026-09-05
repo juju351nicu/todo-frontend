@@ -36,6 +36,8 @@ import type {
   WbsBaselineDetailResponse,
   WbsBaselineListResponse,
   WbsBaselineSummary,
+  WbsReportDownload,
+  WbsReportType,
   WbsResponse,
   WbsTask,
   WbsTaskEditForm,
@@ -95,6 +97,9 @@ export const useWbsPage = () => {
   const baselineErrorMessages = ref<string[]>([]);
   const baselineList = ref<WbsBaselineListResponse | null>(null);
   const baselineSuccessMessage = ref("");
+  const exportingReportType = ref<WbsReportType | null>(null);
+  const reportExportErrorMessages = ref<string[]>([]);
+  const reportExportSuccessMessage = ref("");
   const dependencyList = ref<TaskDependencyListResponse | null>(null);
   const dependencyPendingDelete = ref<TaskDependency | null>(null);
   const editingEffortPlan = ref<TaskEffortPlan | null>(null);
@@ -395,6 +400,8 @@ export const useWbsPage = () => {
     baselineEditorErrorMessages.value = [];
     baselineErrorMessages.value = [];
     baselineSuccessMessage.value = "";
+    reportExportErrorMessages.value = [];
+    reportExportSuccessMessage.value = "";
     if (projectId.value === null) {
       project.value = null;
       wbs.value = null;
@@ -500,6 +507,103 @@ export const useWbsPage = () => {
       fieldMessages.length > 0
         ? fieldMessages
         : ["EVMを取得できませんでした。"];
+  };
+
+  /**
+   * Backendから受け取ったExcel Blobをbrowserの一時URLで保存し、使用後に必ず解放する。
+   * 一時URLやbinaryをStore・localStorageへ残さず、実行中のdownloadだけに閉じ込める。
+   */
+  const saveWbsReportDownload = (file: WbsReportDownload): void => {
+    const objectUrl = URL.createObjectURL(file.content);
+    const anchor = document.createElement("a");
+    try {
+      anchor.href = objectUrl;
+      anchor.download = file.fileName;
+      anchor.hidden = true;
+      document.body.appendChild(anchor);
+      anchor.click();
+    } finally {
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  /**
+   * 共通基準日を検証し、週次または月次WBS Excel帳票を1回だけdownloadする。
+   *
+   * @param reportType 週次または月次の帳票期間
+   * @param statusDate EVMと帳票期間に使用するyyyy-MM-dd形式の基準日
+   */
+  const downloadWbsReport = async (
+    reportType: WbsReportType,
+    statusDate: string
+  ): Promise<void> => {
+    if (projectId.value === null || exportingReportType.value !== null) {
+      return;
+    }
+    if (validateEarnedValueStatusDate(statusDate).length > 0) {
+      reportExportErrorMessages.value = [
+        "Excel帳票の基準日を入力してください。",
+      ];
+      return;
+    }
+
+    exportingReportType.value = reportType;
+    earnedValueStatusDate.value = statusDate;
+    reportExportErrorMessages.value = [];
+    reportExportSuccessMessage.value = "";
+    try {
+      const file = await WbsApi.downloadWbsReport(
+        projectId.value,
+        reportType,
+        statusDate
+      );
+      saveWbsReportDownload(file);
+      reportExportSuccessMessage.value = `${reportType === "weekly" ? "週次" : "月次"}Excel帳票をダウンロードしました。`;
+    } catch (error: unknown) {
+      await handleWbsReportDownloadError(error);
+    } finally {
+      exportingReportType.value = null;
+    }
+  };
+
+  /** Excel download APIのstatusを帳票cardの案内またはSession動作へ変換する。 */
+  const handleWbsReportDownloadError = async (
+    error: unknown
+  ): Promise<void> => {
+    if (!(error instanceof WbsApiError)) {
+      reportExportErrorMessages.value = ["Backendへ接続できませんでした。"];
+      return;
+    }
+    if (error.status === 401) {
+      userStore.clearSession();
+      await router.push({ name: "Login" });
+      return;
+    }
+    if (error.status === 403) {
+      reportExportErrorMessages.value = [
+        "Excel帳票を出力するpermissionがありません。",
+      ];
+      return;
+    }
+    if (error.status === 404) {
+      reportExportErrorMessages.value = [
+        "Projectが見つからないか、このProjectへ参加していません。",
+      ];
+      return;
+    }
+    const fieldMessages = getFieldErrorMessages(error);
+    if (error.status === 409) {
+      reportExportErrorMessages.value =
+        fieldMessages.length > 0
+          ? fieldMessages
+          : ["Excel帳票を出力するにはactive baselineが必要です。"];
+      return;
+    }
+    reportExportErrorMessages.value =
+      fieldMessages.length > 0
+        ? fieldMessages
+        : ["Excel帳票をダウンロードできませんでした。"];
   };
 
   /** WBS APIのstatusを、認証状態を含む参照画面の案内へ変換する。 */
@@ -2398,6 +2502,7 @@ export const useWbsPage = () => {
     dependencyPendingDeleteRow,
     dependencyRows,
     dependencyTaskOptions,
+    downloadWbsReport,
     earnedValue,
     earnedValueErrorMessages,
     earnedValueStatusDate,
@@ -2413,6 +2518,7 @@ export const useWbsPage = () => {
     effortPlanTask,
     editorErrorMessages,
     errorMessages,
+    exportingReportType,
     initialize,
     isDeletingDependency,
     isDeletingEffortPlan,
@@ -2454,6 +2560,8 @@ export const useWbsPage = () => {
     requestEffortPlanDelete,
     requestWorkLogDelete,
     requestWorkingDayDelete,
+    reportExportErrorMessages,
+    reportExportSuccessMessage,
     rows,
     saveDependency,
     saveWbsBaseline,

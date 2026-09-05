@@ -21,6 +21,22 @@ describe("REST client", () => {
     expect(options.headers.get("X-AUTH-TOKEN")).toBeNull();
   });
 
+  it("binary GETでは指定したmedia typeをAcceptへ設定してSession Cookieを送る", async () => {
+    fetch.mockResolvedValue({ ok: true, status: 200 });
+
+    await Fetcher.getRequest(
+      "/api/v1/projects/7/wbs/exports/weekly?statusDate=2026-09-05",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    const [, options] = fetch.mock.calls[0];
+    expect(options.credentials).toBe("include");
+    expect(options.headers.get("Accept")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    expect(options.headers.get("X-XSRF-TOKEN")).toBeNull();
+  });
+
   it("POST前にCSRF Cookieを取得してX-XSRF-TOKENヘッダーへ設定する", async () => {
     fetch
       .mockImplementationOnce(async () => {

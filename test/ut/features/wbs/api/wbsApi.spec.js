@@ -713,4 +713,61 @@ describe("WBS API", () => {
       tasks: [],
     });
   });
+
+  it.each([
+    ["weekly", "work-management-wbs-weekly-project-7-2026-09-05.xlsx"],
+    ["monthly", "work-management-wbs-monthly-project-7-2026-09-05.xlsx"],
+  ])("%s Excelをbinary Accept付きで取得してheaderのfile名を返す", async (reportType, fileName) => {
+    const content = new Blob(["xlsx-binary"]);
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      }),
+      blob: vi.fn().mockResolvedValue(content),
+    });
+
+    await expect(
+      WbsApi.downloadWbsReport(7, reportType, "2026-09-05")
+    ).resolves.toEqual({ content, fileName });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      `/api/v1/projects/7/wbs/exports/${reportType}?statusDate=2026-09-05`,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+  });
+
+  it("安全でないContent-DispositionではProjectと基準日のfallback名を使う", async () => {
+    const content = new Blob(["xlsx-binary"]);
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        "Content-Disposition": 'attachment; filename="../outside.xlsx"',
+      }),
+      blob: vi.fn().mockResolvedValue(content),
+    });
+
+    await expect(
+      WbsApi.downloadWbsReport(7, "weekly", "2026-09-05")
+    ).resolves.toEqual({
+      content,
+      fileName: "work-management-wbs-weekly-project-7-2026-09-05.xlsx",
+    });
+  });
+
+  it("Excel downloadの409本文をstatus付きWbsApiErrorへ保持する", async () => {
+    const errorResponse = {
+      fieldErrors: [
+        { field: "baseline", message: "active baselineが必要です。" },
+      ],
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: vi.fn().mockResolvedValue(errorResponse),
+    });
+
+    await expect(
+      WbsApi.downloadWbsReport(7, "monthly", "2026-09-05")
+    ).rejects.toMatchObject({ status: 409, errorResponse });
+  });
 });

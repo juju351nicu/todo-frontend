@@ -18,12 +18,18 @@ import type {
   WbsBaselineDetailResponse,
   WbsBaselineListResponse,
   WbsBaselineSummary,
+  WbsReportDownload,
+  WbsReportType,
   WbsResponse,
   WbsTaskUpdateRequest,
 } from "@/features/wbs/types/wbs";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+
+const XLSX_CONTENT_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const SAFE_XLSX_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+\.xlsx$/;
 
 /** WBS APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class WbsApiError extends Error {
@@ -55,6 +61,23 @@ const ensureSuccess = async (response: Response): Promise<void> => {
   if (!response.ok) {
     throw new WbsApiError(response.status, await readErrorResponse(response));
   }
+};
+
+/**
+ * Content-DispositionのASCII filenameをpathとして解釈できない安全なxlsx名へ制限する。
+ * Backend headerが欠落・破損している場合は、Project・期間・基準日から決まるfallback名を使用する。
+ */
+const resolveWbsReportFileName = (
+  contentDisposition: string | null,
+  projectId: number,
+  reportType: WbsReportType,
+  statusDate: string
+): string => {
+  const matchedFileName = contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  if (matchedFileName && SAFE_XLSX_FILE_NAME_PATTERN.test(matchedFileName)) {
+    return matchedFileName;
+  }
+  return `work-management-wbs-${reportType}-project-${projectId}-${statusDate}.xlsx`;
 };
 
 /**
@@ -216,6 +239,38 @@ const getEarnedValueMetrics = async (
   return normalizeEarnedValueResponse(
     (await response.json()) as EarnedValueResponse
   );
+};
+
+/**
+ * 指定基準日の週次または月次WBS Excel帳票をSession Cookie付きで取得する。
+ * binaryはJSON変換せずBlobとして返し、画面側が一時URLの生成と解放を担当する。
+ *
+ * @param projectId 帳票対象Project ID
+ * @param reportType 週次または月次の期間種別
+ * @param statusDate EVM計算と帳票抽出に使用するyyyy-MM-dd形式の基準日
+ * @returns `.xlsx` Blobと安全なdownload file名
+ * @throws WbsApiError 入力不正、認証・認可不足、対象なし、active baselineなしまたは生成失敗の場合
+ */
+const downloadWbsReport = async (
+  projectId: number,
+  reportType: WbsReportType,
+  statusDate: string
+): Promise<WbsReportDownload> => {
+  const query = new URLSearchParams({ statusDate });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/exports/${reportType}?${query.toString()}`,
+    XLSX_CONTENT_TYPE
+  );
+  await ensureSuccess(response);
+  return {
+    content: await response.blob(),
+    fileName: resolveWbsReportFileName(
+      response.headers.get("Content-Disposition"),
+      projectId,
+      reportType,
+      statusDate
+    ),
+  };
 };
 
 /**
@@ -719,6 +774,7 @@ export default {
   deleteTaskWorkLog,
   deleteMemberWorkingDay,
   deleteProjectWorkingDay,
+  downloadWbsReport,
   getTaskDependencies,
   getEarnedValueMetrics,
   getTaskEffortPlans,

@@ -11,6 +11,7 @@ import WbsBaselineCard from "@/features/wbs/components/WbsBaselineCard.vue";
 import WbsBaselineCreateDialog from "@/features/wbs/components/WbsBaselineCreateDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsEarnedValueCard from "@/features/wbs/components/WbsEarnedValueCard.vue";
+import WbsReportExportCard from "@/features/wbs/components/WbsReportExportCard.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
@@ -71,6 +72,7 @@ const {
   dependencyPendingDeleteRow,
   dependencyRows,
   dependencyTaskOptions,
+  downloadWbsReport,
   earnedValue,
   earnedValueErrorMessages,
   earnedValueStatusDate,
@@ -87,6 +89,7 @@ const {
   editWorkLog,
   editorErrorMessages,
   errorMessages,
+  exportingReportType,
   initialize,
   isDeletingDependency,
   isDeletingEffortPlan,
@@ -126,6 +129,8 @@ const {
   requestEffortPlanDelete,
   requestWorkLogDelete,
   requestWorkingDayDelete,
+  reportExportErrorMessages,
+  reportExportSuccessMessage,
   rows,
   saveDependency,
   saveWbsBaseline,
@@ -435,6 +440,15 @@ onBeforeMount(initialize);
       :is-loading="isLoadingEarnedValue"
       :error-messages="earnedValueErrorMessages"
       @load="loadEarnedValueMetrics"
+    />
+
+    <WbsReportExportCard
+      v-if="wbs"
+      :status-date="earnedValueStatusDate"
+      :exporting-report-type="exportingReportType"
+      :error-messages="reportExportErrorMessages"
+      :success-message="reportExportSuccessMessage"
+      @download="downloadWbsReport"
     />
 
     <WorkingCalendarCard

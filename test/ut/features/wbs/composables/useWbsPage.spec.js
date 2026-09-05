@@ -14,6 +14,11 @@ const mocks = vi.hoisted(() => ({
     memberId: 2,
   },
   roles: new Set(),
+  createObjectUrl: vi.fn(() => "blob:wbs-report"),
+  revokeObjectUrl: vi.fn(),
+  clickDownloadAnchor: vi.fn(),
+  appendDownloadAnchor: vi.fn(),
+  removeDownloadAnchor: vi.fn(),
   projectApi: {
     getProject: vi.fn(),
   },
@@ -30,6 +35,7 @@ const mocks = vi.hoisted(() => ({
     deleteTaskWorkLog: vi.fn(),
     deleteMemberWorkingDay: vi.fn(),
     deleteProjectWorkingDay: vi.fn(),
+    downloadWbsReport: vi.fn(),
     getTaskDependencies: vi.fn(),
     getEarnedValueMetrics: vi.fn(),
     getTaskEffortPlans: vi.fn(),
@@ -473,6 +479,10 @@ describe("useWbsPage", () => {
     mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
     mocks.wbsApi.deleteMemberWorkingDay.mockResolvedValue(undefined);
     mocks.wbsApi.deleteProjectWorkingDay.mockResolvedValue(undefined);
+    mocks.wbsApi.downloadWbsReport.mockResolvedValue({
+      content: new Blob(["xlsx-binary"]),
+      fileName: "work-management-wbs-weekly-project-7-2026-09-05.xlsx",
+    });
     mocks.wbsApi.getTaskDependencies.mockResolvedValue(
       structuredClone(dependencyList)
     );
@@ -511,6 +521,24 @@ describe("useWbsPage", () => {
     mocks.wbsApi.updateProjectWorkingDay.mockResolvedValue(
       structuredClone(workingCalendarResponse)
     );
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: mocks.createObjectUrl,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: mocks.revokeObjectUrl,
+    });
+    vi.stubGlobal("document", {
+      body: { appendChild: mocks.appendDownloadAnchor },
+      createElement: vi.fn(() => ({
+        click: mocks.clickDownloadAnchor,
+        download: "",
+        hidden: false,
+        href: "",
+        remove: mocks.removeDownloadAnchor,
+      })),
+    });
   });
 
   it("初期表示でProject WBSと依存関係を取得して階層行と種別件数を作る", async () => {
@@ -1765,5 +1793,97 @@ describe("useWbsPage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledTimes(1);
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(page.earnedValue.value).toBeNull();
+  });
+
+  it("指定基準日の週次Excelを1回保存して一時Blob URLを解放する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("weekly", "2026-09-05");
+
+    expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledWith(
+      7,
+      "weekly",
+      "2026-09-05"
+    );
+    expect(mocks.createObjectUrl).toHaveBeenCalledOnce();
+    expect(mocks.appendDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.clickDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.removeDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.revokeObjectUrl).toHaveBeenCalledWith("blob:wbs-report");
+    expect(page.earnedValueStatusDate.value).toBe("2026-09-05");
+    expect(page.reportExportSuccessMessage.value).toBe(
+      "週次Excel帳票をダウンロードしました。"
+    );
+    expect(page.exportingReportType.value).toBeNull();
+  });
+
+  it("不正なExcel基準日ではAPIを呼ばず入力理由を表示する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("monthly", "2026-02-29");
+
+    expect(mocks.wbsApi.downloadWbsReport).not.toHaveBeenCalled();
+    expect(page.reportExportErrorMessages.value).toEqual([
+      "Excel帳票の基準日を入力してください。",
+    ]);
+  });
+
+  it("Excel生成中の再操作は無視して二重downloadを防ぐ", async () => {
+    let resolveDownload;
+    mocks.wbsApi.downloadWbsReport.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDownload = resolve;
+        })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    const firstDownload = page.downloadWbsReport("monthly", "2026-09-05");
+    await page.downloadWbsReport("weekly", "2026-09-05");
+
+    expect(page.exportingReportType.value).toBe("monthly");
+    expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledTimes(1);
+    resolveDownload({
+      content: new Blob(["xlsx-binary"]),
+      fileName: "work-management-wbs-monthly-project-7-2026-09-05.xlsx",
+    });
+    await firstDownload;
+    expect(page.exportingReportType.value).toBeNull();
+  });
+
+  it("Excel downloadの409ではBackend理由を表示して保存処理を行わない", async () => {
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          { field: "baseline", message: "active baselineが必要です。" },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("weekly", "2026-09-05");
+
+    expect(page.reportExportErrorMessages.value).toEqual([
+      "active baselineが必要です。",
+    ]);
+    expect(mocks.createObjectUrl).not.toHaveBeenCalled();
+  });
+
+  it("Excel downloadの401ではSessionを破棄してログイン画面へ遷移する", async () => {
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
+      new WbsApiError(401, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("monthly", "2026-09-05");
+
+    expect(mocks.userStore.clearSession).toHaveBeenCalledTimes(1);
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(mocks.createObjectUrl).not.toHaveBeenCalled();
   });
 });

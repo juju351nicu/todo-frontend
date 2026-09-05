@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -60,6 +60,8 @@ Project Boardの設定Dialogでは、Project名・説明・archiveと、member�
 WBSは`/projects/{projectId}/wbs`で開き、Backendのflat listを`parentTaskId`で階層化します。Boardと同じTask IDを使用し、画面内へ別のTask状態を保存しません。`TASK_UPDATE`を持つ利用者は階層表から親、Task種別、WBSコード、予定日、予定工数、進捗率、nullableな実績開始日・終了日をversion付きで更新できます。未着手は実績日なし、作業中は開始日だけ、完了期間は開始日と終了日で表示し、実績日の保存では進捗率やBoard列を自動変更しません。
 
 EVMはactive baselineと指定基準日からBackendが算出したBAC、PV、EV、AC、SV、CV、SPI、CPIを表示します。Frontendは計算式や丸めを再実装せず、`GET /api/v1/projects/{projectId}/wbs/metrics?statusDate=YYYY-MM-DD`のResponseを正本にします。active baselineを作成・切替した場合は古いEVM結果を破棄し、利用者が新しい基準日で再集計します。
+
+週次／月次ExcelはEVMと同じ基準日を使用し、WBS画面から`.xlsx`を直接ダウンロードします。実行中は両方のボタンを無効化し、BackendがCORSで公開する安全な`Content-Disposition` file nameを優先します。binaryと一時URLはStoreやWeb Storageへ保存せず、Blob URLは処理後に必ず解放します。認証は既存の`JSESSIONID`を使用し、参照専用GETへCSRF headerは付けません。
 
 通常Taskの日別予定・実績Dialogでは、1日・Project member単位の分工数を取得時点versionで登録・更新・削除します。Project workloadは指定期間の日付・担当者単位で予定、実績、差分を表示します。通常memberとOWNER・MANAGER・SYSTEM_ADMINの操作範囲は画面でも案内しますが、最終認可はBackendへ委ねます。Task依存関係はFinish-to-Startと0以上の分単位待ち時間を追加でき、409競合では古い編集対象を破棄して最新一覧を再取得します。
 
