@@ -235,6 +235,12 @@ Routerとside menuは管理画面を`ATTENDANCE_READ_ALL`で案内する。承�
 clientがSession CookieとCSRFを付け、取得時点versionを送る。成功Responseを確定状態とし、409時は古いversionを
 残さず詳細と一覧を再取得する。API path・body、差戻し理由必須、二重送信、401、409、RouterをVitestで固定した。
 
+同日の専用3 accountによる実ブラウザ回帰では、DRAFT version 0から提出、理由付き差戻し、再提出、
+コメント付き承認、締めを順に実行してCLOSED version 5まで確認した。確認者には締め操作を表示せず、本人画面へ
+差戻し理由を表示できた。DB監査5件は画面操作順・actor・versionと一致し、console warning・errorは0件、
+cleanup後の専用6 countもすべて0件だった。これによりStage 8B-2は完了し、次のFrontend作業はStage 8C-2の
+締め後修正申請画面である。先にStage 8C-1のBackend契約とAPIを確定する。
+
 ## 変更時の確認
 
 ```bash

@@ -129,6 +129,22 @@ Backendの`attendance-month`専用fixtureを使用し、通常accountや通常�
 - DB監査が提出・差戻し・再提出・承認・締めの順で5件となり、cleanup後の専用データが0件になる。
 - 一連の操作でブラウザの`warning`、`error`を増やさない。
 
+## 2026-09-06 勤怠月次workflow実施結果
+
+Backendの専用fixtureを二度投入し、本人`attendance-month-browser`、確認者`attendance-month-reviewer`、
+締め担当`attendance-month-closer`の3 accountで確認した。
+
+- 本人画面はDRAFT、差引8時間を表示し、提出後にSUBMITTED version 1となった。
+- 確認者画面は提出済み1件を表示し、空の差戻し理由を送信前に拒否した。
+- 理由`退勤時刻を確認してください`でREJECTED version 2となり、本人画面へ同じ理由を表示した。
+- 本人の再提出でversion 3、確認者のコメント`確認済み`付き承認でAPPROVED version 4となった。
+- 確認者には締めbuttonが表示されず、締め担当だけがCLOSED version 5へ遷移でき、再読込後も維持した。
+- DB監査は提出、差戻し、再提出、承認、締めの順で5件となり、画面状態・actor・versionと一致した。
+- 一連の操作中のconsoleはwarning 0件、error 0件だった。
+- cleanup後の専用account、月、日、勤務、休憩、月次監査はすべて0件となった。
+
+以上によりStage 8B-2のFrontend・実ブラウザ・DB・cleanup回帰を完了した。
+
 ## 2026-08-11 実施結果
 
 すべての確認項目が正常だった。

@@ -81,7 +81,9 @@ EVMはactive baselineと指定基準日からBackendが算出したBAC、PV、EV
 Stage 8B-2では本人画面へ月次状態、月合計、提出・再提出、差戻し理由を追加しました。管理者は
 `/attendance/administration`で対象月・状態を検索し、選択accountの詳細を確認して承認・理由付き差戻し・締めを
 実行します。確認者と締め担当のpermissionを分離し、更新中の二重送信を防止し、409時は最新詳細と一覧を再取得します。
-全50 test file・363 Vitest、TypeScript／Vue型検査、production buildの成功後、専用3 accountによる実ブラウザ・DB回帰を行います。
+全50 test file・363 Vitest、TypeScript／Vue型検査、production buildが成功しました。専用3 accountによる
+実ブラウザ・DB回帰では提出、理由付き差戻し、再提出、コメント付き承認、締めをCLOSED version 5まで確認し、
+確認者の締め操作非表示、監査5件、console warning・error 0件、cleanup後0件も確認しました。これによりStage 8B-2は完了です。
 
 ## 検証
 
