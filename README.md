@@ -94,6 +94,13 @@ Stage 8C-2では本人画面へAPPROVED／CLOSED月の全置換修正申請、�
 夜勤を含む期間境界、permission表示、競合、二重送信も含め、全51 test file・375 Vitest、TypeScript／Vue型検査、
 production buildが成功しました。これによりStage 8C-2は完了です。
 
+Stage 8E-2では管理者向け勤怠月次確認画面へ、選択月の全アカウント・月内全日をCSV出力する導線を追加しました。
+`ATTENDANCE_EXPORT`を持つ利用者だけに「月次CSV」を表示し、最終認可はBackendへ委ねます。CSVは既存Session Cookieを
+使う参照専用GETで取得するためCSRF headerを付けません。Backendの安全なASCII file名だけを採用し、不正または
+欠落時は`work-management-attendance-YYYY-MM.csv`へ戻します。Blob URLは保存開始後に必ず解放し、生成中の再操作、
+401、403、入力不正、接続失敗を画面で扱います。実ブラウザdownloadと手動CSV再読込は専用fixtureで確認します。
+自動検証は全51 test file・382 Vitest、TypeScript／Vue型検査、production buildまで成功しています。
+
 ## 検証
 
 ```bash

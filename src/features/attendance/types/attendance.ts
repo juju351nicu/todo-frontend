@@ -183,6 +183,14 @@ export interface AttendanceMonthListResponse {
   months: AttendanceMonthListItem[];
 }
 
+/** 管理者向け月次勤怠CSV APIから受け取った保存前のbinary file。 */
+export interface AttendanceMonthlyExportDownload {
+  /** UTF-8 BOM付きCSVのbinary body。 */
+  content: Blob;
+  /** Content-Dispositionから検証済みのfile名、またはFrontendの安定fallback名。 */
+  fileName: string;
+}
+
 /** yyyy-MMから解決した月初日と月末日。 */
 export interface AttendanceMonthDateRange {
   dateFrom: string;

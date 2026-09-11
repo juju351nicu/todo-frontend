@@ -245,6 +245,45 @@ describe("本人勤怠API", () => {
     );
   });
 
+  it("管理者向け月次CSVを指定月とCSV Accept headerで取得する", async () => {
+    const content = new Blob(["CSV"]);
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        "Content-Disposition":
+          'attachment; filename="work-management-attendance-2026-09.csv"',
+      }),
+      blob: vi.fn().mockResolvedValue(content),
+    });
+
+    await expect(
+      AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")
+    ).resolves.toEqual({
+      content,
+      fileName: "work-management-attendance-2026-09.csv",
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/administration/exports/monthly?yearMonth=2026-09",
+      "text/csv"
+    );
+  });
+
+  it("月次CSVの応答file名が安全でない場合はFrontend既定名へ置換する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      headers: new Headers({
+        "Content-Disposition": 'attachment; filename="../outside.csv"',
+      }),
+      blob: vi.fn().mockResolvedValue(new Blob(["CSV"])),
+    });
+
+    await expect(
+      AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")
+    ).resolves.toMatchObject({
+      fileName: "work-management-attendance-2026-09.csv",
+    });
+  });
+
   it("本人月次提出と管理対象account詳細をAPI契約どおり呼び出す", async () => {
     const payload = {
       attendanceMonthId: 31,

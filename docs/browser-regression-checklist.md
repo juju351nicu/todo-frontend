@@ -278,3 +278,22 @@ fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を�
 
 2026-09-12に全項目を完了した。実ブラウザで検出した`datetime-local`の秒省略は修正・再実行済みであり、
 詳細な状態、監査順、cleanup結果はBackendの`scripts/browser-regression/README.md`に記録している。
+
+## 管理者向け月次勤怠CSVの回帰（Stage 8E-2）
+
+Backendの`scripts/browser-regression/attendance-export`が作成する専用2 account、勤怠、Task実績だけを使用する。
+通常のaccount、Project、Todo、WBS、Sessionは変更しない。詳しい投入・照合・cleanupコマンドはBackendの
+`scripts/browser-regression/README.md`を参照する。
+
+- [ ] `attendance-export-manager`でログインし、勤怠月次確認画面を表示する。
+- [ ] `ATTENDANCE_EXPORT`を持つ管理者にだけ「月次CSV」buttonが表示される。
+- [ ] fixture投入時に表示された対象月を選び、「月次CSV」を1回押して規約file名で保存できる。
+- [ ] download中は再操作できず、完了メッセージが表示される。
+- [ ] page再読込後もSessionを維持し、同じ対象月を再検索できる。
+- [ ] downloadしたCSVを手動JUnitで再読込し、BOM、CRLF、固定14列、fixture本人の月内全日を確認する。
+- [ ] fixture勤務日は09:00〜18:00、休憩60分、差引480分、Task実績420分、未配賦60分、APPROVEDである。
+- [ ] CSV headerと値にemail、password、OAuth subject、Session ID、修正理由、監査JSONがない。
+- [ ] 安定表示後のbrowser consoleとBackend logに未処理warning・errorがない。
+- [ ] DB inspectがCSV期待値と一致し、cleanup後の再inspectに専用データが残らない。
+
+全項目が揃うまではStage 8E-2を「回帰準備済み」とし、Stage 8全体を完了扱いにしない。

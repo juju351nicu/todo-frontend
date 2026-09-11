@@ -261,6 +261,20 @@ PENDING取消を追加した。画面再読込後の履歴と取消用versionを
 Backend・Viteの安定ログに未処理errorはなかった。全51 test file・375 Vitest、TypeScript／Vue型検査、
 production buildが成功し、Stage 8C-2は完了した。
 
+2026-09-12にStage 8E-2として、管理者向け月次勤怠CSVのdownloadを既存の
+`useAttendanceAdministrationPage`へ統合した。対象月は管理一覧の`selectedMonth`を共有し、CSV専用のStoreや
+重複したmonth stateは作らない。`ATTENDANCE_EXPORT`はbutton表示の案内に使用し、最終認可はBackendの
+Method Securityを正本とする。
+
+API clientは`Accept: text/csv`と既存`JSESSIONID`で参照専用GETを実行し、ResponseをBlobのまま返す。
+`Content-Disposition`は英数字、dot、underscore、hyphenからなる`.csv`名だけを採用し、path文字や不正値は
+Frontend既定名へ置換する。download中は再操作を無視し、一時anchorを除去してBlob URLを必ずrevokeする。
+binary、file名、Session情報はPinia、localStorage、sessionStorageへ保存しない。401はSessionを破棄してLoginへ
+戻し、403、入力不正、Backend接続失敗は管理画面へ表示する。APIとcomposableのVitestでmedia type、file名、
+二重download防止、URL解放、認可境界を固定する。
+全51 test file・382 Vitest、TypeScript／Vue型検査、production buildは成功した。実ブラウザと実file再読込は
+専用fixture反映後に行い、それまではStage 8E-2を回帰準備済みとして扱う。
+
 ## 変更時の確認
 
 ```bash

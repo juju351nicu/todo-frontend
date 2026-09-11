@@ -8,12 +8,18 @@ const mocks = vi.hoisted(() => ({
     approveCorrectionRequest: vi.fn(),
     approveMonth: vi.fn(),
     closeMonth: vi.fn(),
+    downloadAdministrationMonthlyCsv: vi.fn(),
     getAdministrationMonth: vi.fn(),
     getAdministrationMonths: vi.fn(),
     getAdministrationCorrectionRequests: vi.fn(),
     rejectCorrectionRequest: vi.fn(),
     rejectMonth: vi.fn(),
   },
+  appendDownloadAnchor: vi.fn(),
+  clickDownloadAnchor: vi.fn(),
+  createObjectUrl: vi.fn(() => "blob:attendance-export"),
+  removeDownloadAnchor: vi.fn(),
+  revokeObjectUrl: vi.fn(),
   router: { push: vi.fn() },
   userStore: {
     clearSession: vi.fn(),
@@ -91,7 +97,11 @@ describe("useAttendanceAdministrationPage", () => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.userStore.hasPermission.mockImplementation((permission) =>
-      ["ATTENDANCE_REVIEW", "ATTENDANCE_CLOSE"].includes(permission)
+      [
+        "ATTENDANCE_REVIEW",
+        "ATTENDANCE_CLOSE",
+        "ATTENDANCE_EXPORT",
+      ].includes(permission)
     );
     mocks.attendanceApi.getAdministrationMonths.mockResolvedValue({
       yearMonth: "2026-09",
@@ -102,6 +112,28 @@ describe("useAttendanceAdministrationPage", () => {
     );
     mocks.attendanceApi.getAdministrationCorrectionRequests.mockResolvedValue({
       correctionRequests: [correctionRequest],
+    });
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockResolvedValue({
+      content: new Blob(["attendance-csv"]),
+      fileName: "work-management-attendance-2026-09.csv",
+    });
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: mocks.createObjectUrl,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: mocks.revokeObjectUrl,
+    });
+    vi.stubGlobal("document", {
+      body: { appendChild: mocks.appendDownloadAnchor },
+      createElement: vi.fn(() => ({
+        click: mocks.clickDownloadAnchor,
+        download: "",
+        href: "",
+        remove: mocks.removeDownloadAnchor,
+        style: { display: "" },
+      })),
     });
   });
 
@@ -270,5 +302,95 @@ describe("useAttendanceAdministrationPage", () => {
     expect(page.errorMessages.value).toEqual([
       "ほかの利用者が更新しました。",
     ]);
+  });
+
+  it("ATTENDANCE_EXPORTを持つ管理者は選択月CSVを1回保存して一時URLを解放する", async () => {
+    const page = useAttendanceAdministrationPage();
+    page.selectedMonth.value = "2026-09";
+
+    await page.downloadMonthlyCsv();
+
+    expect(page.canExport.value).toBe(true);
+    expect(
+      mocks.attendanceApi.downloadAdministrationMonthlyCsv
+    ).toHaveBeenCalledWith("2026-09");
+    expect(mocks.createObjectUrl).toHaveBeenCalledOnce();
+    expect(mocks.appendDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.clickDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.removeDownloadAnchor).toHaveBeenCalledOnce();
+    expect(mocks.revokeObjectUrl).toHaveBeenCalledWith(
+      "blob:attendance-export"
+    );
+    expect(page.successMessage.value).toBe(
+      "月次勤怠CSVをダウンロードしました。"
+    );
+    expect(page.isExportingMonthlyCsv.value).toBe(false);
+  });
+
+  it("不正な対象月では月次CSV APIを呼ばず入力理由を表示する", async () => {
+    const page = useAttendanceAdministrationPage();
+    page.selectedMonth.value = "2026-13";
+
+    await page.downloadMonthlyCsv();
+
+    expect(
+      mocks.attendanceApi.downloadAdministrationMonthlyCsv
+    ).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual([
+      "実在する表示月を指定してください。",
+    ]);
+  });
+
+  it("月次CSV生成中の再操作は無視して二重downloadを防ぐ", async () => {
+    let resolveDownload;
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveDownload = resolve;
+        })
+    );
+    const page = useAttendanceAdministrationPage();
+    page.selectedMonth.value = "2026-09";
+
+    const firstDownload = page.downloadMonthlyCsv();
+    await page.downloadMonthlyCsv();
+
+    expect(page.isExportingMonthlyCsv.value).toBe(true);
+    expect(
+      mocks.attendanceApi.downloadAdministrationMonthlyCsv
+    ).toHaveBeenCalledTimes(1);
+    resolveDownload({
+      content: new Blob(["attendance-csv"]),
+      fileName: "work-management-attendance-2026-09.csv",
+    });
+    await firstDownload;
+    expect(page.isExportingMonthlyCsv.value).toBe(false);
+  });
+
+  it("月次CSV取得の401はSessionを破棄してログインへ戻す", async () => {
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockRejectedValue(
+      new AttendanceApiError(401, null)
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.downloadMonthlyCsv();
+
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(mocks.createObjectUrl).not.toHaveBeenCalled();
+  });
+
+  it("ATTENDANCE_EXPORTがない利用者は月次CSV APIを呼べない", async () => {
+    mocks.userStore.hasPermission.mockImplementation(
+      (permission) => permission !== "ATTENDANCE_EXPORT"
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.downloadMonthlyCsv();
+
+    expect(page.canExport.value).toBe(false);
+    expect(
+      mocks.attendanceApi.downloadAdministrationMonthlyCsv
+    ).not.toHaveBeenCalled();
   });
 });

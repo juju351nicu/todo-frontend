@@ -8,20 +8,24 @@ import type {
   AttendanceMonthListResponse,
   AttendanceMonthResponse,
   AttendanceMonthStatus,
+  AttendanceMonthlyExportDownload,
   AttendancePunchAction,
 } from "@/features/attendance/types/attendance";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
 
-/** 本人勤怠APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
+const CSV_CONTENT_TYPE = "text/csv";
+const SAFE_CSV_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+\.csv$/;
+
+/** 勤怠APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class AttendanceApiError extends Error {
   readonly status: number;
 
   readonly errorResponse: ErrorResponse | null;
 
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`本人勤怠APIの実行に失敗しました。status=${status}`);
+    super(`勤怠APIの実行に失敗しました。status=${status}`);
     this.name = "AttendanceApiError";
     this.status = status;
     this.errorResponse = errorResponse;
@@ -47,6 +51,25 @@ const ensureSuccess = async (response: Response): Promise<void> => {
       await readErrorResponse(response)
     );
   }
+};
+
+/**
+ * Content-DispositionのASCII filenameをpathとして解釈できない安全なCSV名へ制限する。
+ * Backend headerが欠落・破損している場合は、対象月から決まるfallback名を使用する。
+ *
+ * @param contentDisposition BackendのContent-Disposition header
+ * @param yearMonth 出力対象のyyyy-MM
+ * @returns path separatorを含まないCSV file名
+ */
+const resolveAttendanceExportFileName = (
+  contentDisposition: string | null,
+  yearMonth: string
+): string => {
+  const matchedFileName = contentDisposition?.match(/filename="?([^";]+)"?/i)?.[1];
+  if (matchedFileName && SAFE_CSV_FILE_NAME_PATTERN.test(matchedFileName)) {
+    return matchedFileName;
+  }
+  return `work-management-attendance-${yearMonth}.csv`;
 };
 
 /**
@@ -278,6 +301,32 @@ const getAdministrationMonth = async (
   );
 };
 
+/**
+ * 指定月の全アカウント・全日勤怠CSVをSession Cookie付きで取得する。
+ * 参照専用GETのためCSRF tokenは送らず、binaryはJSON変換せずBlobとして返す。
+ *
+ * @param yearMonth 出力対象のyyyy-MM
+ * @returns UTF-8 BOM付きCSV Blobと安全なdownload file名
+ * @throws AttendanceApiError 入力不正、認証・認可不足、行数超過または生成失敗の場合
+ */
+const downloadAdministrationMonthlyCsv = async (
+  yearMonth: string
+): Promise<AttendanceMonthlyExportDownload> => {
+  const query = new URLSearchParams({ yearMonth });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/administration/exports/monthly?${query.toString()}`,
+    CSV_CONTENT_TYPE
+  );
+  await ensureSuccess(response);
+  return {
+    content: await response.blob(),
+    fileName: resolveAttendanceExportFileName(
+      response.headers.get("Content-Disposition"),
+      yearMonth
+    ),
+  };
+};
+
 /** 管理者が指定状態の勤怠修正申請と置換後snapshotを取得する。 */
 const getAdministrationCorrectionRequests = async (
   status: AttendanceCorrectionStatus
@@ -377,6 +426,7 @@ export default {
   cancelCorrectionRequest,
   closeMonth,
   createCorrectionRequest,
+  downloadAdministrationMonthlyCsv,
   getAdministrationCorrectionRequests,
   getAdministrationMonth,
   getAdministrationMonths,

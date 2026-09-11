@@ -19,6 +19,7 @@ const {
   approveCorrectionRequest,
   canApproveOrReject,
   canCloseMonth,
+  canExport,
   canReview,
   close,
   correctionRejectReason,
@@ -26,7 +27,9 @@ const {
   correctionReviewComment,
   correctionStatusOptions,
   errorMessages,
+  downloadMonthlyCsv,
   initialize,
+  isExportingMonthlyCsv,
   isLoading,
   months,
   processingAction,
@@ -80,7 +83,23 @@ onBeforeMount(initialize);
               検索
             </v-btn>
           </v-col>
+          <v-col v-if="canExport" cols="12" sm="4" md="3">
+            <v-btn
+              color="success"
+              prepend-icon="mdi-file-delimited-outline"
+              variant="tonal"
+              :disabled="isLoading"
+              :loading="isExportingMonthlyCsv"
+              @click="downloadMonthlyCsv"
+            >
+              月次CSV
+            </v-btn>
+          </v-col>
         </v-row>
+
+        <p v-if="canExport" class="text-caption text-medium-emphasis mb-4">
+          選択月の全アカウント・月内全日を出力します。Task実績への配賦状況を含み、メールアドレスや認証情報は含みません。
+        </p>
 
         <v-alert v-if="errorMessages.length" type="error" class="mb-4">
           <div v-for="message in errorMessages" :key="message">{{ message }}</div>

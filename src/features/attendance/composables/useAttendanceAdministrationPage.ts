@@ -9,6 +9,7 @@ import type {
   AttendanceCorrectionStatus,
   AttendanceDayResponse,
   AttendanceMonthListItem,
+  AttendanceMonthlyExportDownload,
   AttendanceMonthResponse,
   AttendanceMonthStatus,
 } from "@/features/attendance/types/attendance";
@@ -51,6 +52,7 @@ export const useAttendanceAdministrationPage = () => {
   const isLoadingDetail = ref(false);
   const isLoadingList = ref(false);
   const isLoadingCorrections = ref(false);
+  const isExportingMonthlyCsv = ref(false);
   const processingAction = ref<
     AttendanceMonthAction | AttendanceCorrectionAction | null
   >(null);
@@ -81,6 +83,9 @@ export const useAttendanceAdministrationPage = () => {
   const canClose = computed(() =>
     userStore.hasPermission("ATTENDANCE_CLOSE")
   );
+  const canExport = computed(() =>
+    userStore.hasPermission("ATTENDANCE_EXPORT")
+  );
   const canApproveOrReject = computed(
     () => canReview.value && selectedDetail.value?.statusCode === "SUBMITTED"
   );
@@ -92,6 +97,7 @@ export const useAttendanceAdministrationPage = () => {
       isLoadingList.value ||
       isLoadingDetail.value ||
       isLoadingCorrections.value ||
+      isExportingMonthlyCsv.value ||
       processingAction.value !== null
   );
 
@@ -116,6 +122,60 @@ export const useAttendanceAdministrationPage = () => {
     selectedAccountId.value = null;
     selectedDetail.value = null;
     await loadMonths();
+  };
+
+  /**
+   * 選択月の全アカウント勤怠をBackendで生成し、ブラウザーの保存処理へ渡す。
+   * 連打による多重downloadとpermissionのない画面からの直接呼出しを抑止する。
+   */
+  const downloadMonthlyCsv = async (): Promise<void> => {
+    if (!canExport.value || isExportingMonthlyCsv.value) {
+      return;
+    }
+    try {
+      buildAttendanceMonthDateRange(selectedMonth.value);
+    } catch (error: unknown) {
+      errorMessages.value = [
+        error instanceof Error ? error.message : "対象月が不正です。",
+      ];
+      return;
+    }
+
+    isExportingMonthlyCsv.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      const download = await AttendanceApi.downloadAdministrationMonthlyCsv(
+        selectedMonth.value
+      );
+      saveMonthlyExport(download);
+      successMessage.value = "月次勤怠CSVをダウンロードしました。";
+    } catch (error: unknown) {
+      await handleMonthlyExportError(error);
+    } finally {
+      isExportingMonthlyCsv.value = false;
+    }
+  };
+
+  /**
+   * Backendから受け取ったCSVを一時URLへ変換し、同一画面のまま保存を開始する。
+   * 使用済みURLは成否にかかわらず破棄し、長時間開く管理画面でmemoryを残さない。
+   */
+  const saveMonthlyExport = (
+    download: AttendanceMonthlyExportDownload
+  ): void => {
+    const objectUrl = URL.createObjectURL(download.content);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = download.fileName;
+    anchor.style.display = "none";
+    try {
+      document.body.appendChild(anchor);
+      anchor.click();
+    } finally {
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+    }
   };
 
   /** 選択状態の勤怠修正申請を再検索し、以前の比較対象を破棄する。 */
@@ -431,11 +491,36 @@ export const useAttendanceAdministrationPage = () => {
       fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
+  /** 月次CSV固有の認可失敗と入力エラーを利用者向けの回復手順へ変換する。 */
+  const handleMonthlyExportError = async (error: unknown): Promise<void> => {
+    if (!(error instanceof AttendanceApiError)) {
+      errorMessages.value = ["Backendへ接続できませんでした。"];
+      return;
+    }
+    if (error.status === 401) {
+      userStore.clearSession();
+      await router.push({ name: "Login" });
+      return;
+    }
+    if (error.status === 403) {
+      errorMessages.value = ["月次勤怠CSVを出力するpermissionがありません。"];
+      return;
+    }
+    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
+      (fieldError) => fieldError.message
+    );
+    errorMessages.value =
+      fieldMessages.length > 0
+        ? fieldMessages
+        : ["月次勤怠CSVを出力できませんでした。"];
+  };
+
   return {
     approve,
     approveCorrectionRequest,
     canApproveOrReject,
     canCloseMonth,
+    canExport,
     canReview,
     close,
     correctionRejectReason,
@@ -444,6 +529,7 @@ export const useAttendanceAdministrationPage = () => {
     correctionStatusOptions: ATTENDANCE_CORRECTION_STATUS_OPTIONS,
     errorMessages,
     initialize,
+    isExportingMonthlyCsv,
     isLoading,
     months,
     processingAction,
@@ -451,6 +537,7 @@ export const useAttendanceAdministrationPage = () => {
     rejectCorrectionRequest,
     rejectReason,
     reviewComment,
+    downloadMonthlyCsv,
     search,
     searchCorrectionRequests,
     selectCorrectionRequest,
