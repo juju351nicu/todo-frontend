@@ -285,15 +285,32 @@ Backendの`scripts/browser-regression/attendance-export`が作成する専用2 a
 通常のaccount、Project、Todo、WBS、Sessionは変更しない。詳しい投入・照合・cleanupコマンドはBackendの
 `scripts/browser-regression/README.md`を参照する。
 
-- [ ] `attendance-export-manager`でログインし、勤怠月次確認画面を表示する。
-- [ ] `ATTENDANCE_EXPORT`を持つ管理者にだけ「月次CSV」buttonが表示される。
-- [ ] fixture投入時に表示された対象月を選び、「月次CSV」を1回押して規約file名で保存できる。
-- [ ] download中は再操作できず、完了メッセージが表示される。
-- [ ] page再読込後もSessionを維持し、同じ対象月を再検索できる。
-- [ ] downloadしたCSVを手動JUnitで再読込し、BOM、CRLF、固定14列、fixture本人の月内全日を確認する。
-- [ ] fixture勤務日は09:00〜18:00、休憩60分、差引480分、Task実績420分、未配賦60分、APPROVEDである。
-- [ ] CSV headerと値にemail、password、OAuth subject、Session ID、修正理由、監査JSONがない。
-- [ ] 安定表示後のbrowser consoleとBackend logに未処理warning・errorがない。
-- [ ] DB inspectがCSV期待値と一致し、cleanup後の再inspectに専用データが残らない。
+- [x] `attendance-export-manager`でログインし、勤怠月次確認画面を表示する。
+- [x] `ATTENDANCE_EXPORT`を持つ管理者にだけ「月次CSV」buttonが表示される。
+- [x] fixture投入時に表示された対象月を選び、「月次CSV」を1回押して規約file名で保存できる。
+- [x] download中は再操作できず、完了メッセージが表示される。
+- [x] page再読込後もSessionを維持し、同じ対象月を再検索できる。
+- [x] downloadしたCSVを手動JUnitで再読込し、BOM、CRLF、固定14列、fixture本人の月内全日を確認する。
+- [x] fixture勤務日は09:00〜18:00、休憩60分、差引480分、Task実績420分、未配賦60分、APPROVEDである。
+- [x] CSV headerと値にemail、password、OAuth subject、Session ID、修正理由、監査JSONがない。
+- [x] 安定表示後のbrowser consoleとBackend logに未処理warning・errorがない。
+- [x] DB inspectがCSV期待値と一致し、cleanup後の再inspectに専用データが残らない。
 
-全項目が揃うまではStage 8E-2を「回帰準備済み」とし、Stage 8全体を完了扱いにしない。
+2026-09-12に全項目を完了した。実fileは手動JUnitで1件をskipせず再読込し、cleanup後の専用件数は
+`0,0,0,0`だった。これによりStage 8E-2とStage 8全体を完了した。
+
+## 本人打刻パネルUX改善の回帰
+
+通常本人アカウントを使用し、実際の打刻を変更しない表示確認と、専用fixtureでの状態遷移確認を分ける。
+
+- [x] 本人勤怠画面の先頭へ利用者名、選択日、Asia/Tokyo現在時刻、勤怠状態が表示される。
+- [x] OFF_DUTYでは出勤だけが有効で、退勤・休憩開始・休憩終了は同じ位置のまま無効になる。
+- [x] 現在時刻が秒単位で更新されても画面全体の幅とbutton位置が変わらない。
+- [x] 狭い画面でも4操作が2列で収まり、button名と状態を読み取れる。
+- [x] 月次申請、月間一覧、選択日詳細、修正申請の既存導線がパネル下に残る。
+- [x] 画面表示だけで勤怠APIを送信せず、Client時刻をRequestへ含めない。
+- [ ] 専用本人打刻fixtureでWORKING、ON_BREAK、OFF_DUTYへ遷移し、有効buttonが状態に追従する。
+- [ ] 状態遷移後のDB時刻がBackend server timestamp・監査logと一致する。
+
+初回表示、レスポンシブ配置、既存導線は2026-09-12に確認済みである。状態を変更する2項目は既存の
+`attendance-browser`専用fixtureを再利用して、次に勤怠打刻回帰を実施するときに確認する。

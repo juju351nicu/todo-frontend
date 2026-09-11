@@ -30,6 +30,22 @@ export const getTodayInTokyo = (now = new Date()): string => {
 };
 
 /**
+ * 指定時刻を打刻パネルへ表示するAsia/Tokyoの24時間制時刻へ変換する。
+ * Client時刻は利用者への案内専用であり、打刻APIへ送信しない。
+ *
+ * @param now 表示対象時刻。省略時はブラウザー現在時刻
+ * @returns HH:mm:ss形式の東京時刻
+ */
+export const formatAttendanceClockTime = (now = new Date()): string =>
+  new Intl.DateTimeFormat("ja-JP", {
+    timeZone: TOKYO_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).format(now);
+
+/**
  * yyyy-MM形式の表示月を境界を含む月初日・月末日へ変換する。
  *
  * @param yearMonth 表示月

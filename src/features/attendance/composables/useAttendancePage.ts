@@ -67,6 +67,9 @@ export const useAttendancePage = () => {
   const selectedDaySummary = computed(() =>
     summarizeAttendanceDay(selectedDay.value)
   );
+  const currentUserDisplayName = computed(
+    () => userStore.displayName || userStore.username || "ログイン利用者"
+  );
   const canWriteAttendance = computed(() =>
     userStore.hasPermission("ATTENDANCE_WRITE_OWN")
   );
@@ -489,6 +492,7 @@ export const useAttendancePage = () => {
     closeCorrectionDialog,
     correctionForm,
     correctionRequests,
+    currentUserDisplayName,
     errorMessages,
     executePunch,
     submitMonth,

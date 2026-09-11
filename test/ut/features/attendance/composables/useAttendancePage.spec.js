@@ -17,7 +17,9 @@ const mocks = vi.hoisted(() => ({
   router: { push: vi.fn() },
   userStore: {
     clearSession: vi.fn(),
+    displayName: "テスト利用者",
     hasPermission: vi.fn(),
+    username: "test-user",
   },
 }));
 
@@ -102,6 +104,7 @@ describe("useAttendancePage", () => {
       page.today
     );
     expect(page.selectedDay.value.workDate).toBe(page.today);
+    expect(page.currentUserDisplayName.value).toBe("テスト利用者");
     expect(page.canClockIn.value).toBe(true);
   });
 

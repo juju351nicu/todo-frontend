@@ -98,8 +98,16 @@ Stage 8E-2では管理者向け勤怠月次確認画面へ、選択月の全ア�
 `ATTENDANCE_EXPORT`を持つ利用者だけに「月次CSV」を表示し、最終認可はBackendへ委ねます。CSVは既存Session Cookieを
 使う参照専用GETで取得するためCSRF headerを付けません。Backendの安全なASCII file名だけを採用し、不正または
 欠落時は`work-management-attendance-YYYY-MM.csv`へ戻します。Blob URLは保存開始後に必ず解放し、生成中の再操作、
-401、403、入力不正、接続失敗を画面で扱います。実ブラウザdownloadと手動CSV再読込は専用fixtureで確認します。
-自動検証は全51 test file・382 Vitest、TypeScript／Vue型検査、production buildまで成功しています。
+401、403、入力不正、接続失敗を画面で扱います。専用fixtureでは実ブラウザの成功通知、再読込後のSession維持、
+認証済みCSVの手動JUnit再読込、DB照合、cleanup後`0,0,0,0`まで確認しました。CSVは固定14列、月内全日、
+差引480分、Task実績420分、未配賦60分、APPROVED、機密列不在で期待値と一致し、Stage 8E-2と
+Stage 8全体は完了しています。
+
+Stage 8完了後のUX改善として、本人勤怠画面の先頭へ大きなAsia/Tokyo現在時刻、利用者名、勤怠状態、
+出勤・退勤・休憩開始・休憩終了をまとめた打刻パネルを追加しました。4操作は常に同じ位置に置き、現在状態で
+実行できるものだけを有効化します。表示時計はAPIへ送信せず、既存のBackend server timestamp、permission、
+二重送信防止、409再取得、月次workflow、修正申請をそのまま利用します。全51 test file・383 Vitest、
+TypeScript／Vue型検査、production buildが成功しています。
 
 ## 検証
 

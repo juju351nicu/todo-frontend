@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildAttendanceMonthDateRange,
   buildAttendanceMonthRows,
+  formatAttendanceClockTime,
   formatAttendanceMinutes,
   getTodayInTokyo,
   summarizeAttendanceDay,
@@ -22,6 +23,12 @@ describe("本人勤怠表示utility", () => {
     expect(getTodayInTokyo(new Date("2026-09-05T15:30:00Z"))).toBe(
       "2026-09-06"
     );
+  });
+
+  it("打刻パネルの現在時刻をAsia/Tokyoの24時間制秒表示へ変換する", () => {
+    expect(
+      formatAttendanceClockTime(new Date("2026-09-11T15:05:06Z"))
+    ).toBe("00:05:06");
   });
 
   it("通常月と閏年2月の月初・月末をAPI検索範囲へ変換する", () => {

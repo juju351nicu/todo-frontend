@@ -275,6 +275,21 @@ binary、file名、Session情報はPinia、localStorage、sessionStorageへ保�
 全51 test file・382 Vitest、TypeScript／Vue型検査、production buildは成功した。実ブラウザと実file再読込は
 専用fixture反映後に行い、それまではStage 8E-2を回帰準備済みとして扱う。
 
+2026-09-12にStage 8E-2の実回帰を完了した。管理画面のCSV操作、成功通知、再読込後のSession維持、
+認証済みResponseの実file保存、Apache Commons CSVによる再読込、DB照合、cleanup後`0,0,0,0`を確認した。
+これによりStage 8全体は完了した。
+
+同日、Stage 8完了後の本人打刻画面UX改善として`AttendancePunchPanel`を追加した。大きな東京現在時刻、
+利用者名、選択日の状態、出勤・退勤・休憩開始・休憩終了を1つの表示componentへ集約する。4つのbuttonは
+配置を変えず、親画面composableが返す既存の操作可否で無効化する。componentは`punch` eventだけを通知し、
+API、認証、競合回復、非同期状態を持たない。
+
+現在時刻は`formatAttendanceClockTime`でAsia/Tokyoの24時間制秒表示へ変換し、component破棄時にtimerを解除する。
+このClient時刻は表示専用であり、Requestへ含めない。打刻値は従来どおりBackend server timestampを正本とする。
+利用者名は既存Session Storeのdisplay name、login ID、固定fallbackの順で表示し、新しいStoreやAPIを追加しない。
+月次申請、月間一覧、選択日詳細、修正申請はパネル下へ維持する。現在時刻境界とSession利用者名をVitestで固定し、
+全51 test file・383 Vitest、TypeScript／Vue型検査、production buildが成功した。
+
 ## 変更時の確認
 
 ```bash

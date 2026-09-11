@@ -3,6 +3,7 @@ import { onBeforeMount } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import AttendanceCorrectionDialog from "@/features/attendance/components/AttendanceCorrectionDialog.vue";
+import AttendancePunchPanel from "@/features/attendance/components/AttendancePunchPanel.vue";
 import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
@@ -36,6 +37,7 @@ const {
   closeCorrectionDialog,
   correctionForm,
   correctionRequests,
+  currentUserDisplayName,
   errorMessages,
   executePunch,
   initialize,
@@ -93,6 +95,21 @@ onBeforeMount(initialize);
         <v-alert v-if="successMessage" type="success" class="mb-4" closable>
           {{ successMessage }}
         </v-alert>
+
+        <AttendancePunchPanel
+          v-if="selectedDay"
+          :work-date="selectedWorkDate"
+          :display-name="currentUserDisplayName"
+          :punch-state="selectedDay.punchState"
+          :can-clock-in="canClockIn"
+          :can-clock-out="canClockOut"
+          :can-start-break="canStartBreak"
+          :can-end-break="canEndBreak"
+          :can-write-attendance="canWriteAttendance"
+          :is-punching="isPunching"
+          :is-today="selectedWorkDate === today"
+          @punch="executePunch"
+        />
 
         <v-card v-if="monthSummary" variant="tonal" class="mb-4">
           <v-card-title class="d-flex align-center flex-wrap ga-3">
@@ -236,65 +253,9 @@ onBeforeMount(initialize);
                   修正申請
                 </v-btn>
               </v-card-title>
-              <v-card-subtitle>打刻時刻はBackendのserver timestampで確定します。</v-card-subtitle>
+              <v-card-subtitle>選択日の確定済み勤務・休憩区間を表示します。</v-card-subtitle>
 
               <v-card-text v-if="selectedDay">
-                <div class="d-flex flex-wrap ga-2 mb-4">
-                  <v-btn
-                    v-if="canClockIn"
-                    color="success"
-                    prepend-icon="mdi-login"
-                    :loading="isPunching"
-                    @click="executePunch('clock-in')"
-                  >
-                    出勤
-                  </v-btn>
-                  <v-btn
-                    v-if="canStartBreak"
-                    color="warning"
-                    prepend-icon="mdi-coffee-outline"
-                    :loading="isPunching"
-                    @click="executePunch('break-start')"
-                  >
-                    休憩開始
-                  </v-btn>
-                  <v-btn
-                    v-if="canEndBreak"
-                    color="primary"
-                    prepend-icon="mdi-coffee-off-outline"
-                    :loading="isPunching"
-                    @click="executePunch('break-end')"
-                  >
-                    休憩終了
-                  </v-btn>
-                  <v-btn
-                    v-if="canClockOut"
-                    color="error"
-                    prepend-icon="mdi-logout"
-                    :loading="isPunching"
-                    @click="executePunch('clock-out')"
-                  >
-                    退勤
-                  </v-btn>
-                </div>
-
-                <v-alert
-                  v-if="!canWriteAttendance"
-                  type="info"
-                  density="compact"
-                  class="mb-4"
-                >
-                  本人勤怠を更新するpermissionがないため参照のみです。
-                </v-alert>
-                <v-alert
-                  v-else-if="selectedWorkDate !== today && selectedDay.punchState === 'OFF_DUTY'"
-                  type="info"
-                  density="compact"
-                  class="mb-4"
-                >
-                  出勤打刻は本日の詳細を選択した場合だけ実行できます。
-                </v-alert>
-
                 <v-row dense class="mb-2">
                   <v-col cols="4">
                     <div class="text-caption text-medium-emphasis">勤務</div>
