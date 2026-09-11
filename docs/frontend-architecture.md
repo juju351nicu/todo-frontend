@@ -241,6 +241,21 @@ clientがSession CookieとCSRFを付け、取得時点versionを送る。成功R
 cleanup後の専用6 countもすべて0件だった。これによりStage 8B-2は完了し、次のFrontend作業はStage 8C-2の
 締め後修正申請画面である。先にStage 8C-1のBackend契約とAPIを確定する。
 
+2026-09-12にStage 8C-2として、本人勤怠画面へ現在勤怠を初期値にした全置換修正申請、勤務日別履歴、
+PENDING取消を追加した。画面再読込後の履歴と取消用versionをFrontendへ保存せず、本人・勤務日限定のGETから
+復元する。Asia/Tokyoの`datetime-local`とoffset付きAPI日時の変換、期間相関、重複検査は
+`attendanceCorrection.ts`へ集約し、Backendの最終検証と同じ主要境界を送信前にも案内する。
+
+管理者画面は既存`useAttendanceAdministrationPage`ひとつに修正申請を統合した。状態別一覧、申請選択時の
+対象account月取得、現在勤怠と申請snapshotの比較、承認、必須理由付き却下を扱う。
+`AttendanceCorrectionDialog`と`AttendanceCorrectionAdministration`はProps／Emit中心でAPIを呼ばず、
+非同期状態、認証、二重送信、409回復は画面composableへ残す。実ブラウザ・DB回帰完了まではStage 8C-2を
+「実装済み・回帰待ち」とする。
+
+画面事前検証はBackend契約と同じく、勤務開始を対象日のAsia/Tokyo日付へ限定し、退勤と勤務内休憩は翌日へ
+跨げる。管理画面の修正審査領域は`ATTENDANCE_REVIEW`保持者だけへ表示する。全51 test file・374 Vitest、
+TypeScript／Vue型検査、production buildは成功済みである。
+
 ## 変更時の確認
 
 ```bash

@@ -2,6 +2,7 @@
 import { onBeforeMount } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import AttendanceCorrectionDialog from "@/features/attendance/components/AttendanceCorrectionDialog.vue";
 import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
@@ -13,9 +14,18 @@ import {
   getAttendanceMonthStatusColor,
   getAttendanceMonthStatusLabel,
 } from "@/features/attendance/utils/attendance";
+import {
+  getAttendanceCorrectionStatusColor,
+  getAttendanceCorrectionStatusLabel,
+} from "@/features/attendance/utils/attendanceCorrection";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
+  addCorrectionBreakPeriod,
+  addCorrectionWorkPeriod,
+  cancelCorrectionRequest,
+  cancellingCorrectionId,
+  canRequestCorrection,
   canSubmitMonth,
   canClockIn,
   canClockOut,
@@ -23,22 +33,33 @@ const {
   canStartBreak,
   canWriteAttendance,
   changeMonth,
+  closeCorrectionDialog,
+  correctionForm,
+  correctionRequests,
   errorMessages,
   executePunch,
   initialize,
   isLoading,
+  isCorrectionDialogOpen,
   isPunching,
   isSubmittingMonth,
+  isSubmittingCorrection,
   monthSummary,
   monthRows,
+  openCorrectionDialog,
+  removeCorrectionBreakPeriod,
+  removeCorrectionWorkPeriod,
   selectWorkDate,
   selectedDay,
   selectedDaySummary,
   selectedMonth,
   selectedWorkDate,
   successMessage,
+  submitCorrectionRequest,
   submitMonth,
   today,
+  updateCorrectionBreakPeriod,
+  updateCorrectionWorkPeriod,
 } = useAttendancePage();
 
 onBeforeMount(initialize);
@@ -204,6 +225,16 @@ onBeforeMount(initialize);
                 >
                   {{ getAttendancePunchStateLabel(selectedDay.punchState) }}
                 </v-chip>
+                <v-spacer />
+                <v-btn
+                  v-if="canRequestCorrection"
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-file-edit-outline"
+                  @click="openCorrectionDialog"
+                >
+                  修正申請
+                </v-btn>
               </v-card-title>
               <v-card-subtitle>打刻時刻はBackendのserver timestampで確定します。</v-card-subtitle>
 
@@ -317,6 +348,55 @@ onBeforeMount(initialize);
                 <v-sheet v-else rounded color="surface-variant" class="pa-4 text-center">
                   この日の打刻はありません。
                 </v-sheet>
+
+                <v-divider class="my-4" />
+                <div class="text-subtitle-2 mb-2">
+                  修正申請履歴（{{ correctionRequests.length }}件）
+                </div>
+                <v-alert
+                  v-if="['APPROVED', 'CLOSED'].includes(monthSummary?.statusCode ?? '') && correctionRequests.some((request) => request.statusCode === 'PENDING')"
+                  type="warning"
+                  density="compact"
+                  class="mb-3"
+                >
+                  この勤務日は審査待ちです。結果確定または取消後に再申請できます。
+                </v-alert>
+                <v-card
+                  v-for="request in correctionRequests"
+                  :key="request.attendanceCorrectionRequestId"
+                  variant="outlined"
+                  class="mb-2"
+                >
+                  <v-card-text>
+                    <div class="d-flex align-center flex-wrap ga-2">
+                      <v-chip :color="getAttendanceCorrectionStatusColor(request.statusCode)" size="small">
+                        {{ getAttendanceCorrectionStatusLabel(request.statusCode) }}
+                      </v-chip>
+                      <span>{{ formatAttendanceInstant(request.requestedAt) }}</span>
+                      <v-spacer />
+                      <v-btn
+                        v-if="request.statusCode === 'PENDING'"
+                        color="error"
+                        variant="text"
+                        size="small"
+                        :loading="cancellingCorrectionId === request.attendanceCorrectionRequestId"
+                        @click="cancelCorrectionRequest(request)"
+                      >
+                        申請取消
+                      </v-btn>
+                    </div>
+                    <div class="mt-2">理由: {{ request.reason }}</div>
+                    <div class="text-caption text-medium-emphasis">
+                      申請勤務区間: {{ request.workPeriods.length }}件 / version {{ request.version }}
+                    </div>
+                    <v-alert v-if="request.reviewComment" type="info" density="compact" class="mt-2">
+                      審査コメント: {{ request.reviewComment }}
+                    </v-alert>
+                  </v-card-text>
+                </v-card>
+                <div v-if="correctionRequests.length === 0" class="text-medium-emphasis">
+                  この勤務日の修正申請はありません。
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -324,6 +404,24 @@ onBeforeMount(initialize);
       </v-card-text>
     </v-card>
   </v-container>
+  <AttendanceCorrectionDialog
+    :model-value="isCorrectionDialogOpen"
+    :form="correctionForm"
+    :submitting="isSubmittingCorrection"
+    :work-date="selectedWorkDate"
+    @add-break="addCorrectionBreakPeriod"
+    @add-work="addCorrectionWorkPeriod"
+    @close="closeCorrectionDialog"
+    @remove-break="removeCorrectionBreakPeriod"
+    @remove-work="removeCorrectionWorkPeriod"
+    @submit="submitCorrectionRequest"
+    @update-break-ended-at="(workIndex, breakIndex, value) => updateCorrectionBreakPeriod(workIndex, breakIndex, 'endedAt', value)"
+    @update-break-started-at="(workIndex, breakIndex, value) => updateCorrectionBreakPeriod(workIndex, breakIndex, 'startedAt', value)"
+    @update-note="correctionForm.note = $event"
+    @update-reason="correctionForm.reason = $event"
+    @update-work-ended-at="(workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'endedAt', value)"
+    @update-work-started-at="(workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'startedAt', value)"
+  />
 </template>
 
 <style scoped>

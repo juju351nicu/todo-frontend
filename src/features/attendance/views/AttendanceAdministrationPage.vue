@@ -2,6 +2,7 @@
 import { onBeforeMount } from "vue";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
+import AttendanceCorrectionAdministration from "@/features/attendance/components/AttendanceCorrectionAdministration.vue";
 import { useAttendanceAdministrationPage } from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import {
   formatAttendanceDate,
@@ -15,20 +16,32 @@ import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
   approve,
+  approveCorrectionRequest,
   canApproveOrReject,
   canCloseMonth,
+  canReview,
   close,
+  correctionRejectReason,
+  correctionRequests,
+  correctionReviewComment,
+  correctionStatusOptions,
   errorMessages,
   initialize,
   isLoading,
   months,
   processingAction,
   reject,
+  rejectCorrectionRequest,
   rejectReason,
   reviewComment,
   search,
+  searchCorrectionRequests,
+  selectCorrectionRequest,
   selectMonth,
   selectedAccountId,
+  selectedCorrection,
+  selectedCorrectionCurrentDay,
+  selectedCorrectionStatus,
   selectedDetail,
   selectedListItem,
   selectedMonth,
@@ -75,6 +88,25 @@ onBeforeMount(initialize);
         <v-alert v-if="successMessage" type="success" class="mb-4">
           {{ successMessage }}
         </v-alert>
+
+        <AttendanceCorrectionAdministration
+          v-if="canReview"
+          :correction-requests="correctionRequests"
+          :current-day="selectedCorrectionCurrentDay"
+          :processing-action="processingAction"
+          :reject-reason="correctionRejectReason"
+          :review-comment="correctionReviewComment"
+          :selected-correction="selectedCorrection"
+          :selected-status="selectedCorrectionStatus"
+          :status-options="correctionStatusOptions"
+          @approve="approveCorrectionRequest"
+          @reject="rejectCorrectionRequest"
+          @search="searchCorrectionRequests"
+          @select="selectCorrectionRequest"
+          @update-reject-reason="correctionRejectReason = $event"
+          @update-review-comment="correctionReviewComment = $event"
+          @update-status="selectedCorrectionStatus = $event"
+        />
 
         <v-row>
           <v-col cols="12" lg="6">

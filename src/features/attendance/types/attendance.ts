@@ -13,7 +13,15 @@ export type AttendanceMonthStatus =
 export type AttendanceEntrySource =
   | "SELF_PUNCH"
   | "ADMIN_CORRECTION"
+  | "APPROVED_CORRECTION"
   | "IMPORT";
+
+/** 勤怠修正申請の審査状態。 */
+export type AttendanceCorrectionStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
 
 /** 本人勤怠日に属する1休憩区間。 */
 export interface AttendanceBreakPeriod {
@@ -35,10 +43,95 @@ export interface AttendanceWorkPeriod {
 /** 本人の指定勤務日の打刻状態と全勤務・休憩区間。 */
 export interface AttendanceDayResponse {
   attendanceDayId: number | null;
+  version: number | null;
   workDate: string;
   note: string | null;
   punchState: AttendancePunchState;
   workPeriods: AttendanceWorkPeriod[];
+}
+
+/** 勤怠修正申請snapshotに含まれる完了済み休憩区間。 */
+export interface AttendanceCorrectionBreakPeriodResponse {
+  attendanceCorrectionBreakPeriodId: number;
+  sequenceNo: number;
+  startedAt: string;
+  endedAt: string;
+}
+
+/** 勤怠修正申請snapshotに含まれる完了済み勤務区間。 */
+export interface AttendanceCorrectionWorkPeriodResponse {
+  attendanceCorrectionWorkPeriodId: number;
+  sequenceNo: number;
+  startedAt: string;
+  endedAt: string;
+  breakPeriods: AttendanceCorrectionBreakPeriodResponse[];
+}
+
+/** 本人履歴または管理一覧へ表示する勤怠修正申請。 */
+export interface AttendanceCorrectionResponse {
+  attendanceCorrectionRequestId: number;
+  accountId: number;
+  loginId: string | null;
+  displayName: string | null;
+  workDate: string;
+  attendanceDayId: number | null;
+  baseDayVersion: number | null;
+  requestedBy: number;
+  proposedNote: string | null;
+  reason: string;
+  statusCode: AttendanceCorrectionStatus;
+  reviewedBy: number | null;
+  reviewedAt: string | null;
+  reviewComment: string | null;
+  requestedAt: string;
+  version: number;
+  workPeriods: AttendanceCorrectionWorkPeriodResponse[];
+}
+
+/** 勤怠修正申請一覧APIのResponse。 */
+export interface AttendanceCorrectionListResponse {
+  correctionRequests: AttendanceCorrectionResponse[];
+}
+
+/** 修正申請入力中の1休憩区間。datetime-local形式で保持する。 */
+export interface AttendanceCorrectionBreakPeriodForm {
+  startedAt: string;
+  endedAt: string;
+}
+
+/** 修正申請入力中の1勤務区間と配下休憩。 */
+export interface AttendanceCorrectionWorkPeriodForm {
+  startedAt: string;
+  endedAt: string;
+  breakPeriods: AttendanceCorrectionBreakPeriodForm[];
+}
+
+/** 本人画面で編集する1勤務日全体の修正申請入力。 */
+export interface AttendanceCorrectionForm {
+  note: string;
+  reason: string;
+  workPeriods: AttendanceCorrectionWorkPeriodForm[];
+}
+
+/** Backendへ送る勤怠修正申請の完了済み休憩区間。 */
+export interface AttendanceCorrectionBreakPeriodRequest {
+  startedAt: string;
+  endedAt: string;
+}
+
+/** Backendへ送る勤怠修正申請の完了済み勤務区間。 */
+export interface AttendanceCorrectionWorkPeriodRequest {
+  startedAt: string;
+  endedAt: string;
+  breakPeriods: AttendanceCorrectionBreakPeriodRequest[];
+}
+
+/** Backendへ送る1勤務日全体の修正申請。 */
+export interface AttendanceCorrectionCreateRequest {
+  baseDayVersion: number | null;
+  note: string | null;
+  reason: string;
+  workPeriods: AttendanceCorrectionWorkPeriodRequest[];
 }
 
 /** 本人の指定期間に登録済みの勤怠日一覧。 */

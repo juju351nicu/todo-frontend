@@ -14,6 +14,7 @@ vi.mock("@/shared/api/httpClient", () => ({
 
 const attendanceDay = {
   attendanceDayId: 11,
+  version: 0,
   workDate: "2026-09-06",
   note: null,
   punchState: "WORKING",
@@ -66,6 +67,7 @@ describe("本人勤怠API", () => {
 
     await expect(AttendanceApi.getDay("2026-09-06")).resolves.toEqual({
       attendanceDayId: null,
+      version: null,
       workDate: "2026-09-06",
       note: null,
       punchState: "OFF_DUTY",
@@ -73,6 +75,91 @@ describe("本人勤怠API", () => {
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/attendance/days/2026-09-06"
+    );
+  });
+
+  it("本人の修正申請履歴を日付で取得し作成・取消をversion付きAPIへ渡す", async () => {
+    const correction = {
+      attendanceCorrectionRequestId: 41,
+      accountId: 1,
+      workDate: "2026-09-06",
+      reason: "退勤時刻訂正",
+      statusCode: "PENDING",
+      requestedBy: 1,
+      requestedAt: "2026-09-07T00:00:00Z",
+      version: 0,
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ correctionRequests: [correction] }),
+    });
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(correction),
+    });
+    const request = {
+      baseDayVersion: 0,
+      note: null,
+      reason: "退勤時刻訂正",
+      workPeriods: [],
+    };
+
+    await AttendanceApi.getOwnCorrectionRequests("2026-09-06");
+    await AttendanceApi.createCorrectionRequest("2026-09-06", request);
+    await AttendanceApi.cancelCorrectionRequest(41, 0);
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/correction-requests?workDate=2026-09-06"
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/attendance/days/2026-09-06/correction-requests",
+      request
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/attendance/correction-requests/41/cancel",
+      { version: 0 }
+    );
+  });
+
+  it("管理者の修正一覧・承認・却下を状態と最新version付きAPIへ渡す", async () => {
+    const correction = {
+      attendanceCorrectionRequestId: 41,
+      accountId: 1,
+      workDate: "2026-09-06",
+      reason: "退勤時刻訂正",
+      statusCode: "PENDING",
+      requestedBy: 1,
+      requestedAt: "2026-09-07T00:00:00Z",
+      version: 2,
+      workPeriods: [],
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ correctionRequests: [correction] }),
+    });
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(correction),
+    });
+
+    await AttendanceApi.getAdministrationCorrectionRequests("PENDING");
+    await AttendanceApi.approveCorrectionRequest(41, 2, "確認済み");
+    await AttendanceApi.rejectCorrectionRequest(41, 2, "証跡不足");
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/attendance/administration/correction-requests?status=PENDING"
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/attendance/administration/correction-requests/41/approve",
+      { version: 2, reviewComment: "確認済み" }
+    );
+    expect(HttpClient.postRequest).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/attendance/administration/correction-requests/41/reject",
+      { version: 2, reason: "証跡不足" }
     );
   });
 

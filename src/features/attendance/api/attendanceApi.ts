@@ -1,4 +1,8 @@
 import type {
+  AttendanceCorrectionCreateRequest,
+  AttendanceCorrectionListResponse,
+  AttendanceCorrectionResponse,
+  AttendanceCorrectionStatus,
   AttendanceDayListResponse,
   AttendanceDayResponse,
   AttendanceMonthListResponse,
@@ -56,6 +60,7 @@ const normalizeAttendanceDay = (
 ): AttendanceDayResponse => ({
   ...payload,
   attendanceDayId: payload.attendanceDayId ?? null,
+  version: payload.version ?? null,
   note: payload.note ?? null,
   workPeriods: (payload.workPeriods ?? []).map((workPeriod) => ({
     ...workPeriod,
@@ -65,6 +70,34 @@ const normalizeAttendanceDay = (
       endedAt: breakPeriod.endedAt ?? null,
     })),
   })),
+});
+
+/** 修正申請Responseのnullable項目とsnapshot配列を画面用確定値へ正規化する。 */
+const normalizeAttendanceCorrection = (
+  payload: AttendanceCorrectionResponse
+): AttendanceCorrectionResponse => ({
+  ...payload,
+  loginId: payload.loginId ?? null,
+  displayName: payload.displayName ?? null,
+  attendanceDayId: payload.attendanceDayId ?? null,
+  baseDayVersion: payload.baseDayVersion ?? null,
+  proposedNote: payload.proposedNote ?? null,
+  reviewedBy: payload.reviewedBy ?? null,
+  reviewedAt: payload.reviewedAt ?? null,
+  reviewComment: payload.reviewComment ?? null,
+  workPeriods: (payload.workPeriods ?? []).map((workPeriod) => ({
+    ...workPeriod,
+    breakPeriods: workPeriod.breakPeriods ?? [],
+  })),
+});
+
+/** 修正申請一覧Responseの欠落した配列を空一覧へ正規化する。 */
+const normalizeAttendanceCorrections = (
+  payload: AttendanceCorrectionListResponse
+): AttendanceCorrectionListResponse => ({
+  correctionRequests: (payload.correctionRequests ?? []).map(
+    normalizeAttendanceCorrection
+  ),
 });
 
 /** 月次Responseのnullable項目と日別配列を画面用確定値へ正規化する。 */
@@ -121,6 +154,50 @@ const getDay = async (workDate: string): Promise<AttendanceDayResponse> => {
   await ensureSuccess(response);
   return normalizeAttendanceDay(
     (await response.json()) as AttendanceDayResponse
+  );
+};
+
+/** 指定勤務日の本人修正申請履歴を新しい順で取得する。 */
+const getOwnCorrectionRequests = async (
+  workDate: string
+): Promise<AttendanceCorrectionListResponse> => {
+  const query = new URLSearchParams({ workDate });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/correction-requests?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrections(
+    (await response.json()) as AttendanceCorrectionListResponse
+  );
+};
+
+/** 承認済みまたは締め済み月の本人勤怠日について全区間snapshotを申請する。 */
+const createCorrectionRequest = async (
+  workDate: string,
+  request: AttendanceCorrectionCreateRequest
+): Promise<AttendanceCorrectionResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/days/${encodeURIComponent(workDate)}/correction-requests`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrection(
+    (await response.json()) as AttendanceCorrectionResponse
+  );
+};
+
+/** PENDING状態の本人修正申請を最新versionで取り消す。 */
+const cancelCorrectionRequest = async (
+  requestId: number,
+  version: number
+): Promise<AttendanceCorrectionResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/correction-requests/${requestId}/cancel`,
+    { version }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrection(
+    (await response.json()) as AttendanceCorrectionResponse
   );
 };
 
@@ -201,6 +278,52 @@ const getAdministrationMonth = async (
   );
 };
 
+/** 管理者が指定状態の勤怠修正申請と置換後snapshotを取得する。 */
+const getAdministrationCorrectionRequests = async (
+  status: AttendanceCorrectionStatus
+): Promise<AttendanceCorrectionListResponse> => {
+  const query = new URLSearchParams({ status });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.ATTENDANCE}/administration/correction-requests?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrections(
+    (await response.json()) as AttendanceCorrectionListResponse
+  );
+};
+
+/** 管理者がPENDING修正申請のsnapshotを任意コメント付きで承認する。 */
+const approveCorrectionRequest = async (
+  requestId: number,
+  version: number,
+  reviewComment: string | null
+): Promise<AttendanceCorrectionResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/administration/correction-requests/${requestId}/approve`,
+    { version, reviewComment }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrection(
+    (await response.json()) as AttendanceCorrectionResponse
+  );
+};
+
+/** 管理者がPENDING修正申請を必須理由付きで却下する。 */
+const rejectCorrectionRequest = async (
+  requestId: number,
+  version: number,
+  reason: string
+): Promise<AttendanceCorrectionResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.ATTENDANCE}/administration/correction-requests/${requestId}/reject`,
+    { version, reason }
+  );
+  await ensureSuccess(response);
+  return normalizeAttendanceCorrection(
+    (await response.json()) as AttendanceCorrectionResponse
+  );
+};
+
 /** SUBMITTED月を任意コメント付きで承認する。 */
 const approveMonth = async (
   attendanceMonthId: number,
@@ -249,14 +372,20 @@ const closeMonth = async (
 };
 
 export default {
+  approveCorrectionRequest,
   approveMonth,
+  cancelCorrectionRequest,
   closeMonth,
+  createCorrectionRequest,
+  getAdministrationCorrectionRequests,
   getAdministrationMonth,
   getAdministrationMonths,
   getDay,
   getDays,
   getMonth,
+  getOwnCorrectionRequests,
   punch,
   rejectMonth,
+  rejectCorrectionRequest,
   submitMonth,
 };

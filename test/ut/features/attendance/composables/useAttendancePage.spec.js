@@ -5,9 +5,12 @@ import { useAttendancePage } from "@/features/attendance/composables/useAttendan
 
 const mocks = vi.hoisted(() => ({
   attendanceApi: {
+    cancelCorrectionRequest: vi.fn(),
+    createCorrectionRequest: vi.fn(),
     getDay: vi.fn(),
     getDays: vi.fn(),
     getMonth: vi.fn(),
+    getOwnCorrectionRequests: vi.fn(),
     punch: vi.fn(),
     submitMonth: vi.fn(),
   },
@@ -33,6 +36,7 @@ vi.mock("@/features/attendance/api/attendanceApi", async () => {
 
 const buildDay = (workDate, punchState = "OFF_DUTY") => ({
   attendanceDayId: punchState === "OFF_DUTY" ? null : 11,
+  version: punchState === "OFF_DUTY" ? null : 0,
   workDate,
   note: null,
   punchState,
@@ -76,6 +80,9 @@ describe("useAttendancePage", () => {
     mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
       Promise.resolve(buildMonth(yearMonth))
     );
+    mocks.attendanceApi.getOwnCorrectionRequests.mockResolvedValue({
+      correctionRequests: [],
+    });
   });
 
   it("初期表示で東京の当日詳細と表示月一覧を並列取得する", async () => {
@@ -90,6 +97,9 @@ describe("useAttendancePage", () => {
     expect(mocks.attendanceApi.getDay).toHaveBeenCalledWith(page.today);
     expect(mocks.attendanceApi.getMonth).toHaveBeenCalledWith(
       page.selectedMonth.value
+    );
+    expect(mocks.attendanceApi.getOwnCorrectionRequests).toHaveBeenCalledWith(
+      page.today
     );
     expect(page.selectedDay.value.workDate).toBe(page.today);
     expect(page.canClockIn.value).toBe(true);
@@ -193,6 +203,87 @@ describe("useAttendancePage", () => {
     expect(mocks.attendanceApi.submitMonth).not.toHaveBeenCalled();
   });
 
+  it("承認済み月の現在勤怠を初期値にして東京時刻の全置換snapshotを申請する", async () => {
+    mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
+      Promise.resolve(buildMonth(yearMonth, "APPROVED"))
+    );
+    const page = useAttendancePage();
+    await page.initialize();
+    page.openCorrectionDialog();
+    page.addCorrectionWorkPeriod();
+    page.correctionForm.value.reason = "打刻漏れを修正";
+    mocks.attendanceApi.createCorrectionRequest.mockResolvedValue({
+      attendanceCorrectionRequestId: 41,
+      statusCode: "PENDING",
+      version: 0,
+    });
+
+    await page.submitCorrectionRequest();
+
+    expect(mocks.attendanceApi.createCorrectionRequest).toHaveBeenCalledWith(
+      page.today,
+      {
+        baseDayVersion: null,
+        note: null,
+        reason: "打刻漏れを修正",
+        workPeriods: [
+          {
+            startedAt: `${page.today}T09:00:00+09:00`,
+            endedAt: `${page.today}T18:00:00+09:00`,
+            breakPeriods: [],
+          },
+        ],
+      }
+    );
+    expect(page.isCorrectionDialogOpen.value).toBe(false);
+    expect(page.successMessage.value).toBe("勤怠修正を申請しました。");
+  });
+
+  it("必須理由がない修正入力はAPIへ送らずPENDING申請は最新versionで取り消す", async () => {
+    const pending = {
+      attendanceCorrectionRequestId: 41,
+      accountId: 1,
+      workDate: "2026-09-06",
+      reason: "訂正",
+      statusCode: "PENDING",
+      requestedBy: 1,
+      requestedAt: "2026-09-07T00:00:00Z",
+      version: 3,
+      workPeriods: [],
+    };
+    mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
+      Promise.resolve(buildMonth(yearMonth, "APPROVED"))
+    );
+    mocks.attendanceApi.getOwnCorrectionRequests.mockResolvedValueOnce({
+      correctionRequests: [],
+    });
+    const page = useAttendancePage();
+    await page.initialize();
+    page.openCorrectionDialog();
+
+    await page.submitCorrectionRequest();
+
+    expect(mocks.attendanceApi.createCorrectionRequest).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual(["修正理由を入力してください。"]);
+    mocks.attendanceApi.getOwnCorrectionRequests.mockResolvedValue({
+      correctionRequests: [{ ...pending, workDate: page.today }],
+    });
+    await page.selectWorkDate(page.today);
+    mocks.attendanceApi.cancelCorrectionRequest.mockResolvedValue({
+      ...pending,
+      workDate: page.today,
+      statusCode: "CANCELLED",
+      version: 4,
+    });
+
+    await page.cancelCorrectionRequest({ ...pending, workDate: page.today });
+
+    expect(mocks.attendanceApi.cancelCorrectionRequest).toHaveBeenCalledWith(
+      41,
+      3
+    );
+  });
+
   it("409はBackendメッセージを表示して月一覧と選択日を再取得する", async () => {
     const page = useAttendancePage();
     await page.initialize();
@@ -214,6 +305,7 @@ describe("useAttendancePage", () => {
     expect(mocks.attendanceApi.getDays).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getDay).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getMonth).toHaveBeenCalledTimes(2);
+    expect(mocks.attendanceApi.getOwnCorrectionRequests).toHaveBeenCalledTimes(2);
   });
 
   it("401はSessionを破棄してログイン画面へ戻す", async () => {

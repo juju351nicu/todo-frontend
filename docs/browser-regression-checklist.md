@@ -237,3 +237,41 @@ Backendの`BROWSER-WBS-DEPENDENCY`専用fixtureをDocker MySQLへ投入し、`us
 
 これにより、Task依存関係V3の一覧編集と参照専用Gantt線の実ブラウザ回帰を完了した。採番値は実施記録の識別用であり、
 fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を使用する。
+
+## 勤怠修正申請・審査の回帰（Stage 8C-2）
+
+通常のaccount・勤怠・Project・Todo・Taskを変更しないよう、Backendの
+`scripts/browser-regression/attendance-correction`が作成する専用accountと当月勤怠だけを使用する。
+実施手順、期待するversion・監査順、DB確認値、cleanupはBackendの
+`scripts/browser-regression/README.md`に記載する。
+
+### 本人画面
+
+- [ ] `attendance-correction-browser`でログインし、対象月・対象日を表示できる。
+- [ ] APPROVEDまたはCLOSEDの対象日だけ「修正申請」操作を表示する。
+- [ ] 現在の勤務・休憩・メモを初期値にした申請Dialogを表示する。
+- [ ] 申請理由の未入力、1000文字超過、勤務・休憩の時刻逆転、重複、勤務外休憩を送信前に拒否する。
+- [ ] 申請中は送信を無効にし、二重送信しない。
+- [ ] 申請後にPENDING履歴を表示し、再読込後も同じ内容を表示する。
+- [ ] PENDING中は新しい修正申請を開始できず、本人だけがversion付きで取消できる。
+- [ ] CANCELLED、APPROVED、REJECTEDの履歴、審査コメント、却下理由を表示する。
+- [ ] 409競合時は対象日と履歴を再取得し、古い画面状態を残さない。
+
+### 管理画面
+
+- [ ] `attendance-correction-reviewer`でログインし、PENDING一覧を日付・申請者とともに表示する。
+- [ ] 対象申請を選択し、現在勤怠と申請snapshotを並べて比較できる。
+- [ ] version付きで承認し、現在勤怠が申請snapshotへ置き換わる。
+- [ ] CLOSED月の申請を承認するとAPPROVEDへ戻り、再確認・再締めが必要になる。
+- [ ] 却下理由の未入力を送信前に拒否し、理由付きで却下できる。
+- [ ] 審査中は承認・却下を無効にし、二重送信しない。
+- [ ] 409競合時は一覧と現在勤怠を再取得し、別申請の選択結果で上書きしない。
+- [ ] 本人accountに審査操作を表示せず、直接API呼出しも403になる。
+
+### DB・監査・後始末
+
+- [ ] 取消、承認、却下を含む3件のsnapshotが履歴として残る。
+- [ ] 承認後の勤務終了が18:30、`entry_source=APPROVED_CORRECTION`、月次versionが4になる。
+- [ ] 申請・取消・申請・承認・申請・却下の監査6件がactor・before／after状態と一致する。
+- [ ] 安定起動後のブラウザconsoleがwarning 0件、error 0件である。
+- [ ] cleanup後に専用account、勤怠、申請snapshot、監査がすべて0件になる。

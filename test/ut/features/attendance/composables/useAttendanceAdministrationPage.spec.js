@@ -5,10 +5,13 @@ import { useAttendanceAdministrationPage } from "@/features/attendance/composabl
 
 const mocks = vi.hoisted(() => ({
   attendanceApi: {
+    approveCorrectionRequest: vi.fn(),
     approveMonth: vi.fn(),
     closeMonth: vi.fn(),
     getAdministrationMonth: vi.fn(),
     getAdministrationMonths: vi.fn(),
+    getAdministrationCorrectionRequests: vi.fn(),
+    rejectCorrectionRequest: vi.fn(),
     rejectMonth: vi.fn(),
   },
   router: { push: vi.fn() },
@@ -63,6 +66,26 @@ const buildDetail = (statusCode = "SUBMITTED", version = 1) => ({
   days: [],
 });
 
+const correctionRequest = {
+  attendanceCorrectionRequestId: 41,
+  accountId: 21,
+  loginId: "attendance-user",
+  displayName: "勤怠 利用者",
+  workDate: "2026-09-05",
+  attendanceDayId: 51,
+  baseDayVersion: 0,
+  requestedBy: 21,
+  proposedNote: "修正後",
+  reason: "退勤時刻訂正",
+  statusCode: "PENDING",
+  reviewedBy: null,
+  reviewedAt: null,
+  reviewComment: null,
+  requestedAt: "2026-09-06T00:00:00Z",
+  version: 2,
+  workPeriods: [],
+};
+
 describe("useAttendanceAdministrationPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -77,6 +100,9 @@ describe("useAttendanceAdministrationPage", () => {
     mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(
       buildDetail()
     );
+    mocks.attendanceApi.getAdministrationCorrectionRequests.mockResolvedValue({
+      correctionRequests: [correctionRequest],
+    });
   });
 
   it("対象月と状態で検索し選択accountの詳細を取得する", async () => {
@@ -157,6 +183,65 @@ describe("useAttendanceAdministrationPage", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("修正審査permissionがない利用者は初期表示で修正申請APIを呼ばない", async () => {
+    mocks.userStore.hasPermission.mockReturnValue(false);
+    const page = useAttendanceAdministrationPage();
+
+    await page.initialize();
+
+    expect(page.canReview.value).toBe(false);
+    expect(
+      mocks.attendanceApi.getAdministrationCorrectionRequests
+    ).not.toHaveBeenCalled();
+  });
+
+  it("修正申請と現在勤怠を比較し最新versionで承認して一覧を更新する", async () => {
+    const currentDay = {
+      attendanceDayId: 51,
+      version: 0,
+      workDate: "2026-09-05",
+      note: null,
+      punchState: "OFF_DUTY",
+      workPeriods: [],
+    };
+    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue({
+      ...buildDetail(),
+      days: [currentDay],
+    });
+    mocks.attendanceApi.approveCorrectionRequest.mockResolvedValue({
+      ...correctionRequest,
+      statusCode: "APPROVED",
+      version: 3,
+    });
+    const page = useAttendanceAdministrationPage();
+    await page.initialize();
+    await page.selectCorrectionRequest(correctionRequest);
+    page.correctionReviewComment.value = "確認済み";
+
+    await page.approveCorrectionRequest();
+
+    expect(mocks.attendanceApi.approveCorrectionRequest).toHaveBeenCalledWith(
+      41,
+      2,
+      "確認済み"
+    );
+    expect(page.successMessage.value).toBe("勤怠修正申請を承認しました。");
+    expect(mocks.attendanceApi.getAdministrationCorrectionRequests).toHaveBeenCalledTimes(2);
+    expect(page.selectedCorrectionCurrentDay.value).toEqual(currentDay);
+  });
+
+  it("空白の却下理由では修正申請APIを呼ばない", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.initialize();
+    await page.selectCorrectionRequest(correctionRequest);
+    page.correctionRejectReason.value = "   ";
+
+    await page.rejectCorrectionRequest();
+
+    expect(mocks.attendanceApi.rejectCorrectionRequest).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual(["却下理由を入力してください。"]);
   });
 
   it("409時は古いversionを維持せず詳細と一覧を再取得する", async () => {
