@@ -249,12 +249,17 @@ PENDING取消を追加した。画面再読込後の履歴と取消用versionを
 管理者画面は既存`useAttendanceAdministrationPage`ひとつに修正申請を統合した。状態別一覧、申請選択時の
 対象account月取得、現在勤怠と申請snapshotの比較、承認、必須理由付き却下を扱う。
 `AttendanceCorrectionDialog`と`AttendanceCorrectionAdministration`はProps／Emit中心でAPIを呼ばず、
-非同期状態、認証、二重送信、409回復は画面composableへ残す。実ブラウザ・DB回帰完了まではStage 8C-2を
-「実装済み・回帰待ち」とする。
+非同期状態、認証、二重送信、409回復は画面composableへ残す。
 
 画面事前検証はBackend契約と同じく、勤務開始を対象日のAsia/Tokyo日付へ限定し、退勤と勤務内休憩は翌日へ
-跨げる。管理画面の修正審査領域は`ATTENDANCE_REVIEW`保持者だけへ表示する。全51 test file・374 Vitest、
-TypeScript／Vue型検査、production buildは成功済みである。
+跨げる。管理画面の修正審査領域は`ATTENDANCE_REVIEW`保持者だけへ表示する。
+
+同日の実ブラウザ回帰では申請、再読込後のPENDING復元、取消、再申請、現在値との比較、承認、理由必須の却下を
+確認した。承認後は本人画面へAPPROVED、退勤18:30、承認後メモと審査コメントが反映された。利用者が
+`datetime-local`を編集すると秒が省略される実ブラウザ固有の境界を検出したため、offset変換時に秒のない入力へ
+`:00`を補完し、秒あり入力を変えないutility testを追加した。最終DBは3申請・6監査、cleanup後0件となり、
+Backend・Viteの安定ログに未処理errorはなかった。全51 test file・375 Vitest、TypeScript／Vue型検査、
+production buildが成功し、Stage 8C-2は完了した。
 
 ## 変更時の確認
 

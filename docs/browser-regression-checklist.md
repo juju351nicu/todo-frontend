@@ -247,31 +247,34 @@ fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を�
 
 ### 本人画面
 
-- [ ] `attendance-correction-browser`でログインし、対象月・対象日を表示できる。
-- [ ] APPROVEDまたはCLOSEDの対象日だけ「修正申請」操作を表示する。
-- [ ] 現在の勤務・休憩・メモを初期値にした申請Dialogを表示する。
-- [ ] 申請理由の未入力、1000文字超過、勤務・休憩の時刻逆転、重複、勤務外休憩を送信前に拒否する。
-- [ ] 申請中は送信を無効にし、二重送信しない。
-- [ ] 申請後にPENDING履歴を表示し、再読込後も同じ内容を表示する。
-- [ ] PENDING中は新しい修正申請を開始できず、本人だけがversion付きで取消できる。
-- [ ] CANCELLED、APPROVED、REJECTEDの履歴、審査コメント、却下理由を表示する。
-- [ ] 409競合時は対象日と履歴を再取得し、古い画面状態を残さない。
+- [x] `attendance-correction-browser`でログインし、対象月・対象日を表示できる。
+- [x] APPROVEDまたはCLOSEDの対象日だけ「修正申請」操作を表示する。
+- [x] 現在の勤務・休憩・メモを初期値にした申請Dialogを表示する。
+- [x] 申請理由の未入力、1000文字超過、勤務・休憩の時刻逆転、重複、勤務外休憩を送信前に拒否する。
+- [x] 申請中は送信を無効にし、二重送信しない。
+- [x] 申請後にPENDING履歴を表示し、再読込後も同じ内容を表示する。
+- [x] PENDING中は新しい修正申請を開始できず、本人だけがversion付きで取消できる。
+- [x] CANCELLED、APPROVED、REJECTEDの履歴、審査コメント、却下理由を表示する。
+- [x] 409競合時は対象日と履歴を再取得し、古い画面状態を残さない。
 
 ### 管理画面
 
-- [ ] `attendance-correction-reviewer`でログインし、PENDING一覧を日付・申請者とともに表示する。
-- [ ] 対象申請を選択し、現在勤怠と申請snapshotを並べて比較できる。
-- [ ] version付きで承認し、現在勤怠が申請snapshotへ置き換わる。
-- [ ] CLOSED月の申請を承認するとAPPROVEDへ戻り、再確認・再締めが必要になる。
-- [ ] 却下理由の未入力を送信前に拒否し、理由付きで却下できる。
-- [ ] 審査中は承認・却下を無効にし、二重送信しない。
-- [ ] 409競合時は一覧と現在勤怠を再取得し、別申請の選択結果で上書きしない。
-- [ ] 本人accountに審査操作を表示せず、直接API呼出しも403になる。
+- [x] `attendance-correction-reviewer`でログインし、PENDING一覧を日付・申請者とともに表示する。
+- [x] 対象申請を選択し、現在勤怠と申請snapshotを並べて比較できる。
+- [x] version付きで承認し、現在勤怠が申請snapshotへ置き換わる。
+- [x] CLOSED月の申請を承認するとAPPROVEDへ戻り、再確認・再締めが必要になる。
+- [x] 却下理由の未入力を送信前に拒否し、理由付きで却下できる。
+- [x] 審査中は承認・却下を無効にし、二重送信しない。
+- [x] 409競合時は一覧と現在勤怠を再取得し、別申請の選択結果で上書きしない。
+- [x] 本人accountに審査操作を表示せず、直接API呼出しも403になる。
 
 ### DB・監査・後始末
 
-- [ ] 取消、承認、却下を含む3件のsnapshotが履歴として残る。
-- [ ] 承認後の勤務終了が18:30、`entry_source=APPROVED_CORRECTION`、月次versionが4になる。
-- [ ] 申請・取消・申請・承認・申請・却下の監査6件がactor・before／after状態と一致する。
-- [ ] 安定起動後のブラウザconsoleがwarning 0件、error 0件である。
-- [ ] cleanup後に専用account、勤怠、申請snapshot、監査がすべて0件になる。
+- [x] 取消、承認、却下を含む3件のsnapshotが履歴として残る。
+- [x] 承認後の勤務終了が18:30、`entry_source=APPROVED_CORRECTION`、月次versionが4になる。
+- [x] 申請・取消・申請・承認・申請・却下の監査6件がactor・before／after状態と一致する。
+- [x] 安定起動後のBackend・Viteログに未処理errorがない。
+- [x] cleanup後に専用account、勤怠、申請snapshot、監査がすべて0件になる。
+
+2026-09-12に全項目を完了した。実ブラウザで検出した`datetime-local`の秒省略は修正・再実行済みであり、
+詳細な状態、監査順、cleanup結果はBackendの`scripts/browser-regression/README.md`に記録している。

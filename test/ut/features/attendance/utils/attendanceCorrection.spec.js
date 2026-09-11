@@ -4,6 +4,7 @@ import {
   buildAttendanceCorrectionForm,
   buildAttendanceCorrectionRequest,
   toTokyoDateTimeInput,
+  toTokyoOffsetDateTime,
   validateAttendanceCorrectionForm,
 } from "@/features/attendance/utils/attendanceCorrection";
 
@@ -44,6 +45,15 @@ describe("勤怠修正申請の画面変換と事前検証", () => {
         },
       ],
     });
+  });
+
+  it("datetime-localが秒を省略してもBackendで解釈できるInstant形式へ補完する", () => {
+    expect(toTokyoOffsetDateTime("2026-09-05T18:30")).toBe(
+      "2026-09-05T18:30:00+09:00"
+    );
+    expect(toTokyoOffsetDateTime("2026-09-05T18:30:45")).toBe(
+      "2026-09-05T18:30:45+09:00"
+    );
   });
 
   it("必須理由・逆転・勤務重複・勤務外休憩・日付違いを利用者向けに検出する", () => {

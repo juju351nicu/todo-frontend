@@ -42,8 +42,11 @@ export const toTokyoDateTimeInput = (instant: string): string => {
 };
 
 /** 東京時刻のdatetime-local入力値をBackendへ送るoffset付きISO文字列へ変換する。 */
-export const toTokyoOffsetDateTime = (input: string): string =>
-  `${input}${TOKYO_OFFSET}`;
+export const toTokyoOffsetDateTime = (input: string): string => {
+  // datetime-localは利用者が値を変更すると秒を省略するため、Instantが解釈できる形式へ揃える。
+  const normalizedInput = input.length === 16 ? `${input}:00` : input;
+  return `${normalizedInput}${TOKYO_OFFSET}`;
+};
 
 /** 現在の勤怠日を全置換用の修正申請フォーム初期値へ変換する。 */
 export const buildAttendanceCorrectionForm = (

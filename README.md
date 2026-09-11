@@ -88,9 +88,11 @@ Stage 8B-2では本人画面へ月次状態、月合計、提出・再提出、�
 Stage 8C-2では本人画面へAPPROVED／CLOSED月の全置換修正申請、勤務日別の申請履歴、PENDING取消を追加しました。
 現在勤怠はAsia/Tokyoの入力値へ変換し、勤務・休憩の逆転、日付違い、重複、勤務外休憩を送信前にも案内します。
 管理画面には状態別修正申請一覧、現在勤怠と申請snapshotの比較、コメント付き承認、理由付き却下を追加しました。
-再読込後の履歴・versionはBackendから復元し、409時は古い値を再送しません。自動検証は成功済みで、
-夜勤を含む期間境界、permission表示、競合、二重送信も含め、全51 test file・374 Vitest、TypeScript／Vue型検査、
-production buildが成功しました。実ブラウザ・DB・console・cleanup回帰後にStage 8C-2を完了とします。
+再読込後の履歴・versionはBackendから復元し、409時は古い値を再送しません。実ブラウザ回帰では取消、承認、
+理由必須の却下、CLOSEDからAPPROVEDへの遷移、退勤18:30への全置換、DB監査6件、cleanup後0件を確認しました。
+回帰中に見つかった`datetime-local`の秒省略は、offset変換時に`:00`を補完して修正し、Vitestで固定しています。
+夜勤を含む期間境界、permission表示、競合、二重送信も含め、全51 test file・375 Vitest、TypeScript／Vue型検査、
+production buildが成功しました。これによりStage 8C-2は完了です。
 
 ## 検証
 
