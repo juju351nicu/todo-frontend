@@ -82,6 +82,15 @@ describe("Vue routes", () => {
     ]);
   });
 
+  it("お知らせ配信画面を専用permissionで保護する", () => {
+    const route = findRoute("NotificationAdministration");
+
+    expect(route.path).toBe("/administration/notifications");
+    expect(route.meta.requiredAnyPermissions).toEqual([
+      "NOTIFICATION_ANNOUNCEMENT_CREATE",
+    ]);
+  });
+
   it("各画面をルート単位で遅延読み込みする", () => {
     routes.forEach((route) => {
       expect(route.component).toBeTypeOf("function");

@@ -28,4 +28,7 @@ export const API_PATHS = {
   AUTHORIZATION_AUDIT_LOGS:
     "/api/v1/administration/authorization-audit-logs",
   ATTENDANCE: "/api/v1/attendance",
+  NOTIFICATIONS: "/api/v1/notifications",
+  ADMINISTRATION_NOTIFICATION_ANNOUNCEMENTS:
+    "/api/v1/administration/notifications/announcements",
 } as const;

@@ -63,6 +63,16 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/administration/notifications",
+    name: "NotificationAdministration",
+    component: () =>
+      import("@/features/notification/views/AnnouncementManagementPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["NOTIFICATION_ANNOUNCEMENT_CREATE"],
+    },
+  },
+  {
     path: "/member/memberList",
     name: "MemberList",
     component: () => import("@/features/member/views/MemberListPage.vue"),

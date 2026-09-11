@@ -125,6 +125,12 @@ src/
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
 - `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar・baseline・EVM・Excel帳票入口画面
+- `src/features/notification/api/notificationApi.ts`: 通知一覧・一括既読・管理者お知らせ発行API
+- `src/features/notification/types/notification.ts`: イベント型通知、導出型警告、badge、既読、お知らせ入力のAPI契約型
+- `src/features/notification/composables/useNotificationCenter.ts`: ベルの取得・既読・画面遷移と非polling更新契機
+- `src/features/notification/components/NotificationBell.vue`: 全認証画面の未読・未解決badgeと通知一覧
+- `src/features/notification/composables/useAnnouncementManagementPage.ts`: 管理者お知らせ入力、UTC変換、送信、認証・入力エラー処理
+- `src/features/notification/views/AnnouncementManagementPage.vue`: SYSTEM_ADMIN向け全利用者お知らせ配信画面
 - `src/features/inquiry/api/inquiryApi.ts`: 問い合わせ送信API
 - `src/features/inquiry/types/inquiry.ts`: 問い合わせAPIのRequest / Response型
 - `src/features/inquiry/composables/useInquiryFormPage.ts`: 問い合わせ入力、送信、成功・入力エラー・接続エラー表示
@@ -289,6 +295,17 @@ API、認証、競合回復、非同期状態を持たない。
 利用者名は既存Session Storeのdisplay name、login ID、固定fallbackの順で表示し、新しいStoreやAPIを追加しない。
 月次申請、月間一覧、選択日詳細、修正申請はパネル下へ維持する。現在時刻境界とSession利用者名をVitestで固定し、
 全51 test file・383 Vitest、TypeScript／Vue型検査、production buildが成功した。
+
+## 通知センター
+
+2026-09-12にStage 9Aとして`src/features/notification`を追加した。`AppHeader`のベルは保存済みイベントと
+現在状態から導出した警告を同じカード内の別sectionに表示する。全体件数は未読イベントと未解決警告の合計であり、
+ベルを開いて既読にしても警告件数は減らさない。通知の`navigationPath`は`/`で始まるFrontend内pathだけを
+Routerへ渡し、外部URLやprotocol-relative pathは拒否する。
+
+Spring Sessionの無操作期限を定期Requestで延長しないため、`setInterval`によるpollingは使用しない。
+初期mount、route変更、visibility復帰、window focus、管理者お知らせ発行後の明示event、利用者の再読込操作を
+更新契機とする。リアルタイム配信はUbuntu／Nginx移行後にWebSocketまたはSSEとSession期限を同時設計する。
 
 ## 変更時の確認
 

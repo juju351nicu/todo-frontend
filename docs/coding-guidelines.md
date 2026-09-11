@@ -34,6 +34,8 @@ JSDocには必要に応じて次を含める。
 JSDocはチャット、口頭説明、Gitのコミットメッセージがなくても、対象コードを安全に利用・変更できる情報を残す。すべての項目を機械的に埋めるのではなく、対象に該当するものだけを具体的に記載する。
 
 - composable: 担当する画面状態と操作、返すref／computedの意味、呼び出すAPI、Router・Store・通知等の副作用、初期化と再読込の条件、エラー時の状態。
+- 通知の定期pollingはSpring Sessionの無操作期限を延長するため、要件とSession設計なしに追加しない。初期表示、route変更、tab復帰、業務操作後の明示eventを更新契機にする。
+- Backendから受け取った通知遷移先はFrontend内の絶対pathだけを許可し、外部URLや`//`で始まるpathをRouterへ渡さない。
 - API関数: HTTPメソッドと用途、認証・CSRFの前提、Request／Responseの意味、204・空配列・nullの扱い、呼出側が区別すべき失敗条件。単純な共通Client委譲では、パスをコードから読める場合に重複記載しなくてよい。
 - Store action・utility: 変更する共有状態、永続化の有無、再実行時の契約、外部状態や時刻への依存。
 - type・interface・property: Backend項目との対応、コード体系、日時・数値の単位、null・未指定の意味、画面専用かAPI境界か。名称とTypeScript型だけで明白なpropertyへ重複説明は書かない。

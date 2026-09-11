@@ -36,7 +36,8 @@ export type PermissionCode =
   | "ATTENDANCE_REVIEW"
   | "ATTENDANCE_CLOSE"
   | "ATTENDANCE_EXPORT"
-  | "ATTENDANCE_AUDIT_READ";
+  | "ATTENDANCE_AUDIT_READ"
+  | "NOTIFICATION_ANNOUNCEMENT_CREATE";
 
 /** 本人勤怠の日・月表示に必要なpermission。 */
 export const ATTENDANCE_READ_PERMISSION_CODES = [

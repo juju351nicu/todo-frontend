@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -108,6 +108,13 @@ Stage 8完了後のUX改善として、本人勤怠画面の先頭へ大きなAs
 実行できるものだけを有効化します。表示時計はAPIへ送信せず、既存のBackend server timestamp、permission、
 二重送信防止、409再取得、月次workflow、修正申請をそのまま利用します。全51 test file・383 Vitest、
 TypeScript／Vue型検査、production buildが成功しています。
+
+Stage 9Aでは全認証画面のヘッダーへベルを追加しました。未読の管理者お知らせ・Task割当・勤怠差戻しと、
+未解決の期限超過・打刻漏れ・承認待ちを分けて表示し、badgeは両方の合計です。イベント通知はベルを開いた後に
+一括既読とし、導出警告は元のTask・勤怠状態を解消するまで残します。SYSTEM_ADMINはside menuの
+「お知らせ配信」から全利用者向けの件名・本文・任意終了日時を登録できます。定期pollingは行わず、初期表示、
+route変更、tab再表示、window focus、業務操作後の明示eventで更新します。Frontendは54 test file・395 Vitest、
+TypeScript／Vue型検査、production buildまで成功しています。
 
 ## 検証
 

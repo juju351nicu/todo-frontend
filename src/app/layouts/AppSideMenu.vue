@@ -81,6 +81,13 @@ const links = computed<NavigationLink[]>(() => {
             url: "/administration/authorization-audit-logs",
         });
     }
+    if (userStore.hasPermission("NOTIFICATION_ANNOUNCEMENT_CREATE")) {
+        values.push({
+            icon: "mdi-bullhorn-outline",
+            text: "お知らせ配信",
+            url: "/administration/notifications",
+        });
+    }
     if (userStore.hasRole("SYSTEM_ADMIN")) {
         values.push({
             icon: "mdi-account-plus",
