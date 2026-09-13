@@ -5,6 +5,7 @@ import Draggable from "vuedraggable";
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
+import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import type { TaskPriority } from "@/features/project/types/project";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
@@ -285,6 +286,12 @@ onBeforeMount(initialize);
               :disabled="isSaving || form.taskId !== null"
               hint="登録後の列変更はBoard上の移動操作で行います。"
               persistent-hint
+            />
+            <TaskCommentsPanel
+              v-if="form.taskId !== null && board"
+              :project-id="board.projectId"
+              :task-id="form.taskId"
+              :disabled="isReadonly || project?.status === 'ARCHIVED'"
             />
           </v-form>
         </v-card-text>
