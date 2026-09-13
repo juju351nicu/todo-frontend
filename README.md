@@ -116,6 +116,11 @@ Stage 9Aでは全認証画面のヘッダーへベルを追加しました。未
 route変更、tab再表示、window focus、業務操作後の明示eventで更新します。Frontendは54 test file・395 Vitest、
 TypeScript／Vue型検査、production buildまで成功しています。
 
+ロードマップのPhase 1として、`/my-tasks`へMy Tasks画面を追加しました。既存Todo一覧APIの認可済みResponseを
+利用し、Sessionのaccount IDに一致する未完了Taskを、期限超過・今日・今後の3グループへ表示します。Task詳細への
+遷移、完了操作、再読込、空結果、通信エラーを既存のTask APIと共通HTTPクライアントで処理します。横断検索、
+Saved View、Backend専用My Tasks endpointは後続Stageで追加し、現在の画面で新しいAPI契約を先取りしません。
+
 ## 検証
 
 ```bash
