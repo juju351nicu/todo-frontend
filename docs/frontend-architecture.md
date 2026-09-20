@@ -354,6 +354,12 @@ Project変更時は担当者・状態候補を再取得して無効な選択値�
 `remainingDays`から当日〜日曜だけを表示し、期限超過は含めない。
 API、composable、route、「今週」の境界を含む全60 test file・437 Vitest、型検査、production buildが成功した。
 
+`BROWSER-TASK-SEARCH`専用fixtureによる実ブラウザ回帰では、初期103件の100件上限、未参加・archive境界、
+`100%_DONE!`のliteral検索、複合条件、説明列追加、Saved View作成・別tab適用・更新・削除を確認した。
+2 tabの古いversion更新は409となり、競合tabがversion 1の最新名と条件を再取得した。検索結果から既存Boardの
+Task詳細Dialogへ遷移し、再読込後も表示を維持した。安定再読込のconsole warning・errorは0件で、
+DB inspectと専用fixture cleanup後0件まで完了した。これによりStage 9EのFrontend回帰を完了した。
+
 ## 変更時の確認
 
 ```bash

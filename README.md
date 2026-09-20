@@ -137,6 +137,10 @@ Task詳細deep linkへ接続します。
 `TASK_READ`で案内し、Project参照範囲、本人所有、名称重複、件数上限、最終認可はBackendを正本とします。
 Task検索と「今週」のテストを含む全60 test file・437 Vitest、TypeScript／Vue型検査、production buildが成功しています。
 
+2026-09-20に専用fixtureで100件上限、未参加・archive境界、literal検索、複合条件、表示列、Saved Viewの
+作成・別tab適用・version競合・削除、Board詳細deep linkを実ブラウザ確認しました。競合回復後の安定再読込は
+console warning・error 0件で、DB inspectとcleanup後の専用account、Project、Task、Saved View、Session 0件まで完了しています。
+
 Task詳細Dialogのコメント欄は、投稿者本人のコメントだけに編集・削除操作を表示します。編集と削除には一覧取得時点の
 versionを送り、409または404では古い入力・確認対象を破棄して最新一覧を再取得します。編集による再メンションや、
 削除による既存通知の取消は行いません。API境界とcomposableは401、入力上限、二重送信、所有者判定、409回復を扱い、

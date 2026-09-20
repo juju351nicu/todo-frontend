@@ -50,6 +50,10 @@ npm run dev -- --host localhost
 | 25 | My Tasksを開く | 本人担当の未完了Taskだけが期限超過・今日・今後へ分かれ、Project・状態・優先度・期限・進捗が表示される |
 | 26 | My TasksのTaskを選択する | 所属Project Boardへ遷移し、URLのTask IDに対応する既存Task詳細Dialogが開く |
 | 27 | My TasksでTaskを完了する | 更新permissionがある場合だけ完了操作が表示され、成功後に一覧から消えて再読込後も戻らない |
+| 28 | Task検索を開く | 参照可能なACTIVE Projectの非archive Taskだけが最大100件表示され、上限超過が案内される |
+| 29 | 検索条件と表示列をSaved Viewへ保存・適用する | literalキーワードと複合条件、表示列が別tabでも復元される |
+| 30 | Saved Viewを2 tabで更新する | 古いversionは409となり、競合tabが最新Saved View一覧を再取得する |
+| 31 | 検索結果のTaskを選択する | Project BoardへTask ID付きで遷移し、既存Task詳細Dialogが開く |
 
 2026-09-20に項目25〜27を`BROWSER-MY-TASKS`専用fixtureで確認した。期限3グループ各1件、非対象3件の除外、
 Task ID queryによる詳細Dialog表示、完了後2件への更新、再読込、DB照合、console warning・error 0件、cleanup後の
@@ -358,3 +362,26 @@ Backendの`scripts/browser-regression/task-comment`専用fixtureにactive Task�
 2026-09-20にProject ID 6、active Task ID 23、archive済みTask ID 24、コメントID 6・5で完了した。
 投稿者と別Project memberで同じ2件を確認し、active行だけTask詳細を開いた。両Sessionのconsoleはwarning・error 0件、
 cleanup後の専用Project、account、コメント、通知件数は`0,0,0,0`だった。
+
+## Task横断検索・Saved Viewの回帰（Stage 9E）
+
+Backendの`scripts/browser-regression/task-search`専用fixtureを使用し、通常のaccount、Project、Task、Saved Viewを
+変更しない。`task-search-browser`のProject membershipをBackendの参照境界として次を確認した。
+
+- [x] 初期検索対象103件の先頭100件と上限超過案内を表示する。
+- [x] 未参加ACTIVE Project、ARCHIVED Project、archive済みTaskを候補と結果へ表示しない。
+- [x] `%`、`_`、`!`を含む`100%_DONE!`をliteralとして検索し、対象1件だけを表示する。
+- [x] Project、担当者、状態、期限From／To、優先度を組み合わせ、Backend確定結果1件を表示する。
+- [x] 表示列へ「説明」を追加し、検索条件と合わせてSaved Viewへ保存する。
+- [x] 別tabでSaved Viewを適用し、条件7項目、表示列7件、検索結果1件を復元する。
+- [x] 先行tabのversion 1更新後、古いtabのversion 0更新を409として拒否する。
+- [x] 競合tabが最新名・条件・表示列を再取得し、古い値を再送しない。
+- [x] 最新versionでSaved Viewを削除し、一覧が0件になる。
+- [x] 検索結果からTask ID付きBoardへ遷移し、再読込後も既存Task詳細Dialogを開く。
+- [x] 競合回復後の安定再読込で全APIが200、browser console warning・errorがない。
+- [x] DB inspectが検索対象、literal一致、Saved View versionと一致し、cleanup後の専用5 countが0件になる。
+
+2026-09-20にaccount ID 15・16、Project ID 9〜11、Task ID 31を含む106件で完了した。意図した競合PUTだけが
+409となり、作成201、更新・取得200、削除204、Board詳細取得200だった。更新時のSaved Viewは
+`Browser Search View Updated`、version 1、削除後0件である。cleanup後のaccount、Project、Task、Saved View、
+Sessionは`0,0,0,0,0`だった。
