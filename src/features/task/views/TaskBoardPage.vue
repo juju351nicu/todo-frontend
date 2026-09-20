@@ -8,6 +8,7 @@ import type { TaskPriority } from "@/features/project/types/project";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
+import TaskRecurrenceDialog from "@/features/task/components/TaskRecurrenceDialog.vue";
 import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
 import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
@@ -19,9 +20,11 @@ const {
   board,
   canArchiveTask,
   canCreateTask,
+  canCreateTaskRecurrence,
   canMoveTask,
   canSave,
   canUpdateTask,
+  canUpdateTaskRecurrence,
   closeArchiveConfirm,
   closeTaskEditor,
   errorMessages,
@@ -112,6 +115,15 @@ onBeforeMount(initialize);
         :can-edit="canUpdateTask"
         :project-active="project.status === 'ACTIVE'"
         @task-created="handleTemplateTaskCreated"
+      />
+      <TaskRecurrenceDialog
+        v-if="project"
+        :project-id="project.projectId"
+        :members="project.members"
+        :statuses="project.taskStatuses"
+        :can-create="canCreateTaskRecurrence"
+        :can-update="canUpdateTaskRecurrence"
+        :project-active="project.status === 'ACTIVE'"
       />
       <ProjectSettingsDialog
         v-if="project"
