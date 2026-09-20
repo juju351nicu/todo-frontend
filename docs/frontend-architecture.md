@@ -307,6 +307,20 @@ Spring Sessionの無操作期限を定期Requestで延長しないため、`setI
 初期mount、route変更、visibility復帰、window focus、管理者お知らせ発行後の明示event、利用者の再読込操作を
 更新契機とする。リアルタイム配信はUbuntu／Nginx移行後にWebSocketまたはSSEとSession期限を同時設計する。
 
+## Taskコメント編集・削除
+
+Backend V15の楽観ロック契約へ合わせ、Task詳細Dialogのコメント欄に投稿者本人向けの編集・削除操作を追加した。
+`TaskCommentsPanel`は表示と入力を担当し、API呼出し、所有者判定、競合回復は`useTaskComments`へ集約する。
+所有者表示はSessionのaccount IDと`authorAccountId`を照合するが、最終認可はBackendが行う。
+
+編集はPUT bodyへ本文と一覧取得時点のversion、削除はDELETE queryへversionを渡す。各操作中は再操作を無効にし、
+二重送信しない。401ではSessionを破棄してLoginへ遷移する。404または409では編集入力・削除確認を破棄して一覧を
+再取得し、古いversionを再送しない。編集による再メンション、既存通知本文の更新、削除による通知取消は行わない。
+
+API・composableのVitestを追加し、全56 test file・408件、TypeScript／Vue型検査、production buildが成功した。
+専用fixtureによる実ブラウザ回帰では、version 1への編集、別コメントの削除、他者の操作非表示、通知履歴維持、
+2 tabの競合による409とversion 2の再取得、DB照合、cleanup後0件を確認した。
+
 ## 変更時の確認
 
 ```bash

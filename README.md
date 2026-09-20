@@ -121,6 +121,12 @@ TypeScript／Vue型検査、production buildまで成功しています。
 遷移、完了操作、再読込、空結果、通信エラーを既存のTask APIと共通HTTPクライアントで処理します。横断検索、
 Saved View、Backend専用My Tasks endpointは後続Stageで追加し、現在の画面で新しいAPI契約を先取りしません。
 
+Task詳細Dialogのコメント欄は、投稿者本人のコメントだけに編集・削除操作を表示します。編集と削除には一覧取得時点の
+versionを送り、409または404では古い入力・確認対象を破棄して最新一覧を再取得します。編集による再メンションや、
+削除による既存通知の取消は行いません。API境界とcomposableは401、入力上限、二重送信、所有者判定、409回復を扱い、
+全56 test file・408 Vitest、TypeScript／Vue型検査、production buildが成功しています。専用fixtureによる投稿、編集、
+削除、他者操作非表示、2 tab競合、通知履歴、DB照合、cleanupの実ブラウザ回帰も完了しました。
+
 ## 検証
 
 ```bash

@@ -314,3 +314,23 @@ Backendの`scripts/browser-regression/attendance-export`が作成する専用2 a
 
 初回表示、レスポンシブ配置、既存導線は2026-09-12に確認済みである。状態を変更する2項目は既存の
 `attendance-browser`専用fixtureを再利用して、次に勤怠打刻回帰を実施するときに確認する。
+
+## Taskコメント編集・削除の回帰（V15）
+
+Backendの`scripts/browser-regression/task-comment`専用fixtureを使用し、通常のaccount、Project、Task、通知を
+変更しない。投稿者`comment-author`と受信者`comment-mentioned`で次を確認した。
+
+- [x] 投稿者本人のコメントだけに編集・削除操作を表示する。
+- [x] 一覧取得時点のversionで本文を編集し、更新時刻と「編集済み」を表示して再読込後も維持する。
+- [x] 2件目のコメントだけを削除し、1件目と投稿時のメンション通知を保持する。
+- [x] 受信者には編集・削除操作を表示せず、コメント本文を参照できる。
+- [x] 編集・削除による再通知、通知本文の更新、通知取消が発生しない。
+- [x] 2 tabで先行更新後、古いtabのversionによる更新を409で拒否する。
+- [x] 409後は編集状態を破棄し、先行更新済みの本文とversionを再取得する。
+- [x] DBのコメント、version、通知、既読状態が画面と一致し、cleanup後は専用データが0件になる。
+- [x] 安定表示後のbrowser consoleにwarning・errorがない。
+
+2026-09-20の実施ではProject ID 4、Task ID 21、コメントID 3、通知ID 3を使用した。最終コメント本文は
+`先行tabで更新済み`、version 2であり、通知本文は投稿時の内容を維持した。favicon未設定による404を検出したため
+`public/favicon.svg`を追加し、Project ID 5の再投入環境でconsole warning・error 0件を確認した。両fixtureとも
+cleanup後のProject、Task、コメント、通知件数は`0,0,0,0`である。
