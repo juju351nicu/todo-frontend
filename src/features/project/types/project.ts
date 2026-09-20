@@ -73,7 +73,7 @@ export interface ProjectMemberUpdateRequest {
   version: number;
 }
 
-/** Project内Taskの優先度。数字が小さいほど優先度が高い。 */
+/** Project内Taskの優先度。1=低、2=中、3=高。 */
 export type TaskPriority = 1 | 2 | 3;
 
 /** Board上のTaskカード。 */

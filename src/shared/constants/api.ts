@@ -21,6 +21,7 @@ export const API_PATHS = {
   TASK_SEARCH: "/api/v1/tasks/search",
   TASK_SEARCH_OPTIONS: "/api/v1/tasks/search/options",
   TASK_SAVED_VIEWS: "/api/v1/task-saved-views",
+  TASK_TEMPLATES: "/api/v1/task-templates",
   TODO_LIST: "/api/v1/todo/todoList",
   TODO_DETAIL: "/api/v1/todo",
   TODO_CALENDAR: "/api/v1/todo/calendar",

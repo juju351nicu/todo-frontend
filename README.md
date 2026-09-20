@@ -153,6 +153,19 @@ Task詳細Dialogへ接続し、archive済みTaskは「アーカイブ済み」�
 全57 test file・414 Vitest、型検査、production buildが成功し、投稿者と別Project memberによる実ブラウザ、
 更新時刻順、Task詳細遷移、DB照合、cleanup回帰まで完了しています。
 
+Stage 10A-2ではTask詳細へchecklistを追加しました。最大50件の追加、完了切替、本文編集、上下移動、削除を
+item単位versionで実行し、404／409では編集・削除対象を破棄して最新一覧へ戻します。完了数と進捗率を表示しますが、
+Task本体の進捗率は変更しません。
+
+本人専用Task Templateは、既存Taskと未完了checklistのsnapshot保存、本人一覧、初期値とchecklistの全置換編集、
+version付きarchive、別Projectへの適用を提供します。適用時は開始日、担当者、Board列を任意上書きでき、生成Taskを
+既存Board詳細で開きます。機能資格を含む最終認可はBackendへ委ね、資格不足の403、401、404／409を個別に扱います。
+Backend契約に合わせ、Task優先度表示は`1=低、2=中、3=高`へ統一しました。
+
+Frontendは65 test file・466 Vitest、TypeScript／Vue型検査、production buildが成功しています。2026-09-21の
+専用fixture回帰ではchecklist CRUD／並び替え、capture後のsnapshot不変、Template編集、別Project適用、
+Board／WBSの同一Task表示、lineage、archive、DB cleanupを確認し、安定操作中のbrowser consoleはwarning・error 0件でした。
+
 ## 検証
 
 ```bash

@@ -179,9 +179,9 @@ export const useTaskBoardPage = () => {
   });
 
   const priorityOptions: SelectOption<TaskPriority>[] = [
-    { title: "高", value: 1 },
+    { title: "低", value: 1 },
     { title: "中", value: 2 },
-    { title: "低", value: 3 },
+    { title: "高", value: 3 },
   ];
 
   /** Project管理APIの確定ResponseをBoard見出し・認可・担当者候補へ反映する。 */
@@ -266,6 +266,20 @@ export const useTaskBoardPage = () => {
       await handleApiError(error, "Task詳細を取得できませんでした。");
     } finally {
       isLoadingTask.value = false;
+    }
+  };
+
+  /** Template適用後のBoardを再取得し、生成されたTask詳細を開く。 */
+  const handleTemplateTaskCreated = async (task: TaskDetail): Promise<void> => {
+    successMessage.value = "TemplateからTaskを登録しました。";
+    try {
+      await loadBoardData();
+      await openTaskEditor(task.taskId);
+    } catch (error: unknown) {
+      await handleApiError(
+        error,
+        "Taskは登録されましたが、最新のProject Boardを取得できませんでした。"
+      );
     }
   };
 
@@ -687,12 +701,14 @@ export const useTaskBoardPage = () => {
     canCreateTask,
     canMoveTask,
     canSave,
+    canUpdateTask,
     closeArchiveConfirm,
     closeTaskEditor,
     errorMessages,
     form,
     finishTaskDrag,
     handleTaskDrop,
+    handleTemplateTaskCreated,
     initialize,
     isArchiveConfirmOpen,
     isArchiving,

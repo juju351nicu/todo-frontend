@@ -132,7 +132,7 @@ export const getWbsTaskTypeIcon = (taskType: WbsTaskType): string =>
 
 /** Task優先度をWBS階層表の日本語表示へ変換する。 */
 export const getWbsPriorityLabel = (priority: WbsTaskPriority): string =>
-  ({ 1: "高", 2: "中", 3: "低" })[priority];
+  ({ 1: "低", 2: "中", 3: "高" })[priority];
 
 /** Task優先度をVuetify colorへ変換する。 */
 export const getWbsPriorityColor = (priority: WbsTaskPriority): string =>

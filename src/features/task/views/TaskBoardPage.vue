@@ -7,6 +7,9 @@ import ProjectSettingsDialog from "@/features/project/components/ProjectSettings
 import type { TaskPriority } from "@/features/project/types/project";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
+import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
+import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
+import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
@@ -18,12 +21,14 @@ const {
   canCreateTask,
   canMoveTask,
   canSave,
+  canUpdateTask,
   closeArchiveConfirm,
   closeTaskEditor,
   errorMessages,
   finishTaskDrag,
   form,
   handleTaskDrop,
+  handleTemplateTaskCreated,
   initialize,
   isArchiveConfirmOpen,
   isArchiving,
@@ -52,7 +57,7 @@ const getPriorityColor = (priority: TaskPriority): string =>
 
 /** Task優先度を日本語表示へ変換する。 */
 const getPriorityLabel = (priority: TaskPriority): string =>
-  ({ 1: "高", 2: "中", 3: "低" })[priority];
+  ({ 1: "低", 2: "中", 3: "高" })[priority];
 
 onBeforeMount(initialize);
 </script>
@@ -97,6 +102,16 @@ onBeforeMount(initialize);
         v-if="board"
         :project-id="board.projectId"
         @task-selected="openTaskEditor"
+      />
+      <TaskTemplateDialog
+        v-if="project"
+        :project-id="project.projectId"
+        :members="project.members"
+        :statuses="project.taskStatuses"
+        :can-apply="canCreateTask"
+        :can-edit="canUpdateTask"
+        :project-active="project.status === 'ACTIVE'"
+        @task-created="handleTemplateTaskCreated"
       />
       <ProjectSettingsDialog
         v-if="project"
@@ -292,6 +307,18 @@ onBeforeMount(initialize);
               :disabled="isSaving || form.taskId !== null"
               hint="登録後の列変更はBoard上の移動操作で行います。"
               persistent-hint
+            />
+            <TaskTemplateCaptureButton
+              v-if="form.taskId !== null && project !== null"
+              :project-id="project.projectId"
+              :task-id="form.taskId"
+              :disabled="project.status === 'ARCHIVED'"
+            />
+            <TaskChecklistPanel
+              v-if="form.taskId !== null && project !== null"
+              :project-id="project.projectId"
+              :task-id="form.taskId"
+              :disabled="isReadonly || project.status === 'ARCHIVED'"
             />
             <TaskCommentsPanel
               v-if="form.taskId !== null && board"

@@ -385,3 +385,24 @@ Backendの`scripts/browser-regression/task-search`専用fixtureを使用し、�
 409となり、作成201、更新・取得200、削除204、Board詳細取得200だった。更新時のSaved Viewは
 `Browser Search View Updated`、version 1、削除後0件である。cleanup後のaccount、Project、Task、Saved View、
 Sessionは`0,0,0,0,0`だった。
+
+## Task checklist／本人専用Task Templateの回帰（Stage 10A-2）
+
+Backendの`scripts/browser-regression/task-template`専用fixtureを使用し、通常のaccount、Project、Task、Templateを
+変更しない。`task-template-browser`が所有するSource／Target Projectで次を確認した。
+
+- [x] Task詳細に未完了・完了checklist、完了数、進捗率を表示する。
+- [x] checklistを追加し、本文編集、上下移動、完了状態の往復、version付き削除を行う。
+- [x] 既存Taskと未完了checklistを本人用Templateへcaptureする。
+- [x] capture後に元Taskのchecklist本文を変更してもTemplate snapshotは変わらない。
+- [x] Template名、Taskタイトル・詳細、期限offset、予定工数をversion付きで更新する。
+- [x] Target Projectの進行中列へTemplateを適用し、通常Taskと未完了checklistを同時生成する。
+- [x] 生成Taskを既存Board詳細で開き、同じTaskをWBSにも表示する。
+- [x] Templateをarchiveすると本人一覧から消え、生成済みTaskのlineageは残る。
+- [x] 安定操作中のbrowser consoleにwarning・errorがない。
+- [x] DBのsnapshot、lineage、checklistが画面と一致し、cleanup後の専用データが0件になる。
+
+2026-09-21にSource Project ID 30／Task ID 176、Target Project ID 31／生成Task ID 177、Template ID 7で
+完了した。生成Taskは開始日`2026-09-21`、期限`2026-09-24`、優先度3、予定工数600分、進行中列、
+未完了checklist 1件であり、`source_task_template_id=7`を保持した。Template archive後もsnapshotとlineageが残り、
+cleanup後の専用account、Project、Template件数は`0,0,0`だった。
