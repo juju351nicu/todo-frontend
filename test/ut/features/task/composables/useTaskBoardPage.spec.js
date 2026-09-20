@@ -300,6 +300,25 @@ describe("useTaskBoardPage", () => {
     expect(page.canArchiveTask.value).toBe(false);
   });
 
+  it("MEMBERはTask permissionを持っていても繰り返し規則を変更できない", async () => {
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canCreateTaskRecurrence.value).toBe(false);
+    expect(page.canUpdateTaskRecurrence.value).toBe(false);
+  });
+
+  it("OWNERはTask permissionとACTIVE Projectで繰り返し規則を変更できる", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canCreateTaskRecurrence.value).toBe(true);
+    expect(page.canUpdateTaskRecurrence.value).toBe(true);
+  });
+
   it("OWNERは確認後にTaskをversion付きでarchiveして最新Boardを取得する", async () => {
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
     const page = useTaskBoardPage();

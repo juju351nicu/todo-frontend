@@ -166,6 +166,21 @@ Frontendは65 test file・466 Vitest、TypeScript／Vue型検査、production bu
 専用fixture回帰ではchecklist CRUD／並び替え、capture後のsnapshot不変、Template編集、別Project適用、
 Board／WBSの同一Task表示、lineage、archive、DB cleanupを確認し、安定操作中のbrowser consoleはwarning・error 0件でした。
 
+Stage 10A-3ではProject Boardへ繰り返しTask管理Dialogを追加しました。OWNER／MANAGER／SYSTEM_ADMINは、
+`TASK_CREATE`または`TASK_UPDATE`とACTIVE Projectの条件内で、Task snapshotの直接入力または本人所有Task Templateから
+規則を作成できます。日次・週次・月次schedule、生成先行日数、終了日、checklist snapshot、pause／resume、
+BLOCKED規則の修正、version付きarchiveを扱います。Project参加者はarchive済みを含む規則と直近100件の生成履歴を
+参照でき、管理者はFAILED履歴を最新規則version付きで手動再試行できます。401ではLoginへ戻り、機能資格403は
+Backendメッセージを表示し、更新系の404／409では古いdraftを破棄して規則・履歴を再取得します。
+
+繰り返しTaskを含む全67 test file・488 Vitest、TypeScript／Vue型検査、production buildが成功しています。
+Backendの専用fixtureを使った実ブラウザ／DB回帰では、2 worker同時scanの一意生成、FAILED履歴の手動retry、
+週次・火／金の直接規則、pause／resume／archive、月次31日のTask Template規則、lineageとchecklist snapshot、
+OWNER／MEMBERの操作境界、生成Taskと通知を確認しました。安定操作中のbrowser console warning／errorと
+HTTP 4xx／5xxは0件で、cleanup後の専用account、Project、規則、Task、通知は`0,0,0,0,0`です。
+2 tab競合、snapshot更新後の次回生成、停止期間の非catch-up、Project archiveはBackend自動test済みで、
+実ブラウザ証跡は後続の回帰対象です。
+
 ## 検証
 
 ```bash

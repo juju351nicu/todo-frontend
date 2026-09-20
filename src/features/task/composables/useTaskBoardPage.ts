@@ -133,6 +133,16 @@ export const useTaskBoardPage = () => {
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER"
   );
+  const canCreateTaskRecurrence = computed(
+    () =>
+      canCreateTask.value &&
+      canManageProjectTasks.value
+  );
+  const canUpdateTaskRecurrence = computed(
+    () =>
+      canUpdateTask.value &&
+      canManageProjectTasks.value
+  );
   const canMoveTask = computed(
     () =>
       userStore.hasPermission("TASK_MOVE") &&
@@ -699,9 +709,11 @@ export const useTaskBoardPage = () => {
     archiveTask,
     canArchiveTask,
     canCreateTask,
+    canCreateTaskRecurrence,
     canMoveTask,
     canSave,
     canUpdateTask,
+    canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,
     errorMessages,

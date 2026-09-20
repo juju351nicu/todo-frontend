@@ -406,3 +406,35 @@ Backendの`scripts/browser-regression/task-template`専用fixtureを使用し、
 完了した。生成Taskは開始日`2026-09-21`、期限`2026-09-24`、優先度3、予定工数600分、進行中列、
 未完了checklist 1件であり、`source_task_template_id=7`を保持した。Template archive後もsnapshotとlineageが残り、
 cleanup後の専用account、Project、Template件数は`0,0,0`だった。
+
+## 繰り返しTaskの回帰（Stage 10A-3）
+
+Backendへ専用fixtureを追加し、通常のaccount、Project、Task、Template、規則を変更せずに次を確認する。
+Dispatcher／workerは複数instance相当で同時実行し、同じ発生日からTaskを重複生成しないことをDBでも照合する。
+
+- [x] OWNERが直接入力で週次規則、本人Task Templateから月次規則を作成できる。
+- [x] MEMBERは規則と生成履歴を参照できるが、作成・編集・archive・再試行操作を表示しない。
+- [x] 週次の火／金と月次31日を入力し、曜日行、月次日、Template lineageがDBへ保存される。
+- [ ] 月次31日の実生成における月末丸め、lead、終了日から次回発生日が契約どおりになる。
+- [x] 規則を一時停止、再開、archiveし、取得時点versionが順に更新される。
+- [ ] 停止期間をcatch upせず、再開後の次回発生日から生成する。
+- [ ] 規則snapshotを更新しても生成済みTaskは変わらず、次回生成Taskだけへ反映する。
+- [x] 生成Task、未完了checklist、`RECURRING_TASK_CREATED`通知、生成履歴を同一結果として確認する。
+- [x] 2つのworkerが同時claimしても同じ発生日のTaskが1件だけ生成される。
+- [ ] 一時失敗はbackoff後に再試行し、上限到達時にFAILED／BLOCKEDと安定error codeを表示する。
+- [x] 解消済みのBLOCKED原因を再検査し、FAILED履歴の手動再試行後にPENDINGからSUCCEEDEDへ進む。
+- [ ] 古いtabの更新・archive・再試行は409となり、画面が最新versionと履歴を再取得する。
+- [ ] Project archiveで継続中規則がENDED、未処理履歴がSKIPPEDになり、履歴参照は維持される。
+- [x] 安定操作中のAPIが成功し、browser consoleにwarning・errorがない。
+- [x] DBの規則、曜日、checklist、生成履歴、Task、通知が画面と一致し、cleanup後の専用データが0件になる。
+
+### 2026-09-21 実施結果
+
+Project ID 34、規則ID 5〜9、Task ID 180・181を実施時の識別に使用した。2 worker同時scanで
+`Browser Parallel Recurring Task`のgeneration、Task、通知は各1件だった。FAILED履歴は手動retry後に
+SUCCEEDEDとなり、直接規則は週次・火／金、version 3のARCHIVED、Template規則は月次31日、
+`source_task_template_id=9`、checklist 1件のARCHIVEDとなった。
+
+OWNERでは作成・更新・archive・retry、MEMBERでは参照専用表示を確認した。安定操作中のbrowser consoleと
+HTTP errorは0件で、cleanup後のaccount、Project、規則、Task、通知は`0,0,0,0,0`だった。
+未チェック6項目はBackend自動test済みであり、実ブラウザ／DB証跡を後続回帰で追加する。
