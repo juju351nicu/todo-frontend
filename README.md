@@ -120,11 +120,22 @@ TypeScript／Vue型検査、production buildまで成功しています。
 Sessionのaccount ID、Project membership、ACTIVE Project、未完了・未archive状態を確定し、Asia/Tokyoの業務日を
 基準に期限超過・今日・今後の3グループと残日数を返します。画面はProject、Board列、優先度、期限、進捗を表示し、
 Task選択時はProject Boardの詳細Dialogへ遷移します。旧Todo更新permissionがある利用者だけ完了操作を表示し、
-再読込、空結果、401、permission不足、通信エラーを処理します。横断検索、今週filter、Saved Viewは後続Stageです。
+再読込、空結果、401、permission不足、通信エラーを処理します。「今週」はBackendの業務日から日曜までを
+切り替えて表示し、期限超過を混在させません。
 
 2026-09-20に専用fixtureで実ブラウザ回帰を完了しました。期限3グループ、非対象Taskの除外、Board詳細deep link、
 完了後の再読込とDB状態を照合し、安定表示後のAPIはすべて200、browser console warning・errorは0件でした。
 Frontendは58 test file・425 Vitest、TypeScript／Vue型検査、production buildまで成功しています。
+
+Stage 9Eでは`/tasks/search`を追加し、Backendが認可済みのACTIVE Projectを対象に、Task名・説明・Project、
+担当者、状態、期限、優先度で横断検索します。結果は最大100件で、上限超過を画面に案内します。表示列はTask名を
+固定し、Project、状態、担当者、優先度、開始日、期限、進捗、説明から選択できます。結果行は既存Project Boardの
+Task詳細deep linkへ接続します。
+
+検索条件と表示列は本人Saved Viewとして最大20件保存できます。作成・適用・version付き更新／削除を
+`useTaskSearchPage`へ集約し、404／409では一覧を再取得して古いversionを残しません。Routerとside menuは
+`TASK_READ`で案内し、Project参照範囲、本人所有、名称重複、件数上限、最終認可はBackendを正本とします。
+Task検索と「今週」のテストを含む全60 test file・437 Vitest、TypeScript／Vue型検査、production buildが成功しています。
 
 Task詳細Dialogのコメント欄は、投稿者本人のコメントだけに編集・削除操作を表示します。編集と削除には一覧取得時点の
 versionを送り、409または404では古い入力・確認対象を破棄して最新一覧を再取得します。編集による再メンションや、

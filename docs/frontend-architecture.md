@@ -84,12 +84,15 @@ src/
 - `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
 - `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
 - `src/features/task/api/taskApi.ts`: Todo一覧・詳細・カレンダー・完了・登録更新、My Tasks専用API
+- `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
 - `src/features/task/stores/task.ts`: Todo一覧の共有状態とTask API呼び出し
 - `src/features/task/types/task.ts`: TodoとMy Tasks APIのRequest / Response型
+- `src/features/task/types/taskSearch.ts`: Task検索・候補・Saved ViewのRequest / Response型
 - `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移
 - `src/features/task/composables/useTodoDetailPage.ts`: Todo詳細取得、登録更新フォーム、確認モーダル、エラー表示
 - `src/features/task/composables/useTodoCalendarPage.ts`: Todoカレンダー検索、イベント設定、エラー表示
-- `src/features/task/composables/useMyTasksPage.ts`: Backend認可済み本人Taskの期限グループ表示、完了、Board詳細遷移
+- `src/features/task/composables/useMyTasksPage.ts`: Backend認可済み本人Taskの期限グループ・今週表示、完了、Board詳細遷移
+- `src/features/task/composables/useTaskSearchPage.ts`: 横断検索、候補、表示列、本人Saved View、競合回復
 - `src/features/task/components/TodoUpsertConfirm.vue`: Todo登録更新の確認部品
 - `src/features/task/utils/taskForm.ts`: Todo詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/task/utils/taskCalendar.ts`: Todo一覧からFullCalendarイベント・設定への変換
@@ -98,6 +101,7 @@ src/
 - `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
 - `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
+- `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
 - `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
@@ -336,6 +340,19 @@ archive済みTaskは履歴参照だけとして編集入口を表示しない。
 API・composable・Board接続を含む全57 test file・414 Vitest、型検査、production buildが成功した。専用fixtureでは
 activeコメント、archive済み履歴、更新時刻順、active行からTask詳細への遷移を投稿者と別Project memberで確認した。
 両Sessionのbrowser consoleはwarning 0件、error 0件で、DB照合とcleanup後0件まで完了した。
+
+## Task横断検索・Saved View
+
+`/tasks/search`は`useTaskSearchPage`から検索候補、検索結果、本人Saved Viewを取得する。ViewからAPIを直接呼ばず、
+Project変更時は担当者・状態候補を再取得して無効な選択値を解除する。Task名は常に表示し、任意表示列と検索条件を
+同じSaved Viewへ保存する。検索結果はBackendの最大100件と`truncated`を正本とし、Frontendだけで全Taskを取得・
+絞り込みしない。結果行は`/projects/{projectId}/board?taskId={taskId}`へ接続する。
+
+本人Saved Viewは最大20件、名称一意、取得時点versionによる更新・削除をBackendが保証する。Frontendは401でSessionを
+破棄し、404／409ではSaved View一覧を再取得して古いversionを残さない。検索期限の逆転と空のSaved View名・表示列は
+送信前にも案内するが、最終検証と所有者判定はBackendへ委ねる。My Tasksの「今週」はBackendの`businessDate`と
+`remainingDays`から当日〜日曜だけを表示し、期限超過は含めない。
+API、composable、route、「今週」の境界を含む全60 test file・437 Vitest、型検査、production buildが成功した。
 
 ## 変更時の確認
 

@@ -117,6 +117,15 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/tasks/search",
+    name: "TaskSearch",
+    component: () => import("@/features/task/views/TaskSearchPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["TASK_READ"],
+    },
+  },
+  {
     path: "/projects/:projectId/board",
     name: "TaskBoard",
     component: () => import("@/features/task/views/TaskBoardPage.vue"),

@@ -90,6 +90,18 @@ describe("useMyTasksPage", () => {
       .toEqual([[15], [16], [17]]);
   });
 
+  it("今週では業務日から日曜までが期限のTaskだけを表示する", async () => {
+    const page = useMyTasksPage();
+    await page.loadTasks();
+
+    page.selectedFilter.value = "THIS_WEEK";
+
+    expect(page.businessDate.value).toBe("2026-09-20");
+    expect(page.visibleTasks.value.map((task) => task.taskId)).toEqual([16]);
+    expect(page.groups.value.map((group) => group.items.map((task) => task.taskId)))
+      .toEqual([[], [16], []]);
+  });
+
   it("Taskの所属Project BoardへTask ID付きで移動する", () => {
     const page = useMyTasksPage();
 

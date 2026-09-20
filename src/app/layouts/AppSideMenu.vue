@@ -59,6 +59,7 @@ const links = computed<NavigationLink[]>(() => {
         });
     }
     if (userStore.hasPermission("TASK_READ")) {
+        values.unshift({ icon: "mdi-magnify", text: "Task検索", url: "/tasks/search" });
         values.unshift({ icon: "mdi-format-list-checks", text: "My Tasks", url: "/my-tasks" });
     }
     if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {

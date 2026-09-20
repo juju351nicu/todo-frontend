@@ -15,6 +15,8 @@ interface MyTaskGroup {
   items: MyTaskItem[];
 }
 
+type MyTaskFilter = "ALL" | "THIS_WEEK";
+
 /** 本人担当Taskを日付グループへ分けるMy Tasks画面の状態と操作を提供する。 */
 export const useMyTasksPage = () => {
   const router = useRouter();
@@ -23,14 +25,34 @@ export const useMyTasksPage = () => {
   const errorMessages = ref<string[]>([]);
   const isLoading = ref(false);
   const myTasks = ref<MyTaskItem[]>([]);
+  const businessDate = ref("");
+  const selectedFilter = ref<MyTaskFilter>("ALL");
   const canCompleteTasks = computed(() =>
     userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)
   );
 
+  /** Backendの業務日から今週末までに期限を迎える、期限超過ではないTaskだけを返す。 */
+  const visibleTasks = computed<MyTaskItem[]>(() => {
+    if (selectedFilter.value === "ALL" || !businessDate.value) {
+      return myTasks.value;
+    }
+    const dayOfWeek = new Date(`${businessDate.value}T00:00:00Z`).getUTCDay();
+    const daysUntilSunday = dayOfWeek === 0 ? 0 : 7 - dayOfWeek;
+    return myTasks.value.filter(
+      (task) => task.remainingDays >= 0 && task.remainingDays <= daysUntilSunday
+    );
+  });
+
   const groups = computed<MyTaskGroup[]>(() => {
-    const overdue = myTasks.value.filter((task) => task.dueGroup === "OVERDUE");
-    const todayTasks = myTasks.value.filter((task) => task.dueGroup === "TODAY");
-    const upcoming = myTasks.value.filter((task) => task.dueGroup === "UPCOMING");
+    const overdue = visibleTasks.value.filter(
+      (task) => task.dueGroup === "OVERDUE"
+    );
+    const todayTasks = visibleTasks.value.filter(
+      (task) => task.dueGroup === "TODAY"
+    );
+    const upcoming = visibleTasks.value.filter(
+      (task) => task.dueGroup === "UPCOMING"
+    );
     return [
       {
         key: "overdue",
@@ -70,6 +92,7 @@ export const useMyTasksPage = () => {
     try {
       const data = await todoStore.findMyTasks();
       myTasks.value = data.tasks;
+      businessDate.value = data.businessDate;
     } catch (error: unknown) {
       if (error instanceof TaskApiError) {
         if (error.status === 401) {
@@ -117,6 +140,7 @@ export const useMyTasksPage = () => {
   };
 
   return {
+    businessDate,
     canCompleteTasks,
     completeTask,
     errorMessages,
@@ -124,6 +148,8 @@ export const useMyTasksPage = () => {
     isLoading,
     loadTasks,
     myTasks,
+    selectedFilter,
     showTask,
+    visibleTasks,
   };
 };

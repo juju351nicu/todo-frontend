@@ -18,7 +18,9 @@ const {
   isLoading,
   loadTasks,
   myTasks,
+  selectedFilter,
   showTask,
+  visibleTasks,
 } = useMyTasksPage();
 
 onBeforeMount(loadTasks);
@@ -50,8 +52,21 @@ onBeforeMount(loadTasks);
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </v-alert>
 
-    <v-alert v-if="!isLoading && myTasks.length === 0" type="success" variant="tonal" class="mb-6">
-      未完了の担当Taskはありません。
+    <v-btn-toggle
+      v-model="selectedFilter"
+      mandatory
+      color="primary"
+      density="comfortable"
+      variant="outlined"
+      class="mb-4"
+      aria-label="My Tasksの期間"
+    >
+      <v-btn value="ALL">すべて</v-btn>
+      <v-btn value="THIS_WEEK">今週</v-btn>
+    </v-btn-toggle>
+
+    <v-alert v-if="!isLoading && visibleTasks.length === 0" type="success" variant="tonal" class="mb-6">
+      {{ myTasks.length === 0 ? "未完了の担当Taskはありません。" : "今週が期限のTaskはありません。" }}
     </v-alert>
 
     <v-row>
