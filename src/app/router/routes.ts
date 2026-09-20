@@ -113,7 +113,7 @@ export const routes: RouteRecordRaw[] = [
     component: () => import("@/features/task/views/MyTasksPage.vue"),
     meta: {
       requiresAuth: true,
-      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+      requiredAnyPermissions: ["TASK_READ"],
     },
   },
   {

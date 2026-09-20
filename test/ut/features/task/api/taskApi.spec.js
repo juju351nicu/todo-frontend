@@ -55,6 +55,27 @@ describe("Task API", () => {
     );
   });
 
+  it("My Tasks専用APIから本人担当Taskを取得する", async () => {
+    const payload = { businessDate: "2026-09-20", tasks: [] };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(payload),
+    });
+
+    await expect(TaskApi.findMyTasks()).resolves.toEqual(payload);
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.MY_TASKS);
+  });
+
+  it("My Tasks取得のHTTPエラーを通知する", async () => {
+    HttpClient.getRequest.mockResolvedValue({ ok: false, status: 403 });
+
+    await expect(TaskApi.findMyTasks()).rejects.toMatchObject({
+      name: "TaskApiError",
+      status: 403,
+    });
+  });
+
   it("Todo IDをBackendと一致するparameter名で完了APIへ渡す", async () => {
     HttpClient.postRequest.mockResolvedValue({ ok: true });
 

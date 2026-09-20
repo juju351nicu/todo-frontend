@@ -24,5 +24,16 @@ export const getTodoPriorityColor = (priority: number | string): string => {
 export const formatRemainingDays = (value: number): string =>
   `残り${value}日間`;
 
+/** My Tasksの符号付き残日数を期限超過、今日、残日の自然な表現へ変換する。 */
+export const formatMyTaskRemainingDays = (value: number): string => {
+  if (value < 0) {
+    return `${Math.abs(value)}日超過`;
+  }
+  if (value === 0) {
+    return "今日";
+  }
+  return `残り${value}日`;
+};
+
 /** Todo詳細を一覧用の最大3文字へ省略する。 */
 export const truncateTodoDetail = (value: string): string => value.slice(0, 3);

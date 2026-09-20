@@ -83,12 +83,13 @@ src/
 - `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
 - `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
-- `src/features/task/api/taskApi.ts`: Todo一覧・詳細・カレンダー・完了・登録更新API
+- `src/features/task/api/taskApi.ts`: Todo一覧・詳細・カレンダー・完了・登録更新、My Tasks専用API
 - `src/features/task/stores/task.ts`: Todo一覧の共有状態とTask API呼び出し
-- `src/features/task/types/task.ts`: Task APIのRequest / Response型
+- `src/features/task/types/task.ts`: TodoとMy Tasks APIのRequest / Response型
 - `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移
 - `src/features/task/composables/useTodoDetailPage.ts`: Todo詳細取得、登録更新フォーム、確認モーダル、エラー表示
 - `src/features/task/composables/useTodoCalendarPage.ts`: Todoカレンダー検索、イベント設定、エラー表示
+- `src/features/task/composables/useMyTasksPage.ts`: Backend認可済み本人Taskの期限グループ表示、完了、Board詳細遷移
 - `src/features/task/components/TodoUpsertConfirm.vue`: Todo登録更新の確認部品
 - `src/features/task/utils/taskForm.ts`: Todo詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/task/utils/taskCalendar.ts`: Todo一覧からFullCalendarイベント・設定への変換
@@ -96,6 +97,7 @@ src/
 - `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
 - `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
 - `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
+- `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
 - `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
@@ -103,7 +105,7 @@ src/
 - `src/features/project/components/ProjectSettingsDialog.vue`: Task Boardから開くProject設定・member管理Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
-- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task Dialog、登録・更新・移動・archive・競合回復
+- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task ID queryからの詳細表示、Task登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
 - `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型

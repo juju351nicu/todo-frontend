@@ -55,11 +55,14 @@ describe("Vue routes", () => {
 
   it("Project一覧・Board・WBSをBackendの専用permissionで保護する", () => {
     const projectList = findRoute("ProjectList");
+    const myTasks = findRoute("MyTasks");
     const taskBoard = findRoute("TaskBoard");
     const wbs = findRoute("Wbs");
 
     expect(projectList.path).toBe("/projects");
     expect(projectList.meta.requiredAnyPermissions).toEqual(["PROJECT_READ"]);
+    expect(myTasks.path).toBe("/my-tasks");
+    expect(myTasks.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
     expect(taskBoard.path).toBe("/projects/:projectId/board");
     expect(taskBoard.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
     expect(wbs.path).toBe("/projects/:projectId/wbs");

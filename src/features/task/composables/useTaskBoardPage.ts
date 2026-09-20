@@ -106,6 +106,14 @@ export const useTaskBoardPage = () => {
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   });
 
+  const requestedTaskId = computed(() => {
+    const value = Array.isArray(route.query.taskId)
+      ? route.query.taskId[0]
+      : route.query.taskId;
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+  });
+
   const isProjectActive = computed(() => project.value?.status === "ACTIVE");
   const canCreateTask = computed(
     () => userStore.hasPermission("TASK_CREATE") && isProjectActive.value
@@ -210,6 +218,9 @@ export const useTaskBoardPage = () => {
     errorMessages.value = [];
     try {
       await loadBoardData();
+      if (requestedTaskId.value !== null) {
+        await openTaskEditor(requestedTaskId.value);
+      }
     } catch (error: unknown) {
       await handleApiError(error, "Project Boardを取得できませんでした。");
     } finally {

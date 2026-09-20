@@ -1,10 +1,37 @@
 import type {
+  MyTaskListResponse,
   TodoDetailResponse,
   TodoListRequest,
   TodoUpsertRequest,
 } from "@/features/task/types/task";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
+import type { ErrorResponse } from "@/shared/types/error";
+
+/** Task APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
+export class TaskApiError extends Error {
+  readonly status: number;
+
+  readonly errorResponse: ErrorResponse | null;
+
+  constructor(status: number, errorResponse: ErrorResponse | null) {
+    super(`Task APIの実行に失敗しました。status=${status}`);
+    this.name = "TaskApiError";
+    this.status = status;
+    this.errorResponse = errorResponse;
+  }
+}
+
+/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
+const readErrorResponse = async (
+  response: Response
+): Promise<ErrorResponse | null> => {
+  try {
+    return (await response.json()) as ErrorResponse;
+  } catch (_error: unknown) {
+    return null;
+  }
+};
 
 /**
  * Todo詳細を取得する。
@@ -23,6 +50,20 @@ const findDetail = async (todoId: number): Promise<TodoDetailResponse> => {
     );
   }
   return (await response.json()) as TodoDetailResponse;
+};
+
+/**
+ * 認証利用者本人が担当する未完了Project Taskを取得する。
+ *
+ * @returns Backendが本人・Project・状態・期限を確定したMy Tasks Response
+ * @throws 未認証または参照permission不足等で非2xxが返った場合
+ */
+const findMyTasks = async (): Promise<MyTaskListResponse> => {
+  const response = await HttpClient.getRequest(API_PATHS.MY_TASKS);
+  if (!response.ok) {
+    throw new TaskApiError(response.status, await readErrorResponse(response));
+  }
+  return (await response.json()) as MyTaskListResponse;
 };
 
 /**
@@ -68,5 +109,6 @@ export default {
   findCalendar,
   findDetail,
   findList,
+  findMyTasks,
   upsert,
 };

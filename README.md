@@ -116,10 +116,15 @@ Stage 9Aでは全認証画面のヘッダーへベルを追加しました。未
 route変更、tab再表示、window focus、業務操作後の明示eventで更新します。Frontendは54 test file・395 Vitest、
 TypeScript／Vue型検査、production buildまで成功しています。
 
-ロードマップのPhase 1として、`/my-tasks`へMy Tasks画面を追加しました。既存Todo一覧APIの認可済みResponseを
-利用し、Sessionのaccount IDに一致する未完了Taskを、期限超過・今日・今後の3グループへ表示します。Task詳細への
-遷移、完了操作、再読込、空結果、通信エラーを既存のTask APIと共通HTTPクライアントで処理します。横断検索、
-Saved View、Backend専用My Tasks endpointは後続Stageで追加し、現在の画面で新しいAPI契約を先取りしません。
+ロードマップのPhase 1として、`/my-tasks`をBackend専用の`GET /api/v1/my-tasks`へ接続しました。Backendが
+Sessionのaccount ID、Project membership、ACTIVE Project、未完了・未archive状態を確定し、Asia/Tokyoの業務日を
+基準に期限超過・今日・今後の3グループと残日数を返します。画面はProject、Board列、優先度、期限、進捗を表示し、
+Task選択時はProject Boardの詳細Dialogへ遷移します。旧Todo更新permissionがある利用者だけ完了操作を表示し、
+再読込、空結果、401、permission不足、通信エラーを処理します。横断検索、今週filter、Saved Viewは後続Stageです。
+
+2026-09-20に専用fixtureで実ブラウザ回帰を完了しました。期限3グループ、非対象Taskの除外、Board詳細deep link、
+完了後の再読込とDB状態を照合し、安定表示後のAPIはすべて200、browser console warning・errorは0件でした。
+Frontendは58 test file・425 Vitest、TypeScript／Vue型検査、production buildまで成功しています。
 
 Task詳細Dialogのコメント欄は、投稿者本人のコメントだけに編集・削除操作を表示します。編集と削除には一覧取得時点の
 versionを送り、409または404では古い入力・確認対象を破棄して最新一覧を再取得します。編集による再メンションや、

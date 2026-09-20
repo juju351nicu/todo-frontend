@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
     moveTask: vi.fn(),
     updateTask: vi.fn(),
   },
-  route: { params: { projectId: "5" } },
+  route: { params: { projectId: "5" }, query: {} },
   router: { push: vi.fn() },
   userStore: {
     memberId: 2,
@@ -162,6 +162,7 @@ describe("useTaskBoardPage", () => {
     mocks.permissions.add("TASK_MOVE");
     mocks.permissions.add("TASK_ARCHIVE");
     mocks.route.params.projectId = "5";
+    mocks.route.query = {};
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
     mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(board));
@@ -181,6 +182,17 @@ describe("useTaskBoardPage", () => {
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledWith(5);
     expect(page.project.value).toEqual(project);
     expect(page.board.value).toEqual(board);
+  });
+
+  it("Task ID query付きの初期表示でTask詳細Dialogを開く", async () => {
+    mocks.route.query = { taskId: "31" };
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(mocks.projectTaskApi.getTask).toHaveBeenCalledWith(5, 31);
+    expect(page.form.value.taskId).toBe(31);
+    expect(page.isEditorOpen.value).toBe(true);
   });
 
   it("列の追加操作から担当者・日付・配置先を初期設定してTaskを登録する", async () => {

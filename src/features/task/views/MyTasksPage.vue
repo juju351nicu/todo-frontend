@@ -5,19 +5,20 @@ import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { useMyTasksPage } from "@/features/task/composables/useMyTasksPage";
 import {
-  formatRemainingDays,
+  formatMyTaskRemainingDays,
   getTodoPriorityColor,
   getTodoPriorityLabel,
 } from "@/features/task/utils/taskDisplay";
 
 const {
-  completeTodo,
+  canCompleteTasks,
+  completeTask,
   errorMessages,
   groups,
   isLoading,
   loadTasks,
   myTasks,
-  showTodoDetail,
+  showTask,
 } = useMyTasksPage();
 
 onBeforeMount(loadTasks);
@@ -64,37 +65,41 @@ onBeforeMount(loadTasks);
             </v-chip>
           </v-card-title>
           <v-divider />
-          <v-list v-if="group.items.length" lines="two" density="compact">
+          <v-list v-if="group.items.length" lines="three" density="compact">
             <v-list-item
-              v-for="todo in group.items"
-              :key="todo.todoId"
+              v-for="task in group.items"
+              :key="task.taskId"
               class="task-item"
-              @click="showTodoDetail(todo)"
+              @click="showTask(task)"
             >
               <v-list-item-title class="font-weight-medium">
-                {{ todo.title }}
+                {{ task.title }}
               </v-list-item-title>
               <v-list-item-subtitle>
-                {{ todo.end ? `期限 ${todo.end.slice(0, 10)}` : "期限未設定" }}
-                ・残り {{ formatRemainingDays(todo.remainingDays) }}
+                {{ task.projectName }} ・ {{ task.statusName }} ・進捗
+                {{ Number(task.progressPercent) }}%
+                <br />
+                期限 {{ task.dueDate }} ・
+                {{ formatMyTaskRemainingDays(task.remainingDays) }}
               </v-list-item-subtitle>
               <template #append>
                 <v-btn
+                  v-if="canCompleteTasks"
                   icon="mdi-check"
                   size="small"
                   variant="text"
                   aria-label="Taskを完了"
                   title="完了"
-                  @click.stop="completeTodo(todo)"
+                  @click.stop="completeTask(task)"
                 />
               </template>
               <template #prepend>
                 <v-chip
-                  :color="getTodoPriorityColor(todo.priority)"
+                  :color="getTodoPriorityColor(task.priority)"
                   size="x-small"
                   class="mr-2"
                 >
-                  {{ getTodoPriorityLabel(todo.priority) }}
+                  {{ getTodoPriorityLabel(task.priority) }}
                 </v-chip>
               </template>
             </v-list-item>

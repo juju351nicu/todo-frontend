@@ -58,9 +58,11 @@ const links = computed<NavigationLink[]>(() => {
             url: "/projects",
         });
     }
+    if (userStore.hasPermission("TASK_READ")) {
+        values.unshift({ icon: "mdi-format-list-checks", text: "My Tasks", url: "/my-tasks" });
+    }
     if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
         values.unshift(
-                { icon: "mdi-format-list-checks", text: "My Tasks", url: "/my-tasks" },
             { icon: "mdi-calendar", text: "Todoカレンダー", url: "/todo/calendar" },
             { icon: "mdi-format-list-checks", text: "Todo一覧", url: "/todo/todoList" },
         );

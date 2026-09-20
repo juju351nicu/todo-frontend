@@ -16,6 +16,7 @@ describe("Router authorization", () => {
   });
 
   it("permissionに応じて認証後の既定画面を選択する", () => {
+    expect(resolveAuthenticatedHomeRouteName(["TASK_READ"])).toBe("MyTasks");
     expect(resolveAuthenticatedHomeRouteName(["TASK_READ_OWN"])).toBe(
       "TodoCalendar"
     );

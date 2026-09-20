@@ -20,15 +20,18 @@ export const hasAnyPermission = (
 /**
  * ログイン後またはNot Found画面から戻る既定ルートを決定する。
  *
- * Todo参照permissionを持つ通常利用者はカレンダーへ移動する。Todoを参照できない管理者は、
- * アカウント・ロール管理画面へ移動し、どちらも利用できない場合は権限不足画面へ移動する。
+ * Project Task参照permissionを持つ利用者はMy Tasks、旧Todo参照permissionだけを持つ利用者はカレンダーへ移動する。
+ * いずれも参照できない管理者はアカウント・ロール管理画面へ移動し、利用可能な入口がなければ権限不足画面へ移動する。
  *
  * @param permissionCodes Session APIから復元した利用者permission
  * @returns Vue Routerへ渡すルート名
  */
 export const resolveAuthenticatedHomeRouteName = (
   permissionCodes: readonly PermissionCode[]
-): "TodoCalendar" | "AccountAdministration" | "AccessDenied" => {
+): "MyTasks" | "TodoCalendar" | "AccountAdministration" | "AccessDenied" => {
+  if (permissionCodes.includes("TASK_READ")) {
+    return "MyTasks";
+  }
   if (hasAnyPermission(permissionCodes, TASK_READ_PERMISSION_CODES)) {
     return "TodoCalendar";
   }

@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 
 import TaskApi from "@/features/task/api/taskApi";
 import type {
+  MyTaskListResponse,
   TodoDetailResponse,
   TodoListItem,
   TodoListRequest,
@@ -52,6 +53,15 @@ export const useTodoStore = defineStore("todo", {
      */
     findTodoList(payload: TodoListRequest): Promise<Response> {
       return TaskApi.findList(payload);
+    },
+
+    /**
+     * Backendで本人・Project・状態を絞り込んだMy Tasks一覧を取得する。
+     *
+     * @returns 業務日と本人担当の未完了Project Task
+     */
+    findMyTasks(): Promise<MyTaskListResponse> {
+      return TaskApi.findMyTasks();
     },
 
     /**

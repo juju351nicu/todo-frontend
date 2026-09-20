@@ -47,6 +47,13 @@ npm run dev -- --host localhost
 | 22 | 通常Taskの日別実績を操作する | 一覧・合計・登録・編集・削除がBackendの確定値と一致し、Summary・Milestoneには入口が表示されない |
 | 23 | WBS Taskの実績期間を更新する | 未着手・作業中・完了期間が一覧とGantt tooltipへ表示され、再読込後も一致する |
 | 24 | WBSの稼働日calendarを操作する | Project共通・個人例外の優先順位、登録・更新・削除、role別操作表示がBackend確定値と一致する |
+| 25 | My Tasksを開く | 本人担当の未完了Taskだけが期限超過・今日・今後へ分かれ、Project・状態・優先度・期限・進捗が表示される |
+| 26 | My TasksのTaskを選択する | 所属Project Boardへ遷移し、URLのTask IDに対応する既存Task詳細Dialogが開く |
+| 27 | My TasksでTaskを完了する | 更新permissionがある場合だけ完了操作が表示され、成功後に一覧から消えて再読込後も戻らない |
+
+2026-09-20に項目25〜27を`BROWSER-MY-TASKS`専用fixtureで確認した。期限3グループ各1件、非対象3件の除外、
+Task ID queryによる詳細Dialog表示、完了後2件への更新、再読込、DB照合、console warning・error 0件、cleanup後の
+専用account・Project・Task・進捗snapshot・Session 0件まで完了している。
 
 ## WBS階層表・Ganttの初回確認項目
 
