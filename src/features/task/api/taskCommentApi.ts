@@ -1,4 +1,5 @@
 import type {
+  ProjectTaskComment,
   TaskComment,
   TaskCommentCreateRequest,
   TaskCommentUpdateRequest,
@@ -24,6 +25,10 @@ export class TaskCommentApiError extends Error {
 /** TaskコメントAPIのProject・Task階層pathを組み立てる。 */
 const createPath = (projectId: number, taskId: number): string =>
   `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}/comments`;
+
+/** Project内のTaskコメント一覧pathを組み立てる。 */
+const createProjectPath = (projectId: number): string =>
+  `${API_PATHS.PROJECTS}/${projectId}/comments`;
 
 /** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
 const readErrorResponse = async (
@@ -61,6 +66,21 @@ const findComments = async (
   const response = await HttpClient.getRequest(createPath(projectId, taskId));
   await ensureSuccess(response);
   return (await response.json()) as TaskComment[];
+};
+
+/**
+ * Project内の最新TaskコメントをTask情報付きで取得する。
+ *
+ * @param projectId 参照対象Project ID
+ * @returns archive済みTaskを含む、最終更新時刻の新しい順の最新100件
+ * @throws TaskCommentApiError 未認証、参照不可またはBackendエラーの場合
+ */
+const findProjectComments = async (
+  projectId: number
+): Promise<ProjectTaskComment[]> => {
+  const response = await HttpClient.getRequest(createProjectPath(projectId));
+  await ensureSuccess(response);
+  return (await response.json()) as ProjectTaskComment[];
 };
 
 /**
@@ -135,6 +155,7 @@ export default {
   createComment,
   deleteComment,
   findComments,
+  findProjectComments,
   updateComment,
 };
 

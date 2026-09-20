@@ -334,3 +334,20 @@ Backendの`scripts/browser-regression/task-comment`専用fixtureを使用し、�
 `先行tabで更新済み`、version 2であり、通知本文は投稿時の内容を維持した。favicon未設定による404を検出したため
 `public/favicon.svg`を追加し、Project ID 5の再投入環境でconsole warning・error 0件を確認した。両fixtureとも
 cleanup後のProject、Task、コメント、通知件数は`0,0,0,0`である。
+
+## Project単位Taskコメント一覧の回帰
+
+Backendの`scripts/browser-regression/task-comment`専用fixtureにactive Taskとarchive済みTaskを作成して確認する。
+
+- [x] Board headerの「コメント一覧」からProject内コメントを表示できる。
+- [x] archive済みTaskの履歴コメントに「アーカイブ済み」を表示し、Task詳細を開かない。
+- [x] active Taskへ投稿または編集したコメントが最終更新時刻順でarchive済み履歴より上に表示される。
+- [x] active Taskのコメント行から既存Task詳細Dialogを開き、同じ本文を参照できる。
+- [x] 再読込操作で最新一覧を取得し、Request中に二重取得しない。
+- [x] Project memberは同じ一覧を参照でき、未参加者とpermission不足はBackendが拒否する。
+- [x] 安定表示後のbrowser consoleにwarning・errorがない。
+- [x] DBのTaskタイトル、archive状態、本文、順序が画面と一致し、cleanup後は専用データが0件になる。
+
+2026-09-20にProject ID 6、active Task ID 23、archive済みTask ID 24、コメントID 6・5で完了した。
+投稿者と別Project memberで同じ2件を確認し、active行だけTask詳細を開いた。両Sessionのconsoleはwarning・error 0件、
+cleanup後の専用Project、account、コメント、通知件数は`0,0,0,0`だった。

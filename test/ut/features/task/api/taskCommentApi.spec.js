@@ -44,6 +44,25 @@ describe("TaskコメントAPI", () => {
     );
   });
 
+  it("Project内のTask横断コメント一覧を取得する", async () => {
+    const projectComment = {
+      ...comment,
+      taskTitle: "対象Task",
+      taskArchived: false,
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([projectComment]),
+    });
+
+    await expect(TaskCommentApi.findProjectComments(5)).resolves.toEqual([
+      projectComment,
+    ]);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/5/comments"
+    );
+  });
+
   it("trim済み投稿本文をコメントAPIへ送信する", async () => {
     HttpClient.postRequest.mockResolvedValue({
       ok: true,

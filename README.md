@@ -127,6 +127,12 @@ versionを送り、409または404では古い入力・確認対象を破棄し�
 全56 test file・408 Vitest、TypeScript／Vue型検査、production buildが成功しています。専用fixtureによる投稿、編集、
 削除、他者操作非表示、2 tab競合、通知履歴、DB照合、cleanupの実ブラウザ回帰も完了しました。
 
+Project Boardの「コメント一覧」は、Project内のTaskコメントを最終更新時刻の新しい順で最大100件表示します。
+FrontendでTask別一覧を集約せず、Backendの認可済み横断APIをDialogを開くたびに取得します。active Taskは既存の
+Task詳細Dialogへ接続し、archive済みTaskは「アーカイブ済み」を表示する履歴参照だけとします。
+全57 test file・414 Vitest、型検査、production buildが成功し、投稿者と別Project memberによる実ブラウザ、
+更新時刻順、Task詳細遷移、DB照合、cleanup回帰まで完了しています。
+
 ## 検証
 
 ```bash

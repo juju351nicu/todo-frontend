@@ -321,6 +321,20 @@ API・composableのVitestを追加し、全56 test file・408件、TypeScript／
 専用fixtureによる実ブラウザ回帰では、version 1への編集、別コメントの削除、他者の操作非表示、通知履歴維持、
 2 tabの競合による409とversion 2の再取得、DB照合、cleanup後0件を確認した。
 
+## Project単位Taskコメント一覧
+
+Project Board headerの`ProjectCommentsDialog`は、`useProjectComments`を介して
+`GET /api/v1/projects/{projectId}/comments`を呼び出す。Dialogを開くたびに最終更新時刻順の最新100件を取得し、
+定期pollingやTask別APIのFrontend集約は行わない。取得中は同じRequestを重ねず、401ではSessionを破棄してLoginへ戻す。
+
+各行にはTaskタイトル、archive状態、投稿者、更新日時、本文を表示する。active Taskだけを既存Task詳細Dialogへ渡し、
+archive済みTaskは履歴参照だけとして編集入口を表示しない。Project membershipと`TASK_READ`の最終認可、100件制限、
+並び順はBackendを正本とする。
+
+API・composable・Board接続を含む全57 test file・414 Vitest、型検査、production buildが成功した。専用fixtureでは
+activeコメント、archive済み履歴、更新時刻順、active行からTask詳細への遷移を投稿者と別Project memberで確認した。
+両Sessionのbrowser consoleはwarning 0件、error 0件で、DB照合とcleanup後0件まで完了した。
+
 ## 変更時の確認
 
 ```bash

@@ -11,6 +11,14 @@ export interface TaskComment {
   version: number;
 }
 
+/** Project内のTaskコメント一覧Response。Taskの現在情報をコメントへ付加する。 */
+export interface ProjectTaskComment extends TaskComment {
+  /** コメント対象Taskの現在のタイトル。 */
+  taskTitle: string;
+  /** コメント対象TaskがBoardからarchive済みの場合true。 */
+  taskArchived: boolean;
+}
+
 /** Taskコメント投稿Request。`@loginId`形式のメンションを本文へ含められる。 */
 export interface TaskCommentCreateRequest {
   body: string;
