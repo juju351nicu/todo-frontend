@@ -319,6 +319,25 @@ describe("useTaskBoardPage", () => {
     expect(page.canUpdateTaskRecurrence.value).toBe(true);
   });
 
+  it("OWNERはPROJECT_CREATE permissionとACTIVE ProjectでProject Templateをcaptureできる", async () => {
+    mocks.permissions.add("PROJECT_CREATE");
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canCaptureProjectTemplate.value).toBe(true);
+  });
+
+  it("MEMBERはPROJECT_CREATE permissionがあってもProject Templateをcaptureできない", async () => {
+    mocks.permissions.add("PROJECT_CREATE");
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canCaptureProjectTemplate.value).toBe(false);
+  });
+
   it("OWNERは確認後にTaskをversion付きでarchiveして最新Boardを取得する", async () => {
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
     const page = useTaskBoardPage();

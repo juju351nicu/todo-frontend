@@ -4,6 +4,7 @@ import Draggable from "vuedraggable";
 
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
+import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
 import type { TaskPriority } from "@/features/project/types/project";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
@@ -19,6 +20,7 @@ const {
   archiveTask,
   board,
   canArchiveTask,
+  canCaptureProjectTemplate,
   canCreateTask,
   canCreateTaskRecurrence,
   canMoveTask,
@@ -105,6 +107,11 @@ onBeforeMount(initialize);
         v-if="board"
         :project-id="board.projectId"
         @task-selected="openTaskEditor"
+      />
+      <ProjectTemplateCaptureButton
+        v-if="project && canCaptureProjectTemplate"
+        :project-id="project.projectId"
+        :disabled="project.status !== 'ACTIVE'"
       />
       <TaskTemplateDialog
         v-if="project"

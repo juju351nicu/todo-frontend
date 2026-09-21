@@ -53,8 +53,9 @@ describe("Vue routes", () => {
     ]);
   });
 
-  it("Project一覧・My Tasks・Task検索・Board・WBSをBackendの専用permissionで保護する", () => {
+  it("Project一覧・Template・My Tasks・Task検索・Board・WBSをBackendの専用permissionで保護する", () => {
     const projectList = findRoute("ProjectList");
+    const projectTemplates = findRoute("ProjectTemplates");
     const myTasks = findRoute("MyTasks");
     const taskSearch = findRoute("TaskSearch");
     const taskBoard = findRoute("TaskBoard");
@@ -62,6 +63,8 @@ describe("Vue routes", () => {
 
     expect(projectList.path).toBe("/projects");
     expect(projectList.meta.requiredAnyPermissions).toEqual(["PROJECT_READ"]);
+    expect(projectTemplates.path).toBe("/project-templates");
+    expect(projectTemplates.meta.requiredAnyPermissions).toEqual(["PROJECT_READ"]);
     expect(myTasks.path).toBe("/my-tasks");
     expect(myTasks.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
     expect(taskSearch.path).toBe("/tasks/search");

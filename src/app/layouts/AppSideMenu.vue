@@ -52,11 +52,18 @@ const links = computed<NavigationLink[]>(() => {
         });
     }
     if (userStore.hasPermission("PROJECT_READ")) {
-        values.unshift({
-            icon: "mdi-view-dashboard-outline",
-            text: "Project Board",
-            url: "/projects",
-        });
+        values.unshift(
+            {
+                icon: "mdi-view-dashboard-outline",
+                text: "Project Board",
+                url: "/projects",
+            },
+            {
+                icon: "mdi-folder-multiple-outline",
+                text: "Project Template",
+                url: "/project-templates",
+            },
+        );
     }
     if (userStore.hasPermission("TASK_READ")) {
         values.unshift({ icon: "mdi-magnify", text: "Task検索", url: "/tasks/search" });

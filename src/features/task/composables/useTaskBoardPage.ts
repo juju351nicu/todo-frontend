@@ -138,6 +138,13 @@ export const useTaskBoardPage = () => {
       canCreateTask.value &&
       canManageProjectTasks.value
   );
+  const canCaptureProjectTemplate = computed(
+    () =>
+      userStore.hasPermission("PROJECT_CREATE") &&
+      isProjectActive.value &&
+      (userStore.hasRole("SYSTEM_ADMIN") ||
+        currentProjectRole.value === "OWNER")
+  );
   const canUpdateTaskRecurrence = computed(
     () =>
       canUpdateTask.value &&
@@ -708,6 +715,7 @@ export const useTaskBoardPage = () => {
     board,
     archiveTask,
     canArchiveTask,
+    canCaptureProjectTemplate,
     canCreateTask,
     canCreateTaskRecurrence,
     canMoveTask,

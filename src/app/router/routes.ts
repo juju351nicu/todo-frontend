@@ -108,6 +108,16 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: "/project-templates",
+    name: "ProjectTemplates",
+    component: () =>
+      import("@/features/project/views/ProjectTemplatePage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["PROJECT_READ"],
+    },
+  },
+  {
     path: "/my-tasks",
     name: "MyTasks",
     component: () => import("@/features/task/views/MyTasksPage.vue"),

@@ -103,11 +103,18 @@ src/
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
+- `src/features/project/api/projectTemplateApi.ts`: 本人所有Project Templateのcapture・一覧・詳細・更新・archive・適用API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
+- `src/features/project/types/projectTemplate.ts`: Project Template snapshot、member slot mapping、適用Request／Response型
 - `src/features/project/composables/useProjectListPage.ts`: Project一覧、検索、Board遷移
 - `src/features/project/composables/useProjectSettingsDialog.ts`: Project基本情報、archive、member追加・role変更・除外、409再取得
+- `src/features/project/composables/useProjectTemplateCapture.ts`: Boardからのcapture Dialog状態、入力検証、認証・機能資格エラー
+- `src/features/project/composables/useProjectTemplatePage.ts`: 本人Templateの一覧・詳細・header編集・archive・Project適用・競合回復
 - `src/features/project/components/ProjectSettingsDialog.vue`: Task Boardから開くProject設定・member管理Dialog
+- `src/features/project/components/ProjectTemplateCaptureButton.vue`: OWNER／SYSTEM_ADMIN向けProject snapshot保存Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
+- `src/features/project/views/ProjectTemplatePage.vue`: Template snapshot参照、管理、member slot mapping、Project生成画面
+- `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputのローカル日付変換と実在日付検証
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task ID queryからの詳細表示、Task登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
@@ -359,6 +366,24 @@ API、composable、route、「今週」の境界を含む全60 test file・437 V
 2 tabの古いversion更新は409となり、競合tabがversion 1の最新名と条件を再取得した。検索結果から既存Boardの
 Task詳細Dialogへ遷移し、再読込後も表示を維持した。安定再読込のconsole warning・errorは0件で、
 DB inspectと専用fixture cleanup後0件まで完了した。これによりStage 9EのFrontend回帰を完了した。
+
+## Project Template
+
+Stage 10A-4ではProject Boardへ「ProjectをTemplateとして保存」を追加し、ACTIVE ProjectのOWNERまたは
+SYSTEM_ADMINかつ`PROJECT_CREATE`保持者だけに操作を案内する。保存対象はProject説明、member role、Board列、
+WBS Task階層、checklist、Finish-to-Start依存であり、元account ID、コメント、進捗、実績、calendar、baseline、
+EVM、勤怠は含めない。最終認可、規模上限、snapshot整合性、機能資格はBackendを正本とする。
+
+`/project-templates`では本人所有active Templateの軽量一覧とsnapshot詳細を取得し、名称・説明だけのversion付き更新、
+論理archive、Project生成を扱う。適用時はProject key、名称、開始日、全member slotのACTIVE account IDを指定する。
+`OWNER_1`が未指定ならSessionの本人accountを補完するが、本人をOWNERへ割り当てること、slot不足・重複・account状態は
+Backendでも再検査する。生成成功後は既存Project Boardへ遷移し、Board／WBSは生成済みの通常Task IDを正本とする。
+
+Template参照は契約終了後も可能とし、capture・更新・archive・適用で機能資格403を受けた場合はBackendの案内を表示する。
+401ではSessionを破棄してLoginへ戻り、更新系の404／409では古いsnapshot、version、member mapping draftを破棄して
+一覧・詳細を再取得する。Project Template固有の日付既定値とMySQL DATE範囲の実在日付検証は
+`projectTemplateDate.ts`へ集約した。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
+専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認は次の変更単位とする。
 
 ## 変更時の確認
 

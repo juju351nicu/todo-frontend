@@ -17,6 +17,7 @@ export const API_PATHS = {
   MEMBER_UPSERT: "/api/v1/member/upsertConfirm",
   MEMBER_CANCEL: "/api/v1/member/cancel",
   PROJECTS: "/api/v1/projects",
+  PROJECT_TEMPLATES: "/api/v1/project-templates",
   MY_TASKS: "/api/v1/my-tasks",
   TASK_SEARCH: "/api/v1/tasks/search",
   TASK_SEARCH_OPTIONS: "/api/v1/tasks/search/options",

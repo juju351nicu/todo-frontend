@@ -181,6 +181,16 @@ HTTP 4xx／5xxは0件で、cleanup後の専用account、Project、規則、Task�
 2 tab競合、snapshot更新後の次回生成、停止期間の非catch-up、Project archiveはBackend自動test済みで、
 実ブラウザ証跡は後続の回帰対象です。
 
+Stage 10A-4ではProject Boardから、Project説明、member role、Board列、WBS Task階層、checklist、依存関係を
+本人専用Project Templateへ保存できるようにしました。`/project-templates`では本人Templateの一覧・詳細、
+名称・説明のversion付き更新、archive、Project key・開始日・member slot mappingを指定したProject生成を扱います。
+参照は契約終了後も可能とし、更新系の機能資格403、401、404／409競合を個別に処理します。生成後は既存Boardへ遷移し、
+生成Project／Taskを通常のBoard、WBS、Gantt、Workload、EVMから同じIDで参照します。
+
+Project Templateを含む全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功しています。
+専用fixtureによるcapture、snapshot不変、member mapping、Board／WBS／依存／checklist、lineage、archive、
+DB inspect／cleanupの実回帰は次の変更単位です。
+
 ## 検証
 
 ```bash
