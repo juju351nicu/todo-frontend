@@ -226,7 +226,13 @@ onBeforeMount(loadDashboard);
                 cols="12"
                 md="6"
               >
-                <v-card variant="tonal" color="teal" height="100%" @click="openProject(project)">
+                <v-card
+                  variant="tonal"
+                  color="teal"
+                  height="100%"
+                  link
+                  @click="openProject(project)"
+                >
                   <v-card-title class="text-subtitle-1 font-weight-bold">
                     {{ project.projectName }}
                   </v-card-title>

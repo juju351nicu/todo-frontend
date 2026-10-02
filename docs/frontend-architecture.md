@@ -404,7 +404,9 @@ Frontend内の絶対pathだけに制限する。401ではSession表示を破棄�
 
 Dashboard API、composable、表示utility、Router、ログイン後遷移をVitestで固定した。既存の繰り返しTaskテストが
 実行日へ依存していたため、規則作成日をVitestのsystem timeで固定し、将来の日付でも全体回帰が安定するよう修正した。
-全74 test file・529 Vitest、TypeScript／Vue型検査、production buildが成功している。次の変更単位は
+全74 test file・531 Vitest、TypeScript／Vue型検査、production buildが成功している。追加監査では、403を
+Session切れとして扱わないこと、表示名fallback、Backendのpermission AND条件・日曜境界・card上限を
+JUnit／Vitestで固定し、Project cardへVuetifyの`link`契約を指定してkeyboard操作を可能にした。次の変更単位は
 Stage 10B-4の高度Dashboard Backend／Frontendと`DASHBOARD_ADVANCED`資格境界である。
 
 ## 変更時の確認

@@ -140,6 +140,29 @@ describe("useDashboardPage", () => {
     expect(page.errorMessages.value).toEqual(["Backendへ接続できませんでした。"]);
   });
 
+  it("Backendの項目エラーを表示して403ではSessionを破棄しない", async () => {
+    mocks.dashboardApi.getBasicDashboard.mockRejectedValue(
+      new DashboardApiError(403, {
+        fieldErrors: [
+          {
+            errorCode: "FEATURE_NOT_ENTITLED",
+            field: "featureCode",
+            message: "この機能は現在の契約では利用できません。",
+          },
+        ],
+      })
+    );
+    const page = useDashboardPage();
+
+    await page.loadDashboard();
+
+    expect(page.errorMessages.value).toEqual([
+      "この機能は現在の契約では利用できません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
     mocks.dashboardApi.getBasicDashboard.mockRejectedValue(
       new DashboardApiError(401, null)
@@ -150,6 +173,16 @@ describe("useDashboardPage", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("表示名がない場合はlogin ID、両方ない場合は固定名へ補完する", () => {
+    mocks.userStore.displayName = null;
+    const usernamePage = useDashboardPage();
+    expect(usernamePage.displayName.value).toBe("ken");
+
+    mocks.userStore.username = null;
+    const fallbackPage = useDashboardPage();
+    expect(fallbackPage.displayName.value).toBe("利用者");
   });
 
   it("TaskとProjectを既存Boardへ遷移させる", async () => {
