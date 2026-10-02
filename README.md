@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -190,6 +190,17 @@ Stage 10A-4ではProject Boardから、Project説明、member role、Board列、
 Project Templateを含む全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功しています。
 専用fixtureによるcapture、snapshot不変、member mapping、Board／WBS／依存／checklist、lineage、archive、
 DB inspect／cleanupの実回帰は次の変更単位です。
+
+Stage 10B-3では`/dashboard`を全認証利用者のログイン後入口として追加しました。1回の
+`GET /api/v1/dashboard/basic`で同一基準時刻のMy Tasks、通知、ACTIVE Project進捗、当月本人勤怠を取得し、
+PCではcard grid、スマートフォンではMy Tasksと通知を先頭にした縦積みで表示します。各セクションはBackendの
+`available`を正本とし、permission不足時に件数、ID、名称を推測または別APIから補完しません。
+
+Task previewは既存Board詳細、Project cardはBoard、各summaryはMy Tasks・Project一覧・本人勤怠へ接続します。
+通知遷移先はFrontend内の安全な絶対pathだけを許可し、外部URLをRouterへ渡しません。再取得は利用者の明示操作だけで、
+Spring Sessionを延長する定期pollingは追加していません。API、二重送信、401、snapshot維持、安全な遷移、日付・進捗境界、
+Router、ログイン後遷移を含む全74 test file・529 Vitest、TypeScript／Vue型検査、production buildが成功しています。
+次のDashboard実装単位はStage 10B-4の高度Dashboardと`DASHBOARD_ADVANCED`資格境界です。
 
 ## 検証
 

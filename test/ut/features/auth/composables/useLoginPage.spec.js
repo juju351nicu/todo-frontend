@@ -45,13 +45,13 @@ describe("useLoginPage", () => {
     mocks.userStore.permissionCodes = ["TASK_READ_OWN"];
   });
 
-  it("既存Sessionがあればpermissionに対応するTodo画面へ移動する", async () => {
+  it("既存SessionがあればDashboardへ移動する", async () => {
     mocks.userStore.restoreSession.mockResolvedValue(true);
     const page = useLoginPage();
 
     await page.initialize();
 
-    expect(mocks.router.push).toHaveBeenCalledWith({ name: "TodoCalendar" });
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Dashboard" });
   });
 
   it("OAuth2エラーを画面メッセージへ変換してURLから除去する", async () => {
@@ -67,7 +67,7 @@ describe("useLoginPage", () => {
     expect(mocks.router.replace).toHaveBeenCalledWith({ path: "/", query: {} });
   });
 
-  it("ログイン成功時はフォームをStoreへ渡してTodo画面へ移動する", async () => {
+  it("ログイン成功時はフォームをStoreへ渡してDashboardへ移動する", async () => {
     mocks.userStore.authLogin.mockResolvedValue({ ok: true, status: 204 });
     const page = useLoginPage();
     page.loginForm.value = { loginId: "user01", password: "password" };
@@ -78,7 +78,7 @@ describe("useLoginPage", () => {
       loginId: "user01",
       password: "password",
     });
-    expect(mocks.router.push).toHaveBeenCalledWith({ name: "TodoCalendar" });
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Dashboard" });
     expect(page.isLoading.value).toBe(false);
   });
 

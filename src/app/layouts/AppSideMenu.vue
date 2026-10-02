@@ -113,6 +113,11 @@ const links = computed<NavigationLink[]>(() => {
             url: "/member/memberList",
         });
     }
+    values.unshift({
+        icon: "mdi-view-dashboard",
+        text: "Dashboard",
+        url: "/dashboard",
+    });
     return values;
 });
 

@@ -19,9 +19,12 @@ describe("Vue routes", () => {
     expect(route.meta?.requiresAuth).not.toBe(true);
   });
 
-  it("試作Dashboardルートを公開しない", () => {
-    expect(findRoute("DashBoard")).toBeUndefined();
-    expect(findRoute("TodoCalendar").path).toBe("/todo/calendar");
+  it("Basic Dashboardを全認証利用者向けルートとして公開する", () => {
+    const dashboard = findRoute("Dashboard");
+
+    expect(dashboard.path).toBe("/dashboard");
+    expect(dashboard.meta.requiresAuth).toBe(true);
+    expect(dashboard.meta.requiredAnyPermissions).toBeUndefined();
   });
 
   it("Todo画面にBackendと一致するpermissionメタデータを設定する", () => {

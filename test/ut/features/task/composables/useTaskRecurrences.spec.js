@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskRecurrenceApiError } from "@/features/task/api/taskRecurrenceApi";
 import { useTaskRecurrences } from "@/features/task/composables/useTaskRecurrences";
@@ -78,6 +78,8 @@ const createPage = () => useTaskRecurrences(ref(5));
 
 describe("useTaskRecurrences", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 21, 12, 0, 0));
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.taskRecurrenceApi.findRules.mockResolvedValue([
@@ -102,6 +104,10 @@ describe("useTaskRecurrences", () => {
       lastErrorCode: null,
     });
     mocks.taskTemplateApi.findOwnTemplates.mockResolvedValue([template]);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("archive済みを含む規則一覧を取得する", async () => {

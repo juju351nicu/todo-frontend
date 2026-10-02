@@ -15,14 +15,14 @@ describe("Router authorization", () => {
     ).toBe(false);
   });
 
-  it("permissionに応じて認証後の既定画面を選択する", () => {
-    expect(resolveAuthenticatedHomeRouteName(["TASK_READ"])).toBe("MyTasks");
+  it("全認証利用者の既定画面をBasic Dashboardにする", () => {
+    expect(resolveAuthenticatedHomeRouteName(["TASK_READ"])).toBe("Dashboard");
     expect(resolveAuthenticatedHomeRouteName(["TASK_READ_OWN"])).toBe(
-      "TodoCalendar"
+      "Dashboard"
     );
     expect(resolveAuthenticatedHomeRouteName(["ACCOUNT_READ"])).toBe(
-      "AccountAdministration"
+      "Dashboard"
     );
-    expect(resolveAuthenticatedHomeRouteName([])).toBe("AccessDenied");
+    expect(resolveAuthenticatedHomeRouteName([])).toBe("Dashboard");
   });
 });

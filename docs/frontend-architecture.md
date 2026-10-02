@@ -62,6 +62,11 @@ src/
 - `src/shared/constants/ui.ts`: data-tableのページ表示定数
 - `src/shared/types/error.ts`: Backend共通エラー型
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
+- `src/features/dashboard/api/dashboardApi.ts`: permission別セクションを持つBasic Dashboard API
+- `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠のDashboard契約型
+- `src/features/dashboard/composables/useDashboardPage.ts`: Dashboard取得、401、再読込、既存画面遷移
+- `src/features/dashboard/views/DashboardPage.vue`: PC／スマートフォン向け基本Dashboard
+- `src/features/dashboard/utils/dashboard.ts`: 業務日、進捗率、Project roleの表示変換
 - `src/app/layouts/AppHeader.vue`: アプリケーション共通ヘッダー
 - `src/app/layouts/AppSideMenu.vue`: 認証利用者のロールに応じた共通メニュー
 - `src/app/router/index.ts`: Router生成とSession認証ガード
@@ -384,6 +389,23 @@ Template参照は契約終了後も可能とし、capture・更新・archive・�
 一覧・詳細を再取得する。Project Template固有の日付既定値とMySQL DATE範囲の実在日付検証は
 `projectTemplateDate.ts`へ集約した。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
 専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認は次の変更単位とする。
+
+## Basic Dashboard
+
+Stage 10B-3では`src/features/dashboard`を追加し、`/dashboard`を全認証利用者の既定画面にした。
+`useDashboardPage`は`GET /api/v1/dashboard/basic`を1回だけ呼び、Backendが同一生成時刻で確定したMy Tasks、通知、
+ACTIVE Project進捗、当月本人勤怠を保持する。Frontendから各機能APIを集約せず、permission不足のセクションは
+Backendの`available=false`、0件、空配列、nullをそのまま情報非公開表示へ変換する。
+
+PCは4セクションのcard grid、スマートフォンはMy Tasks、通知、Project、勤怠の縦積みとする。Taskは既存Board詳細、
+ProjectはBoard、summary footerはMy Tasks・Project一覧・本人勤怠へ遷移する。通知の`navigationPath`は既存utilityで
+Frontend内の絶対pathだけに制限する。401ではSession表示を破棄してLoginへ戻し、再読込失敗では直前のsnapshotを
+維持する。二重Requestを防止し、Session期限を延長する定期pollingは行わない。
+
+Dashboard API、composable、表示utility、Router、ログイン後遷移をVitestで固定した。既存の繰り返しTaskテストが
+実行日へ依存していたため、規則作成日をVitestのsystem timeで固定し、将来の日付でも全体回帰が安定するよう修正した。
+全74 test file・529 Vitest、TypeScript／Vue型検査、production buildが成功している。次の変更単位は
+Stage 10B-4の高度Dashboard Backend／Frontendと`DASHBOARD_ADVANCED`資格境界である。
 
 ## 変更時の確認
 

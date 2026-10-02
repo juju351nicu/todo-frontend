@@ -7,13 +7,9 @@ import { useUserStore } from "@/features/auth/stores/user";
 const router = useRouter();
 const userStore = useUserStore();
 
-/** 現在のpermissionで参照できる既定画面へ戻る。 */
+/** permission別セクションを持つ全認証利用者向けDashboardへ戻る。 */
 const goHome = (): void => {
   const routeName = resolveAuthenticatedHomeRouteName(userStore.permissionCodes);
-  if (routeName === "AccessDenied") {
-    void router.push({ name: "Login" });
-    return;
-  }
   void router.push({ name: routeName });
 };
 </script>
