@@ -5,6 +5,8 @@ import {
   formatEarnedValuePercent,
   formatEarnedValueRatio,
   formatSignedEarnedValueMinutes,
+  getEarnedValueRatioColor,
+  getEarnedValueVarianceColor,
   validateEarnedValueStatusDate,
 } from "@/features/wbs/utils/earnedValue";
 
@@ -31,5 +33,15 @@ describe("EVM表示utility", () => {
     expect(formatEarnedValueRatio(null)).toBe("算出対象外");
     expect(formatEarnedValuePercent(42.125)).toBe("42.13%");
     expect(formatEarnedValuePercent(null)).toBe("算出対象外");
+  });
+
+  it("SPI・CPIとSV・CVの健全境界を共通の注意色へ変換する", () => {
+    expect(getEarnedValueRatioColor(null)).toBeUndefined();
+    expect(getEarnedValueRatioColor(Number.NaN)).toBeUndefined();
+    expect(getEarnedValueRatioColor(0.9999)).toBe("error");
+    expect(getEarnedValueRatioColor(1)).toBe("success");
+    expect(getEarnedValueVarianceColor(Number.POSITIVE_INFINITY)).toBeUndefined();
+    expect(getEarnedValueVarianceColor(-0.01)).toBe("error");
+    expect(getEarnedValueVarianceColor(0)).toBe("success");
   });
 });

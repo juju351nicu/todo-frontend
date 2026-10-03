@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本・高度Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -199,8 +199,14 @@ PCではcard grid、スマートフォンではMy Tasksと通知を先頭にし�
 Task previewは既存Board詳細、Project cardはBoard、各summaryはMy Tasks・Project一覧・本人勤怠へ接続します。
 通知遷移先はFrontend内の安全な絶対pathだけを許可し、外部URLをRouterへ渡しません。再取得は利用者の明示操作だけで、
 Spring Sessionを延長する定期pollingは追加していません。API、二重送信、401、snapshot維持、安全な遷移、日付・進捗境界、
-Router、ログイン後遷移を含む全74 test file・529 Vitest、TypeScript／Vue型検査、production buildが成功しています。
-次のDashboard実装単位はStage 10B-4の高度Dashboardと`DASHBOARD_ADVANCED`資格境界です。
+Router、ログイン後遷移を含む全74 test file・531 Vitest、TypeScript／Vue型検査、production buildが成功しています。
+
+Stage 10B-4では同じ`/dashboard`へ高度Dashboardを独立sectionとして追加しました。Basic APIの業務日を初期基準日に、
+`GET /api/v1/dashboard/advanced`から参照可能ProjectのBAC・PV・EV・AC、SPI・CPI、SV・CV、進捗率、EVM警告、
+本人の月曜〜日曜予定負荷と8時間超過日を取得します。PCは比較表、スマートフォンはProject summary cardとし、
+詳細は既存WBS／EVM画面へ接続します。`FEATURE_NOT_ENTITLED`の403だけをプラン問い合わせ導線へ変換し、一般403や
+401と混同しません。全74 test file・544 Vitest、TypeScript／Vue型検査、production buildが成功しています。
+次は専用fixture、実ブラウザ、DB inspect／cleanup、性能計測でStage 10Bを完了させます。
 
 ## 検証
 

@@ -22,6 +22,20 @@ const response = {
   attendance: { available: false, yearMonth: null, status: null },
 };
 
+const advancedResponse = {
+  statusDate: "2026-09-21",
+  businessZoneId: "Asia/Tokyo",
+  projectsWithoutActiveBaselineCount: 1,
+  projects: [
+    {
+      projectId: 7,
+      projectKey: "WM",
+      projectName: "Work Management",
+      warningCodes: ["BASELINE_PLAN_UNALLOCATED"],
+    },
+  ],
+};
+
 describe("Dashboard API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -56,6 +70,45 @@ describe("Dashboard API", () => {
       notifications: { recentEvents: [] },
       projects: { cards: [] },
     });
+  });
+
+  it("基準日をqueryへ指定して高度Dashboardを取得する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(advancedResponse),
+    });
+
+    await expect(
+      DashboardApi.getAdvancedDashboard("2026-09-21")
+    ).resolves.toEqual(advancedResponse);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      `${API_PATHS.DASHBOARD_ADVANCED}?statusDate=2026-09-21`
+    );
+  });
+
+  it("高度Dashboardの欠落したProject・警告一覧を空配列へ正規化する", async () => {
+    HttpClient.getRequest
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          ...advancedResponse,
+          projects: undefined,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          ...advancedResponse,
+          projects: [{ ...advancedResponse.projects[0], warningCodes: undefined }],
+        }),
+      });
+
+    await expect(
+      DashboardApi.getAdvancedDashboard("2026-09-21")
+    ).resolves.toMatchObject({ projects: [] });
+    await expect(
+      DashboardApi.getAdvancedDashboard("2026-09-21")
+    ).resolves.toMatchObject({ projects: [{ warningCodes: [] }] });
   });
 
   it("JSON本文のない401をstatus付きDashboardApiErrorへ変換する", async () => {

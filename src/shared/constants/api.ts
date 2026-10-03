@@ -12,6 +12,7 @@ export const API_PATHS = {
   CSRF: "/api/v1/csrf",
   LOGOUT: "/api/v1/logout",
   DASHBOARD_BASIC: "/api/v1/dashboard/basic",
+  DASHBOARD_ADVANCED: "/api/v1/dashboard/advanced",
   MEMBER_LIST: "/api/v1/member/memberList",
   MEMBER_DETAIL: "/api/v1/member",
   MEMBER_DELETE: "/api/v1/member/deleteMembers",

@@ -7,6 +7,8 @@ import {
   formatEarnedValuePercent,
   formatEarnedValueRatio,
   formatSignedEarnedValueMinutes,
+  getEarnedValueRatioColor,
+  getEarnedValueVarianceColor,
 } from "@/features/wbs/utils/earnedValue";
 
 /** WBS EVM cardへ親画面から渡す基準日、Backend確定値、取得状態。 */
@@ -37,18 +39,6 @@ const submit = (): void => {
     emit("load", formStatusDate.value);
   }
 };
-
-/** 1以上を健全とするSPI・CPIを画面の注意色へ変換する。 */
-const getRatioColor = (ratio: number | null): string | undefined => {
-  if (ratio === null) {
-    return undefined;
-  }
-  return ratio >= 1 ? "success" : "error";
-};
-
-/** 0以上を健全とするSV・CVを画面の注意色へ変換する。 */
-const getVarianceColor = (variance: number): string =>
-  variance >= 0 ? "success" : "error";
 </script>
 
 <template>
@@ -142,16 +132,16 @@ const getVarianceColor = (variance: number): string =>
         </v-row>
 
         <div class="d-flex flex-wrap ga-2 mb-4">
-          <v-chip :color="getVarianceColor(metrics.sv)" variant="tonal">
+          <v-chip :color="getEarnedValueVarianceColor(metrics.sv)" variant="tonal">
             SV {{ formatSignedEarnedValueMinutes(metrics.sv) }}
           </v-chip>
-          <v-chip :color="getVarianceColor(metrics.cv)" variant="tonal">
+          <v-chip :color="getEarnedValueVarianceColor(metrics.cv)" variant="tonal">
             CV {{ formatSignedEarnedValueMinutes(metrics.cv) }}
           </v-chip>
-          <v-chip :color="getRatioColor(metrics.spi)" variant="tonal">
+          <v-chip :color="getEarnedValueRatioColor(metrics.spi)" variant="tonal">
             SPI {{ formatEarnedValueRatio(metrics.spi) }}
           </v-chip>
-          <v-chip :color="getRatioColor(metrics.cpi)" variant="tonal">
+          <v-chip :color="getEarnedValueRatioColor(metrics.cpi)" variant="tonal">
             CPI {{ formatEarnedValueRatio(metrics.cpi) }}
           </v-chip>
           <v-chip
@@ -232,12 +222,12 @@ const getVarianceColor = (variance: number): string =>
                 <td class="text-no-wrap">{{ formatEarnedValueMinutes(task.ev) }}</td>
                 <td class="text-no-wrap">{{ formatEarnedValueMinutes(task.ac) }}</td>
                 <td class="text-no-wrap">
-                  <v-chip :color="getVarianceColor(task.sv)" size="small" variant="tonal">
+                  <v-chip :color="getEarnedValueVarianceColor(task.sv)" size="small" variant="tonal">
                     {{ formatSignedEarnedValueMinutes(task.sv) }}
                   </v-chip>
                 </td>
                 <td class="text-no-wrap">
-                  <v-chip :color="getVarianceColor(task.cv)" size="small" variant="tonal">
+                  <v-chip :color="getEarnedValueVarianceColor(task.cv)" size="small" variant="tonal">
                     {{ formatSignedEarnedValueMinutes(task.cv) }}
                   </v-chip>
                 </td>

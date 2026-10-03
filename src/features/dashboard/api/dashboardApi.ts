@@ -1,4 +1,7 @@
-import type { BasicDashboardResponse } from "@/features/dashboard/types/dashboard";
+import type {
+  AdvancedDashboardResponse,
+  BasicDashboardResponse,
+} from "@/features/dashboard/types/dashboard";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
@@ -66,6 +69,33 @@ const getBasicDashboard = async (): Promise<BasicDashboardResponse> => {
   };
 };
 
+/**
+ * 現在のSession利用者向け高度Dashboardを指定基準日で取得する。
+ * `DASHBOARD_ADVANCED`資格の最終判定はBackendが行い、資格不足は403として通知する。
+ *
+ * @param statusDate EVMと本人週次負荷の基準日。yyyy-MM-dd形式
+ * @returns 参照可能ProjectのEVM・本人負荷summaryとactive baselineなし件数
+ * @throws DashboardApiError 未認証、資格・permission不足、入力不正またはBackendエラーの場合
+ */
+const getAdvancedDashboard = async (
+  statusDate: string
+): Promise<AdvancedDashboardResponse> => {
+  const query = new URLSearchParams({ statusDate });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.DASHBOARD_ADVANCED}?${query.toString()}`
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as AdvancedDashboardResponse;
+  return {
+    ...payload,
+    projects: (payload.projects ?? []).map((project) => ({
+      ...project,
+      warningCodes: project.warningCodes ?? [],
+    })),
+  };
+};
+
 export default {
+  getAdvancedDashboard,
   getBasicDashboard,
 };

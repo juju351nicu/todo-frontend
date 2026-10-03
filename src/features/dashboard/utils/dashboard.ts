@@ -33,3 +33,14 @@ export const getDashboardProjectRoleLabel = (
     projectRole
   ];
 };
+
+const ADVANCED_WARNING_LABELS: Readonly<Record<string, string>> = {
+  BASELINE_PLAN_UNALLOCATED: "baseline予定工数に未配賦があります",
+  BASELINE_PLAN_OVER_ALLOCATED: "baseline予定工数を超えて配賦されています",
+  UNBASELINED_TASK_EXISTS: "baseline作成後のTaskがあります",
+  UNBASELINED_ACTUAL_EXCLUDED: "baseline外Taskの実績をACから除外しています",
+};
+
+/** 高度Dashboardの安定したEVM警告codeを利用者向け表示へ変換する。 */
+export const getAdvancedDashboardWarningLabel = (code: string): string =>
+  ADVANCED_WARNING_LABELS[code] ?? code;

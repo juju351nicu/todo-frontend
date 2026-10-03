@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatDashboardBusinessDate,
+  getAdvancedDashboardWarningLabel,
   getDashboardProjectRoleLabel,
   normalizeDashboardProgress,
 } from "@/features/dashboard/utils/dashboard";
@@ -26,5 +27,14 @@ describe("Dashboard表示utility", () => {
     expect(getDashboardProjectRoleLabel("MANAGER")).toBe("マネージャー");
     expect(getDashboardProjectRoleLabel("MEMBER")).toBe("メンバー");
     expect(getDashboardProjectRoleLabel(null)).toBe("システム管理者参照");
+  });
+
+  it("高度Dashboardの既知警告を表示文言へ変換し未知codeを隠さない", () => {
+    expect(
+      getAdvancedDashboardWarningLabel("BASELINE_PLAN_UNALLOCATED")
+    ).toContain("未配賦");
+    expect(getAdvancedDashboardWarningLabel("FUTURE_WARNING")).toBe(
+      "FUTURE_WARNING"
+    );
   });
 });

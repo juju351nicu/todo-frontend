@@ -5,6 +5,8 @@ import DashboardApi, {
   DashboardApiError,
 } from "@/features/dashboard/api/dashboardApi";
 import type {
+  AdvancedDashboardProject,
+  AdvancedDashboardResponse,
   BasicDashboardResponse,
   DashboardNotificationEvent,
   DashboardProject,
@@ -12,9 +14,10 @@ import type {
 } from "@/features/dashboard/types/dashboard";
 import { useUserStore } from "@/features/auth/stores/user";
 import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
+import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 
 /**
- * Basic Dashboardの取得、再読込、既存業務画面への遷移を管理する。
+ * Basic／高度Dashboardの取得、再読込、既存業務画面への遷移を管理する。
  * 初期表示後は明示的な再読込だけを行い、Spring Sessionを延長する定期pollingは追加しない。
  */
 export const useDashboardPage = () => {
@@ -22,8 +25,13 @@ export const useDashboardPage = () => {
   const userStore = useUserStore();
 
   const dashboard = ref<BasicDashboardResponse | null>(null);
+  const advancedDashboard = ref<AdvancedDashboardResponse | null>(null);
+  const advancedStatusDate = ref("");
   const errorMessages = ref<string[]>([]);
+  const advancedErrorMessages = ref<string[]>([]);
   const isLoading = ref(false);
+  const isAdvancedLoading = ref(false);
+  const isAdvancedNotEntitled = ref(false);
 
   const displayName = computed(
     () => userStore.displayName ?? userStore.username ?? "利用者"
@@ -40,11 +48,90 @@ export const useDashboardPage = () => {
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      dashboard.value = await DashboardApi.getBasicDashboard();
+      const loadedDashboard = await DashboardApi.getBasicDashboard();
+      dashboard.value = loadedDashboard;
+      if (!loadedDashboard.myTasks.available) {
+        advancedDashboard.value = null;
+        advancedErrorMessages.value = [];
+        isAdvancedNotEntitled.value = false;
+        return;
+      }
+      if (advancedStatusDate.value.length === 0) {
+        advancedStatusDate.value = loadedDashboard.businessDate;
+      }
+      await loadAdvancedDashboard(advancedStatusDate.value);
     } catch (error: unknown) {
       await handleApiError(error);
     } finally {
       isLoading.value = false;
+    }
+  };
+
+  /** 高度Dashboardの安定error codeから、機能資格不足だけを判定する。 */
+  const isFeatureNotEntitled = (error: DashboardApiError): boolean =>
+    error.status === 403 &&
+    (error.errorResponse?.fieldErrors ?? []).some(
+      (fieldError) =>
+        fieldError.errorCode === "FEATURE_NOT_ENTITLED" &&
+        fieldError.field === "featureCode"
+    );
+
+  /** 高度Dashboard APIのstatusをSession、upgrade案内、業務エラーへ分離する。 */
+  const handleAdvancedApiError = async (error: unknown): Promise<void> => {
+    if (!(error instanceof DashboardApiError)) {
+      advancedErrorMessages.value = ["高度Dashboardへ接続できませんでした。"];
+      return;
+    }
+    if (error.status === 401) {
+      userStore.clearSession();
+      await router.push({ name: "Login" });
+      return;
+    }
+    if (isFeatureNotEntitled(error)) {
+      advancedDashboard.value = null;
+      isAdvancedNotEntitled.value = true;
+      return;
+    }
+    if (error.status === 403 || error.status === 404) {
+      // permissionまたはProject参照範囲が変わった後に、以前取得した横断値を画面へ残さない。
+      advancedDashboard.value = null;
+    }
+    const backendMessage = error.errorResponse?.fieldErrors?.[0]?.message;
+    advancedErrorMessages.value = [
+      backendMessage ?? "高度Dashboardを取得できませんでした。",
+    ];
+  };
+
+  /**
+   * 指定基準日の高度Dashboardを取得し、失敗時は資格取消を除いて直前snapshotを維持する。
+   * 入力不正と処理中の再操作ではAPIを呼ばない。
+   */
+  const loadAdvancedDashboard = async (
+    requestedStatusDate = advancedStatusDate.value
+  ): Promise<void> => {
+    if (isAdvancedLoading.value) {
+      return;
+    }
+    const normalizedStatusDate = requestedStatusDate.trim();
+    const validationErrors = validateEarnedValueStatusDate(
+      normalizedStatusDate
+    );
+    if (validationErrors.length > 0) {
+      advancedErrorMessages.value = validationErrors;
+      return;
+    }
+    advancedStatusDate.value = normalizedStatusDate;
+    isAdvancedLoading.value = true;
+    isAdvancedNotEntitled.value = false;
+    advancedErrorMessages.value = [];
+    try {
+      advancedDashboard.value = await DashboardApi.getAdvancedDashboard(
+        normalizedStatusDate
+      );
+    } catch (error: unknown) {
+      await handleAdvancedApiError(error);
+    } finally {
+      isAdvancedLoading.value = false;
     }
   };
 
@@ -82,6 +169,21 @@ export const useDashboardPage = () => {
     });
   };
 
+  /** 高度DashboardのProject summaryから既存WBS・EVM画面へ遷移する。 */
+  const openAdvancedProject = async (
+    project: AdvancedDashboardProject
+  ): Promise<void> => {
+    await router.push({
+      name: "Wbs",
+      params: { projectId: project.projectId },
+    });
+  };
+
+  /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
+  const openAdvancedAccessInquiry = async (): Promise<void> => {
+    await router.push({ name: "InquiryForm" });
+  };
+
   /** Backend通知の安全なFrontend内pathだけへ遷移する。 */
   const openNotificationEvent = async (
     event: DashboardNotificationEvent
@@ -111,12 +213,20 @@ export const useDashboardPage = () => {
   };
 
   return {
+    advancedDashboard,
+    advancedErrorMessages,
+    advancedStatusDate,
     dashboard,
     displayName,
     errorMessages,
+    isAdvancedLoading,
+    isAdvancedNotEntitled,
     isInitialLoading,
     isLoading,
+    loadAdvancedDashboard,
     loadDashboard,
+    openAdvancedAccessInquiry,
+    openAdvancedProject,
     openAttendance,
     openMyTasks,
     openNotificationEvent,

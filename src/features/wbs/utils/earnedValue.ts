@@ -43,3 +43,23 @@ export const formatEarnedValuePercent = (percent: number | null): string =>
   percent === null || !Number.isFinite(percent)
     ? "算出対象外"
     : `${PERCENT_FORMATTER.format(percent)}%`;
+
+/** 1以上を健全とするSPI・CPIをEVM表示の注意色へ変換する。 */
+export const getEarnedValueRatioColor = (
+  ratio: number | null
+): string | undefined => {
+  if (ratio === null || !Number.isFinite(ratio)) {
+    return undefined;
+  }
+  return ratio >= 1 ? "success" : "error";
+};
+
+/** 0以上を健全とするSV・CVをEVM表示の注意色へ変換する。 */
+export const getEarnedValueVarianceColor = (
+  variance: number
+): string | undefined => {
+  if (!Number.isFinite(variance)) {
+    return undefined;
+  }
+  return variance >= 0 ? "success" : "error";
+};

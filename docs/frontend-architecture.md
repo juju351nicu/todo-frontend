@@ -62,10 +62,10 @@ src/
 - `src/shared/constants/ui.ts`: data-tableのページ表示定数
 - `src/shared/types/error.ts`: Backend共通エラー型
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
-- `src/features/dashboard/api/dashboardApi.ts`: permission別セクションを持つBasic Dashboard API
-- `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠のDashboard契約型
-- `src/features/dashboard/composables/useDashboardPage.ts`: Dashboard取得、401、再読込、既存画面遷移
-- `src/features/dashboard/views/DashboardPage.vue`: PC／スマートフォン向け基本Dashboard
+- `src/features/dashboard/api/dashboardApi.ts`: permission別Basic Dashboardと資格境界を持つ高度Dashboard API
+- `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠、横断EVM／負荷のDashboard契約型
+- `src/features/dashboard/composables/useDashboardPage.ts`: Basic／高度Dashboard取得、資格不足、401、再読込、既存画面遷移
+- `src/features/dashboard/views/DashboardPage.vue`: PC／スマートフォン向け基本・高度Dashboard
 - `src/features/dashboard/utils/dashboard.ts`: 業務日、進捗率、Project roleの表示変換
 - `src/app/layouts/AppHeader.vue`: アプリケーション共通ヘッダー
 - `src/app/layouts/AppSideMenu.vue`: 認証利用者のロールに応じた共通メニュー
@@ -408,6 +408,23 @@ Dashboard API、composable、表示utility、Router、ログイン後遷移をVi
 Session切れとして扱わないこと、表示名fallback、Backendのpermission AND条件・日曜境界・card上限を
 JUnit／Vitestで固定し、Project cardへVuetifyの`link`契約を指定してkeyboard操作を可能にした。次の変更単位は
 Stage 10B-4の高度Dashboard Backend／Frontendと`DASHBOARD_ADVANCED`資格境界である。
+
+## Advanced Dashboard
+
+Stage 10B-4ではBasic Dashboardと同じ`/dashboard`へ高度機能を独立sectionとして追加した。初期表示ではBasic APIが
+返す業務日をEVM基準日として`GET /api/v1/dashboard/advanced`を呼び、参照可能なACTIVE Projectのうちactive
+baselineを持つ最大10件を比較する。FrontendはEVMや本人負荷を再計算せず、Backend確定済みのBAC、PV、EV、AC、
+SV、CV、SPI、CPI、進捗率、警告code、月曜〜日曜予定負荷、日別480分超過日数を表示する。
+
+PCはProject横断比較表、スマートフォンはProject summary cardとし、詳細操作は既存WBS／EVM画面へ遷移する。
+Task参照permissionがない場合は高度APIを呼ばない。Backendの403は安定codeとfieldを確認し、
+`FEATURE_NOT_ENTITLED`／`featureCode`だけをプラン問い合わせ導線へ変換する。一般403はpermissionエラーとして扱い、
+以前取得したProject横断値を破棄する。集計中に参照範囲が変わった404でも旧横断値を破棄し、401はSession表示を
+破棄してLoginへ戻す。409、通信失敗、入力エラーでは直前snapshotを維持し、定期pollingとWeb Storage保存は行わない。
+
+API query、欠落配列の正規化、初期基準日、二重Request防止、入力不正、資格403、一般403、401、snapshot維持、
+WBS／問い合わせ遷移、警告・指標の表示境界をVitestで固定した。全74 test file・544 Vitest、TypeScript／Vue型検査、
+production buildが成功している。次の作業単位はStage 10B-5の専用fixture、実ブラウザ、DB inspect／cleanup、性能計測である。
 
 ## 変更時の確認
 
