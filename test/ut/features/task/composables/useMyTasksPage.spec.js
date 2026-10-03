@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   userStore: {
     clearSession: vi.fn(),
     hasAnyPermission: vi.fn(),
+    hasPermission: vi.fn(),
   },
 }));
 
@@ -73,6 +74,7 @@ describe("useMyTasksPage", () => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.userStore.hasAnyPermission.mockReturnValue(true);
+    mocks.userStore.hasPermission.mockReturnValue(true);
     mocks.todoStore.findMyTasks.mockResolvedValue({
       businessDate: "2026-09-20",
       tasks,
@@ -164,5 +166,15 @@ describe("useMyTasksPage", () => {
     expect(page.errorMessages.value).toEqual([
       "Taskを完了するpermissionがありません。",
     ]);
+  });
+
+  it("TASK_UPDATEがある場合だけTimer開始操作を表示する", () => {
+    const page = useMyTasksPage();
+
+    expect(page.canStartTimers.value).toBe(true);
+
+    mocks.userStore.hasPermission.mockReturnValue(false);
+    const readonlyPage = useMyTasksPage();
+    expect(readonlyPage.canStartTimers.value).toBe(false);
   });
 });

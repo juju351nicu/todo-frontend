@@ -49,7 +49,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本・高度Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本・高度Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Todo一覧・詳細・カレンダーとProject Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、全画面共通Task Timer・本人履歴・工数監査は`src/features/time-tracking`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
 Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Todo・FullCalendarのコードを別チャンクに分割します。
 
@@ -207,6 +207,16 @@ Stage 10B-4では同じ`/dashboard`へ高度Dashboardを独立sectionとして�
 詳細は既存WBS／EVM画面へ接続します。`FEATURE_NOT_ENTITLED`の403だけをプラン問い合わせ導線へ変換し、一般403や
 401と混同しません。全74 test file・544 Vitest、TypeScript／Vue型検査、production buildが成功しています。
 次は専用fixture、実ブラウザ、DB inspect／cleanup、性能計測でStage 10Bを完了させます。
+
+Stage 10C-4では`src/features/time-tracking`へAPI、型、Pinia Store、表示utility、共通Timer、本人履歴、工数監査を追加しました。
+認証後の共通headerは現在Timerを初回だけ復元し、Backendの経過秒を起点に画面内の`setInterval`だけで表示を進めます。
+秒次polling、route変更・Dialog終了時の自動停止、Web Storage保存は行いません。PCはTask名・経過時間・停止を表示し、
+mobileは同じ状態を省スペース表示します。停止・取消・別tabの409ではBackendを正本として現在Timerを再取得します。
+
+My TasksとProject BoardのTask詳細から同じStoreで開始・停止できます。Task詳細からはWBSの既存日別実績Dialogへ
+対象Task付きで遷移し、手入力とTimer反映の監査履歴も参照できます。本人Timer履歴はAsia/Tokyoの最大366日を検索し、
+0分停止もBackend確定結果のまま案内します。全79 test file・574 Vitest、TypeScript／Vue型検査、production buildが
+成功しています。次はStage 10C-5の専用fixture、PC／mobile、複数tab競合、DB inspect／cleanup回帰です。
 
 ## 検証
 

@@ -165,6 +165,18 @@ export const useWbsPage = () => {
     const parsed = Number(value);
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   });
+  const requestedWorkLogTaskId = computed(() => {
+    const panel = Array.isArray(route.query.panel)
+      ? route.query.panel[0]
+      : route.query.panel;
+    const value = Array.isArray(route.query.taskId)
+      ? route.query.taskId[0]
+      : route.query.taskId;
+    const parsed = Number(value);
+    return panel === "work-logs" && Number.isSafeInteger(parsed) && parsed > 0
+      ? parsed
+      : null;
+  });
   const rows = computed(() => buildWbsTreeRows(wbs.value?.tasks ?? []));
   const dependencies = computed(() => dependencyList.value?.dependencies ?? []);
   const taskCount = computed(
@@ -425,6 +437,9 @@ export const useWbsPage = () => {
           workingCalendarSelectedTargetKey.value
         ),
       ]);
+      if (requestedWorkLogTaskId.value !== null) {
+        await openWorkLogDialog(requestedWorkLogTaskId.value);
+      }
     } catch (error: unknown) {
       project.value = null;
       wbs.value = null;

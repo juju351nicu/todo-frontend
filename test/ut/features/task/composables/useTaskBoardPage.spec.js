@@ -193,6 +193,33 @@ describe("useTaskBoardPage", () => {
     expect(mocks.projectTaskApi.getTask).toHaveBeenCalledWith(5, 31);
     expect(page.form.value.taskId).toBe(31);
     expect(page.isEditorOpen.value).toBe(true);
+    expect(page.canStartTaskTimer.value).toBe(true);
+  });
+
+  it("Task詳細から同じTaskの日別実績入力をWBSで開く", async () => {
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.openTaskWorkLogs();
+
+    expect(mocks.router.push).toHaveBeenCalledWith({
+      name: "Wbs",
+      params: { projectId: 5 },
+      query: { taskId: "31", panel: "work-logs" },
+    });
+  });
+
+  it("MEMBERは自分が担当しないTaskのTimerを開始表示しない", async () => {
+    mocks.projectTaskApi.getTask.mockResolvedValue({
+      ...task,
+      assigneeAccountId: 9,
+    });
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    expect(page.canStartTaskTimer.value).toBe(false);
   });
 
   it("列の追加操作から担当者・日付・配置先を初期設定してTaskを登録する", async () => {

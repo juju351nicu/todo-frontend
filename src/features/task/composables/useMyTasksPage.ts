@@ -30,6 +30,7 @@ export const useMyTasksPage = () => {
   const canCompleteTasks = computed(() =>
     userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)
   );
+  const canStartTimers = computed(() => userStore.hasPermission("TASK_UPDATE"));
 
   /** Backendの業務日から今週末までに期限を迎える、期限超過ではないTaskだけを返す。 */
   const visibleTasks = computed<MyTaskItem[]>(() => {
@@ -142,6 +143,7 @@ export const useMyTasksPage = () => {
   return {
     businessDate,
     canCompleteTasks,
+    canStartTimers,
     completeTask,
     errorMessages,
     groups,

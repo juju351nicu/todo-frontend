@@ -67,6 +67,16 @@ src/
 - `src/features/dashboard/composables/useDashboardPage.ts`: Basic／高度Dashboard取得、資格不足、401、再読込、既存画面遷移
 - `src/features/dashboard/views/DashboardPage.vue`: PC／スマートフォン向け基本・高度Dashboard
 - `src/features/dashboard/utils/dashboard.ts`: 業務日、進捗率、Project roleの表示変換
+- `src/features/time-tracking/api/timeTrackingApi.ts`: 現在Timer、開始・停止・取消、本人履歴、Task工数監査API
+- `src/features/time-tracking/types/timeTracking.ts`: Timer Session、日別配賦、工数監査のBackend契約型
+- `src/features/time-tracking/stores/taskTimer.ts`: 画面を跨ぐ現在Timer、競合回復、停止結果のPinia状態
+- `src/features/time-tracking/composables/useTaskTimerHistory.ts`: 本人Timer履歴の期間・paging・認証エラー
+- `src/features/time-tracking/composables/useTaskWorkLogAudits.ts`: Task工数監査Dialogのpaging・認可エラー
+- `src/features/time-tracking/components/CurrentTaskTimer.vue`: PC／mobile共通headerの経過表示・停止・取消
+- `src/features/time-tracking/components/TaskTimerActionButton.vue`: My TasksとTask詳細が共有する開始・停止操作
+- `src/features/time-tracking/components/TaskTimerHistoryDialog.vue`: 本人Timer Session履歴Dialog
+- `src/features/time-tracking/components/TaskWorkLogAuditDialog.vue`: 手入力・Timer反映の工数監査Dialog
+- `src/features/time-tracking/utils/timeTracking.ts`: 経過秒、JST日時、工数、状態・監査表示の純粋変換
 - `src/app/layouts/AppHeader.vue`: アプリケーション共通ヘッダー
 - `src/app/layouts/AppSideMenu.vue`: 認証利用者のロールに応じた共通メニュー
 - `src/app/router/index.ts`: Router生成とSession認証ガード
@@ -425,6 +435,24 @@ Task参照permissionがない場合は高度APIを呼ばない。Backendの403�
 API query、欠落配列の正規化、初期基準日、二重Request防止、入力不正、資格403、一般403、401、snapshot維持、
 WBS／問い合わせ遷移、警告・指標の表示境界をVitestで固定した。全74 test file・544 Vitest、TypeScript／Vue型検査、
 production buildが成功している。次の作業単位はStage 10B-5の専用fixture、実ブラウザ、DB inspect／cleanup、性能計測である。
+
+## Time Tracking Frontend
+
+Stage 10C-4では`features/time-tracking`へ画面横断のTask Timerを追加した。現在TimerだけをPiniaで共有し、
+本人履歴とTask工数監査の期間・paging・Dialog状態は各Composableへ分離する。初期取得は認証Session復元後の1回だけで、
+routeごとにAppHeaderが再生成されてもStoreの`initialized`を正本として重複取得しない。経過表示はBackend Responseの
+`elapsedSeconds`と受信時刻から画面内だけで更新し、Spring Sessionを延長する秒次pollingは行わない。
+
+開始・停止・取消は共通HTTP clientのSession CookieとCSRFを使用し、時刻、worker、Session IDをRequestへ含めない。
+409ではFrontendの推測状態を確定せず現在Timerを再取得し、24時間・1440分上限は取消後の既存手入力を案内する。
+ログアウトと401ではStoreを破棄し、Timer、認証情報、停止結果をWeb Storageへ保存しない。route変更、Dialog終了、
+browser tab非表示ではTimerを止めない。
+
+My Tasksは`TASK_UPDATE`を持つ本人担当Task、Board詳細はACTIVE Projectの参加者かつ既存Task操作範囲に開始操作を案内する。
+最終認可はBackendへ委ねる。Board詳細からWBSへ`taskId`と`panel=work-logs`を渡し、既存の日別実績Dialogを再利用する。
+工数監査はTask詳細から参照し、本人Timer履歴は最大366日の入力境界をFrontendでも検査する。API path・body・query、
+0分停止、409再取得、二重送信、401、403、paging端、日時・経過表示をVitestで固定した。全79 test file・574 Vitest、
+TypeScript／Vue型検査、production buildが成功している。次はStage 10C-5の実ブラウザ・DB回帰である。
 
 ## 変更時の確認
 

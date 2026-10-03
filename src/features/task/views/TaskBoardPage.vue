@@ -13,6 +13,8 @@ import TaskRecurrenceDialog from "@/features/task/components/TaskRecurrenceDialo
 import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
 import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
+import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
+import TaskWorkLogAuditDialog from "@/features/time-tracking/components/TaskWorkLogAuditDialog.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
@@ -25,6 +27,7 @@ const {
   canCreateTaskRecurrence,
   canMoveTask,
   canSave,
+  canStartTaskTimer,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
@@ -48,6 +51,7 @@ const {
   openArchiveConfirm,
   openTaskCreator,
   openTaskEditor,
+  openTaskWorkLogs,
   priorityOptions,
   project,
   saveTask,
@@ -327,6 +331,28 @@ onBeforeMount(initialize);
               hint="登録後の列変更はBoard上の移動操作で行います。"
               persistent-hint
             />
+            <div
+              v-if="form.taskId !== null && board"
+              class="d-flex align-center flex-wrap ga-2 my-4"
+            >
+              <TaskTimerActionButton
+                v-if="canStartTaskTimer"
+                :project-id="board.projectId"
+                :task-id="form.taskId"
+              />
+              <v-btn
+                prepend-icon="mdi-clock-edit-outline"
+                variant="tonal"
+                size="small"
+                @click="openTaskWorkLogs"
+              >
+                日別実績を入力
+              </v-btn>
+              <TaskWorkLogAuditDialog
+                :project-id="board.projectId"
+                :task-id="form.taskId"
+              />
+            </div>
             <TaskTemplateCaptureButton
               v-if="form.taskId !== null && project !== null"
               :project-id="project.projectId"

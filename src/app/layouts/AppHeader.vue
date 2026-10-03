@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppSideMenu from "@/app/layouts/AppSideMenu.vue";
 import NotificationBell from "@/features/notification/components/NotificationBell.vue";
+import CurrentTaskTimer from "@/features/time-tracking/components/CurrentTaskTimer.vue";
 import { ref } from "vue";
 
 const drawer = ref<boolean>(false);
@@ -11,6 +12,7 @@ const drawer = ref<boolean>(false);
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>メニュー</v-toolbar-title>
       <v-spacer></v-spacer>
+      <CurrentTaskTimer />
       <NotificationBell />
     </v-app-bar>
     <AppSideMenu v-model:drawer="drawer" />

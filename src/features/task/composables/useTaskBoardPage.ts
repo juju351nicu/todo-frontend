@@ -133,6 +133,11 @@ export const useTaskBoardPage = () => {
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER"
   );
+  const isCurrentUserProjectMember = computed(() =>
+    (project.value?.members ?? []).some(
+      (member) => member.accountId === userStore.memberId
+    )
+  );
   const canCreateTaskRecurrence = computed(
     () =>
       canCreateTask.value &&
@@ -164,6 +169,14 @@ export const useTaskBoardPage = () => {
   );
   const isEditing = computed(() => form.value.taskId !== null);
   const isReadonly = computed(() => isEditing.value && !canUpdateTask.value);
+  const canStartTaskTimer = computed(
+    () =>
+      form.value.taskId !== null &&
+      canUpdateTask.value &&
+      isCurrentUserProjectMember.value &&
+      (canManageProjectTasks.value ||
+        form.value.assigneeAccountId === userStore.memberId)
+  );
   const canSave = computed(
     () =>
       !isSaving.value &&
@@ -710,6 +723,18 @@ export const useTaskBoardPage = () => {
     errorMessages.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
+  /** 選択中Taskを保ったままWBSへ遷移し、既存の日別実績入力Dialogを開く。 */
+  const openTaskWorkLogs = async (): Promise<void> => {
+    if (projectId.value === null || form.value.taskId === null) {
+      return;
+    }
+    await router.push({
+      name: "Wbs",
+      params: { projectId: projectId.value },
+      query: { taskId: String(form.value.taskId), panel: "work-logs" },
+    });
+  };
+
   return {
     applyProjectDetail,
     board,
@@ -720,6 +745,7 @@ export const useTaskBoardPage = () => {
     canCreateTaskRecurrence,
     canMoveTask,
     canSave,
+    canStartTaskTimer,
     canUpdateTask,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
@@ -743,6 +769,7 @@ export const useTaskBoardPage = () => {
     openArchiveConfirm,
     openTaskCreator,
     openTaskEditor,
+    openTaskWorkLogs,
     priorityOptions,
     project,
     saveTask,

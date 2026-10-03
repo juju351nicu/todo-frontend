@@ -4,6 +4,7 @@ import { onBeforeMount } from "vue";
 import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { useMyTasksPage } from "@/features/task/composables/useMyTasksPage";
+import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import {
   formatMyTaskRemainingDays,
   getTodoPriorityColor,
@@ -12,6 +13,7 @@ import {
 
 const {
   canCompleteTasks,
+  canStartTimers,
   completeTask,
   errorMessages,
   groups,
@@ -98,15 +100,23 @@ onBeforeMount(loadTasks);
                 {{ formatMyTaskRemainingDays(task.remainingDays) }}
               </v-list-item-subtitle>
               <template #append>
-                <v-btn
-                  v-if="canCompleteTasks"
-                  icon="mdi-check"
-                  size="small"
-                  variant="text"
-                  aria-label="Taskを完了"
-                  title="完了"
-                  @click.stop="completeTask(task)"
-                />
+                <div class="d-flex align-center ga-1">
+                  <TaskTimerActionButton
+                    v-if="canStartTimers"
+                    :project-id="task.projectId"
+                    :task-id="task.taskId"
+                    compact
+                  />
+                  <v-btn
+                    v-if="canCompleteTasks"
+                    icon="mdi-check"
+                    size="small"
+                    variant="text"
+                    aria-label="Taskを完了"
+                    title="完了"
+                    @click.stop="completeTask(task)"
+                  />
+                </div>
               </template>
               <template #prepend>
                 <v-chip

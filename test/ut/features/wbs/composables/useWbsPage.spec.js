@@ -5,7 +5,7 @@ import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 
 const mocks = vi.hoisted(() => ({
   permissions: new Set(),
-  route: { params: { projectId: "7" } },
+  route: { params: { projectId: "7" }, query: {} },
   router: { push: vi.fn() },
   userStore: {
     clearSession: vi.fn(),
@@ -451,6 +451,7 @@ describe("useWbsPage", () => {
     mocks.permissions.add("TASK_UPDATE");
     mocks.userStore.memberId = 2;
     mocks.route.params.projectId = "7";
+    mocks.route.query = {};
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
     mocks.wbsApi.activateWbsBaseline.mockResolvedValue(
@@ -572,6 +573,17 @@ describe("useWbsPage", () => {
         plannedEffortDifferenceMinutes: 60,
       }),
     ]);
+  });
+
+  it("BoardのTask詳細導線では対象Taskの日別実績Dialogを初期表示する", async () => {
+    mocks.route.query = { taskId: "2", panel: "work-logs" };
+    const page = useWbsPage();
+
+    await page.initialize();
+
+    expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledWith(7, 2);
+    expect(page.workLogTask.value?.taskId).toBe(2);
+    expect(page.isWorkLogDialogOpen.value).toBe(true);
   });
 
   it("不正なProject IDではAPIを呼ばず画面へ理由を表示する", async () => {
