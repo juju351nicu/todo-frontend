@@ -1,6 +1,6 @@
 # Playwright E2E実行手順
 
-更新日: 2026-10-03
+更新日: 2026-10-04
 
 ## 目的と範囲
 
@@ -30,6 +30,10 @@ Stage 10D-2の主要journeyは次を確認する。
 - Source ProjectのProject Template captureとsnapshot構造の表示
 - member slot mappingを指定した別Projectへの適用と生成Board表示
 - Template／生成Projectの構造、日付offset、担当、状態、親子、WBS code、進捗初期値、lineageのMySQL inspect
+- 管理者によるロール変更、対象者の既存Session失効、再ログイン後の参照専用permission
+- 取消・付与の監査ログ、account version、role集合、Session件数のMySQL inspect
+- 本人による勤怠月次提出、確認者による理由必須の差戻し、本人再提出、コメント付き承認、締め担当による締め
+- 確認者の締め操作非表示、CLOSED・version 5、勤務／休憩集計、監査順とactorのMySQL inspect
 
 ## 初回セットアップ
 
@@ -75,9 +79,12 @@ npm run test:e2e:journeys
 npm run test:e2e:chromium
 ```
 
-`dashboard-browser`、`my-tasks-browser`、`board-browser`、`project-template-owner`、`recurrence-owner`／`password`は
+`dashboard-browser`、`my-tasks-browser`、`board-browser`、`project-template-owner`、`recurrence-owner`、
+`authorization-admin-browser`、`authorization-target-browser`、`attendance-month-browser`、
+`attendance-month-reviewer`、`attendance-month-closer`／`password`は
 ローカル回帰専用credentialであり、通常accountや本番credentialを使用しない。E2E開始時に
-`scripts/browser-regression/dashboard`、`my-tasks`、`board`、`project-template`、`task-recurrence`の`prepare.sql`を実行し、終了時は
+`scripts/browser-regression/dashboard`、`my-tasks`、`board`、`project-template`、`task-recurrence`、`authorization`、`attendance-month`の
+`prepare.sql`を実行し、終了時は
 成功・失敗にかかわらず各`cleanup.sql`を実行する。途中でprocessを強制終了してcleanupできなかった場合は、
 Backend repositoryで次を実行する。
 
@@ -101,6 +108,14 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
   mysql --default-character-set=utf8mb4 -u work_management_app todo \
   < scripts/browser-regression/task-recurrence/cleanup.sql
+
+docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
+  mysql --default-character-set=utf8mb4 -u work_management_app todo \
+  < scripts/browser-regression/authorization/cleanup.sql
+
+docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
+  mysql --default-character-set=utf8mb4 -u work_management_app todo \
+  < scripts/browser-regression/attendance-month/cleanup.sql
 ```
 
 ## 環境変数
@@ -119,6 +134,11 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 | `E2E_PROJECT_TEMPLATE_LOGIN_ID` | `project-template-owner` | Project Template主要journey専用ログインID |
 | `E2E_PROJECT_TEMPLATE_MEMBER_ACCOUNT_ID` | 未設定 | 外部fixture利用時のMEMBER slot用account ID |
 | `E2E_TASK_RECURRENCE_LOGIN_ID` | `recurrence-owner` | 繰り返しTask主要journey専用ログインID |
+| `E2E_AUTHORIZATION_ADMIN_LOGIN_ID` | `authorization-admin-browser` | 権限変更journeyの管理者ログインID |
+| `E2E_AUTHORIZATION_TARGET_LOGIN_ID` | `authorization-target-browser` | 権限変更journeyの変更対象者ログインID |
+| `E2E_ATTENDANCE_MONTH_EMPLOYEE_LOGIN_ID` | `attendance-month-browser` | 勤怠月次journeyの本人ログインID |
+| `E2E_ATTENDANCE_MONTH_REVIEWER_LOGIN_ID` | `attendance-month-reviewer` | 勤怠月次journeyの確認者ログインID |
+| `E2E_ATTENDANCE_MONTH_CLOSER_LOGIN_ID` | `attendance-month-closer` | 勤怠月次journeyの締め担当ログインID |
 | `E2E_PASSWORD` | `password` | 専用account password |
 | `E2E_SKIP_DATABASE_FIXTURE` | 未設定 | 外部環境がfixtureを準備済みの場合だけ`true` |
 
@@ -155,7 +175,8 @@ smokeと主要journeyを1 worker・retryなしで実行する。Frontend CIは�
 
 Stage 10D-2のMy Tasks→Board更新→再読込→WBS反映、Board上のTask作成→列移動→再読込→2 tab競合回復、
 Project Templateのcapture→snapshot確認→別Project適用→Board・DB lineage照合、繰り返し規則の停止→再読込→再開と
-FAILED生成retryは自動化済みである。繰り返しTask単独は認証setupを含む6件、追加後のChromium全12件は
-1 worker・retryなしで成功した。global teardownは専用SessionとDB fixtureを削除する。
-次はpermission、勤怠workflowをChromiumの主要journeyとして追加する。
+FAILED生成retry、permission変更による既存Session失効と再ログイン後の参照専用表示、勤怠月次の
+提出→差戻し→再提出→承認→締めは自動化済みである。勤怠単独は認証setupを含む11件、既存journeyを含む
+Chromium全19件が1 worker・retryなしで成功した。global teardownは通知を含む専用SessionとDB fixtureを削除する。
+Stage 10D-2は完了し、次はStage 10D-3でFirefox／WebKitの定期回帰、時間制探索、限定property-based／Fuzz testを扱う。
 操作ごとに専用fixtureを分け、固定採番IDに依存せず、必要なDB整合だけをinspect SQLで確認する。

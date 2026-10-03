@@ -266,8 +266,10 @@ TypeScript／Vue／E2E型検査、production buildが成功しています。
 
 Stage 10D-2では、My Tasksから同一TaskのBoard更新・再読込・WBS反映を確認するjourneyに加え、BoardでのTask作成、
 keyboard列移動、再読込、同じversionを編集した2 tabの409競合回復、Project Templateのcapture・別Project適用、
-生成BoardとMySQL lineage照合、繰り返し規則の停止・再読込・再開、FAILED生成の手動retryを自動化しています。各journeyは
+生成BoardとMySQL lineage照合、繰り返し規則の停止・再読込・再開、FAILED生成の手動retry、管理者によるロール変更、
+対象者の既存Session失効、再ログイン後の参照専用表示、勤怠月次の提出・差戻し・再提出・承認・締めを自動化しています。各journeyは
 専用account／Projectを使用し、成功・失敗にかかわらずglobal teardownでSessionと専用データを削除します。
 Project Template単独は認証setupを含む5件が成功し、2 member slot、3列、4 Task、3 checklist、2依存と
-生成元lineageが画面・DBで一致しています。繰り返しTask単独は認証setupを含む6件、追加後のChromium全12件も
-1 worker・retryなしで成功し、global teardown後は各専用account、Project、Template、Task、規則、生成履歴、Sessionが残っていません。
+生成元lineageが画面・DBで一致しています。勤怠単独は認証setupを含む11件、既存journeyを含むChromium全19件も
+1 worker・retryなしで成功しました。差戻し通知のcleanup漏れは回帰で検出して修正し、global teardown後は各専用account、
+Project、Template、Task、規則、生成履歴、勤怠、通知、監査ログ、Sessionが残っていません。これによりStage 10D-2は完了です。

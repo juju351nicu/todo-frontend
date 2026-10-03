@@ -13,6 +13,12 @@ const projectTemplateAuthStatePath = resolve(
 const taskRecurrenceAuthStatePath = resolve(
   "playwright/.auth/recurrence-owner.json"
 );
+const authorizationAdminAuthStatePath = resolve(
+  "playwright/.auth/authorization-admin-browser.json"
+);
+const attendanceMonthEmployeeAuthStatePath = resolve(
+  "playwright/.auth/attendance-month-browser.json"
+);
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -123,6 +129,30 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: taskRecurrenceAuthStatePath,
         // 規則versionと生成履歴はDBで照合し、Session Cookieを含むtraceは保存しない。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-authorization-journey",
+      testMatch: /authorization-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: authorizationAdminAuthStatePath,
+        // 失効対象を含むSession Cookieはtraceへ保存せず、画面とDBの確定値で診断する。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-attendance-month-journey",
+      testMatch: /attendance-month-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: attendanceMonthEmployeeAuthStatePath,
+        // 3 accountの認証Cookieを扱うためtraceへ保存せず、画面状態と監査DBで診断する。
         trace: "off",
         screenshot: "only-on-failure",
       },

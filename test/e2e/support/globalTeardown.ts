@@ -5,6 +5,8 @@ import {
 } from "./databaseFixture";
 
 const FIXTURES: readonly BrowserRegressionFixture[] = [
+  "attendance-month",
+  "authorization",
   "task-recurrence",
   "project-template",
   "board",

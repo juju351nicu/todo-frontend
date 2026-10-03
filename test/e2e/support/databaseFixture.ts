@@ -5,6 +5,8 @@ import { resolve } from "node:path";
 import { BACKEND_PATH } from "./paths";
 
 export type BrowserRegressionFixture =
+  | "attendance-month"
+  | "authorization"
   | "board"
   | "dashboard"
   | "my-tasks"

@@ -10,6 +10,8 @@ const FIXTURES: readonly BrowserRegressionFixture[] = [
   "board",
   "project-template",
   "task-recurrence",
+  "authorization",
+  "attendance-month",
 ];
 
 /** staleな認証状態を捨て、各journeyを毎回同じ専用fixtureから開始する。 */
