@@ -398,7 +398,8 @@ Template参照は契約終了後も可能とし、capture・更新・archive・�
 401ではSessionを破棄してLoginへ戻り、更新系の404／409では古いsnapshot、version、member mapping draftを破棄して
 一覧・詳細を再取得する。Project Template固有の日付既定値とMySQL DATE範囲の実在日付検証は
 `projectTemplateDate.ts`へ集約した。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
-専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認は次の変更単位とする。
+専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認も完了している。Stage 10D-2では同じfixtureを
+Playwrightへ統合し、capture、snapshot表示、member slot mapping、別Project適用、生成Board、DB lineageを自動化した。
 
 ## Basic Dashboard
 
@@ -460,7 +461,7 @@ Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証
 業務計算、HTTP契約、SQL制約はJUnit／Vitestを正本とし、PlaywrightはFrontend、Backend、Session、DBが接続された
 主要導線だけを確認する。Vitestは`test/e2e/**`を除外し、Playwrightのsuiteを別runnerで実行する。
 
-E2EはBackendのDashboard／My Tasks／Board専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
+E2EはBackendのDashboard／My Tasks／Board／Project Template専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
 最適化によるreloadを混在させないため、production build＋Vite previewを使用する。認証状態はGit管理外の
 `playwright/.auth`へ一時保存し、終了時に削除する。未認証testだけが失敗時traceを残し、認証済みtestはtraceを無効化して
 screenshotと機密値を含まないconsole／network要約を使用する。Stage 10D-1は4件成功、fixture cleanup後`0,0,0`、
@@ -477,6 +478,13 @@ Stage 10D-2の次の主要journeyでは、`board-browser`専用fixtureを追加�
 表示する。最終状態は専用inspect SQLでタイトル、詳細、進行中status、position、versionを照合する。
 認証setup 3件を含むChromium全8件は1 worker・retryなしで成功した。全79 file／575 Vitest、型検査、production buildも
 成功し、global teardown後のBoard専用Task件数は`0,0`である。
+
+続くProject Template journeyでは、Source Projectをcaptureし、2 member slot、3列、4 Task、3 checklist、2依存を
+snapshot画面で確認する。採番されたMEMBER account IDは専用inspect SQLから取得し、開始日を指定して別Projectへ
+適用する。生成Boardの4 Taskを確認した後、日付offset、担当、状態、親子、WBS code、進捗初期値、Template／Task
+lineageをDBで照合する。認証setup 4件とjourneyの計5件は1 worker・retryなしで成功した。通常実行は採番IDへ
+依存せず、外部fixture利用時だけ環境変数でMEMBER account IDを指定する。追加後のChromium全10件も
+1 worker・retryなしで成功し、global teardown後のProject Template専用データは再inspectですべて0件だった。
 
 ## 変更時の確認
 

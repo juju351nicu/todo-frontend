@@ -5,6 +5,7 @@ import {
 } from "./databaseFixture";
 
 const FIXTURES: readonly BrowserRegressionFixture[] = [
+  "project-template",
   "board",
   "my-tasks",
   "dashboard",

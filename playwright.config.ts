@@ -7,6 +7,9 @@ const dashboardAuthStatePath = resolve(
   "playwright/.auth/dashboard-browser.json"
 );
 const myTasksAuthStatePath = resolve("playwright/.auth/my-tasks-browser.json");
+const projectTemplateAuthStatePath = resolve(
+  "playwright/.auth/project-template-owner.json"
+);
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -93,6 +96,18 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: boardAuthStatePath,
         // 2 tabを含む認証済みjourneyでもSession Cookieをtraceへ保存しない。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-project-template-journey",
+      testMatch: /project-template-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: projectTemplateAuthStatePath,
+        // snapshotとlineageをDBで照合し、Session Cookieを含むtraceは保存しない。
         trace: "off",
         screenshot: "only-on-failure",
       },

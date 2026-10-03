@@ -4,7 +4,11 @@ import { resolve } from "node:path";
 
 import { BACKEND_PATH } from "./paths";
 
-export type BrowserRegressionFixture = "board" | "dashboard" | "my-tasks";
+export type BrowserRegressionFixture =
+  | "board"
+  | "dashboard"
+  | "my-tasks"
+  | "project-template";
 export type BrowserRegressionFixtureAction =
   | "prepare"
   | "cleanup"

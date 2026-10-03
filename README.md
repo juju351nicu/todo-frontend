@@ -265,7 +265,9 @@ account、Project、Sessionが`0,0,0`であることを確認しました。Play
 TypeScript／Vue／E2E型検査、production buildが成功しています。
 
 Stage 10D-2では、My Tasksから同一TaskのBoard更新・再読込・WBS反映を確認するjourneyに加え、BoardでのTask作成、
-keyboard列移動、再読込、同じversionを編集した2 tabの409競合回復、MySQL照合を自動化しています。各journeyは
+keyboard列移動、再読込、同じversionを編集した2 tabの409競合回復、Project Templateのcapture・別Project適用、
+生成BoardとMySQL lineage照合を自動化しています。各journeyは
 専用account／Projectを使用し、成功・失敗にかかわらずglobal teardownでSessionと専用データを削除します。
-Chromium全8件、全79 test file／575 Vitest、型検査、production buildが成功し、Board fixtureのcleanup後は
-対象TaskとProject内Taskが`0,0`です。
+Project Template単独は認証setupを含む5件が成功し、2 member slot、3列、4 Task、3 checklist、2依存と
+生成元lineageが画面・DBで一致しています。Project Template追加後のChromium全10件も1 worker・retryなしで成功し、
+global teardown後はProject Template専用account、Project、Template、Task、Sessionが残っていません。
