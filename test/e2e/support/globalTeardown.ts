@@ -1,12 +1,30 @@
-import { removeAuthState } from "./authState";
-import { runDashboardFixture } from "./databaseFixture";
+import { removeAuthStates } from "./authState";
+import {
+  runBrowserRegressionFixture,
+  type BrowserRegressionFixture,
+} from "./databaseFixture";
 
-/** 成否にかかわらず専用DB fixtureとSession Cookieを削除する。 */
+const FIXTURES: readonly BrowserRegressionFixture[] = ["my-tasks", "dashboard"];
+
+/** 成否にかかわらず全専用DB fixtureとSession Cookieを削除する。 */
 const globalTeardown = (): void => {
+  const cleanupErrors: unknown[] = [];
   try {
-    runDashboardFixture("cleanup");
+    for (const fixture of FIXTURES) {
+      try {
+        runBrowserRegressionFixture(fixture, "cleanup");
+      } catch (cleanupError: unknown) {
+        cleanupErrors.push(cleanupError);
+      }
+    }
   } finally {
-    removeAuthState();
+    removeAuthStates();
+  }
+  if (cleanupErrors.length > 0) {
+    throw new AggregateError(
+      cleanupErrors,
+      "一部のE2E fixtureをcleanupできませんでした。"
+    );
   }
 };
 

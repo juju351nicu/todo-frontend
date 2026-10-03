@@ -48,10 +48,14 @@ cd /home/ken/workspace/todo/todo-frontend
 npm ci
 npm run test:e2e:install
 npm run test:e2e:smoke
+npm run test:e2e:journeys
+npm run test:e2e:chromium
 ```
 
-E2EはBackendのDashboard専用fixtureを実行前に作り直し、終了時にcleanupします。通常のローカルProjectやTaskは変更しません。
-詳細、安全なartifact、環境変数、障害時の確認方法は[Playwright E2E実行手順](docs/playwright-e2e.md)を参照してください。
+`test:e2e:smoke`はログインとDashboard、`test:e2e:journeys`はStage 10D-2の主要利用者導線、
+`test:e2e:chromium`は両方を実行します。E2EはBackendの専用fixtureを実行前に作り直し、終了時にcleanupします。
+通常のローカルProjectやTaskは変更しません。詳細、安全なartifact、環境変数、障害時の確認方法は
+[Playwright E2E実行手順](docs/playwright-e2e.md)を参照してください。
 
 ## 認証方式
 

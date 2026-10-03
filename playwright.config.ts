@@ -2,7 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 import { resolve } from "node:path";
 
 const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:8081";
-const authStatePath = resolve("playwright/.auth/dashboard-browser.json");
+const dashboardAuthStatePath = resolve(
+  "playwright/.auth/dashboard-browser.json"
+);
+const myTasksAuthStatePath = resolve("playwright/.auth/my-tasks-browser.json");
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -63,8 +66,20 @@ export default defineConfig({
       dependencies: ["auth-setup"],
       use: {
         ...devices["Desktop Chrome"],
-        storageState: authStatePath,
+        storageState: dashboardAuthStatePath,
         // traceにはCookieやHeaderが入る可能性があるため、認証済みtestは安全な診断要約とscreenshotを使う。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-my-tasks-journey",
+      testMatch: /my-tasks-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: myTasksAuthStatePath,
+        // 認証済みjourneyはSession Cookieをtraceへ残さず、安全な診断要約だけをartifact化する。
         trace: "off",
         screenshot: "only-on-failure",
       },

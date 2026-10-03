@@ -1,15 +1,19 @@
 import { mkdirSync, rmSync } from "node:fs";
 import { dirname } from "node:path";
 
-import { AUTH_STATE_PATH } from "./paths";
+import { AUTH_STATE_PATHS } from "./paths";
 
-/** 古いSessionを再利用しないよう認証状態fileを削除し、保存directoryだけを作る。 */
-export const resetAuthState = (): void => {
-  rmSync(AUTH_STATE_PATH, { force: true });
-  mkdirSync(dirname(AUTH_STATE_PATH), { recursive: true });
+/** 古いSessionを再利用しないよう全認証状態fileを削除し、保存directoryだけを作る。 */
+export const resetAuthStates = (): void => {
+  for (const authStatePath of AUTH_STATE_PATHS) {
+    rmSync(authStatePath, { force: true });
+    mkdirSync(dirname(authStatePath), { recursive: true });
+  }
 };
 
-/** E2E終了後にSession Cookieを含む認証状態fileを必ず削除する。 */
-export const removeAuthState = (): void => {
-  rmSync(AUTH_STATE_PATH, { force: true });
+/** E2E終了後にSession Cookieを含む全認証状態fileを必ず削除する。 */
+export const removeAuthStates = (): void => {
+  for (const authStatePath of AUTH_STATE_PATHS) {
+    rmSync(authStatePath, { force: true });
+  }
 };

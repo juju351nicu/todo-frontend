@@ -460,11 +460,16 @@ Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証
 業務計算、HTTP契約、SQL制約はJUnit／Vitestを正本とし、PlaywrightはFrontend、Backend、Session、DBが接続された
 主要導線だけを確認する。Vitestは`test/e2e/**`を除外し、Playwrightのsuiteを別runnerで実行する。
 
-E2EはBackendのDashboard専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
+E2EはBackendのDashboard／My Tasks専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
 最適化によるreloadを混在させないため、production build＋Vite previewを使用する。認証状態はGit管理外の
 `playwright/.auth`へ一時保存し、終了時に削除する。未認証testだけが失敗時traceを残し、認証済みtestはtraceを無効化して
 screenshotと機密値を含まないconsole／network要約を使用する。Stage 10D-1は4件成功、fixture cleanup後`0,0,0`、
 全79 file／575 Vitest、型検査、production build成功で完了した。詳細は[Playwright E2E実行手順](playwright-e2e.md)を正本とする。
+
+Stage 10D-2の最初の主要journeyでは、既存`my-tasks`専用fixtureとaccount別認証状態を追加した。My Tasksの
+`Browser My Tasks Today`からBoard詳細へ遷移し、タイトル・詳細を更新して再読込後も保持されること、同じTask IDの
+WBS日別実績Dialogへ反映されることを確認する。DBはBackendの専用inspect SQLで更新値、WBS code、状態、versionを
+照合し、固定採番IDには依存しない。認証済みjourneyのtraceは引き続き無効とする。
 
 ## 変更時の確認
 
@@ -472,7 +477,7 @@ screenshotと機密値を含まないconsole／network要約を使用する。St
 npm run typecheck
 npm run test
 npm run build
-npm run test:e2e:smoke
+npm run test:e2e:chromium
 ```
 
 APIのRequest / Responseを変更する場合は、Backendの`/v3/api-docs`またはSwagger UIと照合する。Session ID、OAuth2情報、パスワード等をFrontendのログやWeb Storageへ保存しない。

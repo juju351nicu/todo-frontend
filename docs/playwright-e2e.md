@@ -17,6 +17,14 @@ Stage 10D-1のChromium smokeは次を確認する。
 - 専用DB fixtureのprepare／cleanup
 - 失敗時のscreenshot、未認証trace、機密値を除いたconsole／network要約
 
+Stage 10D-2の最初の主要journeyは次を確認する。
+
+- My Tasksの期限3グループと専用Task
+- My Tasksから同じTask IDのBoard詳細へのdeep link
+- Boardでのタイトル・詳細更新と再読込後の保持
+- 同じTask IDを指定したWBS日別実績Dialogへの遷移
+- 更新後タイトル、詳細、WBS code、状態、versionのMySQL inspect
+
 ## 初回セットアップ
 
 Node.js 24とRancher Desktopを起動し、Frontendで依存とChromiumを導入する。
@@ -54,14 +62,26 @@ cd /home/ken/workspace/todo/todo-frontend
 npm run test:e2e:smoke
 ```
 
-`dashboard-browser`／`password`はローカル回帰専用credentialであり、通常accountや本番credentialを使用しない。
-E2E開始時に`scripts/browser-regression/dashboard/prepare.sql`を実行し、終了時は成功・失敗にかかわらず
-`cleanup.sql`を実行する。途中でprocessを強制終了してcleanupできなかった場合は、Backend repositoryで次を実行する。
+Stage 10D-2の主要journeyだけ、またはChromium対象をまとめて実行する場合は次を使用する。
+
+```bash
+npm run test:e2e:journeys
+npm run test:e2e:chromium
+```
+
+`dashboard-browser`、`my-tasks-browser`／`password`はローカル回帰専用credentialであり、通常accountや本番credentialを
+使用しない。E2E開始時に`scripts/browser-regression/dashboard`と`my-tasks`の`prepare.sql`を実行し、終了時は
+成功・失敗にかかわらず各`cleanup.sql`を実行する。途中でprocessを強制終了してcleanupできなかった場合は、
+Backend repositoryで次を実行する。
 
 ```bash
 docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
   mysql --default-character-set=utf8mb4 -u work_management_app todo \
   < scripts/browser-regression/dashboard/cleanup.sql
+
+docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
+  mysql --default-character-set=utf8mb4 -u work_management_app todo \
+  < scripts/browser-regression/my-tasks/cleanup.sql
 ```
 
 ## 環境変数
@@ -75,6 +95,7 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 | `E2E_DB_USER` | `work_management_app` | ローカルE2E DB利用者 |
 | `E2E_DB_PASSWORD` | `work_management_password` | ローカルE2E DB password |
 | `E2E_LOGIN_ID` | `dashboard-browser` | 専用ログインID |
+| `E2E_MY_TASKS_LOGIN_ID` | `my-tasks-browser` | My Tasks主要journey専用ログインID |
 | `E2E_PASSWORD` | `password` | 専用account password |
 | `E2E_SKIP_DATABASE_FIXTURE` | 未設定 | 外部環境がfixtureを準備済みの場合だけ`true` |
 
@@ -82,8 +103,9 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 
 ## 証跡と機密情報
 
-認証状態は`playwright/.auth/dashboard-browser.json`へ一時保存し、`.gitignore`対象にする。test終了時に削除し、
-GitHub Actions artifactへ含めない。このfileにはSession Cookieが含まれるため、内容を表示、共有、commitしない。
+認証状態は`playwright/.auth`配下のaccount別fileへ一時保存し、directory全体を`.gitignore`対象にする。test終了時に
+全fileを削除し、GitHub Actions artifactへ含めない。これらのfileにはSession Cookieが含まれるため、内容を表示、
+共有、commitしない。
 
 未認証smokeは失敗時だけtraceを残す。認証済みsmokeはCookieやHeaderの混入を避けるためtraceを無効にし、
 screenshotと安全な診断要約を使用する。診断要約へ保存するのは次だけである。
@@ -99,7 +121,7 @@ console本文、Request／Response body、header、Cookie、password、Session I
 
 Backend repositoryは非公開、Frontend repositoryは公開のため、追加のrepository tokenを作らずBackend CI側から
 Frontend `master`をcheckoutする。Backend `verify`成功後にMySQL、Backend、production preview、Chromiumを起動して
-smokeを1 worker・retryなしで実行する。Frontend CIは型検査、Vitest、production buildを従来どおり担当する。
+smokeと主要journeyを1 worker・retryなしで実行する。Frontend CIは型検査、Vitest、production buildを従来どおり担当する。
 失敗時だけ安全なtrace、screenshot、診断JSONを7日間保存する。
 認証状態file、Backend log、HTML reportはartifactへ含めない。
 
@@ -108,6 +130,6 @@ smokeを1 worker・retryなしで実行する。Frontend CIは型検査、Vitest
 
 ## 次の自動化単位
 
-Stage 10D-2でMy Tasks、Board／WBS、Template、繰り返しTask、2 tab競合、permission、勤怠workflowを
-Chromiumの主要journeyとして追加する。操作ごとに専用fixtureを分け、固定採番IDに依存せず、必要なDB整合だけを
-inspect SQLで確認する。
+Stage 10D-2のMy Tasks→Board更新→再読込→WBS反映は自動化済みである。次はBoard上のTask作成・列移動と
+2 tab競合を追加し、その後Template、繰り返しTask、permission、勤怠workflowをChromiumの主要journeyとして追加する。
+操作ごとに専用fixtureを分け、固定採番IDに依存せず、必要なDB整合だけをinspect SQLで確認する。

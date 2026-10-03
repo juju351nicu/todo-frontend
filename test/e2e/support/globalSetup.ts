@@ -1,14 +1,37 @@
-import { removeAuthState, resetAuthState } from "./authState";
-import { runDashboardFixture } from "./databaseFixture";
+import { removeAuthStates, resetAuthStates } from "./authState";
+import {
+  runBrowserRegressionFixture,
+  type BrowserRegressionFixture,
+} from "./databaseFixture";
 
-/** staleな認証状態を捨て、毎回同じDashboard専用fixtureからE2Eを開始する。 */
+const FIXTURES: readonly BrowserRegressionFixture[] = ["dashboard", "my-tasks"];
+
+/** staleな認証状態を捨て、各journeyを毎回同じ専用fixtureから開始する。 */
 const globalSetup = (): void => {
-  resetAuthState();
+  resetAuthStates();
+  const preparedFixtures: BrowserRegressionFixture[] = [];
   try {
-    runDashboardFixture("prepare");
-  } catch (error: unknown) {
-    removeAuthState();
-    throw error;
+    for (const fixture of FIXTURES) {
+      runBrowserRegressionFixture(fixture, "prepare");
+      preparedFixtures.push(fixture);
+    }
+  } catch (setupError: unknown) {
+    const cleanupErrors: unknown[] = [];
+    for (const fixture of preparedFixtures.reverse()) {
+      try {
+        runBrowserRegressionFixture(fixture, "cleanup");
+      } catch (cleanupError: unknown) {
+        cleanupErrors.push(cleanupError);
+      }
+    }
+    removeAuthStates();
+    if (cleanupErrors.length > 0) {
+      throw new AggregateError(
+        [setupError, ...cleanupErrors],
+        "E2E fixtureの準備とrollback cleanupに失敗しました。"
+      );
+    }
+    throw setupError;
   }
 };
 
