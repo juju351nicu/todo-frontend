@@ -4,7 +4,11 @@ import {
   type BrowserRegressionFixture,
 } from "./databaseFixture";
 
-const FIXTURES: readonly BrowserRegressionFixture[] = ["my-tasks", "dashboard"];
+const FIXTURES: readonly BrowserRegressionFixture[] = [
+  "board",
+  "my-tasks",
+  "dashboard",
+];
 
 /** 成否にかかわらず全専用DB fixtureとSession Cookieを削除する。 */
 const globalTeardown = (): void => {

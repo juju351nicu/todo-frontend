@@ -17,13 +17,16 @@ Stage 10D-1のChromium smokeは次を確認する。
 - 専用DB fixtureのprepare／cleanup
 - 失敗時のscreenshot、未認証trace、機密値を除いたconsole／network要約
 
-Stage 10D-2の最初の主要journeyは次を確認する。
+Stage 10D-2の主要journeyは次を確認する。
 
 - My Tasksの期限3グループと専用Task
 - My Tasksから同じTask IDのBoard詳細へのdeep link
 - Boardでのタイトル・詳細更新と再読込後の保持
 - 同じTask IDを指定したWBS日別実績Dialogへの遷移
 - 更新後タイトル、詳細、WBS code、状態、versionのMySQL inspect
+- BoardでのTask作成とkeyboardによるTodoから進行中への列移動
+- 移動後の再読込と、2 tabから同じversionを更新した場合の409競合回復
+- 先行tabの更新内容、状態、位置、versionのMySQL inspect
 
 ## 初回セットアップ
 
@@ -69,8 +72,8 @@ npm run test:e2e:journeys
 npm run test:e2e:chromium
 ```
 
-`dashboard-browser`、`my-tasks-browser`／`password`はローカル回帰専用credentialであり、通常accountや本番credentialを
-使用しない。E2E開始時に`scripts/browser-regression/dashboard`と`my-tasks`の`prepare.sql`を実行し、終了時は
+`dashboard-browser`、`my-tasks-browser`、`board-browser`／`password`はローカル回帰専用credentialであり、通常accountや本番credentialを
+使用しない。E2E開始時に`scripts/browser-regression/dashboard`、`my-tasks`、`board`の`prepare.sql`を実行し、終了時は
 成功・失敗にかかわらず各`cleanup.sql`を実行する。途中でprocessを強制終了してcleanupできなかった場合は、
 Backend repositoryで次を実行する。
 
@@ -82,6 +85,10 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
   mysql --default-character-set=utf8mb4 -u work_management_app todo \
   < scripts/browser-regression/my-tasks/cleanup.sql
+
+docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
+  mysql --default-character-set=utf8mb4 -u work_management_app todo \
+  < scripts/browser-regression/board/cleanup.sql
 ```
 
 ## 環境変数
@@ -96,6 +103,7 @@ docker exec -i -e MYSQL_PWD=work_management_password work-management-mysql \
 | `E2E_DB_PASSWORD` | `work_management_password` | ローカルE2E DB password |
 | `E2E_LOGIN_ID` | `dashboard-browser` | 専用ログインID |
 | `E2E_MY_TASKS_LOGIN_ID` | `my-tasks-browser` | My Tasks主要journey専用ログインID |
+| `E2E_BOARD_LOGIN_ID` | `board-browser` | Board主要journey専用ログインID |
 | `E2E_PASSWORD` | `password` | 専用account password |
 | `E2E_SKIP_DATABASE_FIXTURE` | 未設定 | 外部環境がfixtureを準備済みの場合だけ`true` |
 
@@ -130,6 +138,6 @@ smokeと主要journeyを1 worker・retryなしで実行する。Frontend CIは�
 
 ## 次の自動化単位
 
-Stage 10D-2のMy Tasks→Board更新→再読込→WBS反映は自動化済みである。次はBoard上のTask作成・列移動と
-2 tab競合を追加し、その後Template、繰り返しTask、permission、勤怠workflowをChromiumの主要journeyとして追加する。
+Stage 10D-2のMy Tasks→Board更新→再読込→WBS反映と、Board上のTask作成→列移動→再読込→2 tab競合回復は
+自動化済みである。次はTemplate、繰り返しTask、permission、勤怠workflowをChromiumの主要journeyとして追加する。
 操作ごとに専用fixtureを分け、固定採番IDに依存せず、必要なDB整合だけをinspect SQLで確認する。

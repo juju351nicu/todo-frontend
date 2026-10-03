@@ -460,7 +460,7 @@ Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証
 業務計算、HTTP契約、SQL制約はJUnit／Vitestを正本とし、PlaywrightはFrontend、Backend、Session、DBが接続された
 主要導線だけを確認する。Vitestは`test/e2e/**`を除外し、Playwrightのsuiteを別runnerで実行する。
 
-E2EはBackendのDashboard／My Tasks専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
+E2EはBackendのDashboard／My Tasks／Board専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
 最適化によるreloadを混在させないため、production build＋Vite previewを使用する。認証状態はGit管理外の
 `playwright/.auth`へ一時保存し、終了時に削除する。未認証testだけが失敗時traceを残し、認証済みtestはtraceを無効化して
 screenshotと機密値を含まないconsole／network要約を使用する。Stage 10D-1は4件成功、fixture cleanup後`0,0,0`、
@@ -470,6 +470,13 @@ Stage 10D-2の最初の主要journeyでは、既存`my-tasks`専用fixtureとacc
 `Browser My Tasks Today`からBoard詳細へ遷移し、タイトル・詳細を更新して再読込後も保持されること、同じTask IDの
 WBS日別実績Dialogへ反映されることを確認する。DBはBackendの専用inspect SQLで更新値、WBS code、状態、versionを
 照合し、固定採番IDには依存しない。認証済みjourneyのtraceは引き続き無効とする。
+
+Stage 10D-2の次の主要journeyでは、`board-browser`専用fixtureを追加した。空のTodo／進行中／完了列からTaskを作成し、
+移動buttonのkeyboard操作で進行中へ移して再読込後も保持されることを確認する。続けて2 tabが同じversionの編集Dialogを
+開き、先行tabの保存後に後続tabが受け取る409を確認する。後続tabは古いDialogを閉じてBoardを再取得し、先行更新を
+表示する。最終状態は専用inspect SQLでタイトル、詳細、進行中status、position、versionを照合する。
+認証setup 3件を含むChromium全8件は1 worker・retryなしで成功した。全79 file／575 Vitest、型検査、production buildも
+成功し、global teardown後のBoard専用Task件数は`0,0`である。
 
 ## 変更時の確認
 

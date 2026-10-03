@@ -263,3 +263,9 @@ Backendと同時に起動して確認する手順と実施記録は[ブラウザ
 Stage 10D-1ではPlaywright Test 1.63.0のChromium smoke 4件が成功し、Dashboard専用fixtureのcleanup後に
 account、Project、Sessionが`0,0,0`であることを確認しました。Playwright導入後も全79 test file／575 Vitest、
 TypeScript／Vue／E2E型検査、production buildが成功しています。
+
+Stage 10D-2では、My Tasksから同一TaskのBoard更新・再読込・WBS反映を確認するjourneyに加え、BoardでのTask作成、
+keyboard列移動、再読込、同じversionを編集した2 tabの409競合回復、MySQL照合を自動化しています。各journeyは
+専用account／Projectを使用し、成功・失敗にかかわらずglobal teardownでSessionと専用データを削除します。
+Chromium全8件、全79 test file／575 Vitest、型検査、production buildが成功し、Board fixtureのcleanup後は
+対象TaskとProject内Taskが`0,0`です。

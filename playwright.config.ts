@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import { resolve } from "node:path";
 
 const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:8081";
+const boardAuthStatePath = resolve("playwright/.auth/board-browser.json");
 const dashboardAuthStatePath = resolve(
   "playwright/.auth/dashboard-browser.json"
 );
@@ -80,6 +81,18 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: myTasksAuthStatePath,
         // 認証済みjourneyはSession Cookieをtraceへ残さず、安全な診断要約だけをartifact化する。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-board-journey",
+      testMatch: /board-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: boardAuthStatePath,
+        // 2 tabを含む認証済みjourneyでもSession Cookieをtraceへ保存しない。
         trace: "off",
         screenshot: "only-on-failure",
       },
