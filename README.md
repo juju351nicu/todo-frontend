@@ -57,6 +57,14 @@ npm run test:e2e:chromium
 通常のローカルProjectやTaskは変更しません。詳細、安全なartifact、環境変数、障害時の確認方法は
 [Playwright E2E実行手順](docs/playwright-e2e.md)を参照してください。
 
+Stage 10D-3のFirefox／WebKit smokeを実行する場合は、初回だけ対応browserとUbuntu依存を導入します。
+`install:release`はOS package導入時にsudo passwordを求めることがあります。
+
+```bash
+npm run test:e2e:install:release
+npm run test:e2e:cross-browser-smoke
+```
+
 ## 認証方式
 
 BackendのSpring Security + Spring Session JDBCを使用します。JWTは使用せず、ブラウザが保持するHttpOnlyの`JSESSIONID` Cookieを認証根拠にします。
@@ -273,3 +281,9 @@ Project Template単独は認証setupを含む5件が成功し、2 member slot、
 生成元lineageが画面・DBで一致しています。勤怠単独は認証setupを含む11件、既存journeyを含むChromium全19件も
 1 worker・retryなしで成功しました。差戻し通知のcleanup漏れは回帰で検出して修正し、global teardown後は各専用account、
 Project、Template、Task、規則、生成履歴、勤怠、通知、監査ログ、Sessionが残っていません。これによりStage 10D-2は完了です。
+
+Stage 10D-3では、公開ログイン・保護route・認証済みDashboard・Session再読込だけをFirefox／WebKitのsmoke対象にしました。
+全主要journeyを3 browserへ複製せず、業務導線はChromiumを正本とします。Firefoxは認証setupを含む13件がretryなしで
+成功し、Firefox／WebKit同時実行も共通認証setup 10件を含む16件がretryなしで成功しています。Backend CIでは
+毎週日曜02:00（Asia/Tokyo）と手動実行時だけFirefox／WebKit smokeを行います。push／Pull Requestは従来どおり
+Chromium全19件です。

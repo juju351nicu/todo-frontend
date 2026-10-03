@@ -492,6 +492,11 @@ PAUSEDが保持されることを確認してACTIVEへ戻す。FAILED／`RETRY_E
 E2E中はschedulerを無効化し、非同期workerがfixtureを先取りしないようにする。認証setup 5件とjourneyの計6件、
 追加後のChromium全12件は1 worker・retryなしで成功した。
 
+Stage 10D-3では、公開ログイン、保護route、認証済みDashboard、Session再読込だけをFirefox／WebKit smokeへ追加した。
+業務journeyはChromiumを正本とし、browser差異を確認する土台へ限定する。Firefoxは共通認証setupを含む13件が成功した。
+Firefox／WebKit同時実行も共通setupを含む16件が成功した。毎週日曜02:00（Asia/Tokyo）または手動起動するBackend CIで
+同じsmokeを継続する。認証済みprojectはbrowserにかかわらずtraceを無効化し、Session Cookieをartifactへ保存しない。
+
 ## 変更時の確認
 
 ```bash

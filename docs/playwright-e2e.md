@@ -35,6 +35,15 @@ Stage 10D-2の主要journeyは次を確認する。
 - 本人による勤怠月次提出、確認者による理由必須の差戻し、本人再提出、コメント付き承認、締め担当による締め
 - 確認者の締め操作非表示、CLOSED・version 5、勤務／休憩集計、監査順とactorのMySQL inspect
 
+Stage 10D-3の複数browser smokeは次だけをFirefox／WebKitで確認する。
+
+- 未認証ログイン画面
+- 未認証で保護routeへ遷移した場合のログイン復帰
+- Chromiumで作成した専用storage stateによるDashboard表示
+- 認証済みDashboard再読込後のSession維持
+
+入力、競合、権限変更、勤怠等の主要journeyはChromiumを正本とし、同じ業務assertionをbrowser数だけ複製しない。
+
 ## 初回セットアップ
 
 Node.js 24とRancher Desktopを起動し、Frontendで依存とChromiumを導入する。
@@ -43,6 +52,12 @@ Node.js 24とRancher Desktopを起動し、Frontendで依存とChromiumを導入
 cd /home/ken/workspace/todo/todo-frontend
 npm ci
 npm run test:e2e:install
+```
+
+Firefox／WebKitを含むrelease対象browserは次で導入する。Ubuntu dependencyの導入時はsudo passwordが必要になる。
+
+```bash
+npm run test:e2e:install:release
 ```
 
 Playwright MCPの導入有無は、repositoryのE2E実行条件ではない。MCPは対話的な画面調査に利用できるが、
@@ -77,6 +92,7 @@ Stage 10D-2の主要journeyだけ、またはChromium対象をまとめて実行
 ```bash
 npm run test:e2e:journeys
 npm run test:e2e:chromium
+npm run test:e2e:cross-browser-smoke
 ```
 
 `dashboard-browser`、`my-tasks-browser`、`board-browser`、`project-template-owner`、`recurrence-owner`、
@@ -165,6 +181,8 @@ console本文、Request／Response body、header、Cookie、password、Session I
 Backend repositoryは非公開、Frontend repositoryは公開のため、追加のrepository tokenを作らずBackend CI側から
 Frontend `master`をcheckoutする。Backend `verify`成功後にMySQL、Backend、production preview、Chromiumを起動して
 smokeと主要journeyを1 worker・retryなしで実行する。Frontend CIは型検査、Vitest、production buildを従来どおり担当する。
+push／Pull RequestではChromiumを実行し、毎週日曜02:00（Asia/Tokyo）のscheduleと`workflow_dispatch`では
+Chromiumに加えてFirefox／WebKit smokeを実行する。CIは`playwright install --with-deps`でbrowser実行libraryも導入する。
 失敗時だけ安全なtrace、screenshot、診断JSONを7日間保存する。
 認証状態file、Backend log、HTML reportはartifactへ含めない。
 
@@ -180,3 +198,8 @@ FAILED生成retry、permission変更による既存Session失効と再ログイ�
 Chromium全19件が1 worker・retryなしで成功した。global teardownは通知を含む専用SessionとDB fixtureを削除する。
 Stage 10D-2は完了し、次はStage 10D-3でFirefox／WebKitの定期回帰、時間制探索、限定property-based／Fuzz testを扱う。
 操作ごとに専用fixtureを分け、固定採番IDに依存せず、必要なDB整合だけをinspect SQLで確認する。
+
+Stage 10D-3の最初の変更単位としてFirefox／WebKitの公開・認証済みsmoke projectと定期／手動CIを追加した。
+Firefox単独は共通認証setup 10件とsmoke 3件の計13件、Firefox／WebKit同時実行はsetup 10件とsmoke 6件の計16件が
+1 worker・retryなしで成功した。production buildも同じ実行内で成功し、cleanup後の専用accountとSessionは`0,0`だった。
+これによりローカルの複数browser gateは完了した。定期CIは同じcommandを`--with-deps`で準備した環境で継続確認する。

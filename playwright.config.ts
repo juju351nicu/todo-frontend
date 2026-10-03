@@ -86,6 +86,50 @@ export default defineConfig({
       },
     },
     {
+      name: "firefox-public-smoke",
+      testMatch: /public-smoke\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        storageState: { cookies: [], origins: [] },
+        trace: "retain-on-failure",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "firefox-authenticated-smoke",
+      testMatch: /authenticated-smoke\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Firefox"],
+        storageState: dashboardAuthStatePath,
+        // 認証済みtestはbrowserにかかわらずSession Cookieをtraceへ保存しない。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "webkit-public-smoke",
+      testMatch: /public-smoke\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: { cookies: [], origins: [] },
+        trace: "retain-on-failure",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "webkit-authenticated-smoke",
+      testMatch: /authenticated-smoke\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Safari"],
+        storageState: dashboardAuthStatePath,
+        // 認証済みtestはbrowserにかかわらずSession Cookieをtraceへ保存しない。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
       name: "chromium-my-tasks-journey",
       testMatch: /my-tasks-journey\.spec\.ts/,
       dependencies: ["auth-setup"],
