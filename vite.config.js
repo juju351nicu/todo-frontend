@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
+import { configDefaults } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,5 +23,9 @@ export default defineConfig({
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
+  },
+  test: {
+    // Playwright suiteをVitestへ誤収集させず、各runnerの責務とfixture lifecycleを分離する。
+    exclude: [...configDefaults.exclude, "test/e2e/**"],
   },
 });

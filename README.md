@@ -5,6 +5,7 @@ Vue 3とViteで構成したフロントエンドです。
 - [コーディング規約](docs/coding-guidelines.md)
 - [Frontend構成ガイド](docs/frontend-architecture.md)
 - [ブラウザ回帰チェックリスト](docs/browser-regression-checklist.md)
+- [Playwright E2E実行手順](docs/playwright-e2e.md)
 
 ## 必要な環境
 
@@ -26,6 +27,31 @@ npm run dev
 ```
 
 開発サーバーは既定で`http://localhost:8081`を使用します。Backendの既定接続先は`http://localhost:8030`で、環境ごとに`.env.local`の`VITE_API_BASE_URL`で変更できます。`.env.example`には接続先だけを記載し、OAuth2 Client Secretやメールパスワード等の秘密情報はFrontendへ設定しません。
+
+## Playwright E2E
+
+Stage 10Dでは、JUnit、MySQL統合テスト、Vitestを正本とした上で、主要な利用者導線だけをPlaywrightで確認します。
+最小smokeの準備と実行は次のとおりです。
+
+```bash
+cd /home/ken/workspace/todo/todo-backend
+docker compose up -d mysql
+SPRING_PROFILES_ACTIVE=local,docker \
+WORK_MANAGEMENT_TASK_RECURRENCE_SCHEDULER_ENABLED=false \
+./mvnw spring-boot:run
+```
+
+別terminalで実行します。
+
+```bash
+cd /home/ken/workspace/todo/todo-frontend
+npm ci
+npm run test:e2e:install
+npm run test:e2e:smoke
+```
+
+E2EはBackendのDashboard専用fixtureを実行前に作り直し、終了時にcleanupします。通常のローカルProjectやTaskは変更しません。
+詳細、安全なartifact、環境変数、障害時の確認方法は[Playwright E2E実行手順](docs/playwright-e2e.md)を参照してください。
 
 ## 認証方式
 
@@ -229,3 +255,7 @@ npm run build
 CIでもNode.js 24を使い、同じ型検査、テスト、ビルドを実行します。
 
 Backendと同時に起動して確認する手順と実施記録は[ブラウザ回帰チェックリスト](docs/browser-regression-checklist.md)を参照してください。
+
+Stage 10D-1ではPlaywright Test 1.63.0のChromium smoke 4件が成功し、Dashboard専用fixtureのcleanup後に
+account、Project、Sessionが`0,0,0`であることを確認しました。Playwright導入後も全79 test file／575 Vitest、
+TypeScript／Vue／E2E型検査、production buildが成功しています。

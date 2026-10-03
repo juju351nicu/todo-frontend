@@ -454,12 +454,25 @@ My Tasksは`TASK_UPDATE`を持つ本人担当Task、Board詳細はACTIVE Project
 0分停止、409再取得、二重送信、401、403、paging端、日時・経過表示をVitestで固定した。全79 test file・574 Vitest、
 TypeScript／Vue型検査、production buildが成功している。次はStage 10C-5の実ブラウザ・DB回帰である。
 
+## Playwright E2E
+
+Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証済みsmoke、診断fixtureを追加した。
+業務計算、HTTP契約、SQL制約はJUnit／Vitestを正本とし、PlaywrightはFrontend、Backend、Session、DBが接続された
+主要導線だけを確認する。Vitestは`test/e2e/**`を除外し、Playwrightのsuiteを別runnerで実行する。
+
+E2EはBackendのDashboard専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
+最適化によるreloadを混在させないため、production build＋Vite previewを使用する。認証状態はGit管理外の
+`playwright/.auth`へ一時保存し、終了時に削除する。未認証testだけが失敗時traceを残し、認証済みtestはtraceを無効化して
+screenshotと機密値を含まないconsole／network要約を使用する。Stage 10D-1は4件成功、fixture cleanup後`0,0,0`、
+全79 file／575 Vitest、型検査、production build成功で完了した。詳細は[Playwright E2E実行手順](playwright-e2e.md)を正本とする。
+
 ## 変更時の確認
 
 ```bash
 npm run typecheck
 npm run test
 npm run build
+npm run test:e2e:smoke
 ```
 
 APIのRequest / Responseを変更する場合は、Backendの`/v3/api-docs`またはSwagger UIと照合する。Session ID、OAuth2情報、パスワード等をFrontendのログやWeb Storageへ保存しない。
