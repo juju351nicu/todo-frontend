@@ -112,6 +112,8 @@ await authStore.restoreSession();
 - DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。
 - Backend変更を伴う場合はFrontendのVitestだけで完了せず、Backendの該当JUnitと`./mvnw verify`も成功させる。
 - repository conventionのVitestでexportedな型・関数とAPI境界の関数にJSDocがあることを構文解析する。composable内部の非同期副作用、認証、CSRF、変換等は自動検査だけに依存せずレビューする。
+- 境界値、状態遷移、API Request mapping、競合回復等の高リスクな変更では、変更単位ごとに代表条件を1件以上選び、比較演算子、上限値、code mapping、guard等を一時的に誤らせる手動mutation probeを行う。対象のVitestまたはPlaywrightが意図したassertionで失敗することを確認し、故意変更を復元して同じtestの成功まで確認する。
+- compile error、test discovery失敗、無関係なtest失敗はmutation検知の証明にしない。変異コード、認証状態、秘密値、実データをGitやartifactへ残さず、代表的な実施結果だけを引継ぎ資料またはテスト記録へ残す。
 
 ```bash
 npm run typecheck
@@ -126,4 +128,5 @@ npm run build
 - [ ] 実装の逐語訳、推測、不要・古いコメント、コメントアウトした旧コードを残していない。
 - [ ] Session、CSRF、秘密情報を安全に扱っている。
 - [ ] 正常系と実在する異常系・境界値をVitestで検証し、発見した不具合の回帰テストを残している。
+- [ ] 高リスクな規則では代表的な故意変更を対象テストが検知し、復元後も成功することを確認している。
 - [ ] 型検査、テスト、production buildが成功している。

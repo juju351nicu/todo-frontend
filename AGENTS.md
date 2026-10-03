@@ -30,5 +30,6 @@ Node.js 24で`npm run typecheck`、`npm run test`、`npm run build`を実行す�
 - 正常系だけでなく、入力境界、null・空、401、403、404、409、通信失敗、二重送信、再読込・rollback等、対象処理に実在する異常系を優先して検証する。
 - APIのmethod・path・Request形式、composableのAPI非実行条件・Router遷移・Session破棄・Store更新もassertする。
 - テストで不具合を発見した場合は原因を修正し、その事象を再現する回帰テストを残す。
+- 境界値、状態遷移、API Request変換、競合回復等の高リスク変更では、代表的な実装条件を一時的に誤らせ、VitestまたはPlaywrightが意図した理由で失敗することを確認する。故意変更は必ず復元し、復元後の成功まで確認して、変異コードをコミットしない。
 - Backend変更を伴う場合は該当JUnitと`./mvnw verify`も実行する。
 - repository conventionのVitestを維持し、exportedな型・関数とAPI境界のJSDoc記載漏れを新規変更で増やさない。composable内の非自明な副作用・変換は自動検査対象外でも必ずレビューする。

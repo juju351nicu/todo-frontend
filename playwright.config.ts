@@ -10,6 +10,9 @@ const myTasksAuthStatePath = resolve("playwright/.auth/my-tasks-browser.json");
 const projectTemplateAuthStatePath = resolve(
   "playwright/.auth/project-template-owner.json"
 );
+const taskRecurrenceAuthStatePath = resolve(
+  "playwright/.auth/recurrence-owner.json"
+);
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -108,6 +111,18 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: projectTemplateAuthStatePath,
         // snapshotとlineageをDBで照合し、Session Cookieを含むtraceは保存しない。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-task-recurrence-journey",
+      testMatch: /task-recurrence-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: taskRecurrenceAuthStatePath,
+        // 規則versionと生成履歴はDBで照合し、Session Cookieを含むtraceは保存しない。
         trace: "off",
         screenshot: "only-on-failure",
       },

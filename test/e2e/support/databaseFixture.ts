@@ -8,7 +8,8 @@ export type BrowserRegressionFixture =
   | "board"
   | "dashboard"
   | "my-tasks"
-  | "project-template";
+  | "project-template"
+  | "task-recurrence";
 export type BrowserRegressionFixtureAction =
   | "prepare"
   | "cleanup"

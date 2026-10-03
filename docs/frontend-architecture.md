@@ -461,7 +461,7 @@ Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証
 業務計算、HTTP契約、SQL制約はJUnit／Vitestを正本とし、PlaywrightはFrontend、Backend、Session、DBが接続された
 主要導線だけを確認する。Vitestは`test/e2e/**`を除外し、Playwrightのsuiteを別runnerで実行する。
 
-E2EはBackendのDashboard／My Tasks／Board／Project Template専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
+E2EはBackendのDashboard／My Tasks／Board／Project Template／繰り返しTask専用SQLをglobal setupでprepareし、global teardownでcleanupする。Vite開発時の遅延dependency
 最適化によるreloadを混在させないため、production build＋Vite previewを使用する。認証状態はGit管理外の
 `playwright/.auth`へ一時保存し、終了時に削除する。未認証testだけが失敗時traceを残し、認証済みtestはtraceを無効化して
 screenshotと機密値を含まないconsole／network要約を使用する。Stage 10D-1は4件成功、fixture cleanup後`0,0,0`、
@@ -485,6 +485,12 @@ snapshot画面で確認する。採番されたMEMBER account IDは専用inspect
 lineageをDBで照合する。認証setup 4件とjourneyの計5件は1 worker・retryなしで成功した。通常実行は採番IDへ
 依存せず、外部fixture利用時だけ環境変数でMEMBER account IDを指定する。追加後のChromium全10件も
 1 worker・retryなしで成功し、global teardown後のProject Template専用データは再inspectですべて0件だった。
+
+続く繰り返しTask journeyでは、`recurrence-owner`で規則snapshotを更新して一時停止し、Board再読込後にも更新値と
+PAUSEDが保持されることを確認してACTIVEへ戻す。FAILED／`RETRY_EXHAUSTED`の生成履歴を画面から再試行し、
+規則のBLOCKED解除、generationのPENDING化、attempt countとclaim／error情報の初期化を専用inspect SQLで照合する。
+E2E中はschedulerを無効化し、非同期workerがfixtureを先取りしないようにする。認証setup 5件とjourneyの計6件、
+追加後のChromium全12件は1 worker・retryなしで成功した。
 
 ## 変更時の確認
 
