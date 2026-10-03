@@ -1,4 +1,5 @@
 import type {
+  AttendanceAllocationStatus,
   AttendanceDayResponse,
   AttendanceDaySummary,
   AttendanceMonthDateRange,
@@ -142,6 +143,9 @@ export const buildAttendanceMonthRows = (
       attendanceDayId: day?.attendanceDayId ?? null,
       punchState: day?.punchState ?? "OFF_DUTY",
       hasRecord: day !== null,
+      taskActualMinutes: day?.taskActualMinutes ?? 0,
+      unallocatedMinutes: day?.unallocatedMinutes ?? 0,
+      allocationStatus: day?.allocationStatus ?? "BALANCED",
       ...summarizeAttendanceDay(day),
     });
   }
@@ -159,6 +163,28 @@ export const getAttendancePunchStateColor = (
   state: AttendancePunchState
 ): string =>
   ({ OFF_DUTY: "default", WORKING: "success", ON_BREAK: "warning" })[state];
+
+/** Task実績と実勤務の照合状態を本人画面の日本語表示へ変換する。 */
+export const getAttendanceAllocationStatusLabel = (
+  status: AttendanceAllocationStatus
+): string =>
+  ({
+    BALANCED: "一致",
+    UNALLOCATED: "未配賦あり",
+    OVER_ALLOCATED: "過配賦",
+    INCOMPLETE: "勤怠未確定",
+  })[status];
+
+/** Task実績と実勤務の照合状態をVuetify chip色へ変換する。 */
+export const getAttendanceAllocationStatusColor = (
+  status: AttendanceAllocationStatus
+): string =>
+  ({
+    BALANCED: "success",
+    UNALLOCATED: "warning",
+    OVER_ALLOCATED: "error",
+    INCOMPLETE: "info",
+  })[status];
 
 /** 月次workflow状態を本人・管理画面共通の日本語へ変換する。 */
 export const getAttendanceMonthStatusLabel = (
@@ -246,6 +272,19 @@ export const formatAttendanceMinutes = (minutes: number): string => {
   return remainingMinutes === 0
     ? `${hours}時間`
     : `${hours}時間${remainingMinutes}分`;
+};
+
+/** 未配賦分数を、一致・未配賦・過配賦の向きを失わない表示へ整形する。 */
+export const formatAttendanceAllocationDifference = (
+  unallocatedMinutes: number
+): string => {
+  if (!Number.isFinite(unallocatedMinutes) || unallocatedMinutes === 0) {
+    return "差分なし";
+  }
+  const formatted = formatAttendanceMinutes(Math.abs(unallocatedMinutes));
+  return unallocatedMinutes > 0
+    ? `未配賦 ${formatted}`
+    : `超過 ${formatted}`;
 };
 
 /** 開始・終了時刻が確定した区間を切り捨て分数へ変換する。 */

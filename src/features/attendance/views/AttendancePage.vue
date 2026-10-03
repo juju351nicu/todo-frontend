@@ -7,9 +7,12 @@ import AttendancePunchPanel from "@/features/attendance/components/AttendancePun
 import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
+  formatAttendanceAllocationDifference,
   formatAttendanceInstant,
   formatAttendanceMinutes,
   formatAttendanceTime,
+  getAttendanceAllocationStatusColor,
+  getAttendanceAllocationStatusLabel,
   getAttendancePunchStateColor,
   getAttendancePunchStateLabel,
   getAttendanceMonthStatusColor,
@@ -186,6 +189,8 @@ onBeforeMount(initialize);
                         <th scope="col" class="text-end">勤務</th>
                         <th scope="col" class="text-end">休憩</th>
                         <th scope="col" class="text-end">差引</th>
+                        <th scope="col" class="text-end">Task実績</th>
+                        <th scope="col">照合</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -223,6 +228,17 @@ onBeforeMount(initialize);
                           </span>
                           <span v-else>—</span>
                         </td>
+                        <td class="text-end">
+                          {{ formatAttendanceMinutes(row.taskActualMinutes) }}
+                        </td>
+                        <td>
+                          <v-chip
+                            :color="getAttendanceAllocationStatusColor(row.allocationStatus)"
+                            size="small"
+                          >
+                            {{ getAttendanceAllocationStatusLabel(row.allocationStatus) }}
+                          </v-chip>
+                        </td>
                       </tr>
                     </tbody>
                   </v-table>
@@ -257,19 +273,41 @@ onBeforeMount(initialize);
 
               <v-card-text v-if="selectedDay">
                 <v-row dense class="mb-2">
-                  <v-col cols="4">
+                  <v-col cols="6" sm="3">
                     <div class="text-caption text-medium-emphasis">勤務</div>
                     <strong>{{ formatAttendanceMinutes(selectedDaySummary.grossWorkMinutes) }}</strong>
                   </v-col>
-                  <v-col cols="4">
+                  <v-col cols="6" sm="3">
                     <div class="text-caption text-medium-emphasis">休憩</div>
                     <strong>{{ formatAttendanceMinutes(selectedDaySummary.breakMinutes) }}</strong>
                   </v-col>
-                  <v-col cols="4">
+                  <v-col cols="6" sm="3">
                     <div class="text-caption text-medium-emphasis">差引</div>
                     <strong>{{ formatAttendanceMinutes(selectedDaySummary.netWorkMinutes) }}</strong>
                   </v-col>
+                  <v-col cols="6" sm="3">
+                    <div class="text-caption text-medium-emphasis">Task実績</div>
+                    <strong>{{ formatAttendanceMinutes(selectedDay.taskActualMinutes) }}</strong>
+                  </v-col>
                 </v-row>
+
+                <v-alert
+                  :type="selectedDay.allocationStatus === 'BALANCED' ? 'success' : selectedDay.allocationStatus === 'OVER_ALLOCATED' ? 'error' : 'warning'"
+                  variant="tonal"
+                  density="compact"
+                  class="mb-4"
+                >
+                  <div class="d-flex align-center flex-wrap ga-2">
+                    <strong>Task実績との照合</strong>
+                    <v-chip
+                      :color="getAttendanceAllocationStatusColor(selectedDay.allocationStatus)"
+                      size="small"
+                    >
+                      {{ getAttendanceAllocationStatusLabel(selectedDay.allocationStatus) }}
+                    </v-chip>
+                    <span>{{ formatAttendanceAllocationDifference(selectedDay.unallocatedMinutes) }}</span>
+                  </div>
+                </v-alert>
 
                 <v-alert
                   v-if="selectedDaySummary.incomplete"

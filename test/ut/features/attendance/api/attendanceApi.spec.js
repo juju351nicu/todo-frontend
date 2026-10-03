@@ -18,6 +18,10 @@ const attendanceDay = {
   workDate: "2026-09-06",
   note: null,
   punchState: "WORKING",
+  netWorkMinutes: 0,
+  taskActualMinutes: 0,
+  unallocatedMinutes: 0,
+  allocationStatus: "INCOMPLETE",
   workPeriods: [
     {
       attendanceWorkPeriodId: 21,
@@ -71,6 +75,10 @@ describe("本人勤怠API", () => {
       workDate: "2026-09-06",
       note: null,
       punchState: "OFF_DUTY",
+      netWorkMinutes: 0,
+      taskActualMinutes: 0,
+      unallocatedMinutes: 0,
+      allocationStatus: "BALANCED",
       workPeriods: [],
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith(

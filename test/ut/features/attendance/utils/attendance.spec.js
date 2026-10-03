@@ -3,8 +3,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildAttendanceMonthDateRange,
   buildAttendanceMonthRows,
+  formatAttendanceAllocationDifference,
   formatAttendanceClockTime,
   formatAttendanceMinutes,
+  getAttendanceAllocationStatusColor,
+  getAttendanceAllocationStatusLabel,
   getTodayInTokyo,
   summarizeAttendanceDay,
 } from "@/features/attendance/utils/attendance";
@@ -15,6 +18,10 @@ const buildDay = (overrides = {}) => ({
   note: null,
   punchState: "OFF_DUTY",
   workPeriods: [],
+  netWorkMinutes: 0,
+  taskActualMinutes: 0,
+  unallocatedMinutes: 0,
+  allocationStatus: "BALANCED",
   ...overrides,
 });
 
@@ -106,6 +113,9 @@ describe("本人勤怠表示utility", () => {
       buildDay({
         workDate: "2026-09-06",
         punchState: "WORKING",
+        taskActualMinutes: 90,
+        unallocatedMinutes: 390,
+        allocationStatus: "UNALLOCATED",
       }),
     ]);
 
@@ -119,7 +129,20 @@ describe("本人勤怠表示utility", () => {
       workDate: "2026-09-06",
       hasRecord: true,
       punchState: "WORKING",
+      taskActualMinutes: 90,
+      unallocatedMinutes: 390,
+      allocationStatus: "UNALLOCATED",
     });
+  });
+
+  it("Task実績の照合状態と差分を未配賦・一致・過配賦の向きを保って表示する", () => {
+    expect(getAttendanceAllocationStatusLabel("BALANCED")).toBe("一致");
+    expect(getAttendanceAllocationStatusLabel("OVER_ALLOCATED")).toBe("過配賦");
+    expect(getAttendanceAllocationStatusColor("UNALLOCATED")).toBe("warning");
+    expect(getAttendanceAllocationStatusColor("OVER_ALLOCATED")).toBe("error");
+    expect(formatAttendanceAllocationDifference(90)).toBe("未配賦 1時間30分");
+    expect(formatAttendanceAllocationDifference(0)).toBe("差分なし");
+    expect(formatAttendanceAllocationDifference(-30)).toBe("超過 30分");
   });
 
   it("分単位時間を0分・分・時間・時間分へ整形する", () => {

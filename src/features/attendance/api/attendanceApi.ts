@@ -80,20 +80,36 @@ const resolveAttendanceExportFileName = (
  */
 const normalizeAttendanceDay = (
   payload: AttendanceDayResponse
-): AttendanceDayResponse => ({
-  ...payload,
-  attendanceDayId: payload.attendanceDayId ?? null,
-  version: payload.version ?? null,
-  note: payload.note ?? null,
-  workPeriods: (payload.workPeriods ?? []).map((workPeriod) => ({
-    ...workPeriod,
-    endedAt: workPeriod.endedAt ?? null,
-    breakPeriods: (workPeriod.breakPeriods ?? []).map((breakPeriod) => ({
-      ...breakPeriod,
-      endedAt: breakPeriod.endedAt ?? null,
+): AttendanceDayResponse => {
+  const netWorkMinutes = payload.netWorkMinutes ?? 0;
+  const taskActualMinutes = payload.taskActualMinutes ?? 0;
+  const unallocatedMinutes =
+    payload.unallocatedMinutes ?? netWorkMinutes - taskActualMinutes;
+  return {
+    ...payload,
+    attendanceDayId: payload.attendanceDayId ?? null,
+    version: payload.version ?? null,
+    note: payload.note ?? null,
+    netWorkMinutes,
+    taskActualMinutes,
+    unallocatedMinutes,
+    allocationStatus:
+      payload.allocationStatus ??
+      (unallocatedMinutes > 0
+        ? "UNALLOCATED"
+        : unallocatedMinutes < 0
+          ? "OVER_ALLOCATED"
+          : "BALANCED"),
+    workPeriods: (payload.workPeriods ?? []).map((workPeriod) => ({
+      ...workPeriod,
+      endedAt: workPeriod.endedAt ?? null,
+      breakPeriods: (workPeriod.breakPeriods ?? []).map((breakPeriod) => ({
+        ...breakPeriod,
+        endedAt: breakPeriod.endedAt ?? null,
+      })),
     })),
-  })),
-});
+  };
+};
 
 /** 修正申請Responseのnullable項目とsnapshot配列を画面用確定値へ正規化する。 */
 const normalizeAttendanceCorrection = (

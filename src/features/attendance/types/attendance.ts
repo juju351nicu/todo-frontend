@@ -1,6 +1,13 @@
 /** 本人勤怠日の打刻状態。 */
 export type AttendancePunchState = "OFF_DUTY" | "WORKING" | "ON_BREAK";
 
+/** 勤怠の実勤務分とTask実績工数の日別照合状態。 */
+export type AttendanceAllocationStatus =
+  | "BALANCED"
+  | "UNALLOCATED"
+  | "OVER_ALLOCATED"
+  | "INCOMPLETE";
+
 /** 月次勤怠の提出・審査・締め状態。 */
 export type AttendanceMonthStatus =
   | "DRAFT"
@@ -48,6 +55,14 @@ export interface AttendanceDayResponse {
   note: string | null;
   punchState: AttendancePunchState;
   workPeriods: AttendanceWorkPeriod[];
+  /** 完了済み勤務・休憩区間からBackendが確定した実勤務分。 */
+  netWorkMinutes: number;
+  /** 同じ本人・勤務日に登録されたTask日別実績工数の合計。 */
+  taskActualMinutes: number;
+  /** 実勤務分からTask実績工数を引いた差分。負数は過配賦を表す。 */
+  unallocatedMinutes: number;
+  /** 未確定区間と差分からBackendが決定した照合状態。 */
+  allocationStatus: AttendanceAllocationStatus;
 }
 
 /** 勤怠修正申請snapshotに含まれる完了済み休憩区間。 */
@@ -211,6 +226,9 @@ export interface AttendanceMonthRow extends AttendanceDaySummary {
   attendanceDayId: number | null;
   punchState: AttendancePunchState;
   hasRecord: boolean;
+  taskActualMinutes: number;
+  unallocatedMinutes: number;
+  allocationStatus: AttendanceAllocationStatus;
 }
 
 /** 本人打刻APIで許可する操作。 */

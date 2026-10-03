@@ -42,6 +42,10 @@ const buildDay = (workDate, punchState = "OFF_DUTY") => ({
   workDate,
   note: null,
   punchState,
+  netWorkMinutes: 0,
+  taskActualMinutes: 0,
+  unallocatedMinutes: 0,
+  allocationStatus: "BALANCED",
   workPeriods: [],
 });
 
