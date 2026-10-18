@@ -65,6 +65,104 @@ export const DISPLAY_MESSAGES = {
         "Timerの状態が別の操作で変更されました。現在状態を再取得しました。",
     },
   },
+  wbs: {
+    projectNotFound:
+      "Projectが見つからないか、このProjectへ参加していません。",
+    readForbidden: "WBSを参照するpermissionがありません。",
+    readFailed: "WBSを取得できませんでした。",
+    updateForbidden: "WBSを更新するpermissionがありません。",
+    taskNotFound: "対象のProjectまたはTaskが見つかりません。",
+    updateFailed: "WBS Taskを更新できませんでした。",
+    conflict: "WBSが他の操作で更新されました。最新情報を確認してください。",
+    reloadFailed: "最新のWBSを再取得できませんでした。再読込してください。",
+    earnedValue: {
+      forbidden: "EVMを参照するpermissionがありません。",
+      activeBaselineRequired:
+        "EVMを集計するにはactive baselineが必要です。",
+      loadFailed: "EVMを取得できませんでした。",
+    },
+    report: {
+      forbidden: "Excel帳票を出力するpermissionがありません。",
+      activeBaselineRequired:
+        "Excel帳票を出力するにはactive baselineが必要です。",
+      downloadFailed: "Excel帳票をダウンロードできませんでした。",
+    },
+    dependency: {
+      forbidden: "Task依存関係を更新するpermissionがありません。",
+      resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
+      createConflict:
+        "Task依存関係が他の操作と競合しました。最新情報を確認してください。",
+      createFailed: "Task依存関係を追加できませんでした。",
+      stale:
+        "Task依存関係が更新または削除されています。最新情報を確認してください。",
+      deleteFailed: "Task依存関係を削除できませんでした。",
+      reloadFailed:
+        "最新のWBSとTask依存関係を再取得できませんでした。再読込してください。",
+    },
+    workload: {
+      forbidden: "workloadを参照するpermissionがありません。",
+      loadFailed: "担当者別workloadを取得できませんでした。",
+    },
+    workingCalendar: {
+      readForbidden: "稼働日calendarを参照するpermissionがありません。",
+      loadFailed: "稼働日calendarを取得できませんでした。",
+      updateForbidden: "このcalendar設定を更新する権限がありません。",
+      deleteForbidden: "このcalendar設定を削除する権限がありません。",
+      resourceNotFound:
+        "対象のProject、memberまたは稼働日例外が見つかりません。",
+      conflict:
+        "稼働日例外が他の操作と競合しました。最新情報を確認してください。",
+      saveFailed: "稼働日例外を保存できませんでした。",
+      stale:
+        "稼働日例外が更新または削除されています。最新情報を確認してください。",
+      deleteFailed: "稼働日例外を削除できませんでした。",
+      reloadFailed:
+        "最新の稼働日calendarを再取得できませんでした。再読込してください。",
+    },
+    effortPlan: {
+      readForbidden: "Task日別予定を参照するpermissionがありません。",
+      readNotFound: "対象のProjectまたは通常Taskが見つかりません。",
+      loadFailed: "Task日別予定を取得できませんでした。",
+      updateForbidden: "Task日別予定を更新する権限がありません。",
+      deleteForbidden: "Task日別予定を削除する権限がありません。",
+      resourceNotFound:
+        "対象のProject、Taskまたは日別予定が見つかりません。",
+      conflict:
+        "日別予定が他の操作と競合しました。最新情報を確認してください。",
+      saveFailed: "Task日別予定を保存できませんでした。",
+      stale:
+        "日別予定が更新または削除されています。最新情報を確認してください。",
+      deleteFailed: "Task日別予定を削除できませんでした。",
+      reloadFailed:
+        "最新の日別予定を再取得できませんでした。Dialogを閉じて再読込してください。",
+    },
+    workLog: {
+      readForbidden: "Task日別実績を参照するpermissionがありません。",
+      readNotFound: "対象のProjectまたは通常Taskが見つかりません。",
+      loadFailed: "Task日別実績を取得できませんでした。",
+      updateForbidden: "Task日別実績を更新する権限がありません。",
+      deleteForbidden: "Task日別実績を削除する権限がありません。",
+      resourceNotFound:
+        "対象のProject、Taskまたは日別実績が見つかりません。",
+      conflict:
+        "日別実績が他の操作と競合しました。最新情報を確認してください。",
+      saveFailed: "Task日別実績を保存できませんでした。",
+      stale:
+        "日別実績が更新または削除されています。最新情報を確認してください。",
+      deleteFailed: "Task日別実績を削除できませんでした。",
+      reloadFailed:
+        "最新の日別実績を再取得できませんでした。Dialogを閉じて再読込してください。",
+    },
+    baseline: {
+      forbidden:
+        "baselineを更新するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      resourceNotFound: "対象のProjectまたはbaselineが見つかりません。",
+      conflict:
+        "baselineが他の操作で更新されました。最新情報を確認してください。",
+      reloadFailed:
+        "最新のbaselineを再取得できませんでした。画面を再読込してください。",
+    },
+  },
 } as const;
 
 /** 固定文言catalog全体の型。 */

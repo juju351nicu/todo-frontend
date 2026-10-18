@@ -92,6 +92,18 @@ describe("WBS API", () => {
     await promise.catch((error) => expect(error).toBeInstanceOf(WbsApiError));
   });
 
+  it.each([
+    ["本文なし", ""],
+    ["非JSON本文", "Forbidden"],
+  ])("%sの403を本文なしAPI例外へ変換する", async (_condition, body) => {
+    HttpClient.getRequest.mockResolvedValue(new Response(body, { status: 403 }));
+
+    await expect(WbsApi.getWbs(7)).rejects.toMatchObject({
+      status: 403,
+      errorResponse: null,
+    });
+  });
+
   it("ProjectとTask IDを含む更新APIへversion付きWBS情報を送る", async () => {
     const request = {
       parentTaskId: 10,
@@ -127,7 +139,11 @@ describe("WBS API", () => {
   it("更新APIの項目エラー本文をstatus付きWbsApiErrorへ保持する", async () => {
     const errorResponse = {
       fieldErrors: [
-        { field: "plannedEndDate", message: "予定終了日が不正です。" },
+        {
+          errorCode: "INVALID_WBS_PLAN",
+          field: "plannedEndDate",
+          message: "予定終了日が不正です。",
+        },
       ],
     };
     HttpClient.putRequest.mockResolvedValue({
@@ -205,7 +221,13 @@ describe("WBS API", () => {
 
   it("削除競合のBackend本文をstatus付きWbsApiErrorへ保持する", async () => {
     const errorResponse = {
-      fieldErrors: [{ field: "version", message: "更新されています。" }],
+      fieldErrors: [
+        {
+          errorCode: "TASK_DEPENDENCY_VERSION_CONFLICT",
+          field: "version",
+          message: "更新されています。",
+        },
+      ],
     };
     HttpClient.deleteRequest.mockResolvedValue({
       ok: false,
@@ -307,7 +329,11 @@ describe("WBS API", () => {
   it("日別実績の重複競合本文をstatus付きWbsApiErrorへ保持する", async () => {
     const errorResponse = {
       fieldErrors: [
-        { field: "workDate", message: "同じ日の実績が登録されています。" },
+        {
+          errorCode: "TASK_WORK_LOG_ALREADY_EXISTS",
+          field: "workDate",
+          message: "同じ日の実績が登録されています。",
+        },
       ],
     };
     HttpClient.postRequest.mockResolvedValue({
@@ -757,7 +783,11 @@ describe("WBS API", () => {
   it("Excel downloadの409本文をstatus付きWbsApiErrorへ保持する", async () => {
     const errorResponse = {
       fieldErrors: [
-        { field: "baseline", message: "active baselineが必要です。" },
+        {
+          errorCode: "WBS_EVM_ACTIVE_BASELINE_REQUIRED",
+          field: "projectId",
+          message: "active baselineが必要です。",
+        },
       ],
     };
     HttpClient.getRequest.mockResolvedValue({

@@ -137,6 +137,7 @@ src/
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
 - `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
+- `src/features/wbs/utils/apiErrors.ts`: WBSが表示契約を持つerror code集合と409回復時に優先するHTTP status
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 実績期間を含む編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化とnullableな実績期間を含む表示変換
@@ -530,7 +531,15 @@ Frontendの`FieldError`から`rejectedValue`を削除した。
 再取得するが、回復中の401／403／404は古い競合案内より優先し、通信失敗等では最初の競合理由を維持する。CSVのbinary
 Response解析は通常JSON APIと統合せず、downloadと一時URL解放の既存契約を維持した。409回復の401優先判定を外すmutationは
 本人打刻、月次更新、修正審査の3件が古い競合文言を検出して失敗し、復元後の関連4 file・63件と全80 test file・623 Vitest、
-型検査、production buildが成功した。次はWBSを同じ契約へ移行する。
+型検査、production buildが成功した。
+
+続いてWBSの読込、Task更新、依存関係、日別予定・実績、workload、稼働日calendar、baseline、EVM、Excel帳票を移行した。
+feature内で共通Bean Validationを含む契約済み38 error codeを明示し、未知／null code、空message、構造不正、本文なし、非JSONは
+操作別fallbackへ閉じる。409後の再取得中に401／403／404となった場合は古い競合案内より現在の認証・認可・公開範囲を優先する。
+calendarとworkloadの並列再取得では、workload側の401後にcalendar成功Responseが遅れても競合案内を復元しない。
+Excelのbinary Response解析は通常JSON APIと統合せず、download契約を維持した。並列再取得のSession失効保護を外すmutationは
+古い競合文言の復活を対象testが検出して失敗し、復元後のWBS関連2 file・115件と全80 test file・634 Vitest、
+TypeScript／Vue／E2E型検査、production buildが成功した。次はProject／Task群を同じ契約へ移行する。
 
 ## 変更時の確認
 

@@ -739,7 +739,11 @@ describe("useWbsPage", () => {
     mocks.wbsApi.updateWbsTask.mockRejectedValue(
       new WbsApiError(400, {
         fieldErrors: [
-          { field: "parentTaskId", message: "親Taskが不正です。" },
+          {
+            errorCode: "INVALID_WBS_HIERARCHY",
+            field: "parentTaskId",
+            message: "親Taskが不正です。",
+          },
         ],
       })
     );
@@ -753,11 +757,69 @@ describe("useWbsPage", () => {
     expect(page.isEditorOpen.value).toBe(true);
   });
 
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    mocks.wbsApi.updateWbsTask.mockRejectedValue(
+      new WbsApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "plannedEndDate",
+            message: " 予定終了日を確認してください。 ",
+          },
+          {
+            errorCode: "INVALID_WBS_ACTUAL_PERIOD",
+            field: "actualEndDate",
+            message: "実績期間を確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(page.editorErrorMessages.value).toEqual([
+      "予定終了日を確認してください。",
+      "実績期間を確認してください。",
+    ]);
+    expect(page.isEditorOpen.value).toBe(true);
+  });
+
+  it("未知codeのBackend messageを表示せずWBS更新fallbackへ閉じる", async () => {
+    mocks.wbsApi.updateWbsTask.mockRejectedValue(
+      new WbsApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_WBS_ERROR",
+            field: "request",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(page.editorErrorMessages.value).toEqual([
+      "WBS Taskを更新できませんでした。",
+    ]);
+    expect(page.isEditorOpen.value).toBe(true);
+  });
+
   it("409競合ではDialogを閉じて最新WBSを再取得する", async () => {
     mocks.wbsApi.updateWbsTask.mockRejectedValue(
       new WbsApiError(409, {
         fieldErrors: [
-          { field: "version", message: "他の操作で更新されています。" },
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
         ],
       })
     );
@@ -776,6 +838,33 @@ describe("useWbsPage", () => {
     ]);
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledTimes(2);
     expect(page.wbs.value).toEqual(updatedWbs);
+  });
+
+  it("WBS更新409後の再取得で401になった場合は競合案内を残さない", async () => {
+    mocks.wbsApi.updateWbsTask.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.wbsApi.getWbs
+      .mockResolvedValueOnce(structuredClone(wbs))
+      .mockRejectedValueOnce(new WbsApiError(401, null));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("保存中の再実行では更新APIを二重送信しない", async () => {
@@ -887,7 +976,11 @@ describe("useWbsPage", () => {
     mocks.wbsApi.createTaskDependency.mockRejectedValue(
       new WbsApiError(400, {
         fieldErrors: [
-          { field: "successorTaskId", message: "循環するため登録できません。" },
+          {
+            errorCode: "INVALID_TASK_DEPENDENCY",
+            field: "successorTaskId",
+            message: "循環するため登録できません。",
+          },
         ],
       })
     );
@@ -945,7 +1038,13 @@ describe("useWbsPage", () => {
   it("作成APIの409ではDialogを閉じてWBSと依存関係を再取得する", async () => {
     mocks.wbsApi.createTaskDependency.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "taskId", message: "Taskが更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "TASK_DEPENDENCY_ALREADY_EXISTS",
+            field: "successorTaskId",
+            message: "Taskが更新されています。",
+          },
+        ],
       })
     );
     mocks.wbsApi.getWbs
@@ -970,6 +1069,37 @@ describe("useWbsPage", () => {
     expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledTimes(2);
     expect(page.wbs.value).toEqual(updatedWbs);
     expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
+  });
+
+  it("依存関係409後の再取得で401になった場合は競合案内を残さない", async () => {
+    mocks.wbsApi.createTaskDependency.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_DEPENDENCY_ALREADY_EXISTS",
+            field: "successorTaskId",
+            message: "依存関係が登録されています。",
+          },
+        ],
+      })
+    );
+    mocks.wbsApi.getWbs
+      .mockResolvedValueOnce(structuredClone(wbs))
+      .mockRejectedValueOnce(new WbsApiError(401, null));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openDependencyEditor();
+
+    await page.saveDependency({
+      predecessorTaskId: 2,
+      successorTaskId: 3,
+      lagMinutes: 0,
+    });
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.isDependencyEditorOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("依存関係保存中の再実行では作成APIを二重送信しない", async () => {
@@ -1025,7 +1155,13 @@ describe("useWbsPage", () => {
   it("削除APIの409では確認対象を破棄して最新一覧を再取得する", async () => {
     mocks.wbsApi.deleteTaskDependency.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "version", message: "更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "TASK_DEPENDENCY_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
       })
     );
     mocks.wbsApi.getTaskDependencies
@@ -1174,7 +1310,13 @@ describe("useWbsPage", () => {
   it("日別実績の409競合では編集を破棄して最新一覧を再取得する", async () => {
     mocks.wbsApi.updateTaskWorkLog.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "version", message: "更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "TASK_WORK_LOG_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
       })
     );
     mocks.wbsApi.getTaskWorkLogs
@@ -1416,7 +1558,13 @@ describe("useWbsPage", () => {
   it("Task日別予定の409競合では編集を破棄して最新一覧とworkloadを再取得する", async () => {
     mocks.wbsApi.updateTaskEffortPlan.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "version", message: "更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "TASK_EFFORT_PLAN_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
       })
     );
     mocks.wbsApi.getTaskEffortPlans
@@ -1605,7 +1753,13 @@ describe("useWbsPage", () => {
     mocks.roles.add("SYSTEM_ADMIN");
     mocks.wbsApi.updateProjectWorkingDay.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "version", message: "更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "WORKING_DAY_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
       })
     );
     const page = useWbsPage();
@@ -1624,6 +1778,82 @@ describe("useWbsPage", () => {
     ]);
     expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenCalledTimes(2);
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
+  });
+
+  it("稼働日409後の再取得で401になった場合は競合案内を残さない", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    mocks.wbsApi.updateProjectWorkingDay.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "WORKING_DAY_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.wbsApi.getWorkingCalendar
+      .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
+      .mockRejectedValueOnce(new WbsApiError(401, null));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openWorkingDayEditor("2026-08-22");
+
+    await page.saveWorkingDay({
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+    });
+
+    expect(page.workingCalendarErrorMessages.value).toEqual([]);
+    expect(page.isWorkingDayEditorOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("並列workload再取得の401後にcalendar取得が完了しても競合案内を復元しない", async () => {
+    let resolveCalendarReload;
+    mocks.roles.add("SYSTEM_ADMIN");
+    mocks.wbsApi.updateProjectWorkingDay.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "WORKING_DAY_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.wbsApi.getWorkingCalendar
+      .mockResolvedValueOnce(structuredClone(workingCalendarResponse))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveCalendarReload = resolve;
+          })
+      );
+    mocks.wbsApi.getTaskWorkload
+      .mockResolvedValueOnce(structuredClone(workloadResponse))
+      .mockRejectedValueOnce(new WbsApiError(401, null));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openWorkingDayEditor("2026-08-22");
+
+    const savePromise = page.saveWorkingDay({
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+    });
+    await vi.waitFor(() =>
+      expect(mocks.userStore.clearSession).toHaveBeenCalledOnce()
+    );
+    resolveCalendarReload(structuredClone(workingCalendarResponse));
+    await savePromise;
+
+    expect(page.workingCalendarErrorMessages.value).toEqual([]);
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("本人の個人例外を取得時点versionで削除しcalendarとworkloadを再取得する", async () => {
@@ -1736,7 +1966,13 @@ describe("useWbsPage", () => {
     mocks.userStore.memberId = 1;
     mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
       new WbsApiError(409, {
-        fieldErrors: [{ field: "version", message: "更新されています。" }],
+        fieldErrors: [
+          {
+            errorCode: "WBS_BASELINE_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
       })
     );
     const page = useWbsPage();
@@ -1747,6 +1983,33 @@ describe("useWbsPage", () => {
     expect(page.baselineErrorMessages.value).toEqual(["更新されています。"]);
     expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
     expect(page.activatingBaselineId.value).toBeNull();
+  });
+
+  it("baseline更新409後の再取得で401になった場合は競合案内を残さない", async () => {
+    mocks.userStore.memberId = 1;
+    mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "WBS_BASELINE_VERSION_CONFLICT",
+            field: "version",
+            message: "更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.wbsApi.getWbsBaselines
+      .mockResolvedValueOnce(structuredClone(baselineList))
+      .mockRejectedValueOnce(new WbsApiError(401, null));
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.activateWbsBaseline(inactiveBaselineSummary);
+
+    expect(page.baselineErrorMessages.value).toEqual([]);
+    expect(page.activatingBaselineId.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("指定基準日のEVMを取得しBackend確定値を画面状態へ保持する", async () => {
@@ -1870,7 +2133,11 @@ describe("useWbsPage", () => {
     mocks.wbsApi.downloadWbsReport.mockRejectedValue(
       new WbsApiError(409, {
         fieldErrors: [
-          { field: "baseline", message: "active baselineが必要です。" },
+          {
+            errorCode: "WBS_EVM_ACTIVE_BASELINE_REQUIRED",
+            field: "projectId",
+            message: "active baselineが必要です。",
+          },
         ],
       })
     );
@@ -1881,6 +2148,46 @@ describe("useWbsPage", () => {
 
     expect(page.reportExportErrorMessages.value).toEqual([
       "active baselineが必要です。",
+    ]);
+    expect(mocks.createObjectUrl).not.toHaveBeenCalled();
+  });
+
+  it("Excel downloadの本文なし403をSession失効にせず権限不足として表示する", async () => {
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
+      new WbsApiError(403, null)
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("weekly", "2026-09-05");
+
+    expect(page.reportExportErrorMessages.value).toEqual([
+      "Excel帳票を出力するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+    expect(mocks.createObjectUrl).not.toHaveBeenCalled();
+  });
+
+  it("Excel downloadの未知codeは帳票用fallbackへ閉じる", async () => {
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
+      new WbsApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_WBS_REPORT_ERROR",
+            field: "report",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.downloadWbsReport("monthly", "2026-09-05");
+
+    expect(page.reportExportErrorMessages.value).toEqual([
+      "Excel帳票をダウンロードできませんでした。",
     ]);
     expect(mocks.createObjectUrl).not.toHaveBeenCalled();
   });

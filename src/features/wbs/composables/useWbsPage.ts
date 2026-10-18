@@ -42,6 +42,10 @@ import type {
   WbsTask,
   WbsTaskEditForm,
 } from "@/features/wbs/types/wbs";
+import {
+  WBS_ERROR_CODES,
+  WBS_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { getToday } from "@/features/wbs/utils/effort";
 import {
@@ -77,6 +81,8 @@ import {
   validateWorkingCalendarDateRange,
   validateWorkingDayForm,
 } from "@/features/wbs/utils/workingCalendar";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * WBS画面の読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、競合回復、認証エラーとBoard遷移を管理する。
@@ -157,6 +163,31 @@ export const useWbsPage = () => {
   const isSavingWorkingDay = ref(false);
   const isWorkingDayEditorOpen = ref(false);
   const wbs = ref<WbsResponse | null>(null);
+  let sessionInvalidated = false;
+
+  /** Session失効時に別cardや閉じる直前のDialogへ古いAPIエラーを残さない。 */
+  const clearWbsApiErrorMessages = (): void => {
+    dependencyEditorErrorMessages.value = [];
+    earnedValueErrorMessages.value = [];
+    baselineEditorErrorMessages.value = [];
+    baselineErrorMessages.value = [];
+    reportExportErrorMessages.value = [];
+    editorErrorMessages.value = [];
+    errorMessages.value = [];
+    effortPlanEditorErrorMessages.value = [];
+    workLogEditorErrorMessages.value = [];
+    workloadErrorMessages.value = [];
+    workingCalendarEditorErrorMessages.value = [];
+    workingCalendarErrorMessages.value = [];
+  };
+
+  /** 401受信を記録し、並行中の再取得が古い競合案内を復元できない状態でLoginへ戻す。 */
+  const handleUnauthorized = async (): Promise<void> => {
+    sessionInvalidated = true;
+    clearWbsApiErrorMessages();
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+  };
 
   const projectId = computed(() => {
     const value = Array.isArray(route.params.projectId)
@@ -490,38 +521,32 @@ export const useWbsPage = () => {
   /** EVM参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
   const handleEarnedValueReadError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      earnedValueErrorMessages.value = ["Backendへ接続できませんでした。"];
+      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      earnedValueErrorMessages.value = [
-        "EVMを参照するpermissionがありません。",
-      ];
+      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.earnedValue.forbidden];
       return;
     }
     if (error.status === 404) {
-      earnedValueErrorMessages.value = [
-        "Projectが見つからないか、このProjectへ参加していません。",
-      ];
+      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 409) {
-      earnedValueErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["EVMを集計するにはactive baselineが必要です。"];
+      earnedValueErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.earnedValue.activeBaselineRequired
+      );
       return;
     }
-    earnedValueErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["EVMを取得できませんでした。"];
+    earnedValueErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.earnedValue.loadFailed
+    );
   };
 
   /**
@@ -587,62 +612,53 @@ export const useWbsPage = () => {
     error: unknown
   ): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      reportExportErrorMessages.value = ["Backendへ接続できませんでした。"];
+      reportExportErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      reportExportErrorMessages.value = [
-        "Excel帳票を出力するpermissionがありません。",
-      ];
+      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.report.forbidden];
       return;
     }
     if (error.status === 404) {
-      reportExportErrorMessages.value = [
-        "Projectが見つからないか、このProjectへ参加していません。",
-      ];
+      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 409) {
-      reportExportErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["Excel帳票を出力するにはactive baselineが必要です。"];
+      reportExportErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.report.activeBaselineRequired
+      );
       return;
     }
-    reportExportErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["Excel帳票をダウンロードできませんでした。"];
+    reportExportErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.report.downloadFailed
+    );
   };
 
   /** WBS APIのstatusを、認証状態を含む参照画面の案内へ変換する。 */
   const handleReadApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError) && !(error instanceof ProjectApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["WBSを参照するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.wbs.readForbidden];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [
-        "Projectが見つからないか、このProjectへ参加していません。",
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
       return;
     }
-    errorMessages.value = ["WBSを取得できませんでした。"];
+    errorMessages.value = [DISPLAY_MESSAGES.wbs.readFailed];
   };
 
   /** TASK_UPDATEを持つ利用者だけに、取得済みTaskの編集Dialogを開く。 */
@@ -831,41 +847,41 @@ export const useWbsPage = () => {
   /** Task依存関係作成APIのstatusをDialog、競合再読込またはSession動作へ変換する。 */
   const handleDependencyCreateError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      dependencyEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      dependencyEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeDependencyEditorAfterSaving();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       dependencyEditorErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
+        DISPLAY_MESSAGES.wbs.dependency.forbidden,
       ];
       return;
     }
     if (error.status === 404) {
       dependencyEditorErrorMessages.value = [
-        "対象のProjectまたはTaskが見つかりません。",
+        DISPLAY_MESSAGES.wbs.dependency.resourceNotFound,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 409) {
       closeDependencyEditorAfterSaving();
-      errorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["Task依存関係が他の操作と競合しました。最新情報を確認してください。"];
+      errorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.dependency.createConflict
+      );
       await reloadPageAfterDependencyConflict();
       return;
     }
-    dependencyEditorErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["Task依存関係を追加できませんでした。"];
+    dependencyEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.dependency.createFailed
+    );
   };
 
   /** 削除対象とversionを現在の一覧から確定して確認Dialogを開く。 */
@@ -937,40 +953,45 @@ export const useWbsPage = () => {
   /** Task依存関係削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
   const handleDependencyDeleteError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       dependencyPendingDelete.value = null;
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.forbidden];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       dependencyPendingDelete.value = null;
-      errorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["Task依存関係が更新または削除されています。最新情報を確認してください。"];
+      errorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.dependency.stale
+      );
       await reloadPageAfterDependencyConflict();
       return;
     }
-    errorMessages.value = ["Task依存関係を削除できませんでした。"];
+    errorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.deleteFailed];
   };
 
   /** 依存関係競合後にWBS Taskと依存関係を再取得し、古い端点とversionを残さない。 */
   const reloadPageAfterDependencyConflict = async (): Promise<void> => {
     try {
       await loadPageSnapshot();
-    } catch (_error: unknown) {
-      errorMessages.value.push(
-        "最新のWBSとTask依存関係を再取得できませんでした。再読込してください。"
-      );
+    } catch (refreshError: unknown) {
+      if (
+        (refreshError instanceof WbsApiError ||
+          refreshError instanceof ProjectApiError) &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        // 認証・認可・公開範囲の変化は、操作時点の競合理由より新しい取得結果を優先する。
+        await handleReadApiError(refreshError);
+        return;
+      }
+      errorMessages.value.push(DISPLAY_MESSAGES.wbs.dependency.reloadFailed);
     }
   };
 
@@ -1006,33 +1027,27 @@ export const useWbsPage = () => {
   /** workload参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
   const handleWorkloadReadError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workloadErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workloadErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeEffortPlanDialogAfterOperation();
       closeWorkLogDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      workloadErrorMessages.value = [
-        "workloadを参照するpermissionがありません。",
-      ];
+      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.workload.forbidden];
       return;
     }
     if (error.status === 404) {
-      workloadErrorMessages.value = [
-        "Projectが見つからないか、このProjectへ参加していません。",
-      ];
+      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
-    workloadErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["担当者別workloadを取得できませんでした。"];
+    workloadErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.workload.loadFailed
+    );
   };
 
   /** 指定期間・対象の稼働日calendarを検証・取得し、既定値を含む確定表示へ反映する。 */
@@ -1083,32 +1098,30 @@ export const useWbsPage = () => {
     error: unknown
   ): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workingCalendarErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workingCalendarErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeWorkingDayEditorAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workingCalendarErrorMessages.value = [
-        "稼働日calendarを参照するpermissionがありません。",
+        DISPLAY_MESSAGES.wbs.workingCalendar.readForbidden,
       ];
       return;
     }
     if (error.status === 404) {
-      workingCalendarErrorMessages.value = [
-        "Projectが見つからないか、このProjectへ参加していません。",
-      ];
+      workingCalendarErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
-    workingCalendarErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["稼働日calendarを取得できませんでした。"];
+    workingCalendarErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.workingCalendar.loadFailed
+    );
   };
 
   /** 表示中calendarの日付を選択し、現在の有効値または保存済み例外で編集Dialogを開く。 */
@@ -1235,41 +1248,37 @@ export const useWbsPage = () => {
   ): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
       workingCalendarEditorErrorMessages.value = [
-        "Backendへ接続できませんでした。",
+        DISPLAY_MESSAGES.common.connectionFailed,
       ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeWorkingDayEditorAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workingCalendarEditorErrorMessages.value = [
-        "このcalendar設定を更新する権限がありません。",
+        DISPLAY_MESSAGES.wbs.workingCalendar.updateForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       closeWorkingDayEditorAfterOperation();
       workingDayPendingDelete.value = null;
-      workingCalendarErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : [
-              error.status === 409
-                ? "稼働日例外が他の操作と競合しました。最新情報を確認してください。"
-                : "対象のProject、memberまたは稼働日例外が見つかりません。",
-            ];
+      workingCalendarErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        error.status === 409
+          ? DISPLAY_MESSAGES.wbs.workingCalendar.conflict
+          : DISPLAY_MESSAGES.wbs.workingCalendar.resourceNotFound
+      );
       await reloadWorkingCalendarAndWorkload();
       return;
     }
-    workingCalendarEditorErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["稼働日例外を保存できませんでした。"];
+    workingCalendarEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.workingCalendar.saveFailed
+    );
   };
 
   /** 表示中の選択階層から削除対象と取得時点versionを確定して確認Dialogを開く。 */
@@ -1358,54 +1367,70 @@ export const useWbsPage = () => {
     error: unknown
   ): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workingCalendarErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workingCalendarErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       workingDayPendingDelete.value = null;
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workingCalendarErrorMessages.value = [
-        "このcalendar設定を削除する権限がありません。",
+        DISPLAY_MESSAGES.wbs.workingCalendar.deleteForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       workingDayPendingDelete.value = null;
-      workingCalendarErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : [
-              "稼働日例外が更新または削除されています。最新情報を確認してください。",
-            ];
+      workingCalendarErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.workingCalendar.stale
+      );
       await reloadWorkingCalendarAndWorkload();
       return;
     }
     workingCalendarErrorMessages.value = [
-      "稼働日例外を削除できませんでした。",
+      DISPLAY_MESSAGES.wbs.workingCalendar.deleteFailed,
     ];
   };
 
   /** 現在の期間・対象でcalendarを再取得し、古い例外IDとversionを残さない。 */
   const reloadWorkingCalendar = async (): Promise<void> => {
     const messagesBeforeReload = [...workingCalendarErrorMessages.value];
-    try {
-      await loadWorkingCalendar(
-        workingCalendarDateRange.value,
-        workingCalendarSelectedTargetKey.value
-      );
+    const target = selectedWorkingCalendarTarget.value;
+    if (projectId.value === null || target === null) {
       workingCalendarErrorMessages.value = [
         ...messagesBeforeReload,
-        ...workingCalendarErrorMessages.value,
+        DISPLAY_MESSAGES.wbs.workingCalendar.reloadFailed,
       ];
-    } catch (_error: unknown) {
-      workingCalendarErrorMessages.value.push(
-        "最新の稼働日calendarを再取得できませんでした。再読込してください。"
+      return;
+    }
+    try {
+      workingCalendar.value = await WbsApi.getWorkingCalendar(
+        projectId.value,
+        workingCalendarDateRange.value.dateFrom,
+        workingCalendarDateRange.value.dateTo,
+        target.accountId
       );
+      if (!sessionInvalidated) {
+        workingCalendarErrorMessages.value = messagesBeforeReload;
+      }
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof WbsApiError &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        // Session・permission・公開範囲の変化は、操作時点の競合理由より優先する。
+        await handleWorkingCalendarReadError(refreshError);
+        return;
+      }
+      workingCalendarErrorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.wbs.workingCalendar.reloadFailed,
+      ];
     }
   };
 
@@ -1477,30 +1502,32 @@ export const useWbsPage = () => {
   /** 日別予定参照APIのstatusをDialog案内またはSession動作へ変換する。 */
   const handleEffortPlanReadError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      effortPlanEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeEffortPlanDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       effortPlanEditorErrorMessages.value = [
-        "Task日別予定を参照するpermissionがありません。",
+        DISPLAY_MESSAGES.wbs.effortPlan.readForbidden,
       ];
       return;
     }
     if (error.status === 404) {
       effortPlanEditorErrorMessages.value = [
-        "対象のProjectまたは通常Taskが見つかりません。",
+        DISPLAY_MESSAGES.wbs.effortPlan.readNotFound,
       ];
       return;
     }
-    effortPlanEditorErrorMessages.value = [
-      "Task日別予定を取得できませんでした。",
-    ];
+    effortPlanEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.effortPlan.loadFailed
+    );
   };
 
   /** 読込・保存・削除中でなければ日別予定Dialogと一時状態を破棄する。 */
@@ -1636,40 +1663,38 @@ export const useWbsPage = () => {
     error: unknown
   ): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      effortPlanEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeEffortPlanDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       effortPlanEditorErrorMessages.value = [
-        "Task日別予定を更新する権限がありません。",
+        DISPLAY_MESSAGES.wbs.effortPlan.updateForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       editingEffortPlan.value = null;
       effortPlanPendingDelete.value = null;
-      effortPlanEditorErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : [
-              error.status === 409
-                ? "日別予定が他の操作と競合しました。最新情報を確認してください。"
-                : "対象のProject、Taskまたは日別予定が見つかりません。",
-            ];
+      effortPlanEditorErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        error.status === 409
+          ? DISPLAY_MESSAGES.wbs.effortPlan.conflict
+          : DISPLAY_MESSAGES.wbs.effortPlan.resourceNotFound
+      );
       await reloadEffortPlansAfterConflict();
       return;
     }
-    effortPlanEditorErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["Task日別予定を保存できませんでした。"];
+    effortPlanEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.effortPlan.saveFailed
+    );
   };
 
   /** 競合後に日別予定とworkloadを再取得し、古いversion・配賦集計を残さない。 */
@@ -1679,7 +1704,7 @@ export const useWbsPage = () => {
       await loadTaskWorkload(workloadDateRange.value);
     } catch (_error: unknown) {
       effortPlanEditorErrorMessages.value.push(
-        "最新の日別予定を再取得できませんでした。Dialogを閉じて再読込してください。"
+        DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed
       );
     }
   };
@@ -1776,34 +1801,34 @@ export const useWbsPage = () => {
   /** 日別予定削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
   const handleEffortPlanDeleteError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      effortPlanEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeEffortPlanDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       effortPlanEditorErrorMessages.value = [
-        "Task日別予定を削除する権限がありません。",
+        DISPLAY_MESSAGES.wbs.effortPlan.deleteForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       editingEffortPlan.value = null;
       effortPlanPendingDelete.value = null;
-      effortPlanEditorErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["日別予定が更新または削除されています。最新情報を確認してください。"];
+      effortPlanEditorErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.effortPlan.stale
+      );
       await reloadEffortPlansAfterConflict();
       return;
     }
     effortPlanEditorErrorMessages.value = [
-      "Task日別予定を削除できませんでした。",
+      DISPLAY_MESSAGES.wbs.effortPlan.deleteFailed,
     ];
   };
 
@@ -1862,30 +1887,32 @@ export const useWbsPage = () => {
   /** 日別実績参照APIのstatusをDialog案内またはSession動作へ変換する。 */
   const handleWorkLogReadError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workLogEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeWorkLogDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workLogEditorErrorMessages.value = [
-        "Task日別実績を参照するpermissionがありません。",
+        DISPLAY_MESSAGES.wbs.workLog.readForbidden,
       ];
       return;
     }
     if (error.status === 404) {
       workLogEditorErrorMessages.value = [
-        "対象のProjectまたは通常Taskが見つかりません。",
+        DISPLAY_MESSAGES.wbs.workLog.readNotFound,
       ];
       return;
     }
-    workLogEditorErrorMessages.value = [
-      "Task日別実績を取得できませんでした。",
-    ];
+    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.workLog.loadFailed
+    );
   };
 
   /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄する。 */
@@ -2016,40 +2043,38 @@ export const useWbsPage = () => {
   /** 登録・更新APIのstatusを入力案内、競合再読込またはSession動作へ変換する。 */
   const handleWorkLogMutationError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workLogEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeWorkLogDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workLogEditorErrorMessages.value = [
-        "Task日別実績を更新する権限がありません。",
+        DISPLAY_MESSAGES.wbs.workLog.updateForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       editingWorkLog.value = null;
       workLogPendingDelete.value = null;
-      workLogEditorErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : [
-              error.status === 409
-                ? "日別実績が他の操作と競合しました。最新情報を確認してください。"
-                : "対象のProject、Taskまたは日別実績が見つかりません。",
-            ];
+      workLogEditorErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        error.status === 409
+          ? DISPLAY_MESSAGES.wbs.workLog.conflict
+          : DISPLAY_MESSAGES.wbs.workLog.resourceNotFound
+      );
       await reloadWorkLogsAfterConflict();
       return;
     }
-    workLogEditorErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["Task日別実績を保存できませんでした。"];
+    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.workLog.saveFailed
+    );
   };
 
   /** 更新競合後に最新日別実績とworkloadを取得し、古いversion・集計を残さない。 */
@@ -2064,9 +2089,17 @@ export const useWbsPage = () => {
         task.taskId
       );
       await loadTaskWorkload(workloadDateRange.value);
-    } catch (_error: unknown) {
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof WbsApiError &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        // 再取得時点の認証・認可・公開範囲を操作時点の競合理由より優先する。
+        await handleWorkLogReadError(refreshError);
+        return;
+      }
       workLogEditorErrorMessages.value.push(
-        "最新の日別実績を再取得できませんでした。Dialogを閉じて再読込してください。"
+        DISPLAY_MESSAGES.wbs.workLog.reloadFailed
       );
     }
   };
@@ -2159,34 +2192,34 @@ export const useWbsPage = () => {
   /** 日別実績削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
   const handleWorkLogDeleteError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      workLogEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.common.connectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeWorkLogDialogAfterOperation();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       workLogEditorErrorMessages.value = [
-        "Task日別実績を削除する権限がありません。",
+        DISPLAY_MESSAGES.wbs.workLog.deleteForbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404 || error.status === 409) {
       editingWorkLog.value = null;
       workLogPendingDelete.value = null;
-      workLogEditorErrorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["日別実績が更新または削除されています。最新情報を確認してください。"];
+      workLogEditorErrorMessages.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.workLog.stale
+      );
       await reloadWorkLogsAfterConflict();
       return;
     }
     workLogEditorErrorMessages.value = [
-      "Task日別実績を削除できませんでした。",
+      DISPLAY_MESSAGES.wbs.workLog.deleteFailed,
     ];
   };
 
@@ -2229,12 +2262,11 @@ export const useWbsPage = () => {
       successMessage.value = "WBS Taskを更新しました。";
     } catch (error: unknown) {
       if (error instanceof WbsApiError && error.status === 409) {
-        const conflictMessages = getFieldErrorMessages(error);
         closeTaskEditorAfterSaving();
-        errorMessages.value =
-          conflictMessages.length > 0
-            ? conflictMessages
-            : ["WBSが他の操作で更新されました。最新情報を確認してください。"];
+        errorMessages.value = resolveWbsErrorMessages(
+          error,
+          DISPLAY_MESSAGES.wbs.conflict
+        );
         await reloadWbsAfterConflict();
       } else {
         await handleUpdateApiError(error);
@@ -2248,42 +2280,52 @@ export const useWbsPage = () => {
   const reloadWbsAfterConflict = async (): Promise<void> => {
     try {
       await loadWbs();
-    } catch (_error: unknown) {
-      errorMessages.value.push("最新のWBSを再取得できませんでした。再読込してください。");
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof WbsApiError &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        await handleReadApiError(refreshError);
+        return;
+      }
+      errorMessages.value.push(DISPLAY_MESSAGES.wbs.reloadFailed);
     }
   };
 
-  /** Backend項目エラーから空文字を除いた利用者向けメッセージを取り出す。 */
-  const getFieldErrorMessages = (error: WbsApiError): string[] =>
-    (error.errorResponse?.fieldErrors ?? [])
-      .map((fieldError) => fieldError.message)
-      .filter((message) => message.trim().length > 0);
+  /** 契約済みWBS codeのBackend messageだけを表示し、未知本文を固定案内へ閉じる。 */
+  const resolveWbsErrorMessages = (
+    error: WbsApiError,
+    fallbackMessage: string
+  ): string[] =>
+    resolveApiErrorMessages(
+      error.errorResponse,
+      WBS_ERROR_CODES,
+      fallbackMessage
+    );
 
   /** WBS更新APIのstatusと項目エラーを、DialogまたはSession動作へ変換する。 */
   const handleUpdateApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      editorErrorMessages.value = ["Backendへ接続できませんでした。"];
+      editorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeTaskEditorAfterSaving();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      editorErrorMessages.value = ["WBSを更新するpermissionがありません。"];
+      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.updateForbidden];
       return;
     }
     if (error.status === 404) {
-      editorErrorMessages.value = ["対象のProjectまたはTaskが見つかりません。"];
+      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.taskNotFound];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
-    editorErrorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["WBS Taskを更新できませんでした。"];
+    editorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      DISPLAY_MESSAGES.wbs.updateFailed
+    );
   };
 
   /** baseline作成Dialogを、Project管理権限と更新可能状態を確認して開く。 */
@@ -2318,9 +2360,20 @@ export const useWbsPage = () => {
   const reloadWbsBaselines = async (): Promise<void> => {
     try {
       await loadWbsBaselines();
-    } catch (_error: unknown) {
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof WbsApiError &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        await handleBaselineMutationError(
+          refreshError,
+          DISPLAY_MESSAGES.wbs.baseline.reloadFailed,
+          false
+        );
+        return;
+      }
       baselineErrorMessages.value.push(
-        "最新のbaselineを再取得できませんでした。画面を再読込してください。"
+        DISPLAY_MESSAGES.wbs.baseline.reloadFailed
       );
     }
   };
@@ -2335,38 +2388,36 @@ export const useWbsPage = () => {
       ? baselineEditorErrorMessages
       : baselineErrorMessages;
     if (!(error instanceof WbsApiError)) {
-      target.value = ["Backendへ接続できませんでした。"];
+      target.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
       closeBaselineCreateDialogAfterSaving();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
       target.value = [
-        "baselineを更新するにはProjectのOWNERまたはMANAGER権限が必要です。",
+        DISPLAY_MESSAGES.wbs.baseline.forbidden,
       ];
       return;
     }
-    const fieldMessages = getFieldErrorMessages(error);
     if (error.status === 404) {
-      target.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["対象のProjectまたはbaselineが見つかりません。"];
+      target.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.baseline.resourceNotFound
+      );
       return;
     }
     if (error.status === 409) {
-      target.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["baselineが他の操作で更新されました。最新情報を確認してください。"];
+      target.value = resolveWbsErrorMessages(
+        error,
+        DISPLAY_MESSAGES.wbs.baseline.conflict
+      );
       await reloadWbsBaselines();
       return;
     }
-    target.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
+    target.value = resolveWbsErrorMessages(error, fallbackMessage);
   };
 
   /** 現在計画のTask・依存関係・日別予定工数を新しいbaselineへ保存する。 */
