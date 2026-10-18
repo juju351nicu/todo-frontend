@@ -37,6 +37,27 @@ export const TASK_CHECKLIST_ERROR_CODES: ReadonlySet<string> = new Set([
   "CHECKLIST_VERSION_CONFLICT",
 ]);
 
+/** Task横断検索がBackendと表示契約を持つerror code集合。 */
+export const TASK_SEARCH_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+  "TASK_SEARCH_KEYWORD_INVALID",
+  "TASK_SEARCH_ID_INVALID",
+  "TASK_SEARCH_STATUS_INVALID",
+  "TASK_SEARCH_DUE_RANGE_INVALID",
+  "TASK_SEARCH_PRIORITY_INVALID",
+]);
+
+/** Task Saved Viewが検索条件を含めてBackendと表示契約を持つerror code集合。 */
+export const TASK_SAVED_VIEW_ERROR_CODES: ReadonlySet<string> = new Set([
+  ...TASK_SEARCH_ERROR_CODES,
+  "TASK_SAVED_VIEW_NAME_INVALID",
+  "TASK_SAVED_VIEW_COLUMNS_INVALID",
+  "TASK_SAVED_VIEW_LIMIT_EXCEEDED",
+  "TASK_SAVED_VIEW_VERSION_CONFLICT",
+  "TASK_SAVED_VIEW_NAME_CONFLICT",
+  "TASK_SAVED_VIEW_NOT_FOUND",
+]);
+
 /** 競合回復中に古い409より優先する認証・認可・公開範囲のHTTP status。 */
 export const TASK_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
   401, 403, 404,

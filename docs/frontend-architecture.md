@@ -576,6 +576,17 @@ production buildが成功した。次はTaskコメント／checklistを同じ契
 対象5 test file・46件と全80 test file・683 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
 次はTask検索／Saved Viewを同じ契約へ移行する。
 
+続いてTask検索／Saved Viewを移行した。検索用6 codeと、検索条件を含むSaved View用12 codeを契約として明示し、
+既知codeの複数messageだけをBackend順で表示する。未知code、本文なし、非JSONは検索、候補取得、保存操作ごとの
+固定fallbackへ閉じ、本文なし403ではSessionを維持する。検索開始時は現在条件と一致しない古い結果を破棄し、
+Saved View適用中の候補取得が失敗した場合は後続検索を送らない。404／409後は一覧、選択、取得時点versionを破棄して
+再取得し、存在する対象の検索条件・表示列も最新値へ置き換える。回復中の401／403／404は元の競合理由より現在の
+認証・認可・公開範囲を優先する。通信失敗では競合理由と
+再取得失敗を併記する。保存操作確定後の一覧再取得失敗も操作失敗と区別し、二重登録・更新・削除を促さない。
+401回復分岐を一時的に無効化したmutationは意図した1件が失敗し、復元後の対象2 test file・22件と
+全80 test file・694 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+次はTask Template／繰り返しTaskを同じ契約へ移行する。
+
 ## 変更時の確認
 
 ```bash

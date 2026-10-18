@@ -90,6 +90,20 @@ describe("Task search API", () => {
     });
   });
 
+  it("本文なし・非JSONの非2xxをnull本文のTaskSearchApiErrorへ変換する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected end")),
+    });
+
+    await expect(searchTasks(filters)).rejects.toMatchObject({
+      name: "TaskSearchApiError",
+      status: 403,
+      errorResponse: null,
+    });
+  });
+
   it("Saved Viewの一覧・登録・更新・削除を専用pathへ送る", async () => {
     const savedView = {
       savedViewId: 3,

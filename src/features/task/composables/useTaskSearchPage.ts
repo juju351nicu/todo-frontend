@@ -19,6 +19,13 @@ import type {
   TaskSearchOptionsResponse,
   TaskSearchSavedFilters,
 } from "@/features/task/types/taskSearch";
+import {
+  TASK_RECOVERY_PRIORITY_STATUSES,
+  TASK_SAVED_VIEW_ERROR_CODES,
+  TASK_SEARCH_ERROR_CODES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface TaskSearchColumnOption {
   code: TaskSearchColumn;
@@ -111,55 +118,102 @@ export const useTaskSearchPage = () => {
       isSavedViewMutating.value
   );
 
-  const setError = (message: string): void => {
-    errorMessages.value = [message];
+  const setErrors = (messages: string[]): void => {
+    errorMessages.value = messages;
     successMessage.value = "";
   };
 
-  /** 401ではSession表示を破棄してLoginへ戻し、それ以外はBackendの先頭メッセージを表示する。 */
-  const handleApiError = async (
+  /** Serverから取得した検索結果を破棄し、現在の条件と一致しないTaskを表示しない。 */
+  const clearSearchResults = (): void => {
+    tasks.value = [];
+    businessDate.value = "";
+    truncated.value = false;
+  };
+
+  /** Saved View一覧と選択中versionを破棄し、古い値で更新・削除できない状態へ戻す。 */
+  const clearSavedViewState = (): void => {
+    savedViews.value = [];
+    selectedSavedViewId.value = null;
+    savedViewName.value = "";
+    isDeleteConfirmationOpen.value = false;
+  };
+
+  /** 認証・認可状態が変化した場合にServer由来の画面状態をすべて破棄する。 */
+  const clearProtectedState = (): void => {
+    options.value = { projects: [], assignees: [], statuses: [] };
+    clearSearchResults();
+    clearSavedViewState();
+  };
+
+  /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
+  const getErrorMessages = (
     error: unknown,
-    fallbackMessage: string
-  ): Promise<void> => {
-    if (error instanceof TaskSearchApiError) {
-      if (error.status === 401) {
-        userStore.clearSession();
-        await router.push({ name: "Login" });
-        return;
-      }
-      setError(
-        error.errorResponse?.fieldErrors?.[0]?.message ?? fallbackMessage
-      );
-      return;
+    fallback: string,
+    knownCodes: ReadonlySet<string>,
+    forbidden: string = DISPLAY_MESSAGES.task.search.operationForbidden
+  ): string[] => {
+    if (!(error instanceof TaskSearchApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
     }
-    setError("Backendへ接続できませんでした。");
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.search.resourceNotFound];
+    }
+    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
+  };
+
+  /** 401ではServer由来の状態とSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskSearchApiError) || error.status !== 401) {
+      return false;
+    }
+    clearProtectedState();
+    errorMessages.value = [];
+    successMessage.value = "";
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
   };
 
   /** 検索結果をBackendの確定Responseで置き換える。二重検索中は新しいRequestを送らない。 */
   const executeSearch = async (): Promise<void> => {
     if (isSearching.value) return;
     if (filters.dueFrom && filters.dueTo && filters.dueTo < filters.dueFrom) {
-      setError("期限の終了日は開始日以降にしてください。");
+      setErrors(["期限の終了日は開始日以降にしてください。"]);
       return;
     }
     isSearching.value = true;
     errorMessages.value = [];
     successMessage.value = "";
+    clearSearchResults();
     try {
       const response = await searchTasks({ ...filters });
       tasks.value = response.tasks ?? [];
       businessDate.value = response.businessDate;
       truncated.value = response.truncated;
     } catch (error: unknown) {
-      await handleApiError(error, "Taskを検索できませんでした。");
+      if (!(await handleUnauthorized(error))) {
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.searchFailed,
+            TASK_SEARCH_ERROR_CODES,
+            DISPLAY_MESSAGES.task.search.readForbidden
+          )
+        );
+      }
     } finally {
       isSearching.value = false;
     }
   };
 
   /** Project選択に応じた担当者・状態候補を再取得し、利用できない現在値を解除する。 */
-  const refreshOptions = async (preserveSelection = false): Promise<void> => {
-    if (isOptionsLoading.value) return;
+  const refreshOptions = async (
+    preserveSelection = false
+  ): Promise<boolean> => {
+    if (isOptionsLoading.value) return false;
     isOptionsLoading.value = true;
     try {
       const response = await getTaskSearchOptions(filters.projectId);
@@ -174,8 +228,28 @@ export const useTaskSearchPage = () => {
         if (!assigneeExists) filters.assigneeAccountId = null;
         if (!statusExists) filters.statusCode = null;
       }
+      return true;
     } catch (error: unknown) {
-      await handleApiError(error, "検索候補を取得できませんでした。");
+      options.value = { projects: [], assignees: [], statuses: [] };
+      filters.assigneeAccountId = null;
+      filters.statusCode = null;
+      if (!(await handleUnauthorized(error))) {
+        if (
+          error instanceof TaskSearchApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearSearchResults();
+        }
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.optionsLoadFailed,
+            TASK_SEARCH_ERROR_CODES,
+            DISPLAY_MESSAGES.task.search.readForbidden
+          )
+        );
+      }
+      return false;
     } finally {
       isOptionsLoading.value = false;
     }
@@ -198,7 +272,17 @@ export const useTaskSearchPage = () => {
       businessDate.value = searchResponse.businessDate;
       truncated.value = searchResponse.truncated;
     } catch (error: unknown) {
-      await handleApiError(error, "Task検索画面を初期化できませんでした。");
+      clearProtectedState();
+      if (!(await handleUnauthorized(error))) {
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.initializeFailed,
+            TASK_SAVED_VIEW_ERROR_CODES,
+            DISPLAY_MESSAGES.task.search.readForbidden
+          )
+        );
+      }
     } finally {
       isInitializing.value = false;
     }
@@ -218,12 +302,15 @@ export const useTaskSearchPage = () => {
     const view = savedViews.value.find(
       (item) => item.savedViewId === savedViewId
     );
-    if (!view) return;
+    if (!view) {
+      selectedSavedViewId.value = null;
+      savedViewName.value = "";
+      return;
+    }
     savedViewName.value = view.name;
     copyFilters(filters, view.filters);
     visibleColumns.value = [...view.visibleColumns];
-    await refreshOptions(true);
-    await executeSearch();
+    if (await refreshOptions(true)) await executeSearch();
   };
 
   /** 絞り込みと表示列を初期値へ戻し、全Project候補と検索結果を再取得する。 */
@@ -232,8 +319,7 @@ export const useTaskSearchPage = () => {
     visibleColumns.value = [...DEFAULT_VISIBLE_COLUMNS];
     selectedSavedViewId.value = null;
     savedViewName.value = "";
-    await refreshOptions();
-    await executeSearch();
+    if (await refreshOptions()) await executeSearch();
   };
 
   /** 409・404後に本人Saved View一覧を再取得し、古いversionを画面へ残さない。 */
@@ -242,18 +328,89 @@ export const useTaskSearchPage = () => {
     savedViews.value = latest;
     const selected = latest.find((view) => view.savedViewId === preferredId);
     selectedSavedViewId.value = selected?.savedViewId ?? null;
-    if (selected) savedViewName.value = selected.name;
+    savedViewName.value = selected?.name ?? "";
+    if (selected) {
+      copyFilters(filters, selected.filters);
+      visibleColumns.value = [...selected.visibleColumns];
+    }
+  };
+
+  /** 保存操作確定後に一覧を再取得し、操作済みなのに失敗と誤表示しない。 */
+  const refreshSavedViewsAfterMutation = async (
+    preferredId: number | null,
+    completedMessage: string
+  ): Promise<void> => {
+    clearSavedViewState();
+    try {
+      await reloadSavedViews(preferredId);
+      successMessage.value = completedMessage;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) return;
+      if (
+        reloadError instanceof TaskSearchApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        setErrors(
+          getErrorMessages(
+            reloadError,
+            DISPLAY_MESSAGES.task.search.savedRefreshFailed,
+            TASK_SAVED_VIEW_ERROR_CODES,
+            DISPLAY_MESSAGES.task.search.readForbidden
+          )
+        );
+        return;
+      }
+      setErrors([DISPLAY_MESSAGES.task.search.savedRefreshFailed]);
+    }
+  };
+
+  /** 404／409後に古いversionを破棄し、最新Saved View一覧へ安全に回復する。 */
+  const recoverSavedViews = async (
+    error: TaskSearchApiError,
+    preferredId: number,
+    fallback: string
+  ): Promise<void> => {
+    const mutationMessages = getErrorMessages(
+      error,
+      fallback,
+      TASK_SAVED_VIEW_ERROR_CODES
+    );
+    clearSavedViewState();
+    try {
+      await reloadSavedViews(preferredId);
+      errorMessages.value = mutationMessages;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) return;
+      if (
+        reloadError instanceof TaskSearchApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        setErrors(
+          getErrorMessages(
+            reloadError,
+            DISPLAY_MESSAGES.task.search.reloadFailed,
+            TASK_SAVED_VIEW_ERROR_CODES,
+            DISPLAY_MESSAGES.task.search.readForbidden
+          )
+        );
+        return;
+      }
+      setErrors([
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.search.reloadFailed,
+      ]);
+    }
   };
 
   /** 現在条件を新しい本人Saved Viewとして登録する。 */
   const createSavedView = async (): Promise<void> => {
     if (isSavedViewMutating.value) return;
     if (!savedViewName.value.trim()) {
-      setError("Saved View名を入力してください。");
+      setErrors(["Saved View名を入力してください。"]);
       return;
     }
     if (visibleColumns.value.length === 0) {
-      setError("表示列を1つ以上選択してください。");
+      setErrors(["表示列を1つ以上選択してください。"]);
       return;
     }
     isSavedViewMutating.value = true;
@@ -265,10 +422,20 @@ export const useTaskSearchPage = () => {
         filters: { ...filters },
         visibleColumns: [...visibleColumns.value],
       });
-      await reloadSavedViews(created.savedViewId);
-      successMessage.value = "Saved Viewを登録しました。";
+      await refreshSavedViewsAfterMutation(
+        created.savedViewId,
+        "Saved Viewを登録しました。"
+      );
     } catch (error: unknown) {
-      await handleApiError(error, "Saved Viewを登録できませんでした。");
+      if (!(await handleUnauthorized(error))) {
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.createFailed,
+            TASK_SAVED_VIEW_ERROR_CODES
+          )
+        );
+      }
     } finally {
       isSavedViewMutating.value = false;
     }
@@ -279,7 +446,7 @@ export const useTaskSearchPage = () => {
     const current = activeSavedView.value;
     if (!current || isSavedViewMutating.value) return;
     if (!savedViewName.value.trim() || visibleColumns.value.length === 0) {
-      setError("Saved View名と1つ以上の表示列を指定してください。");
+      setErrors(["Saved View名と1つ以上の表示列を指定してください。"]);
       return;
     }
     isSavedViewMutating.value = true;
@@ -292,20 +459,31 @@ export const useTaskSearchPage = () => {
         visibleColumns: [...visibleColumns.value],
         version: current.version,
       });
-      await reloadSavedViews(updated.savedViewId);
-      successMessage.value = "Saved Viewを更新しました。";
+      await refreshSavedViewsAfterMutation(
+        updated.savedViewId,
+        "Saved Viewを更新しました。"
+      );
     } catch (error: unknown) {
       if (
         error instanceof TaskSearchApiError &&
         (error.status === 404 || error.status === 409)
       ) {
-        try {
-          await reloadSavedViews(current.savedViewId);
-        } catch (_reloadError: unknown) {
-          // 元の業務エラーを優先し、再取得失敗で競合理由を上書きしない。
-        }
+        await recoverSavedViews(
+          error,
+          current.savedViewId,
+          DISPLAY_MESSAGES.task.search.updateFailed
+        );
+        return;
       }
-      await handleApiError(error, "Saved Viewを更新できませんでした。");
+      if (!(await handleUnauthorized(error))) {
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.updateFailed,
+            TASK_SAVED_VIEW_ERROR_CODES
+          )
+        );
+      }
     } finally {
       isSavedViewMutating.value = false;
     }
@@ -321,21 +499,31 @@ export const useTaskSearchPage = () => {
     successMessage.value = "";
     try {
       await deleteTaskSavedView(current.savedViewId, current.version);
-      await reloadSavedViews(null);
-      savedViewName.value = "";
-      successMessage.value = "Saved Viewを削除しました。";
+      await refreshSavedViewsAfterMutation(
+        null,
+        "Saved Viewを削除しました。"
+      );
     } catch (error: unknown) {
       if (
         error instanceof TaskSearchApiError &&
         (error.status === 404 || error.status === 409)
       ) {
-        try {
-          await reloadSavedViews(current.savedViewId);
-        } catch (_reloadError: unknown) {
-          // 元の業務エラーを優先し、再取得失敗で競合理由を上書きしない。
-        }
+        await recoverSavedViews(
+          error,
+          current.savedViewId,
+          DISPLAY_MESSAGES.task.search.deleteFailed
+        );
+        return;
       }
-      await handleApiError(error, "Saved Viewを削除できませんでした。");
+      if (!(await handleUnauthorized(error))) {
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.search.deleteFailed,
+            TASK_SAVED_VIEW_ERROR_CODES
+          )
+        );
+      }
     } finally {
       isSavedViewMutating.value = false;
     }

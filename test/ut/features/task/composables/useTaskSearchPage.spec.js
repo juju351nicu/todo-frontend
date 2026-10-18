@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskSearchApiError } from "@/features/task/api/taskSearchApi";
 import { useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   api: {
@@ -136,13 +137,32 @@ describe("useTaskSearchPage", () => {
   });
 
   it("更新競合ではSaved Viewを再取得しBackendメッセージを表示する", async () => {
+    const latestSavedView = {
+      ...savedView,
+      name: "担当Task（最新）",
+      filters: { ...emptyFilters, statusCode: "TODO" },
+      visibleColumns: ["STATUS", "ASSIGNEE"],
+      version: 3,
+    };
     const conflict = new TaskSearchApiError(409, {
-      fieldErrors: [{ field: "version", message: "他の画面で更新されています。" }],
+      fieldErrors: [
+        {
+          errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+          field: "version",
+          message: "他の画面で更新されています。",
+        },
+      ],
     });
     mocks.api.updateTaskSavedView.mockRejectedValue(conflict);
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockResolvedValueOnce([latestSavedView]);
     const page = useTaskSearchPage();
     await page.initialize();
     await page.applySavedView(5);
+    page.savedViewName.value = "古い編集値";
+    page.filters.keyword = "古い検索条件";
+    page.visibleColumns.value = ["DETAIL"];
 
     await page.updateSavedView();
 
@@ -151,7 +171,214 @@ describe("useTaskSearchPage", () => {
       expect.objectContaining({ version: 2 })
     );
     expect(mocks.api.getTaskSavedViews).toHaveBeenCalledTimes(2);
+    expect(page.activeSavedView.value?.version).toBe(3);
+    expect(page.savedViewName.value).toBe("担当Task（最新）");
+    expect(page.filters.keyword).toBe("");
+    expect(page.filters.statusCode).toBe("TODO");
+    expect(page.visibleColumns.value).toEqual(["STATUS", "ASSIGNEE"]);
     expect(page.errorMessages.value).toEqual(["他の画面で更新されています。"]);
+  });
+
+  it("検索条件の契約済み複数errorをBackend順で表示する", async () => {
+    mocks.api.searchTasks.mockRejectedValue(
+      new TaskSearchApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SEARCH_KEYWORD_INVALID",
+            field: "keyword",
+            message: "検索語を確認してください。",
+          },
+          {
+            errorCode: "TASK_SEARCH_PRIORITY_INVALID",
+            field: "priority",
+            message: "優先度を確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useTaskSearchPage();
+
+    await page.executeSearch();
+
+    expect(page.errorMessages.value).toEqual([
+      "検索語を確認してください。",
+      "優先度を確認してください。",
+    ]);
+  });
+
+  it("未知error codeのBackend本文を表示せず検索fallbackへ閉じる", async () => {
+    mocks.api.searchTasks.mockRejectedValue(
+      new TaskSearchApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_SEARCH_ERROR",
+            field: "keyword",
+            message: "内部情報を含む本文",
+          },
+        ],
+      })
+    );
+    const page = useTaskSearchPage();
+
+    await page.executeSearch();
+
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.search.searchFailed,
+    ]);
+  });
+
+  it("検索403ではSessionを維持し古い検索結果を破棄する", async () => {
+    const page = useTaskSearchPage();
+    await page.initialize();
+    mocks.api.searchTasks.mockRejectedValue(new TaskSearchApiError(403, null));
+
+    await page.executeSearch();
+
+    expect(page.tasks.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.search.readForbidden,
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("Saved View更新404では古い選択とversionを破棄する", async () => {
+    mocks.api.updateTaskSavedView.mockRejectedValue(
+      new TaskSearchApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SAVED_VIEW_NOT_FOUND",
+            field: "savedViewId",
+            message: "対象がありません。",
+          },
+        ],
+      })
+    );
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockResolvedValueOnce([]);
+    const page = useTaskSearchPage();
+    await page.initialize();
+    await page.applySavedView(5);
+
+    await page.updateSavedView();
+
+    expect(page.savedViews.value).toEqual([]);
+    expect(page.selectedSavedViewId.value).toBeNull();
+    expect(page.savedViewName.value).toBe("");
+    expect(page.activeSavedView.value).toBeNull();
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.search.resourceNotFound,
+    ]);
+  });
+
+  it("競合回復中の401を優先しSessionと古いSaved Viewを破棄する", async () => {
+    mocks.api.updateTaskSavedView.mockRejectedValue(
+      new TaskSearchApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+            field: "version",
+            message: "競合しました。",
+          },
+        ],
+      })
+    );
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockRejectedValueOnce(new TaskSearchApiError(401, null));
+    const page = useTaskSearchPage();
+    await page.initialize();
+    await page.applySavedView(5);
+
+    await page.updateSavedView();
+
+    expect(page.savedViews.value).toEqual([]);
+    expect(page.selectedSavedViewId.value).toBeNull();
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it.each([
+    [403, DISPLAY_MESSAGES.task.search.readForbidden],
+    [404, DISPLAY_MESSAGES.task.search.resourceNotFound],
+  ])(
+    "競合回復中の%sを古い409より優先する",
+    async (reloadStatus, expectedMessage) => {
+      mocks.api.updateTaskSavedView.mockRejectedValue(
+        new TaskSearchApiError(409, {
+          fieldErrors: [
+            {
+              errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+              field: "version",
+              message: "競合しました。",
+            },
+          ],
+        })
+      );
+      mocks.api.getTaskSavedViews
+        .mockResolvedValueOnce([savedView])
+        .mockRejectedValueOnce(new TaskSearchApiError(reloadStatus, null));
+      const page = useTaskSearchPage();
+      await page.initialize();
+      await page.applySavedView(5);
+
+      await page.updateSavedView();
+
+      expect(page.savedViews.value).toEqual([]);
+      expect(page.selectedSavedViewId.value).toBeNull();
+      expect(page.errorMessages.value).toEqual([expectedMessage]);
+      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    }
+  );
+
+  it("競合回復中の通信失敗では競合理由と再取得失敗を併記する", async () => {
+    mocks.api.updateTaskSavedView.mockRejectedValue(
+      new TaskSearchApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+            field: "version",
+            message: "競合しました。",
+          },
+        ],
+      })
+    );
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    const page = useTaskSearchPage();
+    await page.initialize();
+    await page.applySavedView(5);
+
+    await page.updateSavedView();
+
+    expect(page.savedViews.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      "競合しました。",
+      DISPLAY_MESSAGES.task.search.reloadFailed,
+    ]);
+  });
+
+  it("登録確定後の一覧再取得失敗を登録失敗と誤表示しない", async () => {
+    const created = { ...savedView, savedViewId: 6, version: 1 };
+    mocks.api.createTaskSavedView.mockResolvedValue(created);
+    mocks.api.getTaskSavedViews.mockRejectedValue(
+      new TypeError("Failed to fetch")
+    );
+    const page = useTaskSearchPage();
+    page.savedViewName.value = "新しいView";
+
+    await page.createSavedView();
+
+    expect(page.savedViews.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.search.savedRefreshFailed,
+    ]);
+    expect(page.errorMessages.value).not.toContain(
+      DISPLAY_MESSAGES.task.search.createFailed
+    );
   });
 
   it("期限FromがToより後ならAPIを呼ばず画面で検証する", async () => {
@@ -173,6 +400,21 @@ describe("useTaskSearchPage", () => {
 
     await page.executeSearch();
 
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("Saved View適用中の候補取得401では検索を続行しない", async () => {
+    const page = useTaskSearchPage();
+    await page.initialize();
+    mocks.api.getTaskSearchOptions.mockRejectedValue(
+      new TaskSearchApiError(401, null)
+    );
+    mocks.api.searchTasks.mockClear();
+
+    await page.applySavedView(5);
+
+    expect(mocks.api.searchTasks).not.toHaveBeenCalled();
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });

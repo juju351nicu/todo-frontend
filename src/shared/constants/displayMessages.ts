@@ -119,6 +119,21 @@ export const DISPLAY_MESSAGES = {
       reloadFailed:
         "最新のチェックリストを取得できませんでした。再読込してください。",
     },
+    search: {
+      readForbidden: "Task検索を参照するpermissionがありません。",
+      operationForbidden: "このSaved View操作を実行するpermissionがありません。",
+      resourceNotFound: "対象のSaved Viewが見つかりません。",
+      initializeFailed: "Task検索画面を初期化できませんでした。",
+      searchFailed: "Taskを検索できませんでした。",
+      optionsLoadFailed: "検索候補を取得できませんでした。",
+      createFailed: "Saved Viewを登録できませんでした。",
+      updateFailed: "Saved Viewを更新できませんでした。",
+      deleteFailed: "Saved Viewを削除できませんでした。",
+      reloadFailed:
+        "最新のSaved View一覧を取得できませんでした。再読込してください。",
+      savedRefreshFailed:
+        "Saved Viewの変更は完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+    },
   },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",
