@@ -1,20 +1,24 @@
 import { reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 
+import { useUserStore } from "@/features/auth/stores/user";
+import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
-import type {
-  TodoListRequest,
-  TodoListResponse,
-} from "@/features/task/types/task";
+import type { TodoListRequest } from "@/features/task/types/task";
+import { LEGACY_TODO_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import {
   buildTodoCalendarEvents,
   buildTodoCalendarOptions,
 } from "@/features/task/utils/taskCalendar";
-import type { ErrorResponse } from "@/shared/types/error";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { toNumberList } from "@/shared/utils/number";
 
 /** Todoカレンダー画面の状態と操作を提供する。 */
 export const useTodoCalendarPage = () => {
+  const router = useRouter();
   const todoStore = useTodoStore();
+  const userStore = useUserStore();
 
   const calendarOptions = reactive(buildTodoCalendarOptions());
   const errorMessages = ref<string[]>([]);
@@ -29,33 +33,50 @@ export const useTodoCalendarPage = () => {
     done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
-  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
-  const setResponseErrors = (errorResponse: ErrorResponse): void => {
-    errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
-    );
-    if (errorMessages.value.length === 0) {
-      errorMessages.value = ["Todoカレンダーを取得できませんでした。"];
+  /** 401ではCalendar eventとSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskApiError) || error.status !== 401) {
+      return false;
     }
+    calendarOptions.events = [];
+    errorMessages.value = [];
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
+  };
+
+  /** API statusと契約済みerror codeをCalendar向け表示へ変換する。 */
+  const getErrorMessages = (error: unknown): string[] => {
+    if (!(error instanceof TaskApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [DISPLAY_MESSAGES.task.todo.readForbidden];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      LEGACY_TODO_ERROR_CODES,
+      DISPLAY_MESSAGES.task.todo.calendarLoadFailed
+    );
   };
 
   /**
    * 指定条件のTodoと休日を取得し、FullCalendarのEventへ置き換える。
-   * 取得に失敗した場合は既存Eventを変更せず、利用者が再検索できる状態を保つ。
+   * 通信失敗時は既存Eventを維持し、認証・認可状態変更時は保護されたEventを破棄する。
    */
   const loadCalendar = async (payload: TodoListRequest): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      const response = await todoStore.findCalendarList(payload);
-      if (!response.ok) {
-        setResponseErrors((await response.json()) as ErrorResponse);
-        return;
-      }
-      const data = (await response.json()) as TodoListResponse;
+      const data = await todoStore.findCalendarList(payload);
       calendarOptions.events = buildTodoCalendarEvents(data.todoList);
-    } catch (_error: unknown) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+    } catch (error: unknown) {
+      if (!(await handleUnauthorized(error))) {
+        if (error instanceof TaskApiError && error.status === 403) {
+          calendarOptions.events = [];
+        }
+        errorMessages.value = getErrorMessages(error);
+      }
     } finally {
       isLoading.value = false;
     }

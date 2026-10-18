@@ -1,18 +1,27 @@
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
 
 const mocks = vi.hoisted(() => ({
+  router: {
+    push: vi.fn(),
+  },
   todoStore: {
     findTodoDetail: vi.fn(),
     isLoading: false,
     upsertTodoInfo: vi.fn(),
   },
   userStore: {
+    clearSession: vi.fn(),
     hasPermission: vi.fn(),
     memberId: 5,
   },
+}));
+
+vi.mock("vue-router", () => ({
+  useRouter: () => mocks.router,
 }));
 
 vi.mock("@/features/task/stores/task", () => ({
@@ -26,6 +35,7 @@ vi.mock("@/features/auth/stores/user", () => ({
 describe("useTodoDetailPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.router.push.mockResolvedValue(undefined);
     mocks.todoStore.isLoading = false;
     mocks.userStore.memberId = 5;
     mocks.userStore.hasPermission.mockImplementation(
@@ -66,13 +76,30 @@ describe("useTodoDetailPage", () => {
   });
 
   it("詳細取得失敗時は画面用メッセージを設定する", async () => {
-    mocks.todoStore.findTodoDetail.mockRejectedValue(new Error("not found"));
+    mocks.todoStore.findTodoDetail.mockRejectedValue(
+      new TaskApiError(404, null)
+    );
 
     const page = useTodoDetailPage(ref(999));
 
     await vi.waitFor(() => {
-      expect(page.loadError.value).toContain("Todo情報を取得できませんでした");
+      expect(page.loadError.value).toBe("対象のTodoが見つかりません。");
     });
+  });
+
+  it("詳細取得の401ではフォームとSession表示を破棄してLoginへ戻す", async () => {
+    mocks.todoStore.findTodoDetail.mockRejectedValue(
+      new TaskApiError(401, null)
+    );
+
+    const page = useTodoDetailPage(ref(42));
+
+    await vi.waitFor(() => {
+      expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    });
+    expect(page.todoForm.todoId).toBe(0);
+    expect(page.loadError.value).toBe("");
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
   });
 
   it("編集画面のクリアでは取得時の内容へ戻す", async () => {
@@ -98,7 +125,7 @@ describe("useTodoDetailPage", () => {
   });
 
   it("確認したフォームを登録更新RequestとしてStoreへ渡す", async () => {
-    mocks.todoStore.upsertTodoInfo.mockResolvedValue({ ok: true });
+    mocks.todoStore.upsertTodoInfo.mockResolvedValue(undefined);
     const page = useTodoDetailPage(ref(0));
     Object.assign(page.todoForm, {
       dateFrom: "2026-08-08",
@@ -166,16 +193,171 @@ describe("useTodoDetailPage", () => {
   });
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {
-    mocks.todoStore.upsertTodoInfo.mockResolvedValue({
-      ok: false,
-      json: vi.fn().mockResolvedValue({
-        fieldErrors: [{ field: "title", message: "タイトルは必須です" }],
-      }),
-    });
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
+      new TaskApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "title",
+            message: "タイトルは必須です",
+          },
+        ],
+      })
+    );
     const page = useTodoDetailPage(ref(0));
 
     await page.confirmSubmit();
 
     expect(page.errorMessages.value).toEqual(["タイトルは必須です"]);
+  });
+
+  it("codeなしの旧日付エラー本文を表示せず固定文言へ閉じる", async () => {
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
+      new TaskApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: null,
+            field: "dateTo",
+            message: "古いControllerの文言",
+          },
+        ],
+      })
+    );
+    const page = useTodoDetailPage(ref(0));
+
+    await page.confirmSubmit();
+
+    expect(page.errorMessages.value).toEqual([
+      "Todo情報を保存できませんでした。",
+    ]);
+  });
+
+  it("更新確定後に詳細を再取得して新しいversionへ置き換える", async () => {
+    mocks.todoStore.findTodoDetail
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "更新前",
+        detail: "詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 2,
+        version: 4,
+      })
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "更新後",
+        detail: "詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 2,
+        version: 5,
+      });
+    mocks.todoStore.upsertTodoInfo.mockResolvedValue(undefined);
+    const page = useTodoDetailPage(ref(42));
+    await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
+
+    await page.confirmSubmit();
+
+    expect(page.todoForm.title).toBe("更新後");
+    expect(page.todoForm.version).toBe(5);
+    expect(page.successMessage.value).toBe("Todoを更新しました。");
+  });
+
+  it("更新確定後の再取得失敗を保存失敗と区別する", async () => {
+    mocks.todoStore.findTodoDetail
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "更新前",
+        detail: "詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 2,
+        version: 4,
+      })
+      .mockRejectedValueOnce(new Error("offline"));
+    mocks.todoStore.upsertTodoInfo.mockResolvedValue(undefined);
+    const page = useTodoDetailPage(ref(42));
+    await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
+
+    await page.confirmSubmit();
+
+    expect(page.successMessage.value).toBe("");
+    expect(page.todoForm.todoId).toBe(0);
+    expect(page.errorMessages.value).toEqual([
+      "Todoは保存されましたが、最新情報を取得できませんでした。Todo一覧から開き直してください。",
+    ]);
+  });
+
+  it("409では古いdraftを破棄して最新versionを再取得する", async () => {
+    mocks.todoStore.findTodoDetail
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "古いdraftの元",
+        detail: "詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 2,
+        version: 4,
+      })
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "別tabの更新",
+        detail: "最新詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 3,
+        version: 5,
+      });
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
+      new TaskApiError(409, null)
+    );
+    const page = useTodoDetailPage(ref(42));
+    await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
+    page.todoForm.title = "破棄対象draft";
+
+    await page.confirmSubmit();
+
+    expect(page.todoForm.title).toBe("別tabの更新");
+    expect(page.todoForm.version).toBe(5);
+    expect(page.errorMessages.value).toEqual([
+      "Todoが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
+    ]);
+  });
+
+  it("409回復中の401は古い競合案内よりSession失効を優先する", async () => {
+    mocks.todoStore.findTodoDetail
+      .mockResolvedValueOnce({
+        todo_id: 42,
+        date_from: "2026-08-08",
+        date_to: "2026-08-31",
+        title: "更新前",
+        detail: "詳細",
+        done_flag: "0",
+        user_id: 5,
+        priority: 2,
+        version: 4,
+      })
+      .mockRejectedValueOnce(new TaskApiError(401, null));
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
+      new TaskApiError(409, null)
+    );
+    const page = useTodoDetailPage(ref(42));
+    await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
+
+    await page.confirmSubmit();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 });

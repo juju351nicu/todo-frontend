@@ -22,11 +22,10 @@ describe("Todo store", () => {
   });
 
   it("Backendと一致するURLとパラメータ名でTodoを完了にする", async () => {
-    const response = { ok: true };
-    TaskApi.complete.mockResolvedValue(response);
+    TaskApi.complete.mockResolvedValue(undefined);
     const store = useTodoStore();
 
-    await expect(store.completeTodo(42)).resolves.toBe(response);
+    await expect(store.completeTodo(42)).resolves.toBeUndefined();
 
     expect(TaskApi.complete).toHaveBeenCalledWith(42);
   });
@@ -66,12 +65,12 @@ describe("Todo store", () => {
 
   it("Todo詳細APIが失敗しても処理中フラグを解除する", async () => {
     TaskApi.findDetail.mockRejectedValue(
-      new Error("Todo詳細の取得に失敗しました。status=404")
+      new Error("Task APIの実行に失敗しました。status=404")
     );
     const store = useTodoStore();
 
     await expect(store.findTodoDetail(999)).rejects.toThrow(
-      "Todo詳細の取得に失敗しました"
+      "Task APIの実行に失敗しました"
     );
     expect(store.isLoading).toBe(false);
   });

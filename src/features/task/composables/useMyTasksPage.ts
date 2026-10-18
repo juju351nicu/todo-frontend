@@ -6,6 +6,12 @@ import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
 import { TASK_WRITE_PERMISSION_CODES } from "@/features/auth/types/auth";
 import type { MyTaskItem } from "@/features/task/types/task";
+import {
+  LEGACY_TODO_ERROR_CODES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface MyTaskGroup {
   key: "overdue" | "today" | "upcoming";
@@ -79,8 +85,55 @@ export const useMyTasksPage = () => {
     ];
   });
 
-  const setError = (message: string): void => {
-    errorMessages.value = [message];
+  const setErrors = (messages: string[]): void => {
+    errorMessages.value = messages;
+  };
+
+  /** 認証・認可状態が変化した場合にServer由来のMy Tasksを破棄する。 */
+  const clearProtectedState = (): void => {
+    myTasks.value = [];
+    businessDate.value = "";
+  };
+
+  /** Backendの確定ResponseでMy Tasksと業務日を同時に置き換える。 */
+  const replaceTasks = async (): Promise<void> => {
+    const data = await todoStore.findMyTasks();
+    myTasks.value = data.tasks;
+    businessDate.value = data.businessDate;
+  };
+
+  /** API statusと契約済みerror codeをMy Tasks向け表示へ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallback: string,
+    forbidden: string
+  ): string[] => {
+    if (!(error instanceof TaskApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.myTasks.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      LEGACY_TODO_ERROR_CODES,
+      fallback
+    );
+  };
+
+  /** 401ではMy TasksとSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskApiError) || error.status !== 401) {
+      return false;
+    }
+    clearProtectedState();
+    errorMessages.value = [];
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
   };
 
   /**
@@ -91,20 +144,22 @@ export const useMyTasksPage = () => {
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      const data = await todoStore.findMyTasks();
-      myTasks.value = data.tasks;
-      businessDate.value = data.businessDate;
+      await replaceTasks();
     } catch (error: unknown) {
-      if (error instanceof TaskApiError) {
-        if (error.status === 401) {
-          userStore.clearSession();
-          await router.push({ name: "Login" });
-          return;
+      if (!(await handleUnauthorized(error))) {
+        if (
+          error instanceof TaskApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearProtectedState();
         }
-        const backendMessage = error.errorResponse?.fieldErrors?.[0]?.message;
-        setError(backendMessage ?? "My Tasksを取得できませんでした。");
-      } else {
-        setError("Backendへ接続できませんでした。");
+        setErrors(
+          getErrorMessages(
+            error,
+            DISPLAY_MESSAGES.task.myTasks.loadFailed,
+            DISPLAY_MESSAGES.task.myTasks.readForbidden
+          )
+        );
       }
     } finally {
       isLoading.value = false;
@@ -121,20 +176,71 @@ export const useMyTasksPage = () => {
 
   const completeTask = async (task: MyTaskItem): Promise<void> => {
     if (!canCompleteTasks.value) {
-      setError("Taskを完了するpermissionがありません。");
+      setErrors([DISPLAY_MESSAGES.task.myTasks.operationForbidden]);
       return;
     }
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      const response = await todoStore.completeTodo(task.taskId);
-      if (!response.ok) {
-        setError("Taskを完了状態へ更新できませんでした。");
+      await todoStore.completeTodo(task.taskId);
+      myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
+      try {
+        await replaceTasks();
+      } catch (reloadError: unknown) {
+        if (await handleUnauthorized(reloadError)) return;
+        if (
+          reloadError instanceof TaskApiError &&
+          TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+        ) {
+          clearProtectedState();
+          setErrors(
+            getErrorMessages(
+              reloadError,
+              DISPLAY_MESSAGES.task.myTasks.completedRefreshFailed,
+              DISPLAY_MESSAGES.task.myTasks.readForbidden
+            )
+          );
+          return;
+        }
+        setErrors([DISPLAY_MESSAGES.task.myTasks.completedRefreshFailed]);
+      }
+    } catch (error: unknown) {
+      if (await handleUnauthorized(error)) return;
+      const operationMessages = getErrorMessages(
+        error,
+        DISPLAY_MESSAGES.task.myTasks.completeFailed,
+        DISPLAY_MESSAGES.task.myTasks.operationForbidden
+      );
+      if (!(error instanceof TaskApiError) || error.status !== 404) {
+        setErrors(operationMessages);
         return;
       }
+
       myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
-    } catch (_error: unknown) {
-      setError("Taskを完了状態へ更新できませんでした。");
+      try {
+        await replaceTasks();
+        setErrors(operationMessages);
+      } catch (reloadError: unknown) {
+        if (await handleUnauthorized(reloadError)) return;
+        if (
+          reloadError instanceof TaskApiError &&
+          TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+        ) {
+          clearProtectedState();
+          setErrors(
+            getErrorMessages(
+              reloadError,
+              DISPLAY_MESSAGES.task.myTasks.reloadFailed,
+              DISPLAY_MESSAGES.task.myTasks.readForbidden
+            )
+          );
+          return;
+        }
+        setErrors([
+          ...operationMessages,
+          DISPLAY_MESSAGES.task.myTasks.reloadFailed,
+        ]);
+      }
     } finally {
       isLoading.value = false;
     }

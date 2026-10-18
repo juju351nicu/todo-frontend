@@ -75,6 +75,36 @@ export const DISPLAY_MESSAGES = {
     },
   },
   task: {
+    myTasks: {
+      readForbidden: "My Tasksを参照するpermissionがありません。",
+      operationForbidden: "Taskを完了するpermissionがありません。",
+      resourceNotFound: "対象のTaskが見つかりません。",
+      loadFailed: "My Tasksを取得できませんでした。",
+      completeFailed: "Taskを完了状態へ更新できませんでした。",
+      completedRefreshFailed:
+        "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
+      reloadFailed:
+        "最新のMy Tasksを取得できませんでした。再読込してください。",
+    },
+    todo: {
+      readForbidden: "Todoを参照するpermissionがありません。",
+      operationForbidden: "Todoを更新するpermissionがありません。",
+      resourceNotFound: "対象のTodoが見つかりません。",
+      listLoadFailed: "Todo情報を取得できませんでした。",
+      calendarLoadFailed: "Todoカレンダーを取得できませんでした。",
+      detailLoadFailed:
+        "Todo情報を取得できませんでした。Todo一覧から開き直してください。",
+      saveFailed: "Todo情報を保存できませんでした。",
+      conflict:
+        "Todoが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
+      savedRefreshFailed:
+        "Todoは保存されましたが、最新情報を取得できませんでした。Todo一覧から開き直してください。",
+      completeFailed: "Todoを完了状態へ更新できませんでした。",
+      completedRefreshFailed:
+        "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+      reloadFailed:
+        "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
+    },
     board: {
       readForbidden:
         "Project BoardまたはTaskを参照するpermissionがありません。",

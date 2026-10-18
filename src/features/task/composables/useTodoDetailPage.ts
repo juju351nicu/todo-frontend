@@ -1,13 +1,21 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
+import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
+import type { TodoDetailResponse } from "@/features/task/types/task";
+import {
+  LEGACY_TODO_ERROR_CODES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
 import {
   buildTodoUpsertRequest,
   createTodoDetailForm,
   type TodoDetailForm,
 } from "@/features/task/utils/taskForm";
-import type { ErrorResponse } from "@/shared/types/error";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface PriorityItem {
   priorityLabel: string;
@@ -45,6 +53,7 @@ const USER_ITEMS: UserItem[] = [
  * `TASK_WRITE_ALL`だけが所有者指定UIを利用でき、本人更新permissionではBackendが所有者を固定する。
  */
 export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => {
+  const router = useRouter();
   const todoStore = useTodoStore();
   const userStore = useUserStore();
 
@@ -90,6 +99,57 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     Object.assign(todoForm, createTodoDetailForm());
   };
 
+  /** Backendの確定Responseを編集フォームへ置き換える。 */
+  const applyTodoDetail = (detail: TodoDetailResponse): void => {
+    Object.assign(todoForm, createTodoDetailForm(detail));
+  };
+
+  /** 認証・認可状態が変化した場合にServer由来のフォームとDialogを破棄する。 */
+  const clearProtectedState = (): void => {
+    resetForm();
+    isShowConfirm.value = false;
+  };
+
+  /** API statusと契約済みerror codeを旧Todo詳細向け表示へ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallback: string,
+    forbidden: string
+  ): string[] => {
+    if (!(error instanceof TaskApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.todo.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      LEGACY_TODO_ERROR_CODES,
+      fallback
+    );
+  };
+
+  /** 401ではフォームとSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskApiError) || error.status !== 401) {
+      return false;
+    }
+    clearProtectedState();
+    clearMessages();
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
+  };
+
+  /** 現在のTodo IDを再取得し、取得時点versionを含むフォームへ置き換える。 */
+  const replaceTodoDetail = async (): Promise<void> => {
+    const detail = await todoStore.findTodoDetail(normalizedTodoId.value);
+    applyTodoDetail(detail);
+  };
+
   /** Todo詳細をAPIから取得し、編集フォームへ復元する。 */
   const loadTodoDetail = async (): Promise<void> => {
     resetForm();
@@ -99,11 +159,15 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     }
 
     try {
-      const detail = await todoStore.findTodoDetail(normalizedTodoId.value);
-      Object.assign(todoForm, createTodoDetailForm(detail));
-    } catch (_error: unknown) {
-      loadError.value =
-        "Todo情報を取得できませんでした。Todo一覧から開き直してください。";
+      await replaceTodoDetail();
+    } catch (error: unknown) {
+      if (!(await handleUnauthorized(error))) {
+        loadError.value = getErrorMessages(
+          error,
+          DISPLAY_MESSAGES.task.todo.detailLoadFailed,
+          DISPLAY_MESSAGES.task.todo.readForbidden
+        )[0];
+      }
     }
   };
 
@@ -114,7 +178,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
 
   const showConfirm = (): void => {
     if (!canWriteTodo.value) {
-      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.task.todo.operationForbidden];
       return;
     }
     isShowConfirm.value = true;
@@ -130,7 +194,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     errorMessages.value = [];
     successMessage.value = "";
     if (!canWriteTodo.value) {
-      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.task.todo.operationForbidden];
       return;
     }
     const isUpdate = todoForm.todoId > 0;
@@ -138,24 +202,75 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
 
     isSubmitting.value = true;
     try {
-      const response = await todoStore.upsertTodoInfo(payload);
-      if (!response.ok) {
-        const errorResponse = (await response.json()) as ErrorResponse;
-        errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-          (fieldError) => fieldError.message
-        );
-        if (errorMessages.value.length === 0) {
-          errorMessages.value = ["Todo情報を保存できませんでした。"];
-        }
+      await todoStore.upsertTodoInfo(payload);
+      if (!isUpdate) {
+        successMessage.value = "Todoを登録しました。";
+        resetForm();
         return;
       }
 
-      successMessage.value = `Todoを${isUpdate ? "更新" : "登録"}しました。`;
-      if (!isUpdate) {
-        resetForm();
+      clearProtectedState();
+      try {
+        await replaceTodoDetail();
+        successMessage.value = "Todoを更新しました。";
+      } catch (reloadError: unknown) {
+        if (await handleUnauthorized(reloadError)) return;
+        if (
+          reloadError instanceof TaskApiError &&
+          TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+        ) {
+          clearProtectedState();
+          errorMessages.value = getErrorMessages(
+            reloadError,
+            DISPLAY_MESSAGES.task.todo.savedRefreshFailed,
+            DISPLAY_MESSAGES.task.todo.readForbidden
+          );
+          return;
+        }
+        errorMessages.value = [DISPLAY_MESSAGES.task.todo.savedRefreshFailed];
       }
-    } catch (_error: unknown) {
-      errorMessages.value = ["Todo情報を保存できませんでした。"];
+    } catch (error: unknown) {
+      if (await handleUnauthorized(error)) return;
+      if (
+        isUpdate &&
+        error instanceof TaskApiError &&
+        error.status === 409
+      ) {
+        const conflictMessages = getErrorMessages(
+          error,
+          DISPLAY_MESSAGES.task.todo.conflict,
+          DISPLAY_MESSAGES.task.todo.operationForbidden
+        );
+        clearProtectedState();
+        try {
+          await replaceTodoDetail();
+          errorMessages.value = conflictMessages;
+        } catch (reloadError: unknown) {
+          if (await handleUnauthorized(reloadError)) return;
+          if (
+            reloadError instanceof TaskApiError &&
+            TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+          ) {
+            clearProtectedState();
+            errorMessages.value = getErrorMessages(
+              reloadError,
+              DISPLAY_MESSAGES.task.todo.reloadFailed,
+              DISPLAY_MESSAGES.task.todo.readForbidden
+            );
+            return;
+          }
+          errorMessages.value = [
+            ...conflictMessages,
+            DISPLAY_MESSAGES.task.todo.reloadFailed,
+          ];
+        }
+        return;
+      }
+      errorMessages.value = getErrorMessages(
+        error,
+        DISPLAY_MESSAGES.task.todo.saveFailed,
+        DISPLAY_MESSAGES.task.todo.operationForbidden
+      );
     } finally {
       isSubmitting.value = false;
     }

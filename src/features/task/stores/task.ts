@@ -6,6 +6,7 @@ import type {
   TodoDetailResponse,
   TodoListItem,
   TodoListRequest,
+  TodoListResponse,
   TodoUpsertRequest,
 } from "@/features/task/types/task";
 
@@ -46,12 +47,12 @@ export const useTodoStore = defineStore("todo", {
     },
 
     /**
-     * Todo一覧情報を取得する。レスポンス本文は画面側で処理する。
+     * Todo一覧情報を取得する。
      *
      * @param payload Todo検索条件
-     * @returns Validation結果を含むBackend Response
+     * @returns 認可・Validation確認済みのTodo一覧
      */
-    findTodoList(payload: TodoListRequest): Promise<Response> {
+    findTodoList(payload: TodoListRequest): Promise<TodoListResponse> {
       return TaskApi.findList(payload);
     },
 
@@ -65,12 +66,12 @@ export const useTodoStore = defineStore("todo", {
     },
 
     /**
-     * Todoカレンダー情報を取得する。レスポンス本文は画面側で処理する。
+     * Todoカレンダー情報を取得する。
      *
      * @param payload カレンダー検索条件
-     * @returns Todoと休日を含むBackend Response
+     * @returns Todoと休日を含む認可済み一覧
      */
-    findCalendarList(payload: TodoListRequest): Promise<Response> {
+    findCalendarList(payload: TodoListRequest): Promise<TodoListResponse> {
       return TaskApi.findCalendar(payload);
     },
 
@@ -78,9 +79,8 @@ export const useTodoStore = defineStore("todo", {
      * Todoを完了状態にする。
      *
      * @param todoId 完了させるTodo ID
-     * @returns Backendの認可・更新結果Response
      */
-    completeTodo(todoId: number): Promise<Response> {
+    completeTodo(todoId: number): Promise<void> {
       return TaskApi.complete(todoId);
     },
 
@@ -88,9 +88,8 @@ export const useTodoStore = defineStore("todo", {
      * Todo情報を登録または更新する。
      *
      * @param payload snake_case形式のTodo入力
-     * @returns Backendの認可・保存結果Response
      */
-    upsertTodoInfo(payload: TodoUpsertRequest): Promise<Response> {
+    upsertTodoInfo(payload: TodoUpsertRequest): Promise<void> {
       return TaskApi.upsert(payload);
     },
   },

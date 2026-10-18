@@ -1,15 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoCalendarPage } from "@/features/task/composables/useTodoCalendarPage";
 
 const mocks = vi.hoisted(() => ({
+  router: {
+    push: vi.fn(),
+  },
   todoStore: {
     findCalendarList: vi.fn(),
   },
+  userStore: {
+    clearSession: vi.fn(),
+  },
+}));
+
+vi.mock("vue-router", () => ({
+  useRouter: () => mocks.router,
 }));
 
 vi.mock("@/features/task/stores/task", () => ({
   useTodoStore: () => mocks.todoStore,
+}));
+
+vi.mock("@/features/auth/stores/user", () => ({
+  useUserStore: () => mocks.userStore,
 }));
 
 const todo = {
@@ -33,12 +48,12 @@ const todo = {
 describe("useTodoCalendarPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.router.push.mockResolvedValue(undefined);
   });
 
   it("初期条件でTodoカレンダーを取得する", async () => {
     mocks.todoStore.findCalendarList.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ todoList: [todo] }),
+      todoList: [todo],
     });
     const page = useTodoCalendarPage();
 
@@ -56,8 +71,7 @@ describe("useTodoCalendarPage", () => {
 
   it("入力されたタイトルと完了状態で検索する", async () => {
     mocks.todoStore.findCalendarList.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ todoList: [] }),
+      todoList: [],
     });
     const page = useTodoCalendarPage();
     page.searchTitle.value = "設計";
@@ -73,12 +87,17 @@ describe("useTodoCalendarPage", () => {
   });
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {
-    mocks.todoStore.findCalendarList.mockResolvedValue({
-      ok: false,
-      json: vi.fn().mockResolvedValue({
-        fieldErrors: [{ field: "search_title", message: "タイトルが不正です" }],
-      }),
-    });
+    mocks.todoStore.findCalendarList.mockRejectedValue(
+      new TaskApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "searchTitle",
+            message: "タイトルが不正です",
+          },
+        ],
+      })
+    );
     const page = useTodoCalendarPage();
 
     await page.search();
@@ -93,5 +112,56 @@ describe("useTodoCalendarPage", () => {
     await page.search();
 
     expect(page.errorMessages.value).toEqual(["Backendへ接続できませんでした。"]);
+  });
+
+  it("未知codeのBackend本文を表示せず固定文言へ閉じる", async () => {
+    mocks.todoStore.findCalendarList.mockRejectedValue(
+      new TaskApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_INTERNAL_ERROR",
+            field: "query",
+            message: "secret SQL",
+          },
+        ],
+      })
+    );
+    const page = useTodoCalendarPage();
+
+    await page.search();
+
+    expect(page.errorMessages.value).toEqual([
+      "Todoカレンダーを取得できませんでした。",
+    ]);
+  });
+
+  it("本文なし403ではSessionを維持して古いEventを破棄する", async () => {
+    mocks.todoStore.findCalendarList
+      .mockResolvedValueOnce({ todoList: [todo] })
+      .mockRejectedValueOnce(new TaskApiError(403, null));
+    const page = useTodoCalendarPage();
+    await page.initialize();
+
+    await page.search();
+
+    expect(page.calendarOptions.events).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      "Todoを参照するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("401ではEventとSession表示を破棄してLoginへ戻す", async () => {
+    mocks.todoStore.findCalendarList.mockRejectedValue(
+      new TaskApiError(401, null)
+    );
+    const page = useTodoCalendarPage();
+
+    await page.search();
+
+    expect(page.calendarOptions.events).toEqual([]);
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 });

@@ -2,17 +2,19 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
-import type {
-  TodoListItem,
-  TodoListRequest,
-  TodoListResponse,
-} from "@/features/task/types/task";
-import type { ErrorResponse } from "@/shared/types/error";
+import type { TodoListItem, TodoListRequest } from "@/features/task/types/task";
+import {
+  LEGACY_TODO_ERROR_CODES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   DATA_TABLE_PAGE_OPTIONS,
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { toNumberList } from "@/shared/utils/number";
 
 interface TodoTableHeader {
@@ -66,35 +68,75 @@ export const useTodoListPage = () => {
     done_flag_values: toNumberList(selectedDoneFlag.value),
   });
 
-  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
-  const setResponseErrors = (errorResponse: ErrorResponse): void => {
-    errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
-    );
-    if (errorMessages.value.length === 0) {
-      errorMessages.value = ["Todo情報を取得できませんでした。"];
+  /** 認証・認可状態が変化した場合にServer由来のTodo一覧を破棄する。 */
+  const clearProtectedState = (): void => {
+    todoList.value = [];
+    todoStore.setTodoList([]);
+  };
+
+  /** Backendの確定Responseで画面とStoreのTodo一覧を同時に置き換える。 */
+  const replaceTodoList = async (payload: TodoListRequest): Promise<void> => {
+    const data = await todoStore.findTodoList(payload);
+    todoList.value = data.todoList;
+    todoStore.setTodoList(data.todoList);
+  };
+
+  /** API statusと契約済みerror codeを旧Todo一覧向け表示へ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallback: string,
+    forbidden: string
+  ): string[] => {
+    if (!(error instanceof TaskApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
     }
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.todo.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      LEGACY_TODO_ERROR_CODES,
+      fallback
+    );
+  };
+
+  /** 401ではTodo一覧とSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskApiError) || error.status !== 401) {
+      return false;
+    }
+    clearProtectedState();
+    errorMessages.value = [];
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
   };
 
   /**
    * 指定条件でTodo一覧を取得し、画面とStoreを同じ一覧へ同期する。
-   * API失敗時は不完全なResponseで既存一覧を上書きしない。
+   * 通信失敗時は既存一覧を維持し、認証・認可・公開範囲変更時は保護状態を破棄する。
    */
   const loadTodoList = async (payload: TodoListRequest): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      const response = await todoStore.findTodoList(payload);
-      if (!response.ok) {
-        setResponseErrors((await response.json()) as ErrorResponse);
-        return;
-      }
-      const data = (await response.json()) as TodoListResponse;
-      todoList.value = data.todoList;
-      todoStore.setTodoList(data.todoList);
-    } catch (_error: unknown) {
-      if (errorMessages.value.length === 0) {
-        errorMessages.value = ["Backendへ接続できませんでした。"];
+      await replaceTodoList(payload);
+    } catch (error: unknown) {
+      if (!(await handleUnauthorized(error))) {
+        if (
+          error instanceof TaskApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearProtectedState();
+        }
+        errorMessages.value = getErrorMessages(
+          error,
+          DISPLAY_MESSAGES.task.todo.listLoadFailed,
+          DISPLAY_MESSAGES.task.todo.readForbidden
+        );
       }
     } finally {
       isLoading.value = false;
@@ -119,19 +161,68 @@ export const useTodoListPage = () => {
   /** 指定されたTodoを完了状態へ更新する。 */
   const completeTodo = async (todo: TodoListItem): Promise<void> => {
     if (!canWriteTodo(todo)) {
-      errorMessages.value = ["Todoを更新するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.task.todo.operationForbidden];
       return;
     }
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      const response = await todoStore.completeTodo(todo.todoId);
-      if (!response.ok) {
-        throw new Error("Todoの完了更新に失敗しました。");
-      }
+      await todoStore.completeTodo(todo.todoId);
       todo.doneFlag = true;
-    } catch (_error: unknown) {
-      errorMessages.value = ["Todoを完了状態へ更新できませんでした。"];
+      try {
+        await replaceTodoList(createSearchRequest());
+      } catch (reloadError: unknown) {
+        if (await handleUnauthorized(reloadError)) return;
+        if (
+          reloadError instanceof TaskApiError &&
+          TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+        ) {
+          clearProtectedState();
+          errorMessages.value = getErrorMessages(
+            reloadError,
+            DISPLAY_MESSAGES.task.todo.completedRefreshFailed,
+            DISPLAY_MESSAGES.task.todo.readForbidden
+          );
+          return;
+        }
+        errorMessages.value = [
+          DISPLAY_MESSAGES.task.todo.completedRefreshFailed,
+        ];
+      }
+    } catch (error: unknown) {
+      if (await handleUnauthorized(error)) return;
+      const operationMessages = getErrorMessages(
+        error,
+        DISPLAY_MESSAGES.task.todo.completeFailed,
+        DISPLAY_MESSAGES.task.todo.operationForbidden
+      );
+      if (!(error instanceof TaskApiError) || error.status !== 404) {
+        errorMessages.value = operationMessages;
+        return;
+      }
+
+      try {
+        await replaceTodoList(createSearchRequest());
+        errorMessages.value = operationMessages;
+      } catch (reloadError: unknown) {
+        if (await handleUnauthorized(reloadError)) return;
+        if (
+          reloadError instanceof TaskApiError &&
+          TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+        ) {
+          clearProtectedState();
+          errorMessages.value = getErrorMessages(
+            reloadError,
+            DISPLAY_MESSAGES.task.todo.reloadFailed,
+            DISPLAY_MESSAGES.task.todo.readForbidden
+          );
+          return;
+        }
+        errorMessages.value = [
+          ...operationMessages,
+          DISPLAY_MESSAGES.task.todo.reloadFailed,
+        ];
+      }
     } finally {
       isLoading.value = false;
     }

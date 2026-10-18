@@ -31,11 +31,17 @@ describe("Task API", () => {
   });
 
   it("Todo詳細取得のHTTPエラーを通知する", async () => {
-    HttpClient.getRequest.mockResolvedValue({ ok: false, status: 404 });
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
+    });
 
-    await expect(TaskApi.findDetail(999)).rejects.toThrow(
-      "Todo詳細の取得に失敗しました。status=404"
-    );
+    await expect(TaskApi.findDetail(999)).rejects.toMatchObject({
+      name: "TaskApiError",
+      status: 404,
+      errorResponse: null,
+    });
   });
 
   it("一覧検索条件をTodo一覧APIへ渡す", async () => {
@@ -44,15 +50,47 @@ describe("Task API", () => {
       date_range: "",
       done_flag_values: [0, 1],
     };
-    const response = { ok: true };
-    HttpClient.postRequest.mockResolvedValue(response);
+    const payload = { todoList: [] };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(payload),
+    });
 
-    await expect(TaskApi.findList(request)).resolves.toBe(response);
+    await expect(TaskApi.findList(request)).resolves.toEqual(payload);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       API_PATHS.TODO_LIST,
       request
     );
+  });
+
+  it("Todo一覧の既知Validationエラーをstatusと本文付きで通知する", async () => {
+    const errorResponse = {
+      fieldErrors: [
+        {
+          errorCode: "INVALID_REQUEST_BODY",
+          field: "searchTitle",
+          message: "タイトルが長すぎます。",
+        },
+      ],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: vi.fn().mockResolvedValue(errorResponse),
+    });
+
+    await expect(
+      TaskApi.findList({
+        search_title: "x",
+        date_range: "",
+        done_flag_values: [0],
+      })
+    ).rejects.toMatchObject({
+      name: "TaskApiError",
+      status: 400,
+      errorResponse,
+    });
   });
 
   it("My Tasks専用APIから本人担当Taskを取得する", async () => {
@@ -79,11 +117,39 @@ describe("Task API", () => {
   it("Todo IDをBackendと一致するparameter名で完了APIへ渡す", async () => {
     HttpClient.postRequest.mockResolvedValue({ ok: true });
 
-    await TaskApi.complete(42);
+    await expect(TaskApi.complete(42)).resolves.toBeUndefined();
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       `${API_PATHS.TODO_DONE}?todo_id=42`,
       null
     );
+  });
+
+  it("Todo完了の本文なし404を安全なTaskApiErrorへ変換する", async () => {
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 404,
+      json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
+    });
+
+    await expect(TaskApi.complete(999)).rejects.toMatchObject({
+      name: "TaskApiError",
+      status: 404,
+      errorResponse: null,
+    });
+  });
+
+  it("Todo保存の非JSON 409を安全なTaskApiErrorへ変換する", async () => {
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: vi.fn().mockRejectedValue(new SyntaxError("not json")),
+    });
+
+    await expect(TaskApi.upsert({ todo_id: 42 })).rejects.toMatchObject({
+      name: "TaskApiError",
+      status: 409,
+      errorResponse: null,
+    });
   });
 });

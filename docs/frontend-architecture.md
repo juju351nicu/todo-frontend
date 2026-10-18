@@ -598,6 +598,17 @@ permissionへ誤変換する回帰と通常permissionでBackend本文を表示�
 全80 test file・714 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
 次はMy Tasks／旧Todo画面を同じ契約へ移行する。
 
+続いてMy Tasksと旧Todoの一覧・Calendar・詳細・登録・更新・完了を移行した。feature内の`taskApi`は全操作で
+非2xxを`TaskApiError`へ変換し、画面が生の`Response`や非JSON本文を直接解析しない。共通Bean Validationの
+`INVALID_REQUEST_BODY`だけを契約済みcodeとし、codeなしの旧日付前後関係エラー、未知code、本文なし、非JSONは
+操作別fallbackへ閉じる。401は一覧、Calendar event、編集フォームとSession表示を破棄してLoginへ戻し、本文なし403は
+Sessionを維持したまま参照・更新permissionの固定案内へ変換する。404はresource情報をBackend本文から表示しない。
+完了確定後はMy Tasksまたは現在のTodo検索条件で一覧を再取得し、再取得失敗を完了操作失敗と区別する。旧Todo更新確定後は
+詳細を再取得して新しいversionへ置き換え、本文なし409では古いdraftを破棄して最新詳細へ回復する。回復中の401／403／404は
+元の競合理由より優先する。更新後に古いversionを戻すmutationは新しい回帰testが`4`と`5`の差を検出して失敗し、復元後の
+対象6 test file・60件と全80 test file・736 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+次はAccount管理／認可監査／お知らせ管理を同じ表示境界へ移行し、その後にLogin／問い合わせを移行する。
+
 ## 変更時の確認
 
 ```bash

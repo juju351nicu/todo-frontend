@@ -117,13 +117,18 @@ describe("useMyTasksPage", () => {
   });
 
   it("完了したTaskをMy Tasks一覧から除外する", async () => {
-    mocks.todoStore.completeTodo.mockResolvedValue({ ok: true });
+    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
     const page = useMyTasksPage();
     await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockResolvedValue({
+      businessDate: "2026-09-20",
+      tasks: tasks.slice(1),
+    });
 
     await page.completeTask(tasks[0]);
 
     expect(mocks.todoStore.completeTodo).toHaveBeenCalledWith(15);
+    expect(mocks.todoStore.findMyTasks).toHaveBeenCalledTimes(2);
     expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
   });
 
@@ -144,6 +149,70 @@ describe("useMyTasksPage", () => {
 
     await page.loadTasks();
 
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("本文なし403ではSessionを維持してMy Tasksを破棄する", async () => {
+    const page = useMyTasksPage();
+    await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockRejectedValue(new TaskApiError(403, null));
+
+    await page.loadTasks();
+
+    expect(page.myTasks.value).toEqual([]);
+    expect(page.businessDate.value).toBe("");
+    expect(page.errorMessages.value).toEqual([
+      "My Tasksを参照するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("未知codeのBackend本文を表示せず固定文言へ閉じる", async () => {
+    mocks.todoStore.findMyTasks.mockRejectedValue(
+      new TaskApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_INTERNAL_ERROR",
+            field: "sql",
+            message: "secret table name",
+          },
+        ],
+      })
+    );
+    const page = useMyTasksPage();
+
+    await page.loadTasks();
+
+    expect(page.errorMessages.value).toEqual([
+      "My Tasksを取得できませんでした。",
+    ]);
+  });
+
+  it("完了確定後の再取得失敗は完了操作失敗と区別する", async () => {
+    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    const page = useMyTasksPage();
+    await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockRejectedValue(new Error("offline"));
+
+    await page.completeTask(tasks[0]);
+
+    expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
+    expect(page.errorMessages.value).toEqual([
+      "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
+    ]);
+  });
+
+  it("完了404の回復中に401となった場合は古い案内よりSession失効を優先する", async () => {
+    mocks.todoStore.completeTodo.mockRejectedValue(new TaskApiError(404, null));
+    const page = useMyTasksPage();
+    await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockRejectedValue(new TaskApiError(401, null));
+
+    await page.completeTask(tasks[0]);
+
+    expect(page.myTasks.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([]);
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });

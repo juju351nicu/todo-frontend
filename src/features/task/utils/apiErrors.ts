@@ -100,6 +100,11 @@ export const TASK_RECURRENCE_ERROR_CODES: ReadonlySet<string> = new Set([
   "RETRY_EXHAUSTED",
 ]);
 
+/** My Tasksと旧Todo互換APIが共通Validation handlerから返すerror code集合。 */
+export const LEGACY_TODO_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+]);
+
 /** 競合回復中に古い409より優先する認証・認可・公開範囲のHTTP status。 */
 export const TASK_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
   401, 403, 404,
