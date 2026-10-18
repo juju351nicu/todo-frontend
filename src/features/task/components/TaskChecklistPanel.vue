@@ -22,7 +22,7 @@ const {
   deletingItem,
   editContent,
   editingItemId,
-  errorMessage,
+  errorMessages,
   isCreating,
   isDeleting,
   isLoading,
@@ -76,8 +76,8 @@ const updateDeleteDialog = (open: boolean): void => {
     rounded
     class="mb-3"
   />
-  <v-alert v-if="errorMessage" type="error" density="compact" class="mb-3">
-    {{ errorMessage }}
+  <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+    <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </v-alert>
   <v-alert
     v-if="successMessage"

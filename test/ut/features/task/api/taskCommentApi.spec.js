@@ -133,4 +133,17 @@ describe("TaskコメントAPI", () => {
       expect(error).toBeInstanceOf(TaskCommentApiError)
     );
   });
+
+  it("非JSONのエラーResponseは本文を公開せずnullとして保持する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+    });
+
+    await expect(TaskCommentApi.findComments(5, 31)).rejects.toMatchObject({
+      status: 502,
+      errorResponse: null,
+    });
+  });
 });

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskChecklistApiError } from "@/features/task/api/taskChecklistApi";
 import { useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn() },
@@ -159,7 +160,7 @@ describe("useTaskChecklist", () => {
       new TaskChecklistApiError(409, {
         fieldErrors: [
           {
-            errorCode: "TASK_CHECKLIST_VERSION_CONFLICT",
+            errorCode: "CHECKLIST_VERSION_CONFLICT",
             field: "version",
             message: "別の操作で変更されました。",
           },
@@ -176,7 +177,114 @@ describe("useTaskChecklist", () => {
     expect(mocks.taskChecklistApi.findItems).toHaveBeenCalledTimes(2);
     expect(page.items.value).toEqual([latest]);
     expect(page.editingItemId.value).toBeNull();
-    expect(page.errorMessage.value).toBe("別の操作で変更されました。");
+    expect(page.errorMessages.value).toEqual(["別の操作で変更されました。"]);
+  });
+
+  it("契約済みcodeの複数項目エラーをBackend順で表示する", async () => {
+    mocks.taskChecklistApi.reorderItems.mockRejectedValue(
+      new TaskChecklistApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_CHECKLIST_ORDER",
+            field: "items[0].version",
+            message: "versionは0以上で指定してください。",
+          },
+          {
+            errorCode: "INVALID_CHECKLIST_ORDER",
+            field: "items[1].checklistItemId",
+            message: "checklist item IDは正の値で指定してください。",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+
+    await page.moveItem(page.items.value[1], -1);
+
+    expect(page.errorMessages.value).toEqual([
+      "versionは0以上で指定してください。",
+      "checklist item IDは正の値で指定してください。",
+    ]);
+  });
+
+  it("未知codeを含むBackend本文は表示せず固定fallbackへ置き換える", async () => {
+    mocks.taskChecklistApi.updateItem.mockRejectedValue(
+      new TaskChecklistApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "INTERNAL_SQL_DETAIL",
+            field: "sql",
+            message: "公開してはいけない内部情報",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+
+    await page.toggleItem(page.items.value[0]);
+
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.checklist.toggleFailed,
+    ]);
+  });
+
+  it("409回復中の401を古い競合より優先し一覧を破棄してLoginへ戻す", async () => {
+    mocks.taskChecklistApi.findItems
+      .mockResolvedValueOnce([structuredClone(firstItem)])
+      .mockRejectedValueOnce(new TaskChecklistApiError(401, null));
+    mocks.taskChecklistApi.updateItem.mockRejectedValue(
+      new TaskChecklistApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "CHECKLIST_VERSION_CONFLICT",
+            field: "version",
+            message: "別の操作で変更されました。",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+    page.startEditing(page.items.value[0]);
+    page.editContent.value = "古い更新";
+
+    await page.saveEdit();
+
+    expect(page.items.value).toEqual([]);
+    expect(page.editingItemId.value).toBeNull();
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409回復中の通信失敗では元の競合と再取得失敗を区別して表示する", async () => {
+    mocks.taskChecklistApi.findItems
+      .mockResolvedValueOnce([structuredClone(firstItem)])
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    mocks.taskChecklistApi.updateItem.mockRejectedValue(
+      new TaskChecklistApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "CHECKLIST_VERSION_CONFLICT",
+            field: "version",
+            message: "別の操作で変更されました。",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+    page.startEditing(page.items.value[0]);
+    page.editContent.value = "古い更新";
+
+    await page.saveEdit();
+
+    expect(page.errorMessages.value).toEqual([
+      "別の操作で変更されました。",
+      DISPLAY_MESSAGES.task.checklist.reloadFailed,
+    ]);
   });
 
   it("参照専用では更新系APIを呼び出さない", async () => {
@@ -198,11 +306,13 @@ describe("useTaskChecklist", () => {
       new TaskChecklistApiError(401, null)
     );
 
-    createPage();
+    const page = createPage();
     await waitForInitialLoad();
     await vi.waitFor(() => {
       expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
       expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     });
+    expect(page.items.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([]);
   });
 });

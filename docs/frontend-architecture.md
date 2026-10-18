@@ -567,6 +567,15 @@ error codeだけから複数messageをBackend順で表示し、未知／null cod
 復元後の対象2 test file・46件と全80 test file・670 Vitest、TypeScript／Vue／E2E型検査、
 production buildが成功した。次はTaskコメント／checklistを同じ契約へ移行する。
 
+続いてTaskコメント、Project内コメント一覧、Task checklistを移行した。コメント用6 code、checklist用10 codeを明示し、
+契約済みの複数messageだけをBackend順で表示する。未知code、本文なし、非JSONは操作別fallbackへ閉じ、403ではSessionを
+維持したまま参照と更新の固定案内を分離する。404／409後の再取得中に401／403／404となった場合は古い競合理由より
+現在の認証・認可・公開範囲を優先し、古い一覧と編集・削除draftを破棄する。通信失敗では競合理由と再取得失敗を併記する。
+既存Vitestが実在しない`TASK_CHECKLIST_VERSION_CONFLICT`を正としていた箇所もBackend契約の
+`CHECKLIST_VERSION_CONFLICT`へ修正した。401回復分岐を一時的に誤らせるmutationは意図した1件が失敗し、復元後の
+対象5 test file・46件と全80 test file・683 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+次はTask検索／Saved Viewを同じ契約へ移行する。
+
 ## 変更時の確認
 
 ```bash

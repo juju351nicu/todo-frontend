@@ -19,7 +19,7 @@ import ProjectTaskApi, {
 } from "@/features/task/api/projectTaskApi";
 import {
   TASK_BOARD_ERROR_CODES,
-  TASK_BOARD_RECOVERY_PRIORITY_STATUSES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
@@ -731,7 +731,7 @@ export const useTaskBoardPage = () => {
     } catch (error: unknown) {
       if (
         isTaskBoardApiError(error) &&
-        TASK_BOARD_RECOVERY_PRIORITY_STATUSES.has(error.status)
+        TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)
       ) {
         await handleBoardReadError(
           error,
@@ -788,7 +788,7 @@ export const useTaskBoardPage = () => {
   ): Promise<void> => {
     if (
       isTaskBoardApiError(error) &&
-      TASK_BOARD_RECOVERY_PRIORITY_STATUSES.has(error.status)
+      TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)
     ) {
       await handleBoardReadError(error, fallbackMessage);
       return;

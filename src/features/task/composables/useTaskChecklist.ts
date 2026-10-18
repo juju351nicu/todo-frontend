@@ -6,6 +6,12 @@ import TaskChecklistApi, {
   TaskChecklistApiError,
 } from "@/features/task/api/taskChecklistApi";
 import type { TaskChecklistItem } from "@/features/task/types/taskChecklist";
+import {
+  TASK_CHECKLIST_ERROR_CODES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * Task詳細内のchecklist取得・追加・更新・並び替え・削除を扱う。
@@ -24,7 +30,7 @@ export const useTaskChecklist = (
   const editingItemId = ref<number | null>(null);
   const editContent = ref("");
   const deletingItem = ref<TaskChecklistItem | null>(null);
-  const errorMessage = ref("");
+  const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isLoading = ref(false);
   const isCreating = ref(false);
@@ -50,17 +56,37 @@ export const useTaskChecklist = (
       newContent.value.trim().length <= 255
   );
 
-  /** Backend共通ErrorResponseから最初の利用者向けメッセージを取得する。 */
-  const getErrorMessage = (error: unknown, fallback: string): string =>
-    error instanceof TaskChecklistApiError
-      ? error.errorResponse?.fieldErrors?.[0]?.message ?? fallback
-      : fallback;
+  /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallback: string,
+    forbidden: string = DISPLAY_MESSAGES.task.checklist.operationForbidden
+  ): string[] => {
+    if (!(error instanceof TaskChecklistApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.checklist.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_CHECKLIST_ERROR_CODES,
+      fallback
+    );
+  };
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
     if (!(error instanceof TaskChecklistApiError) || error.status !== 401) {
       return false;
     }
+    items.value = [];
+    clearMutationDrafts();
+    errorMessages.value = [];
+    successMessage.value = "";
     userStore.clearSession();
     await router.push({ name: "Login" });
     return true;
@@ -80,7 +106,7 @@ export const useTaskChecklist = (
       return false;
     }
     isLoading.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       items.value = await TaskChecklistApi.findItems(
@@ -90,9 +116,17 @@ export const useTaskChecklist = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        errorMessage.value = getErrorMessage(
+        if (
+          error instanceof TaskChecklistApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          items.value = [];
+          clearMutationDrafts();
+        }
+        errorMessages.value = getErrorMessages(
           error,
-          "チェックリストを取得できませんでした。"
+          DISPLAY_MESSAGES.task.checklist.loadFailed,
+          DISPLAY_MESSAGES.task.checklist.readForbidden
         );
       }
       return false;
@@ -106,10 +140,48 @@ export const useTaskChecklist = (
     error: TaskChecklistApiError,
     fallback: string
   ): Promise<void> => {
-    const message = getErrorMessage(error, fallback);
+    const currentProjectId = projectId.value;
+    const currentTaskId = taskId.value;
+    if (currentProjectId === null || currentTaskId === null) {
+      items.value = [];
+      clearMutationDrafts();
+      return;
+    }
+    const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
-    if (await loadItems()) {
-      errorMessage.value = message;
+    isLoading.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      items.value = await TaskChecklistApi.findItems(
+        currentProjectId,
+        currentTaskId
+      );
+      errorMessages.value = mutationMessages;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) {
+        return;
+      }
+      if (
+        reloadError instanceof TaskChecklistApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        if (reloadError.status === 403 || reloadError.status === 404) {
+          items.value = [];
+        }
+        errorMessages.value = getErrorMessages(
+          reloadError,
+          DISPLAY_MESSAGES.task.checklist.reloadFailed,
+          DISPLAY_MESSAGES.task.checklist.readForbidden
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.checklist.reloadFailed,
+      ];
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -123,7 +195,7 @@ export const useTaskChecklist = (
       return;
     }
     isCreating.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       items.value.push(
@@ -145,9 +217,9 @@ export const useTaskChecklist = (
         );
         return;
       }
-      errorMessage.value = getErrorMessage(
+      errorMessages.value = getErrorMessages(
         error,
-        "チェック項目を追加できませんでした。"
+        DISPLAY_MESSAGES.task.checklist.createFailed
       );
     } finally {
       isCreating.value = false;
@@ -160,7 +232,7 @@ export const useTaskChecklist = (
     deletingItem.value = null;
     editingItemId.value = item.checklistItemId;
     editContent.value = item.content;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
   };
 
@@ -193,11 +265,11 @@ export const useTaskChecklist = (
     );
     const content = editContent.value.trim();
     if (!item || !content || content.length > 255) {
-      errorMessage.value = "チェック項目を1〜255文字で入力してください。";
+      errorMessages.value = ["チェック項目を1〜255文字で入力してください。"];
       return;
     }
     isUpdating.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       replaceItem(
@@ -211,7 +283,10 @@ export const useTaskChecklist = (
       cancelEditing();
       successMessage.value = "チェック項目を更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(error, "チェック項目を更新できませんでした。");
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.checklist.updateFailed
+      );
     } finally {
       isUpdating.value = false;
     }
@@ -228,7 +303,7 @@ export const useTaskChecklist = (
       return;
     }
     isUpdating.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       replaceItem(
@@ -244,7 +319,10 @@ export const useTaskChecklist = (
         )
       );
     } catch (error: unknown) {
-      await handleMutationError(error, "完了状態を更新できませんでした。");
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.checklist.toggleFailed
+      );
     } finally {
       isUpdating.value = false;
     }
@@ -276,7 +354,7 @@ export const useTaskChecklist = (
       reordered[index],
     ];
     isReordering.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       items.value = await TaskChecklistApi.reorderItems(
@@ -290,7 +368,10 @@ export const useTaskChecklist = (
         }
       );
     } catch (error: unknown) {
-      await handleMutationError(error, "チェック項目を並び替えできませんでした。");
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.checklist.reorderFailed
+      );
     } finally {
       isReordering.value = false;
     }
@@ -321,7 +402,7 @@ export const useTaskChecklist = (
       return;
     }
     isDeleting.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       await TaskChecklistApi.deleteItem(
@@ -336,7 +417,10 @@ export const useTaskChecklist = (
       cancelDelete();
       successMessage.value = "チェック項目を削除しました。";
     } catch (error: unknown) {
-      await handleMutationError(error, "チェック項目を削除できませんでした。");
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.checklist.deleteFailed
+      );
     } finally {
       isDeleting.value = false;
     }
@@ -358,7 +442,7 @@ export const useTaskChecklist = (
       );
       return;
     }
-    errorMessage.value = getErrorMessage(error, fallback);
+    errorMessages.value = getErrorMessages(error, fallback);
   }
 
   watch(
@@ -381,7 +465,7 @@ export const useTaskChecklist = (
     deletingItem,
     editContent,
     editingItemId,
-    errorMessage,
+    errorMessages,
     isCreating,
     isDeleting,
     isLoading,

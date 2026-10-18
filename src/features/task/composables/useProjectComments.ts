@@ -6,6 +6,9 @@ import TaskCommentApi, {
   TaskCommentApiError,
 } from "@/features/task/api/taskCommentApi";
 import type { ProjectTaskComment } from "@/features/task/types/taskComment";
+import { TASK_COMMENT_ERROR_CODES } from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * Project BoardのTask横断コメントDialogを管理する。
@@ -21,14 +24,27 @@ export const useProjectComments = (
   const userStore = useUserStore();
 
   const comments = ref<ProjectTaskComment[]>([]);
-  const errorMessage = ref("");
+  const errorMessages = ref<string[]>([]);
   const isLoading = ref(false);
   const isOpen = ref(false);
 
-  /** Backend共通ErrorResponseから一覧用の案内文を取得する。 */
-  const getErrorMessage = (error: TaskCommentApiError): string =>
-    error.errorResponse?.fieldErrors?.[0]?.message ??
-    "Projectのコメントを取得できませんでした。";
+  /** API statusと契約済みerror codeをProjectコメント用の案内へ変換する。 */
+  const getErrorMessages = (error: unknown): string[] => {
+    if (!(error instanceof TaskCommentApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [DISPLAY_MESSAGES.task.comments.readForbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.comments.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_COMMENT_ERROR_CODES,
+      DISPLAY_MESSAGES.task.comments.projectLoadFailed
+    );
+  };
 
   /**
    * Project内コメントを再取得する。
@@ -39,7 +55,7 @@ export const useProjectComments = (
       return;
     }
     isLoading.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     try {
       comments.value = await TaskCommentApi.findProjectComments(
         projectId.value
@@ -48,12 +64,11 @@ export const useProjectComments = (
       comments.value = [];
       if (error instanceof TaskCommentApiError && error.status === 401) {
         isOpen.value = false;
+        errorMessages.value = [];
         userStore.clearSession();
         await router.push({ name: "Login" });
-      } else if (error instanceof TaskCommentApiError) {
-        errorMessage.value = getErrorMessage(error);
       } else {
-        errorMessage.value = "Backendへ接続できませんでした。";
+        errorMessages.value = getErrorMessages(error);
       }
     } finally {
       isLoading.value = false;
@@ -76,14 +91,14 @@ export const useProjectComments = (
 
   watch(projectId, () => {
     comments.value = [];
-    errorMessage.value = "";
+    errorMessages.value = [];
     isOpen.value = false;
   });
 
   return {
     closeComments,
     comments,
-    errorMessage,
+    errorMessages,
     isLoading,
     isOpen,
     loadComments,

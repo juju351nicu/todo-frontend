@@ -10,6 +10,12 @@ import type {
   TaskCommentCreateRequest,
   TaskCommentUpdateRequest,
 } from "@/features/task/types/taskComment";
+import {
+  TASK_COMMENT_ERROR_CODES,
+  TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * Project BoardのTask編集Dialog内でコメント取得・投稿・本人編集・本人削除を扱う。
@@ -33,7 +39,7 @@ export const useTaskComments = (
   const editingCommentId = ref<number | null>(null);
   const editBody = ref("");
   const deletingComment = ref<TaskComment | null>(null);
-  const errorMessage = ref("");
+  const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isLoading = ref(false);
   const isSubmitting = ref(false);
@@ -43,17 +49,37 @@ export const useTaskComments = (
     () => isSubmitting.value || isUpdating.value || isDeleting.value
   );
 
-  /** Backend共通ErrorResponseから最初の利用者向けメッセージを取得する。 */
-  const getErrorMessage = (error: unknown, fallback: string): string =>
-    error instanceof TaskCommentApiError
-      ? error.errorResponse?.fieldErrors?.[0]?.message ?? fallback
-      : fallback;
+  /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallback: string,
+    forbidden: string = DISPLAY_MESSAGES.task.comments.operationForbidden
+  ): string[] => {
+    if (!(error instanceof TaskCommentApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [forbidden];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.task.comments.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_COMMENT_ERROR_CODES,
+      fallback
+    );
+  };
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
     if (!(error instanceof TaskCommentApiError) || error.status !== 401) {
       return false;
     }
+    comments.value = [];
+    clearMutationDrafts();
+    errorMessages.value = [];
+    successMessage.value = "";
     userStore.clearSession();
     await router.push({ name: "Login" });
     return true;
@@ -73,7 +99,7 @@ export const useTaskComments = (
       return false;
     }
     isLoading.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       comments.value = await TaskCommentApi.findComments(
@@ -83,9 +109,17 @@ export const useTaskComments = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        errorMessage.value = getErrorMessage(
+        if (
+          error instanceof TaskCommentApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          comments.value = [];
+          clearMutationDrafts();
+        }
+        errorMessages.value = getErrorMessages(
           error,
-          "コメントを取得できませんでした。"
+          DISPLAY_MESSAGES.task.comments.loadFailed,
+          DISPLAY_MESSAGES.task.comments.readForbidden
         );
       }
       return false;
@@ -112,12 +146,12 @@ export const useTaskComments = (
       return;
     }
     if (!normalizedBody || normalizedBody.length > 2000) {
-      errorMessage.value = "コメント本文を1〜2000文字で入力してください。";
+      errorMessages.value = ["コメント本文を1〜2000文字で入力してください。"];
       return;
     }
     const payload: TaskCommentCreateRequest = { body: normalizedBody };
     isSubmitting.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       comments.value.push(
@@ -131,9 +165,9 @@ export const useTaskComments = (
       successMessage.value = "コメントを投稿しました。";
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        errorMessage.value = getErrorMessage(
+        errorMessages.value = getErrorMessages(
           error,
-          "コメントを投稿できませんでした。"
+          DISPLAY_MESSAGES.task.comments.createFailed
         );
       }
     } finally {
@@ -149,7 +183,7 @@ export const useTaskComments = (
     deletingComment.value = null;
     editingCommentId.value = comment.commentId;
     editBody.value = comment.body;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
   };
 
@@ -164,10 +198,48 @@ export const useTaskComments = (
     error: TaskCommentApiError,
     fallback: string
   ): Promise<void> => {
-    const message = getErrorMessage(error, fallback);
+    const currentProjectId = projectId.value;
+    const currentTaskId = taskId.value;
+    if (currentProjectId === null || currentTaskId === null) {
+      comments.value = [];
+      clearMutationDrafts();
+      return;
+    }
+    const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
-    if (await loadComments()) {
-      errorMessage.value = message;
+    isLoading.value = true;
+    errorMessages.value = [];
+    successMessage.value = "";
+    try {
+      comments.value = await TaskCommentApi.findComments(
+        currentProjectId,
+        currentTaskId
+      );
+      errorMessages.value = mutationMessages;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) {
+        return;
+      }
+      if (
+        reloadError instanceof TaskCommentApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        if (reloadError.status === 403 || reloadError.status === 404) {
+          comments.value = [];
+        }
+        errorMessages.value = getErrorMessages(
+          reloadError,
+          DISPLAY_MESSAGES.task.comments.reloadFailed,
+          DISPLAY_MESSAGES.task.comments.readForbidden
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.comments.reloadFailed,
+      ];
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -191,7 +263,7 @@ export const useTaskComments = (
     }
     const normalizedBody = editBody.value.trim();
     if (!normalizedBody || normalizedBody.length > 2000) {
-      errorMessage.value = "コメント本文を1〜2000文字で入力してください。";
+      errorMessages.value = ["コメント本文を1〜2000文字で入力してください。"];
       return;
     }
     const payload: TaskCommentUpdateRequest = {
@@ -199,7 +271,7 @@ export const useTaskComments = (
       version: comment.version,
     };
     isUpdating.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       const updated = await TaskCommentApi.updateComment(
@@ -227,9 +299,9 @@ export const useTaskComments = (
         );
         return;
       }
-      errorMessage.value = getErrorMessage(
+      errorMessages.value = getErrorMessages(
         error,
-        "コメントを更新できませんでした。"
+        DISPLAY_MESSAGES.task.comments.updateFailed
       );
     } finally {
       isUpdating.value = false;
@@ -243,7 +315,7 @@ export const useTaskComments = (
     }
     cancelEditing();
     deletingComment.value = comment;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
   };
 
@@ -266,7 +338,7 @@ export const useTaskComments = (
       return;
     }
     isDeleting.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       await TaskCommentApi.deleteComment(
@@ -294,9 +366,9 @@ export const useTaskComments = (
         );
         return;
       }
-      errorMessage.value = getErrorMessage(
+      errorMessages.value = getErrorMessages(
         error,
-        "コメントを削除できませんでした。"
+        DISPLAY_MESSAGES.task.comments.deleteFailed
       );
     } finally {
       isDeleting.value = false;
@@ -323,7 +395,7 @@ export const useTaskComments = (
     deletingComment,
     editBody,
     editingCommentId,
-    errorMessage,
+    errorMessages,
     isDeleting,
     isLoading,
     isMutating,

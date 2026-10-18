@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import { useProjectComments } from "@/features/task/composables/useProjectComments";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn() },
@@ -75,11 +76,15 @@ describe("useProjectComments", () => {
     await Promise.all([first, second]);
   });
 
-  it("403ではBackendの項目メッセージを表示して古い一覧を破棄する", async () => {
+  it("403ではBackend本文を表示せず固定文言へ置き換えて古い一覧を破棄する", async () => {
     mocks.taskCommentApi.findProjectComments.mockRejectedValue(
       new TaskCommentApiError(403, {
         fieldErrors: [
-          { field: "permission", message: "参照権限がありません。" },
+          {
+            errorCode: "ACCESS_DENIED",
+            field: "permission",
+            message: "公開してはいけない認可詳細",
+          },
         ],
       })
     );
@@ -88,8 +93,55 @@ describe("useProjectComments", () => {
     await page.openComments();
 
     expect(page.comments.value).toEqual([]);
-    expect(page.errorMessage.value).toBe("参照権限がありません。");
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.comments.readForbidden,
+    ]);
     expect(page.isOpen.value).toBe(true);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("404ではProjectの存在を断定せず公開範囲用固定文言を表示する", async () => {
+    mocks.taskCommentApi.findProjectComments.mockRejectedValue(
+      new TaskCommentApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_NOT_FOUND",
+            field: "projectId",
+            message: "Projectが存在しません。",
+          },
+        ],
+      })
+    );
+    const page = useProjectComments(ref(5));
+
+    await page.openComments();
+
+    expect(page.comments.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.comments.resourceNotFound,
+    ]);
+    expect(page.isOpen.value).toBe(true);
+  });
+
+  it("未知codeを含む500本文は表示せずProjectコメント用fallbackへ置き換える", async () => {
+    mocks.taskCommentApi.findProjectComments.mockRejectedValue(
+      new TaskCommentApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "INTERNAL_DATABASE_ERROR",
+            field: "sql",
+            message: "公開してはいけない内部情報",
+          },
+        ],
+      })
+    );
+    const page = useProjectComments(ref(5));
+
+    await page.openComments();
+
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.comments.projectLoadFailed,
+    ]);
   });
 
   it("401ではSessionを破棄してDialogを閉じLoginへ戻す", async () => {
@@ -103,6 +155,7 @@ describe("useProjectComments", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(page.isOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([]);
   });
 
   it("Project IDがない場合はDialogを開かずAPIを呼ばない", async () => {

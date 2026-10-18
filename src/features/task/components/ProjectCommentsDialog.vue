@@ -18,7 +18,7 @@ const projectId = toRef(props, "projectId");
 const {
   closeComments,
   comments,
-  errorMessage,
+  errorMessages,
   isLoading,
   isOpen,
   loadComments,
@@ -67,8 +67,8 @@ const selectTask = (comment: ProjectTaskComment): void => {
       </v-card-title>
       <v-card-subtitle>最終更新日時が新しい順に最大100件表示します。</v-card-subtitle>
       <v-card-text>
-        <v-alert v-if="errorMessage" type="error" density="compact" class="mb-3">
-          {{ errorMessage }}
+        <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
         </v-alert>
         <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-3" />
         <v-list v-if="comments.length" lines="three" class="project-comment-list">

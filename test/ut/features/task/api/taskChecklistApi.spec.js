@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import TaskChecklistApi from "@/features/task/api/taskChecklistApi";
+import TaskChecklistApi, {
+  TaskChecklistApiError,
+} from "@/features/task/api/taskChecklistApi";
 import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
@@ -122,5 +124,23 @@ describe("Task checklist API", () => {
         version: 0,
       })
     ).rejects.toMatchObject({ status: 409, errorResponse });
+  });
+
+  it("非JSONのエラーResponseは本文を公開せずnullとして保持する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+    });
+
+    const promise = TaskChecklistApi.findItems(5, 31);
+
+    await expect(promise).rejects.toMatchObject({
+      status: 502,
+      errorResponse: null,
+    });
+    await promise.catch((error) =>
+      expect(error).toBeInstanceOf(TaskChecklistApiError)
+    );
   });
 });

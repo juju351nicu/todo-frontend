@@ -25,7 +25,7 @@ const {
   deletingComment,
   editBody,
   editingCommentId,
-  errorMessage,
+  errorMessages,
   isDeleting,
   isLoading,
   isMutating,
@@ -69,8 +69,8 @@ const updateDeleteDialog = (open: boolean): void => {
 <template>
   <v-divider class="my-4" />
   <div class="text-subtitle-1 font-weight-bold mb-2">コメント</div>
-  <v-alert v-if="errorMessage" type="error" density="compact" class="mb-3">
-    {{ errorMessage }}
+  <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+    <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </v-alert>
   <v-alert
     v-if="successMessage"

@@ -91,6 +91,34 @@ export const DISPLAY_MESSAGES = {
       moveFailed: "Taskを移動できませんでした。",
       reloadFailed: "最新のProject Boardを再取得できませんでした。",
     },
+    comments: {
+      readForbidden: "Taskコメントを参照するpermissionがありません。",
+      operationForbidden: "このコメント操作を実行するpermissionがありません。",
+      resourceNotFound:
+        "対象のProject、Taskまたはコメントが見つかりません。",
+      loadFailed: "コメントを取得できませんでした。",
+      projectLoadFailed: "Projectのコメントを取得できませんでした。",
+      createFailed: "コメントを投稿できませんでした。",
+      updateFailed: "コメントを更新できませんでした。",
+      deleteFailed: "コメントを削除できませんでした。",
+      reloadFailed:
+        "最新のコメント一覧を取得できませんでした。再読込してください。",
+    },
+    checklist: {
+      readForbidden: "Task checklistを参照するpermissionがありません。",
+      operationForbidden:
+        "このchecklist操作を実行するpermissionがありません。",
+      resourceNotFound:
+        "対象のProject、Taskまたはchecklist itemが見つかりません。",
+      loadFailed: "チェックリストを取得できませんでした。",
+      createFailed: "チェック項目を追加できませんでした。",
+      updateFailed: "チェック項目を更新できませんでした。",
+      toggleFailed: "完了状態を更新できませんでした。",
+      reorderFailed: "チェック項目を並び替えできませんでした。",
+      deleteFailed: "チェック項目を削除できませんでした。",
+      reloadFailed:
+        "最新のチェックリストを取得できませんでした。再読込してください。",
+    },
   },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",
