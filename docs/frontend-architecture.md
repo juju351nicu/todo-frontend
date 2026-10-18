@@ -59,8 +59,10 @@ src/
 - `src/shared/components/AppAlert.vue`: 機能に依存しないアラート表示部品
 - `src/shared/components/LoadingIndicator.vue`: 機能に依存しない処理中表示部品
 - `src/shared/constants/api.ts`: 環境変数で変更可能なBackend接続先とAPIパス
+- `src/shared/constants/displayMessages.ts`: Backend本文なしでも使える型付き表示文言catalog
 - `src/shared/constants/ui.ts`: data-tableのページ表示定数
 - `src/shared/types/error.ts`: Backend共通エラー型
+- `src/shared/utils/apiError.ts`: error code／field判定と安全な表示message抽出
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
 - `src/features/dashboard/api/dashboardApi.ts`: permission別Basic Dashboardと資格境界を持つ高度Dashboard API
 - `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠、横断EVM／負荷のDashboard契約型
@@ -496,6 +498,25 @@ Stage 10D-3では、公開ログイン、保護route、認証済みDashboard、S
 業務journeyはChromiumを正本とし、browser差異を確認する土台へ限定する。Firefoxは共通認証setupを含む13件が成功した。
 Firefox／WebKit同時実行も共通setupを含む16件が成功した。毎週日曜02:00（Asia/Tokyo）または手動起動するBackend CIで
 同じsmokeを継続する。認証済みprojectはbrowserにかかわらずtraceを無効化し、Session Cookieをartifactへ保存しない。
+
+## APIエラー表示契約
+
+Stage 10E-3では、Frontend固有の固定案内を`DISPLAY_MESSAGES`へ集約し、Backend共通エラーから表示文言を取り出す
+`resolveApiErrorMessages`と、code／fieldだけで分岐する`hasApiFieldError`を追加した。Backendの`message`は表示だけに使用し、
+資格、認可、競合回復等の判断にはHTTP status、`errorCode`、`field`を使用する。入力値漏えいを前提にしないため、
+Frontendの`FieldError`から`rejectedValue`を削除した。
+
+各featureは、その画面でBackendと契約済みのerror code集合を明示する。本文なし、非JSON、空message、nullまたは未知code、
+構造不正ではBackend本文を部分表示せず、catalogの安全なfallbackを表示する。複数field errorは全codeが既知でmessageが
+空でない場合だけBackend順で表示する。401は従来どおりSessionを破棄してLoginへ戻し、bodyなし403はSession切れへ
+誤変換しない。`readErrorResponse`／`ensureSuccess`の統合は204とfile downloadを壊さない形でStage 10E-4に分離する。
+
+最初の移行対象はBasic／高度Dashboardとした。`FEATURE_NOT_ENTITLED`かつ`featureCode`だけをupgrade導線へ変換し、
+未知codeまたは本文なし403は資格不足にせず高度Dashboardの固定fallbackを表示する。404では旧横断snapshotを破棄し、
+409と通信失敗では従来どおり直前snapshotを維持する。純粋utility、Dashboard API、composableのVitestで複数field、
+未知／null code、空本文、非JSON、401／403、資格判定を固定した。未知code判定を外すmutationは対象3件が失敗し、
+復元後の対象35件と全80 test file・587 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+後続featureも同じ契約へ小さい単位で移行する。
 
 ## 変更時の確認
 

@@ -247,7 +247,7 @@ describe("useDashboardPage", () => {
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
-  it("高度Dashboardの一般403はupgradeへ誤変換せずBackend案内を表示する", async () => {
+  it("高度Dashboardの未知codeはupgradeへ誤変換せず安全なfallbackを表示する", async () => {
     const page = useDashboardPage();
     await page.loadDashboard();
     mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(
@@ -267,7 +267,51 @@ describe("useDashboardPage", () => {
     expect(page.isAdvancedNotEntitled.value).toBe(false);
     expect(page.advancedDashboard.value).toBeNull();
     expect(page.advancedErrorMessages.value).toEqual([
-      "高度Dashboardを参照する権限がありません。",
+      "高度Dashboardを取得できませんでした。",
+    ]);
+  });
+
+  it("高度Dashboardの本文なし403はSessionを維持して安全なfallbackを表示する", async () => {
+    const page = useDashboardPage();
+    await page.loadDashboard();
+    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(
+      new DashboardApiError(403, null)
+    );
+
+    await page.loadAdvancedDashboard("2026-09-22");
+
+    expect(page.advancedDashboard.value).toBeNull();
+    expect(page.advancedErrorMessages.value).toEqual([
+      "高度Dashboardを取得できませんでした。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("Dashboardの複数field errorをBackend順で表示する", async () => {
+    mocks.dashboardApi.getBasicDashboard.mockRejectedValue(
+      new DashboardApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "WBS_EVM_STATUS_DATE_REQUIRED",
+            field: "statusDate",
+            message: "基準日を入力してください。",
+          },
+          {
+            errorCode: "WBS_EVM_STATUS_DATE_BEFORE_BASELINE",
+            field: "statusDate",
+            message: "基準日を確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useDashboardPage();
+
+    await page.loadDashboard();
+
+    expect(page.errorMessages.value).toEqual([
+      "基準日を入力してください。",
+      "基準日を確認してください。",
     ]);
   });
 

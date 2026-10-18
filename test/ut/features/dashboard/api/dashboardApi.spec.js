@@ -128,4 +128,19 @@ describe("Dashboard API", () => {
       expect(error).toBeInstanceOf(DashboardApiError)
     );
   });
+
+  it("非JSONの403を本文なしのDashboardApiErrorへ変換する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("not JSON")),
+    });
+
+    await expect(
+      DashboardApi.getAdvancedDashboard("2026-09-21")
+    ).rejects.toMatchObject({
+      status: 403,
+      errorResponse: null,
+    });
+  });
 });

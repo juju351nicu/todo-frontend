@@ -15,6 +15,19 @@ import type {
 import { useUserStore } from "@/features/auth/stores/user";
 import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
+
+const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
+  "FEATURE_NOT_ENTITLED",
+  "PROJECT_NOT_FOUND",
+  "WBS_EVM_ACTIVE_BASELINE_REQUIRED",
+  "WBS_EVM_STATUS_DATE_BEFORE_BASELINE",
+  "WBS_EVM_STATUS_DATE_REQUIRED",
+]);
 
 /**
  * Basic／高度Dashboardの取得、再読込、既存業務画面への遷移を管理する。
@@ -70,16 +83,18 @@ export const useDashboardPage = () => {
   /** 高度Dashboardの安定error codeから、機能資格不足だけを判定する。 */
   const isFeatureNotEntitled = (error: DashboardApiError): boolean =>
     error.status === 403 &&
-    (error.errorResponse?.fieldErrors ?? []).some(
-      (fieldError) =>
-        fieldError.errorCode === "FEATURE_NOT_ENTITLED" &&
-        fieldError.field === "featureCode"
+    hasApiFieldError(
+      error.errorResponse,
+      "FEATURE_NOT_ENTITLED",
+      "featureCode"
     );
 
   /** 高度Dashboard APIのstatusをSession、upgrade案内、業務エラーへ分離する。 */
   const handleAdvancedApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof DashboardApiError)) {
-      advancedErrorMessages.value = ["高度Dashboardへ接続できませんでした。"];
+      advancedErrorMessages.value = [
+        DISPLAY_MESSAGES.dashboard.advancedConnectionFailed,
+      ];
       return;
     }
     if (error.status === 401) {
@@ -96,10 +111,11 @@ export const useDashboardPage = () => {
       // permissionまたはProject参照範囲が変わった後に、以前取得した横断値を画面へ残さない。
       advancedDashboard.value = null;
     }
-    const backendMessage = error.errorResponse?.fieldErrors?.[0]?.message;
-    advancedErrorMessages.value = [
-      backendMessage ?? "高度Dashboardを取得できませんでした。",
-    ];
+    advancedErrorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      DASHBOARD_ERROR_CODES,
+      DISPLAY_MESSAGES.dashboard.advancedLoadFailed
+    );
   };
 
   /**
@@ -138,7 +154,7 @@ export const useDashboardPage = () => {
   /** Dashboard APIのstatusを、認証状態を含む画面案内へ変換する。 */
   const handleApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof DashboardApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -146,10 +162,11 @@ export const useDashboardPage = () => {
       await router.push({ name: "Login" });
       return;
     }
-    const backendMessage = error.errorResponse?.fieldErrors?.[0]?.message;
-    errorMessages.value = [
-      backendMessage ?? "Dashboardを取得できませんでした。",
-    ];
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      DASHBOARD_ERROR_CODES,
+      DISPLAY_MESSAGES.dashboard.loadFailed
+    );
   };
 
   /** DashboardのTask previewから既存Board詳細へ遷移する。 */
