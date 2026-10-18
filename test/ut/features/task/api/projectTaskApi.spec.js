@@ -111,7 +111,13 @@ describe("Project Task API", () => {
 
   it("409の項目エラーを競合回復用の例外へ保持する", async () => {
     const errorResponse = {
-      fieldErrors: [{ field: "version", message: "他の操作で更新されています。" }],
+      fieldErrors: [
+        {
+          errorCode: "TASK_VERSION_CONFLICT",
+          field: "version",
+          message: "他の操作で更新されています。",
+        },
+      ],
     };
     HttpClient.putRequest.mockResolvedValue({
       ok: false,
@@ -130,5 +136,22 @@ describe("Project Task API", () => {
         version: 1,
       })
     ).rejects.toMatchObject({ status: 409, errorResponse });
+  });
+
+  it("非JSONの403本文を解析失敗させずbodyなし例外として保持する", async () => {
+    HttpClient.putRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("not json")),
+    });
+
+    await expect(
+      ProjectTaskApi.moveTask(5, 31, {
+        destinationStatusId: 12,
+        previousTaskId: null,
+        nextTaskId: null,
+        version: 4,
+      })
+    ).rejects.toMatchObject({ status: 403, errorResponse: null });
   });
 });

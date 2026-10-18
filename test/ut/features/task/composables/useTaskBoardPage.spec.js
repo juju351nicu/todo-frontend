@@ -286,7 +286,11 @@ describe("useTaskBoardPage", () => {
     mocks.projectTaskApi.updateTask.mockRejectedValue(
       new ProjectTaskApiError(409, {
         fieldErrors: [
-          { field: "version", message: "他の操作で更新されています。" },
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
         ],
       })
     );
@@ -301,6 +305,201 @@ describe("useTaskBoardPage", () => {
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
   });
 
+  it("契約済みの複数入力エラーをBackend順でtrimして表示する", async () => {
+    mocks.projectTaskApi.createTask.mockRejectedValue(
+      new ProjectTaskApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "title",
+            message: " タイトルは45文字以内で入力してください。 ",
+          },
+          {
+            errorCode: "INVALID_TASK_SCHEDULE",
+            field: "dateTo",
+            message: "期限は開始日以降の日付を指定してください。",
+          },
+        ],
+      })
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    page.openTaskCreator(11);
+    page.form.value.title = "新規Task";
+    page.form.value.detail = "詳細";
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([
+      "タイトルは45文字以内で入力してください。",
+      "期限は開始日以降の日付を指定してください。",
+    ]);
+    expect(page.isEditorOpen.value).toBe(true);
+  });
+
+  it("未知codeのBackend messageを表示せずTask保存fallbackへ閉じる", async () => {
+    mocks.projectTaskApi.updateTask.mockRejectedValue(
+      new ProjectTaskApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "INTERNAL_TASK_DETAIL",
+            field: "taskId",
+            message: "内部Task情報を含む文言",
+          },
+        ],
+      })
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([
+      "Taskを保存できませんでした。",
+    ]);
+    expect(page.errorMessages.value).not.toContain("内部Task情報を含む文言");
+  });
+
+  it("本文なし403はSessionを維持してTask操作権限不足を表示する", async () => {
+    mocks.projectTaskApi.updateTask.mockRejectedValue(
+      new ProjectTaskApiError(403, null)
+    );
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([
+      "このTask操作を実行するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("Task保存確定後のBoard再取得失敗を保存失敗として誤表示しない", async () => {
+    mocks.projectApi.getProject
+      .mockResolvedValueOnce(structuredClone(project))
+      .mockRejectedValueOnce(new TypeError("network"));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.successMessage.value).toBe("Taskを更新しました。");
+    expect(page.errorMessages.value).toEqual([
+      "Taskは保存されましたが、最新のProject Boardを取得できませんでした。",
+    ]);
+    expect(page.errorMessages.value).not.toContain("Taskを保存できませんでした。");
+  });
+
+  it("Task保存確定後のBoard再取得401は古い画面を破棄してLoginへ戻る", async () => {
+    mocks.projectApi.getProject
+      .mockResolvedValueOnce(structuredClone(project))
+      .mockRejectedValueOnce(new ProjectApiError(401, null));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.project.value).toBeNull();
+    expect(page.board.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it.each([
+    [403, "Project BoardまたはTaskを参照するpermissionがありません。"],
+    [404, "対象のProjectまたはTaskが見つかりません。"],
+  ])(
+    "409回復中の%dは古い競合案内より現在の参照状態を優先する",
+    async (status, expectedMessage) => {
+      mocks.projectTaskApi.updateTask.mockRejectedValue(
+        new ProjectTaskApiError(409, {
+          fieldErrors: [
+            {
+              errorCode: "TASK_VERSION_CONFLICT",
+              field: "version",
+              message: "Taskが先に更新されています。",
+            },
+          ],
+        })
+      );
+      mocks.projectApi.getProject
+        .mockResolvedValueOnce(structuredClone(project))
+        .mockRejectedValueOnce(new ProjectApiError(status, null));
+      const page = useTaskBoardPage();
+      await page.initialize();
+      await page.openTaskEditor(31);
+
+      await page.saveTask();
+
+      expect(page.errorMessages.value).toEqual([expectedMessage]);
+      expect(page.project.value).toBeNull();
+      expect(page.board.value).toBeNull();
+      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    }
+  );
+
+  it("409回復中の401は競合案内と古いBoardを破棄してLoginへ戻る", async () => {
+    mocks.projectTaskApi.updateTask.mockRejectedValue(
+      new ProjectTaskApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "Taskが先に更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.projectApi.getProject
+      .mockResolvedValueOnce(structuredClone(project))
+      .mockRejectedValueOnce(new ProjectApiError(401, null));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.project.value).toBeNull();
+    expect(page.board.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409回復の通信失敗では競合理由を維持して再取得失敗を追加する", async () => {
+    mocks.projectTaskApi.updateTask.mockRejectedValue(
+      new ProjectTaskApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "Taskが先に更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.projectApi.getProject
+      .mockResolvedValueOnce(structuredClone(project))
+      .mockRejectedValueOnce(new TypeError("network"));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    await page.saveTask();
+
+    expect(page.errorMessages.value).toEqual([
+      "Taskが先に更新されています。",
+      "最新のProject Boardを再取得できませんでした。",
+    ]);
+  });
+
   it("401はSessionを破棄してログインへ戻す", async () => {
     mocks.projectApi.getProject.mockRejectedValue(new ProjectApiError(401, null));
     const page = useTaskBoardPage();
@@ -309,6 +508,22 @@ describe("useTaskBoardPage", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("Board取得の本文なし403は古い画面を破棄して参照権限不足を表示する", async () => {
+    mocks.projectApi.getTaskBoard.mockRejectedValue(
+      new ProjectApiError(403, null)
+    );
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "Project BoardまたはTaskを参照するpermissionがありません。",
+    ]);
+    expect(page.project.value).toBeNull();
+    expect(page.board.value).toBeNull();
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
   it("MEMBERはTASK_MOVE permissionを持っていてもドラッグできない", async () => {
@@ -381,6 +596,26 @@ describe("useTaskBoardPage", () => {
     expect(page.successMessage.value).toBe("Taskをアーカイブしました。");
   });
 
+  it("archive確定後のBoard再取得失敗をarchive失敗として誤表示しない", async () => {
+    mocks.projectApi.getProject
+      .mockResolvedValueOnce(structuredClone(ownerProject))
+      .mockRejectedValueOnce(new TypeError("network"));
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+    page.openArchiveConfirm();
+
+    await page.archiveTask();
+
+    expect(page.successMessage.value).toBe("Taskをアーカイブしました。");
+    expect(page.errorMessages.value).toEqual([
+      "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
+    ]);
+    expect(page.errorMessages.value).not.toContain(
+      "Taskをアーカイブできませんでした。"
+    );
+  });
+
   it("archive実行中の再実行ではDELETE APIを二重送信しない", async () => {
     let resolveRequest;
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
@@ -405,7 +640,11 @@ describe("useTaskBoardPage", () => {
     mocks.projectTaskApi.archiveTask.mockRejectedValue(
       new ProjectTaskApiError(409, {
         fieldErrors: [
-          { field: "version", message: "Taskが先に更新されています。" },
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "Taskが先に更新されています。",
+          },
         ],
       })
     );
@@ -522,7 +761,11 @@ describe("useTaskBoardPage", () => {
     mocks.projectTaskApi.moveTask.mockRejectedValue(
       new ProjectTaskApiError(409, {
         fieldErrors: [
-          { field: "version", message: "移動中にTaskが更新されました。" },
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "移動中にTaskが更新されました。",
+          },
         ],
       })
     );
@@ -572,7 +815,7 @@ describe("useTaskBoardPage", () => {
 
     expect(page.board.value).toEqual(beforeDrag);
     expect(page.errorMessages.value).toEqual([
-      "この操作を実行するpermissionがありません。",
+      "このTask操作を実行するpermissionがありません。",
     ]);
   });
 
@@ -584,7 +827,11 @@ describe("useTaskBoardPage", () => {
     mocks.projectTaskApi.moveTask.mockRejectedValue(
       new ProjectTaskApiError(409, {
         fieldErrors: [
-          { field: "version", message: "移動中にTaskが更新されました。" },
+          {
+            errorCode: "TASK_POSITION_CONFLICT",
+            field: "version",
+            message: "移動中にTaskが更新されました。",
+          },
         ],
       })
     );

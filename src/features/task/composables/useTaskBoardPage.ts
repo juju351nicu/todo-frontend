@@ -17,6 +17,12 @@ import type {
 import ProjectTaskApi, {
   ProjectTaskApiError,
 } from "@/features/task/api/projectTaskApi";
+import {
+  TASK_BOARD_ERROR_CODES,
+  TASK_BOARD_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface TaskForm {
   taskId: number | null;
@@ -45,6 +51,12 @@ interface TaskDragChangeEvent {
   moved?: TaskDragChangeDetail;
   removed?: TaskDragChangeDetail;
 }
+
+type TaskBoardApiError = ProjectApiError | ProjectTaskApiError;
+
+/** Board画面で扱うProject／Task API例外か判定する。 */
+const isTaskBoardApiError = (error: unknown): error is TaskBoardApiError =>
+  error instanceof ProjectApiError || error instanceof ProjectTaskApiError;
 
 /** キーボードから指定できるTaskの移動方向。 */
 export type TaskMoveDirection = "UP" | "DOWN" | "LEFT" | "RIGHT";
@@ -252,7 +264,7 @@ export const useTaskBoardPage = () => {
         await openTaskEditor(requestedTaskId.value);
       }
     } catch (error: unknown) {
-      await handleApiError(error, "Project Boardを取得できませんでした。");
+      await handleBoardReadError(error, DISPLAY_MESSAGES.task.board.loadFailed);
     } finally {
       isLoading.value = false;
     }
@@ -293,7 +305,11 @@ export const useTaskBoardPage = () => {
       form.value = buildTaskForm(task);
       isEditorOpen.value = true;
     } catch (error: unknown) {
-      await handleApiError(error, "Task詳細を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.task.board.detailLoadFailed,
+        DISPLAY_MESSAGES.task.board.readForbidden
+      );
     } finally {
       isLoadingTask.value = false;
     }
@@ -403,23 +419,37 @@ export const useTaskBoardPage = () => {
           projectId.value,
           buildTaskCreateRequest()
         );
-        successMessage.value = "Taskを登録しました。";
       } else {
         await ProjectTaskApi.updateTask(
           projectId.value,
           taskId,
           buildTaskUpdateRequest()
         );
-        successMessage.value = "Taskを更新しました。";
       }
-      closeTaskEditorAfterSaving();
+    } catch (error: unknown) {
+      try {
+        await handleApiError(error, DISPLAY_MESSAGES.task.board.saveFailed);
+        if (error instanceof ProjectTaskApiError && error.status === 409) {
+          closeTaskEditorAfterSaving();
+          await reloadBoardAfterConflict();
+        }
+      } finally {
+        isSaving.value = false;
+      }
+      return;
+    }
+
+    closeTaskEditorAfterSaving();
+    successMessage.value =
+      taskId === null ? "Taskを登録しました。" : "Taskを更新しました。";
+    try {
       await loadBoardData();
     } catch (error: unknown) {
-      await handleApiError(error, "Taskを保存できませんでした。");
-      if (error instanceof ProjectTaskApiError && error.status === 409) {
-        closeTaskEditorAfterSaving();
-        await reloadBoardAfterConflict();
-      }
+      // Task更新は確定済みのため、再取得失敗を保存失敗として誤表示しない。
+      await handleConfirmedBoardRefreshError(
+        error,
+        DISPLAY_MESSAGES.task.board.savedRefreshFailed
+      );
     } finally {
       isSaving.value = false;
     }
@@ -469,24 +499,31 @@ export const useTaskBoardPage = () => {
     successMessage.value = "";
     try {
       await ProjectTaskApi.archiveTask(projectId.value, taskId, version);
-      isArchiveConfirmOpen.value = false;
-      closeTaskEditorAfterSaving();
-      successMessage.value = "Taskをアーカイブしました。";
-      try {
-        await loadBoardData();
-      } catch (_error: unknown) {
-        // archive自体は確定済みのため、再実行を促さずBoard再読込だけを案内する。
-        errorMessages.value = [
-          "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
-        ];
-      }
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
-      await handleApiError(error, "Taskをアーカイブできませんでした。");
-      if (error instanceof ProjectTaskApiError && error.status === 409) {
-        closeTaskEditorAfterSaving();
-        await reloadBoardAfterConflict();
+      try {
+        await handleApiError(error, DISPLAY_MESSAGES.task.board.archiveFailed);
+        if (error instanceof ProjectTaskApiError && error.status === 409) {
+          closeTaskEditorAfterSaving();
+          await reloadBoardAfterConflict();
+        }
+      } finally {
+        isArchiving.value = false;
       }
+      return;
+    }
+
+    isArchiveConfirmOpen.value = false;
+    closeTaskEditorAfterSaving();
+    successMessage.value = "Taskをアーカイブしました。";
+    try {
+      await loadBoardData();
+    } catch (error: unknown) {
+      // archive自体は確定済みのため、再実行を促さずBoard再読込だけを案内する。
+      await handleConfirmedBoardRefreshError(
+        error,
+        DISPLAY_MESSAGES.task.board.archivedRefreshFailed
+      );
     } finally {
       isArchiving.value = false;
     }
@@ -559,7 +596,7 @@ export const useTaskBoardPage = () => {
       successMessage.value = "Taskを移動しました。";
     } catch (error: unknown) {
       restoreBoardSnapshot(snapshot);
-      await handleApiError(error, "Taskを移動できませんでした。");
+      await handleApiError(error, DISPLAY_MESSAGES.task.board.moveFailed);
       if (error instanceof ProjectTaskApiError && error.status === 409) {
         await reloadBoardAfterConflict();
       }
@@ -686,41 +723,106 @@ export const useTaskBoardPage = () => {
     );
   };
 
-  /** 競合後に最新Boardを取得し、古いversionを画面へ残さない。 */
+  /** 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。 */
   const reloadBoardAfterConflict = async (): Promise<void> => {
+    const messagesBeforeReload = [...errorMessages.value];
     try {
       await loadBoardData();
-    } catch (_error: unknown) {
-      errorMessages.value.push("最新のProject Boardを再取得できませんでした。");
+    } catch (error: unknown) {
+      if (
+        isTaskBoardApiError(error) &&
+        TASK_BOARD_RECOVERY_PRIORITY_STATUSES.has(error.status)
+      ) {
+        await handleBoardReadError(
+          error,
+          DISPLAY_MESSAGES.task.board.reloadFailed
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.task.board.reloadFailed,
+      ];
     }
+  };
+
+  /** 認証・公開範囲を失った画面から古いBoard、Dialog、楽観表示を破棄する。 */
+  const clearBoardState = (): void => {
+    board.value = null;
+    project.value = null;
+    dragSnapshot.value = null;
+    closeTaskEditorAfterSaving();
+  };
+
+  /** Session失効時に古いBoardとメッセージを破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (): Promise<void> => {
+    errorMessages.value = [];
+    successMessage.value = "";
+    clearBoardState();
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+  };
+
+  /** Board再取得で参照不可になった場合に、古い画面状態を残さずreadエラーへ変換する。 */
+  const handleBoardReadError = async (
+    error: unknown,
+    fallbackMessage: string
+  ): Promise<void> => {
+    if (
+      isTaskBoardApiError(error) &&
+      (error.status === 403 || error.status === 404)
+    ) {
+      clearBoardState();
+    }
+    await handleApiError(
+      error,
+      fallbackMessage,
+      DISPLAY_MESSAGES.task.board.readForbidden
+    );
+  };
+
+  /** 確定済みTask操作後のBoard再取得失敗を、操作失敗と区別して表示する。 */
+  const handleConfirmedBoardRefreshError = async (
+    error: unknown,
+    fallbackMessage: string
+  ): Promise<void> => {
+    if (
+      isTaskBoardApiError(error) &&
+      TASK_BOARD_RECOVERY_PRIORITY_STATUSES.has(error.status)
+    ) {
+      await handleBoardReadError(error, fallbackMessage);
+      return;
+    }
+    errorMessages.value = [fallbackMessage];
   };
 
   /** Project・Task APIのstatusと項目エラーを画面動作へ変換する。 */
   const handleApiError = async (
     error: unknown,
-    fallbackMessage: string
+    fallbackMessage: string,
+    forbiddenMessage: string = DISPLAY_MESSAGES.task.board.operationForbidden
   ): Promise<void> => {
-    if (!(error instanceof ProjectApiError) && !(error instanceof ProjectTaskApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+    if (!isTaskBoardApiError(error)) {
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["この操作を実行するpermissionがありません。"];
+      errorMessages.value = [forbiddenMessage];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = ["対象のProjectまたはTaskが見つかりません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.task.board.resourceNotFound];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_BOARD_ERROR_CODES,
+      fallbackMessage
     );
-    errorMessages.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
   /** 選択中Taskを保ったままWBSへ遷移し、既存の日別実績入力Dialogを開く。 */

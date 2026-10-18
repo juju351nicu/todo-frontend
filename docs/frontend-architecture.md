@@ -558,6 +558,15 @@ field不一致の403はpermission不足としてSessionを維持する。404／4
 mutationは意図した回帰1件が失敗し、復元後のProject Template関連3 file・32件と全80 test file・658 Vitest、
 TypeScript／Vue／E2E型検査、production buildが成功した。次はBoard／Task coreを同じ契約へ移行する。
 
+続いてBoard／Task coreの一覧、詳細、作成、更新、移動、archiveを移行した。共通Bean Validationを含む契約済み11
+error codeだけから複数messageをBackend順で表示し、未知／null code、空message、構造不正、本文なし、非JSONは
+操作別fallbackへ閉じる。本文なし403はSessionを維持し、参照と更新の固定案内を分離した。保存またはarchiveが
+確定した後のBoard再取得失敗は操作失敗と区別し、二重実行を促さない。409回復中の401／403／404は古い競合案内より
+現在の認証・認可・公開範囲を優先し、古いBoard、Project、Dialogを破棄する。通信失敗では競合理由と再取得失敗を
+併記する。401優先statusを一時的に外したmutationでは、確定済み保存後と409回復中の2件が意図どおり失敗した。
+復元後の対象2 test file・46件と全80 test file・670 Vitest、TypeScript／Vue／E2E型検査、
+production buildが成功した。次はTaskコメント／checklistを同じ契約へ移行する。
+
 ## 変更時の確認
 
 ```bash

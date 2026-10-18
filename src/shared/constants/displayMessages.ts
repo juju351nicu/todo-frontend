@@ -74,6 +74,24 @@ export const DISPLAY_MESSAGES = {
         "最新のProject Templateを再取得できませんでした。再読込してください。",
     },
   },
+  task: {
+    board: {
+      readForbidden:
+        "Project BoardまたはTaskを参照するpermissionがありません。",
+      operationForbidden: "このTask操作を実行するpermissionがありません。",
+      resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
+      loadFailed: "Project Boardを取得できませんでした。",
+      detailLoadFailed: "Task詳細を取得できませんでした。",
+      saveFailed: "Taskを保存できませんでした。",
+      savedRefreshFailed:
+        "Taskは保存されましたが、最新のProject Boardを取得できませんでした。",
+      archiveFailed: "Taskをアーカイブできませんでした。",
+      archivedRefreshFailed:
+        "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
+      moveFailed: "Taskを移動できませんでした。",
+      reloadFailed: "最新のProject Boardを再取得できませんでした。",
+    },
+  },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",
     startFailed: "TaskのTimerを開始できませんでした。",
