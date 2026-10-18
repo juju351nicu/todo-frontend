@@ -22,7 +22,13 @@ import {
   buildAttendanceCorrectionRequest,
   validateAttendanceCorrectionForm,
 } from "@/features/attendance/utils/attendanceCorrection";
+import {
+  ATTENDANCE_ERROR_CODES,
+  ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
   "clock-in": "出勤を記録しました。",
@@ -159,7 +165,10 @@ export const useAttendancePage = () => {
       successMessage.value = PUNCH_SUCCESS_MESSAGES[action];
       await loadMonthDays();
     } catch (error: unknown) {
-      await handleApiError(error, "打刻を確定できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.punchFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 競合後のボタン状態を推測せず、Backendの最新状態へ戻す。
         await reloadAfterConflict();
@@ -185,7 +194,10 @@ export const useAttendancePage = () => {
       monthDays.value = monthSummary.value.days;
       successMessage.value = "月次勤怠を提出しました。";
     } catch (error: unknown) {
-      await handleApiError(error, "月次勤怠を提出できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.submitMonthFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         await reloadAfterConflict();
       }
@@ -310,7 +322,10 @@ export const useAttendancePage = () => {
       isCorrectionDialogOpen.value = false;
       successMessage.value = "勤怠修正を申請しました。";
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠修正を申請できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.correctionRequestFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         await reloadAfterConflict();
       }
@@ -340,7 +355,10 @@ export const useAttendancePage = () => {
       await loadCorrectionRequests();
       successMessage.value = "勤怠修正申請を取り消しました。";
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠修正申請を取り消せませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.correctionCancelFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         await reloadAfterConflict();
       }
@@ -372,7 +390,10 @@ export const useAttendancePage = () => {
       monthSummary.value = monthResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠情報を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.loadFailed
+      );
     } finally {
       isLoadingMonth.value = false;
       isLoadingDay.value = false;
@@ -391,7 +412,10 @@ export const useAttendancePage = () => {
       monthDays.value = listResponse.days;
       monthSummary.value = monthResponse;
     } catch (error: unknown) {
-      await handleApiError(error, "月間勤怠を更新できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.monthRefreshFailed
+      );
     } finally {
       isLoadingMonth.value = false;
     }
@@ -413,7 +437,10 @@ export const useAttendancePage = () => {
       selectedDay.value = dayResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
     } catch (error: unknown) {
-      await handleApiError(error, "選択日の勤怠を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.self.dayLoadFailed
+      );
     } finally {
       isLoadingDay.value = false;
     }
@@ -427,7 +454,10 @@ export const useAttendancePage = () => {
     correctionRequests.value = response.correctionRequests;
   };
 
-  /** 409後に月一覧と選択日を再取得し、次に可能な打刻操作を確定する。 */
+  /**
+   * 409後に月一覧と選択日を再取得し、次に可能な打刻操作を確定する。
+   * 認証・認可・公開範囲の変化は優先し、それ以外の再取得失敗では最初の競合理由を維持する。
+   */
   const reloadAfterConflict = async (): Promise<void> => {
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
@@ -442,8 +472,17 @@ export const useAttendancePage = () => {
       selectedDay.value = dayResponse;
       monthSummary.value = monthResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
-    } catch (_refreshError: unknown) {
-      // 最初の409理由を残し、復旧取得失敗による曖昧な上書きを避ける。
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof AttendanceApiError &&
+        ATTENDANCE_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        // Session・permission・公開範囲の変化は、古い409より新しい取得結果を優先する。
+        await handleApiError(
+          refreshError,
+          DISPLAY_MESSAGES.attendance.self.loadFailed
+        );
+      }
     }
   };
 
@@ -453,27 +492,30 @@ export const useAttendancePage = () => {
     fallbackMessage: string
   ): Promise<void> => {
     if (!(error instanceof AttendanceApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
+      errorMessages.value = [];
       userStore.clearSession();
       await router.push({ name: "Login" });
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["本人勤怠を操作するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.attendance.self.forbidden];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = ["勤怠対象のアカウントが見つかりません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.attendance.self.accountNotFound,
+      ];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      ATTENDANCE_ERROR_CODES,
+      fallbackMessage
     );
-    errorMessages.value =
-      fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
   return {

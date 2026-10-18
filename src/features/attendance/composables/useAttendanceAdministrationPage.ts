@@ -17,7 +17,13 @@ import {
   buildAttendanceMonthDateRange,
   getTodayInTokyo,
 } from "@/features/attendance/utils/attendance";
+import {
+  ATTENDANCE_ERROR_CODES,
+  ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** 管理一覧の状態絞込み選択肢。空文字は全状態を表す。 */
 export const ATTENDANCE_MONTH_STATUS_OPTIONS = [
@@ -208,7 +214,10 @@ export const useAttendanceAdministrationPage = () => {
         currentMonth.days.find((day) => day.workDate === request.workDate) ??
         null;
     } catch (error: unknown) {
-      await handleApiError(error, "修正対象の現在勤怠を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.correctionCurrentLoadFailed
+      );
     } finally {
       isLoadingDetail.value = false;
     }
@@ -344,7 +353,10 @@ export const useAttendanceAdministrationPage = () => {
       );
       months.value = response.months;
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠月一覧を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.monthListLoadFailed
+      );
     } finally {
       isLoadingList.value = false;
     }
@@ -363,7 +375,10 @@ export const useAttendanceAdministrationPage = () => {
       );
       correctionRequests.value = response.correctionRequests;
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠修正申請一覧を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.correctionListLoadFailed
+      );
     } finally {
       isLoadingCorrections.value = false;
     }
@@ -382,7 +397,10 @@ export const useAttendanceAdministrationPage = () => {
         selectedMonth.value
       );
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠月詳細を取得できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.monthDetailLoadFailed
+      );
     } finally {
       isLoadingDetail.value = false;
     }
@@ -407,12 +425,14 @@ export const useAttendanceAdministrationPage = () => {
       successMessage.value = message;
       await loadMonths();
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠月の状態を更新できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.monthUpdateFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         // version競合後は古い画面値で再実行させず、最新詳細と一覧へ戻す。
         const conflictMessages = [...errorMessages.value];
-        await Promise.all([loadSelectedDetail(), loadMonths()]);
-        errorMessages.value = conflictMessages;
+        await reloadMonthAfterConflict(conflictMessages);
       }
     } finally {
       processingAction.value = null;
@@ -448,14 +468,14 @@ export const useAttendanceAdministrationPage = () => {
           ) ?? null;
       }
     } catch (error: unknown) {
-      await handleApiError(error, "勤怠修正申請を審査できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.attendance.administration.correctionReviewFailed
+      );
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 同時審査後は古いversionを再送せず、対象状態の一覧から選択し直させる。
         const conflictMessages = [...errorMessages.value];
-        await loadCorrectionRequests();
-        selectedCorrection.value = null;
-        selectedCorrectionCurrentDay.value = null;
-        errorMessages.value = conflictMessages;
+        await reloadCorrectionsAfterConflict(conflictMessages);
       }
     } finally {
       processingAction.value = null;
@@ -468,51 +488,123 @@ export const useAttendanceAdministrationPage = () => {
     fallbackMessage: string
   ): Promise<void> => {
     if (!(error instanceof AttendanceApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
+      errorMessages.value = [];
       userStore.clearSession();
       await router.push({ name: "Login" });
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["勤怠月を参照または更新するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.attendance.administration.forbidden,
+      ];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = ["対象のアカウントまたは勤怠月が見つかりません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.attendance.administration.resourceNotFound,
+      ];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      ATTENDANCE_ERROR_CODES,
+      fallbackMessage
     );
-    errorMessages.value =
-      fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
   /** 月次CSV固有の認可失敗と入力エラーを利用者向けの回復手順へ変換する。 */
   const handleMonthlyExportError = async (error: unknown): Promise<void> => {
     if (!(error instanceof AttendanceApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
+      errorMessages.value = [];
       userStore.clearSession();
       await router.push({ name: "Login" });
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["月次勤怠CSVを出力するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.attendance.administration.exportForbidden,
+      ];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      ATTENDANCE_ERROR_CODES,
+      DISPLAY_MESSAGES.attendance.administration.exportFailed
     );
-    errorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["月次勤怠CSVを出力できませんでした。"];
+  };
+
+  /** 409後に選択月詳細と現在の一覧条件を再取得し、古いversionを破棄する。 */
+  const reloadMonthAfterConflict = async (
+    conflictMessages: string[]
+  ): Promise<void> => {
+    const accountId = selectedAccountId.value;
+    if (accountId === null) {
+      errorMessages.value = conflictMessages;
+      return;
+    }
+    try {
+      const [detail, listResponse] = await Promise.all([
+        AttendanceApi.getAdministrationMonth(accountId, selectedMonth.value),
+        AttendanceApi.getAdministrationMonths(
+          selectedMonth.value,
+          selectedStatus.value || null
+        ),
+      ]);
+      selectedDetail.value = detail;
+      months.value = listResponse.months;
+      errorMessages.value = conflictMessages;
+    } catch (refreshError: unknown) {
+      await handleConflictRefreshError(
+        refreshError,
+        conflictMessages,
+        DISPLAY_MESSAGES.attendance.administration.monthUpdateFailed
+      );
+    }
+  };
+
+  /** 409後に修正申請一覧を再取得し、同時審査前の選択状態を破棄する。 */
+  const reloadCorrectionsAfterConflict = async (
+    conflictMessages: string[]
+  ): Promise<void> => {
+    selectedCorrection.value = null;
+    selectedCorrectionCurrentDay.value = null;
+    try {
+      const response = await AttendanceApi.getAdministrationCorrectionRequests(
+        selectedCorrectionStatus.value
+      );
+      correctionRequests.value = response.correctionRequests;
+      errorMessages.value = conflictMessages;
+    } catch (refreshError: unknown) {
+      await handleConflictRefreshError(
+        refreshError,
+        conflictMessages,
+        DISPLAY_MESSAGES.attendance.administration.correctionReviewFailed
+      );
+    }
+  };
+
+  /** 409回復時の認証・認可・公開範囲変化だけを古い競合案内より優先する。 */
+  const handleConflictRefreshError = async (
+    refreshError: unknown,
+    conflictMessages: string[],
+    fallbackMessage: string
+  ): Promise<void> => {
+    if (
+      refreshError instanceof AttendanceApiError &&
+      ATTENDANCE_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+    ) {
+      await handleApiError(refreshError, fallbackMessage);
+      return;
+    }
+    errorMessages.value = conflictMessages;
   };
 
   return {

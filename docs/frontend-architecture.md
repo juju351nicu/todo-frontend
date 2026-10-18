@@ -523,7 +523,14 @@ Frontendの`FieldError`から`rejectedValue`を削除した。
 複数message、401／403／404、pagingとDialog状態をVitestで固定した。再取得失敗時は成功済みと案内せず、通信またはAPIの
 再取得エラーを保持する。409のfield対応を誤らせるmutationは期待文言との差で失敗し、復元後の対象50件と
 全80 test file・606 Vitest、型検査、production buildが成功した。
-後続featureも同じ契約へ小さい単位で移行する。
+
+続いてAttendanceの本人画面、管理画面、月次CSV出力を移行した。feature内で契約済み36 error codeを明示し、契約済みの
+複数messageだけをBackend順で表示する。本文なし／非JSONの403はSession失効へ誤変換せず、本人操作、管理操作、CSV出力の
+固定案内へ分けた。404もBackend本文へ依存せず、本人対象なしと管理対象なしを画面契約として固定した。409後は最新状態を
+再取得するが、回復中の401／403／404は古い競合案内より優先し、通信失敗等では最初の競合理由を維持する。CSVのbinary
+Response解析は通常JSON APIと統合せず、downloadと一時URL解放の既存契約を維持した。409回復の401優先判定を外すmutationは
+本人打刻、月次更新、修正審査の3件が古い競合文言を検出して失敗し、復元後の関連4 file・63件と全80 test file・623 Vitest、
+型検査、production buildが成功した。次はWBSを同じ契約へ移行する。
 
 ## 変更時の確認
 

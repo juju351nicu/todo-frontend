@@ -304,6 +304,142 @@ describe("useAttendanceAdministrationPage", () => {
     ]);
   });
 
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    mocks.attendanceApi.getAdministrationMonths.mockRejectedValueOnce(
+      new AttendanceApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_YEAR_MONTH_REQUIRED",
+            field: "yearMonth",
+            message: " 対象月を入力してください。 ",
+          },
+          {
+            errorCode: "ATTENDANCE_DATE_RANGE_INVALID",
+            field: "dateTo",
+            message: "対象期間を確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.search();
+
+    expect(page.errorMessages.value).toEqual([
+      "対象月を入力してください。",
+      "対象期間を確認してください。",
+    ]);
+  });
+
+  it("未知codeのBackend messageを表示せず管理一覧のfallbackへ閉じる", async () => {
+    mocks.attendanceApi.getAdministrationMonths.mockRejectedValueOnce(
+      new AttendanceApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_ATTENDANCE_ERROR",
+            field: "request",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.search();
+
+    expect(page.errorMessages.value).toEqual([
+      "勤怠月一覧を取得できませんでした。",
+    ]);
+  });
+
+  it("本文なし403ではSessionを維持して管理勤怠の権限不足を表示する", async () => {
+    mocks.attendanceApi.getAdministrationMonth.mockRejectedValueOnce(
+      new AttendanceApiError(403, null)
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.selectMonth(listItem);
+
+    expect(page.errorMessages.value).toEqual([
+      "勤怠月を参照または更新するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("404ではBackend本文に依存せず管理対象なしを表示する", async () => {
+    mocks.attendanceApi.getAdministrationMonth.mockRejectedValueOnce(
+      new AttendanceApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_MONTH_NOT_FOUND",
+            field: "attendanceMonthId",
+            message: "localeで変化する対象なし文言",
+          },
+        ],
+      })
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.selectMonth(listItem);
+
+    expect(page.errorMessages.value).toEqual([
+      "対象のアカウントまたは勤怠月が見つかりません。",
+    ]);
+  });
+
+  it("月次409後の再取得で401になった場合は競合案内を残さずSessionを破棄する", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.selectMonth(listItem);
+    mocks.attendanceApi.approveMonth.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_MONTH_VERSION_CONFLICT",
+            field: "version",
+            message: "ほかの利用者が更新しました。",
+          },
+        ],
+      })
+    );
+    mocks.attendanceApi.getAdministrationMonth.mockRejectedValueOnce(
+      new AttendanceApiError(401, null)
+    );
+
+    await page.approve();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("修正審査409後の再取得で401になった場合も競合案内を残さない", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.initialize();
+    await page.selectCorrectionRequest(correctionRequest);
+    mocks.attendanceApi.approveCorrectionRequest.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_CORRECTION_VERSION_CONFLICT",
+            field: "version",
+            message: "ほかの利用者が審査しました。",
+          },
+        ],
+      })
+    );
+    mocks.attendanceApi.getAdministrationCorrectionRequests.mockRejectedValueOnce(
+      new AttendanceApiError(401, null)
+    );
+
+    await page.approveCorrectionRequest();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.selectedCorrection.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
   it("ATTENDANCE_EXPORTを持つ管理者は選択月CSVを1回保存して一時URLを解放する", async () => {
     const page = useAttendanceAdministrationPage();
     page.selectedMonth.value = "2026-09";
@@ -378,6 +514,61 @@ describe("useAttendanceAdministrationPage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(mocks.createObjectUrl).not.toHaveBeenCalled();
+  });
+
+  it("月次CSVの本文なし403をSession失効にせず権限不足として表示する", async () => {
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockRejectedValue(
+      new AttendanceApiError(403, null)
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.downloadMonthlyCsv();
+
+    expect(page.errorMessages.value).toEqual([
+      "月次勤怠CSVを出力するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("月次CSVの契約済み409 messageを表示する", async () => {
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_EXPORT_ROW_LIMIT_EXCEEDED",
+            field: "yearMonth",
+            message: "出力上限を超えています。",
+          },
+        ],
+      })
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.downloadMonthlyCsv();
+
+    expect(page.errorMessages.value).toEqual(["出力上限を超えています。"]);
+  });
+
+  it("月次CSVの未知codeは出力用fallbackへ閉じる", async () => {
+    mocks.attendanceApi.downloadAdministrationMonthlyCsv.mockRejectedValue(
+      new AttendanceApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_EXPORT_ERROR",
+            field: "export",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const page = useAttendanceAdministrationPage();
+
+    await page.downloadMonthlyCsv();
+
+    expect(page.errorMessages.value).toEqual([
+      "月次勤怠CSVを出力できませんでした。",
+    ]);
   });
 
   it("ATTENDANCE_EXPORTがない利用者は月次CSV APIを呼べない", async () => {

@@ -13,6 +13,32 @@ export const DISPLAY_MESSAGES = {
     advancedConnectionFailed: "高度Dashboardへ接続できませんでした。",
     advancedLoadFailed: "高度Dashboardを取得できませんでした。",
   },
+  attendance: {
+    self: {
+      forbidden: "本人勤怠を操作するpermissionがありません。",
+      accountNotFound: "勤怠対象のアカウントが見つかりません。",
+      punchFailed: "打刻を確定できませんでした。",
+      submitMonthFailed: "月次勤怠を提出できませんでした。",
+      correctionRequestFailed: "勤怠修正を申請できませんでした。",
+      correctionCancelFailed: "勤怠修正申請を取り消せませんでした。",
+      loadFailed: "勤怠情報を取得できませんでした。",
+      monthRefreshFailed: "月間勤怠を更新できませんでした。",
+      dayLoadFailed: "選択日の勤怠を取得できませんでした。",
+    },
+    administration: {
+      forbidden: "勤怠月を参照または更新するpermissionがありません。",
+      resourceNotFound: "対象のアカウントまたは勤怠月が見つかりません。",
+      correctionCurrentLoadFailed:
+        "修正対象の現在勤怠を取得できませんでした。",
+      monthListLoadFailed: "勤怠月一覧を取得できませんでした。",
+      correctionListLoadFailed: "勤怠修正申請一覧を取得できませんでした。",
+      monthDetailLoadFailed: "勤怠月詳細を取得できませんでした。",
+      monthUpdateFailed: "勤怠月の状態を更新できませんでした。",
+      correctionReviewFailed: "勤怠修正申請を審査できませんでした。",
+      exportForbidden: "月次勤怠CSVを出力するpermissionがありません。",
+      exportFailed: "月次勤怠CSVを出力できませんでした。",
+    },
+  },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",
     startFailed: "TaskのTimerを開始できませんでした。",

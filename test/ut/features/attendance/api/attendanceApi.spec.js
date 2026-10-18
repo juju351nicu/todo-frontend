@@ -213,6 +213,20 @@ describe("本人勤怠API", () => {
     );
   });
 
+  it.each([
+    ["本文なし", ""],
+    ["非JSON本文", "Forbidden"],
+  ])("%sの403を本文なしAPI例外へ変換する", async (_condition, body) => {
+    HttpClient.getRequest.mockResolvedValue(
+      new Response(body, { status: 403 })
+    );
+
+    await expect(AttendanceApi.getDay("2026-09-06")).rejects.toMatchObject({
+      status: 403,
+      errorResponse: null,
+    });
+  });
+
   it("本人月次を取得しnullable項目と日別配列を正規化する", async () => {
     HttpClient.getRequest.mockResolvedValue({
       ok: true,

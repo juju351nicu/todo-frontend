@@ -315,6 +315,143 @@ describe("useAttendancePage", () => {
     expect(mocks.attendanceApi.getOwnCorrectionRequests).toHaveBeenCalledTimes(2);
   });
 
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.submitMonth.mockRejectedValue(
+      new AttendanceApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_YEAR_MONTH_REQUIRED",
+            field: "yearMonth",
+            message: " 対象月を入力してください。 ",
+          },
+          {
+            errorCode: "ATTENDANCE_VERSION_REQUIRED",
+            field: "version",
+            message: "versionを確認してください。",
+          },
+        ],
+      })
+    );
+
+    await page.submitMonth();
+
+    expect(page.errorMessages.value).toEqual([
+      "対象月を入力してください。",
+      "versionを確認してください。",
+    ]);
+  });
+
+  it("未知codeのBackend messageを表示せず本人操作のfallbackへ閉じる", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.punch.mockRejectedValue(
+      new AttendanceApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_ATTENDANCE_ERROR",
+            field: "request",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+
+    await page.executePunch("clock-in");
+
+    expect(page.errorMessages.value).toEqual([
+      "打刻を確定できませんでした。",
+    ]);
+    expect(mocks.attendanceApi.getDays).toHaveBeenCalledOnce();
+  });
+
+  it("本文なし403ではSessionを維持して本人勤怠の権限不足を表示する", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.punch.mockRejectedValue(
+      new AttendanceApiError(403, null)
+    );
+
+    await page.executePunch("clock-in");
+
+    expect(page.errorMessages.value).toEqual([
+      "本人勤怠を操作するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("404ではBackend本文に依存せず勤怠対象accountなしを表示する", async () => {
+    mocks.attendanceApi.getDays.mockRejectedValue(
+      new AttendanceApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_ACCOUNT_NOT_FOUND",
+            field: "accountId",
+            message: "localeで変化する対象なし文言",
+          },
+        ],
+      })
+    );
+    const page = useAttendancePage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "勤怠対象のアカウントが見つかりません。",
+    ]);
+  });
+
+  it("409後の再取得で401になった場合は競合案内を残さずSessionを破棄する", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.punch.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_ALREADY_CLOCKED_IN",
+            field: "punchState",
+            message: "すでに出勤しています。",
+          },
+        ],
+      })
+    );
+    mocks.attendanceApi.getDays.mockRejectedValueOnce(
+      new AttendanceApiError(401, null)
+    );
+
+    await page.executePunch("clock-in");
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409後の再取得が通信失敗した場合は最初の競合案内を維持する", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.punch.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_ALREADY_CLOCKED_IN",
+            field: "punchState",
+            message: "すでに出勤しています。",
+          },
+        ],
+      })
+    );
+    mocks.attendanceApi.getDays.mockRejectedValueOnce(
+      new TypeError("network error")
+    );
+
+    await page.executePunch("clock-in");
+
+    expect(page.errorMessages.value).toEqual(["すでに出勤しています。"]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
   it("401はSessionを破棄してログイン画面へ戻す", async () => {
     mocks.attendanceApi.getDays.mockRejectedValue(
       new AttendanceApiError(401, null)
