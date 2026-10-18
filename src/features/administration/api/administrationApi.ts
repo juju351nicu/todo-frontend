@@ -9,6 +9,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 権限管理APIがHTTPエラーを返したことを、statusと項目エラー付きで表す。 */
 export class AdministrationApiError extends Error {
@@ -25,35 +26,16 @@ export class AdministrationApiError extends Error {
 }
 
 /**
- * JSON形式とは限らないSecurityエラーResponseを安全に読み取る。
- *
- * @param response Backendの失敗Response
- * @returns 共通ErrorResponseを読めた場合はその値、それ以外はnull
- */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
-/**
  * 非2xx Responseを、画面で401・403・409を区別できる例外へ変換する。
  *
  * @param response Backend Response
  * @throws AdministrationApiError 非2xxの場合
  */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new AdministrationApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new AdministrationApiError(status, errorResponse)
+  );
 
 /**
  * ACCOUNT_READ permissionを使用してアカウントと現在ロールを一覧取得する。

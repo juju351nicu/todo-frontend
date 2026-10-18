@@ -106,6 +106,6 @@ export const LEGACY_TODO_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 競合回復中に古い409より優先する認証・認可・公開範囲のHTTP status。 */
-export const TASK_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
-  401, 403, 404,
-]);
+export {
+  API_RECOVERY_PRIORITY_STATUSES as TASK_RECOVERY_PRIORITY_STATUSES,
+} from "@/shared/utils/apiError";

@@ -1,13 +1,94 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  API_RECOVERY_PRIORITY_STATUSES,
+  ensureApiSuccess,
   hasApiFieldError,
+  readErrorResponse,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 
 const KNOWN_CODES = new Set(["KNOWN_ERROR", "VALIDATION_ERROR"]);
 
 describe("API error表示utility", () => {
+  it("競合回復では現在の認証・認可・公開範囲statusだけを優先する", () => {
+    expect([...API_RECOVERY_PRIORITY_STATUSES]).toEqual([401, 403, 404]);
+    expect(API_RECOVERY_PRIORITY_STATUSES.has(409)).toBe(false);
+  });
+
+  it("JSONの失敗Response本文を共通ErrorResponseとして返す", async () => {
+    const response = new Response(
+      JSON.stringify({
+        fieldErrors: [
+          {
+            errorCode: "KNOWN_ERROR",
+            field: "request",
+            message: "処理に失敗しました。",
+          },
+        ],
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    await expect(readErrorResponse(response)).resolves.toEqual({
+      fieldErrors: [
+        {
+          errorCode: "KNOWN_ERROR",
+          field: "request",
+          message: "処理に失敗しました。",
+        },
+      ],
+    });
+  });
+
+  it.each([
+    ["空本文", new Response(null, { status: 403 })],
+    [
+      "非JSON本文",
+      new Response("Forbidden", {
+        status: 403,
+        headers: { "Content-Type": "text/plain" },
+      }),
+    ],
+  ])("%sはnullへ正規化する", async (_condition, response) => {
+    await expect(readErrorResponse(response)).resolves.toBeNull();
+  });
+
+  it.each([
+    ["204", new Response(null, { status: 204 })],
+    ["binary", new Response(new Uint8Array([1, 2]), { status: 200 })],
+  ])("%s成功Responseの本文を消費しない", async (_condition, response) => {
+    const createError = vi.fn(() => new Error("呼ばれない例外"));
+
+    await ensureApiSuccess(response, createError);
+
+    expect(createError).not.toHaveBeenCalled();
+    expect(response.bodyUsed).toBe(false);
+  });
+
+  it("非2xxのstatusと解析済み本文からfeature固有例外を生成する", async () => {
+    const responseBody = {
+      fieldErrors: [
+        {
+          errorCode: "KNOWN_ERROR",
+          field: "request",
+          message: "処理に失敗しました。",
+        },
+      ],
+    };
+    const response = new Response(JSON.stringify(responseBody), { status: 409 });
+    const expectedError = new Error("feature固有例外");
+    const createError = vi.fn(() => expectedError);
+
+    await expect(ensureApiSuccess(response, createError)).rejects.toBe(
+      expectedError
+    );
+    expect(createError).toHaveBeenCalledWith(409, responseBody);
+  });
+
   it("契約済みcodeの複数field messageをBackend順で返す", () => {
     const response = {
       fieldErrors: [

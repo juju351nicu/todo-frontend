@@ -8,6 +8,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TaskApiError extends Error {
@@ -23,23 +24,12 @@ export class TaskApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx Responseを本文形式に依存しないTaskApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TaskApiError(response.status, await readErrorResponse(response));
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TaskApiError(status, errorResponse)
+  );
 
 /**
  * Todo詳細を取得する。

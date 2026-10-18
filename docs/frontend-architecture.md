@@ -628,6 +628,19 @@ TypeScript／Vue／E2E型検査、production build、未認証Login／問い合�
 これによりStage 10E-3を完了し、cross-featureの`readErrorResponse`／`ensureSuccess`統合はStage 10E-4で
 204、binary download、Session、競合回復の契約が同一な範囲に限定して検討する。
 
+Stage 10E-4では、17個のfeature APIに重複していた失敗ResponseのJSON解析を
+`src/shared/utils/apiError.ts`の`readErrorResponse`へ統合し、空本文・非JSONを`null`へ正規化した。
+同じ17経路の非2xx判定は`ensureApiSuccess`へ統合したが、画面の`instanceof`判定を維持するため
+feature固有のApiError型は残した。成功Responseでは本文を消費しないため、204とCSV／Excel等のbinary downloadは
+従来どおり各APIが処理する。競合回復時に旧409より優先する`401／403／404`も1つの共有集合へ統合し、
+Task、Project、Attendance、Administration、WBSのexport名は各画面の契約を読み取れるaliasとして維持した。
+
+composableのSession破棄、古いsnapshotの破棄、Router遷移、並列再取得、成功確定後の再取得失敗は
+画面ごとに副作用と優先順が異なるため共通化しなかった。JSON解析の例外再送出とHTTP成功判定の反転を一時適用した
+mutationでは、それぞれ対象2件と3件が意図した理由で失敗し、復元後の全80 test file・772 Vitest、
+TypeScript／Vue／E2E型検査、production build、Playwright smoke 15件が成功した。これによりStage 10E-4と
+Stage 10E全体を完了し、次はStage 11AのAccount単位課金主体・DB・plan／feature・Stripe adapter境界へ進む。
+
 ## 変更時の確認
 
 ```bash

@@ -9,6 +9,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Project Template APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class ProjectTemplateApiError extends Error {
@@ -24,26 +25,12 @@ export class ProjectTemplateApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをProjectTemplateApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new ProjectTemplateApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new ProjectTemplateApiError(status, errorResponse)
+  );
 
 /** 認証中の本人が所有するactive Project Template headerを取得する。 */
 const findOwnTemplates = async (): Promise<ProjectTemplateSummary[]> => {

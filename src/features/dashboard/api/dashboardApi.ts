@@ -5,6 +5,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Basic Dashboard APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class DashboardApiError extends Error {
@@ -20,26 +21,12 @@ export class DashboardApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをDashboardApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new DashboardApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new DashboardApiError(status, errorResponse)
+  );
 
 /**
  * 現在のSession利用者向けBasic Dashboardを取得する。

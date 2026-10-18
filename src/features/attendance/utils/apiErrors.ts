@@ -42,5 +42,6 @@ export const ATTENDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 409回復中に古い競合案内より優先する認証・認可・公開範囲のHTTP status。 */
-export const ATTENDANCE_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> =
-  new Set([401, 403, 404]);
+export {
+  API_RECOVERY_PRIORITY_STATUSES as ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+} from "@/shared/utils/apiError";

@@ -5,6 +5,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 認証APIのHTTPエラーをstatusと安全に解析できたBackendエラー本文付きで表す。 */
 export class AuthApiError extends Error {
@@ -19,17 +20,6 @@ export class AuthApiError extends Error {
     this.errorResponse = errorResponse;
   }
 }
-
-/** 空本文やJSON以外も返り得るSecurityエラーを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
 
 /**
  * 現在のHttpSessionに保存された認証利用者を取得する。
@@ -57,9 +47,10 @@ const login = async (payload: LoginRequest): Promise<void> => {
     API_PATHS.AUTH_LOGIN,
     payload
   );
-  if (!response.ok) {
-    throw new AuthApiError(response.status, await readErrorResponse(response));
-  }
+  await ensureApiSuccess(
+    response,
+    (status, errorResponse) => new AuthApiError(status, errorResponse)
+  );
   await HttpClient.refreshCsrfToken();
 };
 

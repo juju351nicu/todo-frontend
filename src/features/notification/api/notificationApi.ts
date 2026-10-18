@@ -7,6 +7,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 通知APIのHTTPエラーをstatusとBackend項目エラー付きで表す。 */
 export class NotificationApiError extends Error {
@@ -22,26 +23,12 @@ export class NotificationApiError extends Error {
   }
 }
 
-/** JSONとは限らないSecurityエラーを共通ErrorResponseとして安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx Responseを画面で認証・認可・入力不正へ分岐できる例外に変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new NotificationApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new NotificationApiError(status, errorResponse)
+  );
 
 /** 認証利用者のイベント型通知と導出型警告を取得する。 */
 const getNotificationCenter = async (): Promise<NotificationCenterResponse> => {

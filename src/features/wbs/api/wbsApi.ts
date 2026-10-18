@@ -26,6 +26,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 const XLSX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -45,23 +46,12 @@ export class WbsApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをWbsApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new WbsApiError(response.status, await readErrorResponse(response));
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new WbsApiError(status, errorResponse)
+  );
 
 /**
  * Content-DispositionのASCII filenameをpathとして解釈できない安全なxlsx名へ制限する。

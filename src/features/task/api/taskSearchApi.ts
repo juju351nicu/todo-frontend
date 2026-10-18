@@ -9,6 +9,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task検索・Saved View APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TaskSearchApiError extends Error {
@@ -24,23 +25,12 @@ export class TaskSearchApiError extends Error {
   }
 }
 
-/** JSONとは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをTaskSearchApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TaskSearchApiError(response.status, await readErrorResponse(response));
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TaskSearchApiError(status, errorResponse)
+  );
 
 /** null・空文字を除外し、BackendのcamelCase query parameterへ変換する。 */
 const buildSearchQuery = (filters: TaskSearchFilters): URLSearchParams => {

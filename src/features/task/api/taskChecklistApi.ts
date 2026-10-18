@@ -7,6 +7,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task checklist APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TaskChecklistApiError extends Error {
@@ -26,26 +27,12 @@ export class TaskChecklistApiError extends Error {
 const createPath = (projectId: number, taskId: number): string =>
   `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}/checklist-items`;
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをTaskChecklistApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TaskChecklistApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TaskChecklistApiError(status, errorResponse)
+  );
 
 /** Taskのchecklistを表示順で取得する。 */
 const findItems = async (

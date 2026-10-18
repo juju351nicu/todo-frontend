@@ -9,6 +9,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Time Tracking APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TimeTrackingApiError extends Error {
@@ -24,26 +25,12 @@ export class TimeTrackingApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをTimeTrackingApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TimeTrackingApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TimeTrackingApiError(status, errorResponse)
+  );
 
 /** 欠落した配列を画面へ伝播させないTimer停止Responseへ正規化する。 */
 const normalizeStopResponse = (

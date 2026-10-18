@@ -8,6 +8,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task Template APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TaskTemplateApiError extends Error {
@@ -23,26 +24,12 @@ export class TaskTemplateApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをTaskTemplateApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TaskTemplateApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TaskTemplateApiError(status, errorResponse)
+  );
 
 /** 認証中の本人が所有するactive Task Templateを取得する。 */
 const findOwnTemplates = async (): Promise<TaskTemplate[]> => {

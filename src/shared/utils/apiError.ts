@@ -1,5 +1,48 @@
 import type { ErrorResponse } from "@/shared/types/error";
 
+/** 競合回復中に旧エラーより優先する現在の認証・認可・公開範囲status。 */
+export const API_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
+  401, 403, 404,
+]);
+
+/**
+ * Backendの失敗Responseを共通ErrorResponseとして読み取る。
+ * Spring Security等が返す空本文または非JSON本文は、解析失敗を呼出側へ漏らさずnullへ正規化する。
+ * 成功Response、204 Response、binary downloadの解析には使用しない。
+ *
+ * @param response Backendの非2xx Response
+ * @returns JSON本文を解析できた場合はその値、空本文または非JSON本文の場合はnull
+ */
+export const readErrorResponse = async (
+  response: Response
+): Promise<ErrorResponse | null> => {
+  try {
+    return (await response.json()) as ErrorResponse;
+  } catch (_error: unknown) {
+    return null;
+  }
+};
+
+/**
+ * HTTP成功Responseを本文へ触れず通過させ、失敗Responseだけをfeature固有例外へ変換する。
+ * 204とbinary downloadを含む成功本文は呼出側が処理するため、この関数では消費しない。
+ *
+ * @param response Backend Response
+ * @param createError statusと安全に解析したエラー本文からfeature固有例外を生成する関数
+ * @throws createErrorが生成した例外。Responseが非2xxの場合だけ送出する
+ */
+export const ensureApiSuccess = async (
+  response: Response,
+  createError: (
+    status: number,
+    errorResponse: ErrorResponse | null
+  ) => Error
+): Promise<void> => {
+  if (!response.ok) {
+    throw createError(response.status, await readErrorResponse(response));
+  }
+};
+
 /**
  * Backend共通エラーに指定code・fieldの組み合わせが含まれるか判定する。
  * message本文はlocaleで変化するため機械判定には使用しない。

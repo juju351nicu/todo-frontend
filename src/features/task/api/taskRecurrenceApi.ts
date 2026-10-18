@@ -8,6 +8,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 繰り返しTask APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class TaskRecurrenceApiError extends Error {
@@ -23,26 +24,12 @@ export class TaskRecurrenceApiError extends Error {
   }
 }
 
-/** JSON形式とは限らないSecurityエラーResponseを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /** 非2xx ResponseをTaskRecurrenceApiErrorへ変換する。 */
-const ensureSuccess = async (response: Response): Promise<void> => {
-  if (!response.ok) {
-    throw new TaskRecurrenceApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
-};
+const ensureSuccess = (response: Response): Promise<void> =>
+  ensureApiSuccess(
+    response,
+    (status, errorResponse) => new TaskRecurrenceApiError(status, errorResponse)
+  );
 
 /** Project配下の繰り返し規則API pathを組み立てる。 */
 const recurrencePath = (projectId: number): string =>

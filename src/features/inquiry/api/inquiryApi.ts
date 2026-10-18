@@ -5,6 +5,7 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
+import { ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 問い合わせAPIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
 export class InquiryApiError extends Error {
@@ -20,17 +21,6 @@ export class InquiryApiError extends Error {
   }
 }
 
-/** 空本文やJSON以外のSecurityエラーを安全に読み取る。 */
-const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
-  try {
-    return (await response.json()) as ErrorResponse;
-  } catch (_error: unknown) {
-    return null;
-  }
-};
-
 /**
  * 問い合わせ内容をBackendへ送信する。
  *
@@ -43,12 +33,10 @@ const send = async (payload: InquiryRequest): Promise<InquiryResponse> => {
     API_PATHS.INQUIRY_SEND_MAIL,
     payload
   );
-  if (!response.ok) {
-    throw new InquiryApiError(
-      response.status,
-      await readErrorResponse(response)
-    );
-  }
+  await ensureApiSuccess(
+    response,
+    (status, errorResponse) => new InquiryApiError(status, errorResponse)
+  );
   return (await response.json()) as InquiryResponse;
 };
 
