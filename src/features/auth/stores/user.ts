@@ -99,14 +99,12 @@ export const useUserStore = defineStore("user", {
      * ローカルログインを実行し、成功時だけSession利用者とpermissionを再取得する。
      *
      * @param payload ログインIDと平文パスワード。Storeへ永続化しない
-     * @returns Backendの認証結果Response
+     * @returns ログイン後のSession利用者を復元できた場合はtrue
+     * @throws AuthApiError ログインAPIが非2xxを返した場合
      */
-    async authLogin(payload: LoginRequest): Promise<Response> {
-      const response = await AuthApi.login(payload);
-      if (response.ok) {
-        await this.restoreSession(true);
-      }
-      return response;
+    async authLogin(payload: LoginRequest): Promise<boolean> {
+      await AuthApi.login(payload);
+      return this.restoreSession(true);
     },
     /**
      * BackendのHttpSessionを無効化し、API失敗時もFrontendの認証表示情報を必ず破棄する。

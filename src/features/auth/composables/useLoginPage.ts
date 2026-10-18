@@ -2,17 +2,21 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { resolveAuthenticatedHomeRouteName } from "@/app/router/authorization";
-import AuthApi from "@/features/auth/api/authApi";
+import AuthApi, { AuthApiError } from "@/features/auth/api/authApi";
 import { useUserStore } from "@/features/auth/stores/user";
 import type { LoginRequest } from "@/features/auth/types/auth";
-import type { ErrorResponse } from "@/shared/types/error";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+
+const LOGIN_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+]);
 
 const OAUTH_ERROR_MESSAGES: Readonly<Record<string, string>> = {
-  email_required:
-    "GitHubからメールアドレスを取得できませんでした。GitHubのメール設定を確認してください。",
-  account_unavailable: "このアカウントは現在利用できません。",
-  unsupported_provider: "対応していないOAuth2プロバイダーです。",
-  login_failed: "GitHubでログインできませんでした。もう一度お試しください。",
+  email_required: DISPLAY_MESSAGES.auth.oauth.emailRequired,
+  account_unavailable: DISPLAY_MESSAGES.auth.oauth.accountUnavailable,
+  unsupported_provider: DISPLAY_MESSAGES.auth.oauth.unsupportedProvider,
+  login_failed: DISPLAY_MESSAGES.auth.oauth.loginFailed,
 };
 
 /**
@@ -62,34 +66,44 @@ export const useLoginPage = () => {
 
   /** ログインIDとパスワードでログインする。 */
   const submitForm = async (): Promise<void> => {
+    if (isLoading.value) {
+      return;
+    }
     isLoading.value = true;
     isShowModal.value = false;
     errorMessages.value = [];
     try {
-      const response = await userStore.authLogin({ ...loginForm.value });
-      if (response.ok) {
-        await router.push({
-          name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
-        });
+      if (!(await userStore.authLogin({ ...loginForm.value }))) {
+        showErrors([DISPLAY_MESSAGES.auth.sessionRestoreFailed]);
         return;
       }
-
-      if (response.status === 400) {
-        const errorResponse = (await response.json()) as ErrorResponse;
-        errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-          (fieldError) => fieldError.message
-        );
+      await router.push({
+        name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
+      });
+    } catch (error: unknown) {
+      if (error instanceof AuthApiError) {
+        if (error.status === 401) {
+          showErrors([DISPLAY_MESSAGES.auth.credentialsRejected]);
+          return;
+        }
+        if (error.status === 400) {
+          showErrors(
+            resolveApiErrorMessages(
+              error.errorResponse,
+              LOGIN_INPUT_ERROR_CODES,
+              DISPLAY_MESSAGES.auth.invalidInput
+            )
+          );
+          return;
+        }
+        if (error.status === 403) {
+          showErrors([DISPLAY_MESSAGES.auth.requestForbidden]);
+          return;
+        }
+        showErrors([DISPLAY_MESSAGES.auth.loginFailed]);
+        return;
       }
-      if (errorMessages.value.length === 0) {
-        errorMessages.value = [
-          response.status === 401
-            ? "ログインIDまたはパスワードが正しくありません。"
-            : "ログインできませんでした。",
-        ];
-      }
-      isShowModal.value = true;
-    } catch (_error: unknown) {
-      showErrors(["Backendへ接続できませんでした。"]);
+      showErrors([DISPLAY_MESSAGES.common.connectionFailed]);
     } finally {
       isLoading.value = false;
     }

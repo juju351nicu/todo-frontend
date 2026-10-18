@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import AuthApi from "@/features/auth/api/authApi";
+import AuthApi, { AuthApiError } from "@/features/auth/api/authApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -49,13 +49,52 @@ describe("Auth API", () => {
     HttpClient.postRequest.mockResolvedValue(response);
     HttpClient.refreshCsrfToken.mockResolvedValue("new-csrf-token");
 
-    await expect(AuthApi.login(payload)).resolves.toBe(response);
+    await expect(AuthApi.login(payload)).resolves.toBeUndefined();
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       API_PATHS.AUTH_LOGIN,
       payload
     );
     expect(HttpClient.refreshCsrfToken).toHaveBeenCalledOnce();
+  });
+
+  it("空本文の認証失敗をstatus付き例外へ変換する", async () => {
+    const response = {
+      ok: false,
+      status: 401,
+      json: vi.fn().mockRejectedValue(new SyntaxError("empty body")),
+    };
+    HttpClient.postRequest.mockResolvedValue(response);
+
+    const promise = AuthApi.login({ loginId: "user01", password: "wrong" });
+
+    await expect(promise).rejects.toMatchObject({
+      name: "AuthApiError",
+      status: 401,
+      errorResponse: null,
+    });
+    expect(HttpClient.refreshCsrfToken).not.toHaveBeenCalled();
+  });
+
+  it("入力不正ResponseをAuthApiErrorへ保持する", async () => {
+    const errorResponse = {
+      fieldErrors: [
+        {
+          errorCode: "INVALID_REQUEST_BODY",
+          field: "loginId",
+          message: "ログインIDを入力してください。",
+        },
+      ],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: vi.fn().mockResolvedValue(errorResponse),
+    });
+
+    await expect(
+      AuthApi.login({ loginId: "", password: "password" })
+    ).rejects.toEqual(new AuthApiError(400, errorResponse));
   });
 
   it("ログアウト成功後にCSRFトークンを作り直す", async () => {

@@ -4,6 +4,32 @@ import type {
 } from "@/features/auth/types/auth";
 import HttpClient from "@/shared/api/httpClient";
 import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
+import type { ErrorResponse } from "@/shared/types/error";
+
+/** 認証APIのHTTPエラーをstatusと安全に解析できたBackendエラー本文付きで表す。 */
+export class AuthApiError extends Error {
+  readonly status: number;
+
+  readonly errorResponse: ErrorResponse | null;
+
+  constructor(status: number, errorResponse: ErrorResponse | null) {
+    super(`認証APIの実行に失敗しました。status=${status}`);
+    this.name = "AuthApiError";
+    this.status = status;
+    this.errorResponse = errorResponse;
+  }
+}
+
+/** 空本文やJSON以外も返り得るSecurityエラーを安全に読み取る。 */
+const readErrorResponse = async (
+  response: Response
+): Promise<ErrorResponse | null> => {
+  try {
+    return (await response.json()) as ErrorResponse;
+  } catch (_error: unknown) {
+    return null;
+  }
+};
 
 /**
  * 現在のHttpSessionに保存された認証利用者を取得する。
@@ -23,18 +49,18 @@ const getSession = async (): Promise<SessionUserResponse | null> => {
  * ログインIDとパスワードでログインする。
  *
  * @param payload ログイン情報
- * @returns 認証結果のResponse。成功時は新しいSessionに対応するCSRF Cookieも取得済み
- * @throws ログイン成功後にCSRF Cookieを取得できない場合
+ * @throws AuthApiError 入力不正、認証失敗、CSRF拒否またはBackendエラーの場合
+ * @throws Error ログイン成功後にCSRF Cookieを取得できない場合
  */
-const login = async (payload: LoginRequest): Promise<Response> => {
+const login = async (payload: LoginRequest): Promise<void> => {
   const response = await HttpClient.postRequest(
     API_PATHS.AUTH_LOGIN,
     payload
   );
-  if (response.ok) {
-    await HttpClient.refreshCsrfToken();
+  if (!response.ok) {
+    throw new AuthApiError(response.status, await readErrorResponse(response));
   }
-  return response;
+  await HttpClient.refreshCsrfToken();
 };
 
 /**

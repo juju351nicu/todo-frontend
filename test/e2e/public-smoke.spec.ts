@@ -26,3 +26,26 @@ test("未認証で保護画面へ入るとログインへ戻す", async ({ page 
   expect(dialogMessage).toBe("ログインが必要です");
   await expect(page.getByPlaceholder("ログインID")).toBeVisible();
 });
+
+test("認証失敗でアカウントの存在を公開しない", async ({ page }) => {
+  await page.goto("/");
+  await page.getByPlaceholder("ログインID").fill("missing-browser-user");
+  await page.getByPlaceholder("パスワード").fill("wrong-password");
+
+  await page.getByRole("button", { name: "ログイン", exact: true }).click();
+
+  await expect(
+    page.getByText("ログインIDまたはパスワードが正しくありません。")
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+});
+
+test("未認証でもCSRF保護付き問い合わせを入力検査できる", async ({ page }) => {
+  await page.goto("/inquiry");
+  await page.getByLabel("メールアドレス(必須)").fill("invalid");
+
+  await page.getByRole("button", { name: "送信する" }).click();
+
+  await expect(page.getByText("不正なメールアドレスです。")).toBeVisible();
+  await expect(page.getByText("お問い合わせを送信しました。")).not.toBeVisible();
+});

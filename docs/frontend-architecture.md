@@ -609,6 +609,25 @@ Sessionを維持したまま参照・更新permissionの固定案内へ変換す
 対象6 test file・60件と全80 test file・736 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
 次はAccount管理／認可監査／お知らせ管理を同じ表示境界へ移行し、その後にLogin／問い合わせを移行する。
 
+続いてAccount管理、認可監査、お知らせ管理を移行した。feature別の契約済みcodeだけから
+複数messageをBackend順で表示し、未知code、本文なし、非JSONは操作別fallbackへ閉じる。本文なし403は
+Sessionを維持する。Account更新の404／409後は古いdraftとversionを破棄し、回復中の401／403／404を
+元の操作理由より優先する。お知らせの未契約`VALIDATION_ERROR`はBackend正本の`INVALID_REQUEST_BODY`へ修正した。
+401優先statusを外すmutationは保護されたrole一覧の残存を検知し、復元後の対象5 test file・51件と
+全80 test file・751 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+
+Stage 10E-3の最後にLogin／問い合わせを移行した。`authApi`と`inquiryApi`は非2xxをstatusと安全に解析した
+JSONを持つ型付きerrorへ変換し、画面は契約済みcode以外のBackend文言を表示しない。Login 401は
+account存在有無を区別しない固定文言とし、Login成功後のSession復元が成功した場合だけDashboardへ遷移する。
+問い合わせは`INVALID_REQUEST_BODY`と`INQUIRY_DELIVERY_FAILED`だけを契約済みcodeとし、未認証でも
+CSRF保護付きで送信する。両画面は送信中の二重Requestを防止する。
+
+未知codeを許可するmutationはSMTP内部文言の露出を、Session復元失敗後に遷移するmutationは誤遷移を
+それぞれVitestで検知した。復元後の対象5 test file・31件、全80 test file・765 Vitest、
+TypeScript／Vue／E2E型検査、production build、未認証Login／問い合わせを含むPlaywright smoke 15件が成功した。
+これによりStage 10E-3を完了し、cross-featureの`readErrorResponse`／`ensureSuccess`統合はStage 10E-4で
+204、binary download、Session、競合回復の契約が同一な範囲に限定して検討する。
+
 ## 変更時の確認
 
 ```bash

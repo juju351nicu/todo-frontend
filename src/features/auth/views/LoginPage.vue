@@ -45,7 +45,7 @@ onMounted(initialize);
                 </v-text-field>
                 <p class="pointer">パスワードを忘れた方</p>
                 <div class="text-center">
-                    <v-btn type="submit" color="success" size="large" variant="elevated">ログイン</v-btn>
+                    <v-btn type="submit" color="success" size="large" variant="elevated" :disabled="isLoading">ログイン</v-btn>
                 </div>
             </form>
             <p @click="submitRegister">新しいアカウントを作成</p>

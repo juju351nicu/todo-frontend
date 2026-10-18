@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import InquiryApi from "@/features/inquiry/api/inquiryApi";
+import InquiryApi, { InquiryApiError } from "@/features/inquiry/api/inquiryApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -21,13 +21,62 @@ describe("Inquiry API", () => {
       email: "yamada@example.com",
       message: "お問い合わせ内容",
     };
-    const response = { ok: true };
+    const inquiryResponse = { ...payload, validationErrorMessages: null };
+    const response = {
+      ok: true,
+      json: vi.fn().mockResolvedValue(inquiryResponse),
+    };
     HttpClient.postRequest.mockResolvedValue(response);
 
-    await expect(InquiryApi.send(payload)).resolves.toBe(response);
+    await expect(InquiryApi.send(payload)).resolves.toEqual(inquiryResponse);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       API_PATHS.INQUIRY_SEND_MAIL,
       payload
     );
+  });
+
+  it("送信基盤停止のJSON Responseをstatus付き例外へ変換する", async () => {
+    const errorResponse = {
+      fieldErrors: [
+        {
+          errorCode: "INQUIRY_DELIVERY_FAILED",
+          field: "inquiry",
+          message: "お問い合わせを送信できませんでした。",
+        },
+      ],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: vi.fn().mockResolvedValue(errorResponse),
+    });
+
+    await expect(
+      InquiryApi.send({
+        fullName: "山田",
+        email: "a@example.com",
+        message: "本文",
+      })
+    ).rejects.toEqual(new InquiryApiError(503, errorResponse));
+  });
+
+  it("JSONではない拒否Responseは本文をnullへ閉じる", async () => {
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("not json")),
+    });
+
+    await expect(
+      InquiryApi.send({
+        fullName: "山田",
+        email: "a@example.com",
+        message: "本文",
+      })
+    ).rejects.toMatchObject({
+      name: "InquiryApiError",
+      status: 403,
+      errorResponse: null,
+    });
   });
 });

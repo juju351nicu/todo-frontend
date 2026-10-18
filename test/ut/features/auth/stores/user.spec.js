@@ -43,19 +43,30 @@ describe("User store", () => {
   });
 
   it("ログイン成功後にCSRFを更新してSessionを読み直す", async () => {
-    const loginResponse = { ok: true, status: 200 };
-    AuthApi.login.mockResolvedValue(loginResponse);
+    AuthApi.login.mockResolvedValue(undefined);
     AuthApi.getSession.mockResolvedValue(sessionUser);
     const store = useUserStore();
 
     await expect(store.authLogin({ loginId: "user01", password: "password" }))
-      .resolves.toBe(loginResponse);
+      .resolves.toBe(true);
 
     expect(AuthApi.login).toHaveBeenCalledWith({
       loginId: "user01",
       password: "password",
     });
     expect(store.isAuthenticated).toBe(true);
+  });
+
+  it("ログインAPI成功後にSessionを復元できなければfalseを返す", async () => {
+    AuthApi.login.mockResolvedValue(undefined);
+    AuthApi.getSession.mockResolvedValue(null);
+    const store = useUserStore();
+
+    await expect(store.authLogin({ loginId: "user01", password: "password" }))
+      .resolves.toBe(false);
+
+    expect(store.isAuthenticated).toBe(false);
+    expect(store.sessionChecked).toBe(true);
   });
 
   it("ログアウト後はFrontendの認証情報とCSRFを破棄する", async () => {

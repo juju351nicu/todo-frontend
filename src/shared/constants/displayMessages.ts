@@ -8,6 +8,29 @@ export const DISPLAY_MESSAGES = {
     requestFailed:
       "処理を完了できませんでした。しばらくしてから再度お試しください。",
   },
+  auth: {
+    credentialsRejected: "ログインIDまたはパスワードが正しくありません。",
+    invalidInput: "ログイン情報を確認してください。",
+    requestForbidden:
+      "ログインの準備を更新できませんでした。画面を再読み込みしてお試しください。",
+    loginFailed: "ログインできませんでした。",
+    sessionRestoreFailed:
+      "ログイン後の利用者情報を確認できませんでした。もう一度お試しください。",
+    oauth: {
+      emailRequired:
+        "GitHubからメールアドレスを取得できませんでした。GitHubのメール設定を確認してください。",
+      accountUnavailable: "このアカウントは現在利用できません。",
+      unsupportedProvider: "対応していないOAuth2プロバイダーです。",
+      loginFailed:
+        "GitHubでログインできませんでした。もう一度お試しください。",
+    },
+  },
+  inquiry: {
+    invalidInput: "お問い合わせ内容を確認してください。",
+    sendFailed:
+      "お問い合わせを送信できませんでした。時間を置いて再度お試しください。",
+    sent: "お問い合わせを送信しました。",
+  },
   administration: {
     account: {
       readForbidden: "アカウントとロールを参照するpermissionがありません。",

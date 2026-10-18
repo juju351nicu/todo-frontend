@@ -1,11 +1,16 @@
 import { ref } from "vue";
 
-import InquiryApi from "@/features/inquiry/api/inquiryApi";
-import type {
-  InquiryRequest,
-  InquiryResponse,
-} from "@/features/inquiry/types/inquiry";
-import type { ErrorResponse } from "@/shared/types/error";
+import InquiryApi, {
+  InquiryApiError,
+} from "@/features/inquiry/api/inquiryApi";
+import type { InquiryRequest } from "@/features/inquiry/types/inquiry";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+
+const INQUIRY_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+  "INQUIRY_DELIVERY_FAILED",
+]);
 
 /** 問い合わせ画面の状態と操作を提供する。 */
 export const useInquiryFormPage = () => {
@@ -23,16 +28,6 @@ export const useInquiryFormPage = () => {
     message: message.value,
   });
 
-  /** Backendの項目エラーを画面メッセージへ変換し、項目がない失敗にも既定文言を設定する。 */
-  const setResponseErrors = (errorResponse: ErrorResponse): void => {
-    errorMessages.value = (errorResponse.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
-    );
-    if (errorMessages.value.length === 0) {
-      errorMessages.value = ["お問い合わせを送信できませんでした。"];
-    }
-  };
-
   /** 送信成功後だけ問い合わせ入力を空に戻す。 */
   const clearForm = (): void => {
     fullName.value = "";
@@ -42,26 +37,34 @@ export const useInquiryFormPage = () => {
 
   /** 入力された問い合わせ内容をBackendへ送信する。 */
   const submit = async (): Promise<void> => {
+    if (isLoading.value) {
+      return;
+    }
     errorMessages.value = [];
     successMessage.value = "";
     isLoading.value = true;
     try {
-      const response = await InquiryApi.send(buildInquiryRequest());
-      if (!response.ok) {
-        setResponseErrors((await response.json()) as ErrorResponse);
-        return;
-      }
-
-      const data = (await response.json()) as InquiryResponse;
+      const data = await InquiryApi.send(buildInquiryRequest());
       if (data.validationErrorMessages?.length) {
-        errorMessages.value = data.validationErrorMessages;
+        // 旧Responseの自由文は表示せず、Bean Validation APIと同じ固定案内へ閉じる。
+        errorMessages.value = [DISPLAY_MESSAGES.inquiry.invalidInput];
         return;
       }
 
-      successMessage.value = "お問い合わせを送信しました。";
+      successMessage.value = DISPLAY_MESSAGES.inquiry.sent;
       clearForm();
-    } catch (_error: unknown) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+    } catch (error: unknown) {
+      if (error instanceof InquiryApiError) {
+        errorMessages.value = resolveApiErrorMessages(
+          error.errorResponse,
+          INQUIRY_ERROR_CODES,
+          error.status === 400
+            ? DISPLAY_MESSAGES.inquiry.invalidInput
+            : DISPLAY_MESSAGES.inquiry.sendFailed
+        );
+      } else {
+        errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      }
     } finally {
       isLoading.value = false;
     }
