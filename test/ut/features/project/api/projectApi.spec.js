@@ -54,21 +54,29 @@ describe("Project API", () => {
     );
   });
 
-  it("JSON本文のない403をstatus付きProjectApiErrorへ変換する", async () => {
-    HttpClient.getRequest.mockResolvedValue({
-      ok: false,
-      status: 403,
-      json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
-    });
+  it.each([
+    [401, new SyntaxError("empty")],
+    [403, new SyntaxError("not json")],
+  ])(
+    "本文を解析できない%dをstatus付きProjectApiErrorへ変換する",
+    async (status, parseError) => {
+      HttpClient.getRequest.mockResolvedValue({
+        ok: false,
+        status,
+        json: vi.fn().mockRejectedValue(parseError),
+      });
 
-    const promise = ProjectApi.getProjects();
+      const promise = ProjectApi.getProjects();
 
-    await expect(promise).rejects.toMatchObject({
-      status: 403,
-      errorResponse: null,
-    });
-    await promise.catch((error) => expect(error).toBeInstanceOf(ProjectApiError));
-  });
+      await expect(promise).rejects.toMatchObject({
+        status,
+        errorResponse: null,
+      });
+      await promise.catch((error) =>
+        expect(error).toBeInstanceOf(ProjectApiError)
+      );
+    }
+  );
 
   it("Project表示情報とarchive状態をPUT契約で更新する", async () => {
     const request = {

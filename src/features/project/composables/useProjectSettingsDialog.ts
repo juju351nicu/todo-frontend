@@ -13,6 +13,12 @@ import type {
   ProjectRole,
   ProjectUpdateRequest,
 } from "@/features/project/types/project";
+import {
+  PROJECT_ERROR_CODES,
+  PROJECT_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/project/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** Project設定Dialogで編集する表示情報と取得時点のversion。 */
 interface ProjectSettingsForm {
@@ -220,7 +226,7 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       successMessage.value = "Project情報を更新しました。";
     } catch (error: unknown) {
-      await handleApiError(error, "Project情報を更新できませんでした。");
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.updateFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict();
       }
@@ -273,7 +279,7 @@ export const useProjectSettingsDialog = (
       successMessage.value = "Projectをアーカイブしました。";
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
-      await handleApiError(error, "Projectをアーカイブできませんでした。");
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.archiveFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict();
       }
@@ -315,7 +321,7 @@ export const useProjectSettingsDialog = (
       addMemberRole.value = "MEMBER";
       successMessage.value = `アカウントID ${accountId} をProjectへ追加しました。`;
     } catch (error: unknown) {
-      await handleApiError(error, "Project memberを追加できませんでした。");
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberAddFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict();
       }
@@ -375,7 +381,10 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       successMessage.value = `アカウントID ${member.accountId} のProject roleを更新しました。`;
     } catch (error: unknown) {
-      await handleApiError(error, "Project memberのroleを更新できませんでした。");
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.project.settings.memberRoleUpdateFailed
+      );
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict();
       }
@@ -436,7 +445,7 @@ export const useProjectSettingsDialog = (
     } catch (error: unknown) {
       isRemoveConfirmOpen.value = false;
       memberToRemove.value = null;
-      await handleApiError(error, "Project memberを除外できませんでした。");
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberRemoveFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict();
       }
@@ -457,11 +466,12 @@ export const useProjectSettingsDialog = (
       const updatedProject = await ProjectApi.getProject(current.projectId);
       applyProjectDetail(updatedProject);
       successMessage.value = `アカウントID ${target.accountId} をProjectから除外しました。`;
-    } catch (_error: unknown) {
+    } catch (error: unknown) {
       // DELETEは確定済みのため再実行を促さず、最新表示の再取得だけを案内する。
-      errorMessages.value = [
-        "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
-      ];
+      await handleProjectRefreshError(
+        error,
+        DISPLAY_MESSAGES.project.settings.memberRemovedRefreshFailed
+      );
     } finally {
       isSavingMember.value = false;
     }
@@ -473,14 +483,65 @@ export const useProjectSettingsDialog = (
     if (current === null || isLoadingLatest.value) {
       return;
     }
+    const messagesBeforeReload = [...errorMessages.value];
     isLoadingLatest.value = true;
     try {
       applyProjectDetail(await ProjectApi.getProject(current.projectId));
-    } catch (_error: unknown) {
-      errorMessages.value.push("最新のProject情報を再取得できませんでした。");
+    } catch (error: unknown) {
+      if (
+        error instanceof ProjectApiError &&
+        PROJECT_RECOVERY_PRIORITY_STATUSES.has(error.status)
+      ) {
+        // 再取得時点の認証・認可・公開範囲を操作時点の競合理由より優先する。
+        await handleProjectRefreshError(
+          error,
+          DISPLAY_MESSAGES.project.settings.reloadFailed
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.project.settings.reloadFailed,
+      ];
     } finally {
       isLoadingLatest.value = false;
     }
+  };
+
+  /** Session失効時に設定・確認Dialogと古いAPIメッセージを破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (): Promise<void> => {
+    errorMessages.value = [];
+    successMessage.value = "";
+    isArchiveConfirmOpen.value = false;
+    isRemoveConfirmOpen.value = false;
+    memberToRemove.value = null;
+    isDialogOpen.value = false;
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+  };
+
+  /** 競合または確定済みDELETE後の詳細再取得失敗を現在の参照状態へ変換する。 */
+  const handleProjectRefreshError = async (
+    error: unknown,
+    fallbackMessage: string
+  ): Promise<void> => {
+    if (!(error instanceof ProjectApiError)) {
+      errorMessages.value = [fallbackMessage];
+      return;
+    }
+    if (error.status === 401) {
+      await handleUnauthorized();
+      return;
+    }
+    if (error.status === 403) {
+      errorMessages.value = [DISPLAY_MESSAGES.project.readForbidden];
+      return;
+    }
+    if (error.status === 404) {
+      errorMessages.value = [DISPLAY_MESSAGES.project.projectNotFound];
+      return;
+    }
+    errorMessages.value = [fallbackMessage];
   };
 
   /** Project APIのstatusと項目エラーを、Sessionを含むDialog動作へ変換する。 */
@@ -489,27 +550,28 @@ export const useProjectSettingsDialog = (
     fallbackMessage: string
   ): Promise<void> => {
     if (!(error instanceof ProjectApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      isDialogOpen.value = false;
-      await router.push({ name: "Login" });
+      await handleUnauthorized();
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["この操作を実行するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.project.settings.operationForbidden,
+      ];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = ["対象のProjectまたはmemberが見つかりません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.project.settings.resourceNotFound];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      PROJECT_ERROR_CODES,
+      fallbackMessage
     );
-    errorMessages.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
   return {

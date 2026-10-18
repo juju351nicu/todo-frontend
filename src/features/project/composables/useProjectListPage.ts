@@ -6,6 +6,7 @@ import ProjectApi, {
 } from "@/features/project/api/projectApi";
 import type { ProjectSummary } from "@/features/project/types/project";
 import { useUserStore } from "@/features/auth/stores/user";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 /** Project一覧の検索、読込、Board遷移を管理する。 */
 export const useProjectListPage = () => {
@@ -55,7 +56,7 @@ export const useProjectListPage = () => {
   /** Project APIのstatusを、認証状態を含む一覧画面の案内へ変換する。 */
   const handleApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof ProjectApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -64,10 +65,10 @@ export const useProjectListPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["Projectを参照するpermissionがありません。"];
+      errorMessages.value = [DISPLAY_MESSAGES.project.readForbidden];
       return;
     }
-    errorMessages.value = ["Project一覧を取得できませんでした。"];
+    errorMessages.value = [DISPLAY_MESSAGES.project.listLoadFailed];
   };
 
   return {

@@ -97,4 +97,38 @@ describe("useProjectListPage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
+
+  it("本文なし403はSessionを維持してProject参照権限不足を表示する", async () => {
+    mocks.projectApi.getProjects.mockRejectedValue(new ProjectApiError(403, null));
+    const page = useProjectListPage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "Projectを参照するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("Project一覧の予期しないAPIエラーはBackend本文を表示しない", async () => {
+    mocks.projectApi.getProjects.mockRejectedValue(
+      new ProjectApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "INTERNAL_DETAIL",
+            field: "exception",
+            message: "内部例外とpathを含む文言",
+          },
+        ],
+      })
+    );
+    const page = useProjectListPage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "Project一覧を取得できませんでした。",
+    ]);
+  });
 });

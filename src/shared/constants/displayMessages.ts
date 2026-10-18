@@ -39,6 +39,25 @@ export const DISPLAY_MESSAGES = {
       exportFailed: "月次勤怠CSVを出力できませんでした。",
     },
   },
+  project: {
+    readForbidden: "Projectを参照するpermissionがありません。",
+    projectNotFound:
+      "Projectが見つからないか、このProjectへ参加していません。",
+    listLoadFailed: "Project一覧を取得できませんでした。",
+    settings: {
+      operationForbidden: "この操作を実行するpermissionがありません。",
+      resourceNotFound: "対象のProjectまたはmemberが見つかりません。",
+      updateFailed: "Project情報を更新できませんでした。",
+      archiveFailed: "Projectをアーカイブできませんでした。",
+      memberAddFailed: "Project memberを追加できませんでした。",
+      memberRoleUpdateFailed:
+        "Project memberのroleを更新できませんでした。",
+      memberRemoveFailed: "Project memberを除外できませんでした。",
+      reloadFailed: "最新のProject情報を再取得できませんでした。",
+      memberRemovedRefreshFailed:
+        "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
+    },
+  },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",
     startFailed: "TaskのTimerを開始できませんでした。",

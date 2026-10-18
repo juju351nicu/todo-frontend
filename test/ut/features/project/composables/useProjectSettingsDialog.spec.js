@@ -133,7 +133,11 @@ describe("useProjectSettingsDialog", () => {
     mocks.projectApi.updateProject.mockRejectedValue(
       new ProjectApiError(409, {
         fieldErrors: [
-          { field: "version", message: "Projectが先に更新されています。" },
+          {
+            errorCode: "PROJECT_VERSION_CONFLICT",
+            field: "version",
+            message: "Projectが先に更新されています。",
+          },
         ],
       })
     );
@@ -311,5 +315,165 @@ describe("useProjectSettingsDialog", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(dialog.isDialogOpen.value).toBe(false);
+  });
+
+  it("契約済みの複数項目エラーをBackend順でtrimして表示する", async () => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "name",
+            message: " Project名を入力してください。 ",
+          },
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "description",
+            message: "説明は2000文字以内で入力してください。",
+          },
+        ],
+      })
+    );
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.projectForm.value.name = "更新Project";
+
+    await dialog.saveProject();
+
+    expect(dialog.errorMessages.value).toEqual([
+      "Project名を入力してください。",
+      "説明は2000文字以内で入力してください。",
+    ]);
+  });
+
+  it("未知codeのBackend messageを表示せずProject更新fallbackへ閉じる", async () => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INTERNAL_PROJECT_DETAIL",
+            field: "name",
+            message: "内部Project情報を含む文言",
+          },
+        ],
+      })
+    );
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.projectForm.value.name = "更新Project";
+
+    await dialog.saveProject();
+
+    expect(dialog.errorMessages.value).toEqual([
+      "Project情報を更新できませんでした。",
+    ]);
+  });
+
+  it("本文なし403はSessionを維持して操作権限不足を表示する", async () => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(403, null)
+    );
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.projectForm.value.name = "更新Project";
+
+    await dialog.saveProject();
+
+    expect(dialog.errorMessages.value).toEqual([
+      "この操作を実行するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [403, "Projectを参照するpermissionがありません。"],
+    [404, "Projectが見つからないか、このProjectへ参加していません。"],
+  ])(
+    "409回復中の%dは古い競合案内より現在の参照状態を優先する",
+    async (status, expectedMessage) => {
+      mocks.projectApi.updateProject.mockRejectedValue(
+        new ProjectApiError(409, {
+          fieldErrors: [
+            {
+              errorCode: "PROJECT_VERSION_CONFLICT",
+              field: "version",
+              message: "Projectが先に更新されています。",
+            },
+          ],
+        })
+      );
+      mocks.projectApi.getProject.mockRejectedValue(
+        new ProjectApiError(status, null)
+      );
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.projectForm.value.name = "更新Project";
+
+      await dialog.saveProject();
+
+      expect(dialog.errorMessages.value).toEqual([expectedMessage]);
+      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    }
+  );
+
+  it("409回復中の401は古い競合案内を破棄してSessionを失効させる", async () => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_VERSION_CONFLICT",
+            field: "version",
+            message: "Projectが先に更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.projectApi.getProject.mockRejectedValue(new ProjectApiError(401, null));
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.openDialog();
+    dialog.projectForm.value.name = "更新Project";
+
+    await dialog.saveProject();
+
+    expect(dialog.errorMessages.value).toEqual([]);
+    expect(dialog.isDialogOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409回復の通信失敗では競合理由を維持して再取得失敗を追加する", async () => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_VERSION_CONFLICT",
+            field: "version",
+            message: "Projectが先に更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.projectApi.getProject.mockRejectedValue(new TypeError("network"));
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.projectForm.value.name = "更新Project";
+
+    await dialog.saveProject();
+
+    expect(dialog.errorMessages.value).toEqual([
+      "Projectが先に更新されています。",
+      "最新のProject情報を再取得できませんでした。",
+    ]);
+  });
+
+  it("member除外確定後の詳細取得401はSessionを破棄してLoginへ戻る", async () => {
+    mocks.projectApi.getProject.mockRejectedValue(new ProjectApiError(401, null));
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.openDialog();
+    dialog.openRemoveConfirm(project.members[2]);
+
+    await dialog.removeMember();
+
+    expect(mocks.projectApi.removeProjectMember).toHaveBeenCalledWith(5, 4, 5);
+    expect(dialog.errorMessages.value).toEqual([]);
+    expect(dialog.isDialogOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 });

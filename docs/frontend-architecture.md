@@ -127,6 +127,7 @@ src/
 - `src/features/project/composables/useProjectSettingsDialog.ts`: Project基本情報、archive、member追加・role変更・除外、409再取得
 - `src/features/project/composables/useProjectTemplateCapture.ts`: Boardからのcapture Dialog状態、入力検証、認証・機能資格エラー
 - `src/features/project/composables/useProjectTemplatePage.ts`: 本人Templateの一覧・詳細・header編集・archive・Project適用・競合回復
+- `src/features/project/utils/apiErrors.ts`: Project一覧・設定・member管理が表示契約を持つerror code集合と409回復優先status
 - `src/features/project/components/ProjectSettingsDialog.vue`: Task Boardから開くProject設定・member管理Dialog
 - `src/features/project/components/ProjectTemplateCaptureButton.vue`: OWNER／SYSTEM_ADMIN向けProject snapshot保存Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
@@ -539,7 +540,15 @@ feature内で共通Bean Validationを含む契約済み38 error codeを明示し
 calendarとworkloadの並列再取得では、workload側の401後にcalendar成功Responseが遅れても競合案内を復元しない。
 Excelのbinary Response解析は通常JSON APIと統合せず、download契約を維持した。並列再取得のSession失効保護を外すmutationは
 古い競合文言の復活を対象testが検出して失敗し、復元後のWBS関連2 file・115件と全80 test file・634 Vitest、
-TypeScript／Vue／E2E型検査、production buildが成功した。次はProject／Task群を同じ契約へ移行する。
+TypeScript／Vue／E2E型検査、production buildが成功した。
+
+続いてProject一覧・設定・member管理を移行した。共通Bean Validationを含む契約済み11 error codeをfeature内へ明示し、
+既知codeの複数messageだけをBackend順で表示する。未知code、空message、本文なし、非JSONは一覧・更新・archive・member操作別の
+固定fallbackへ閉じ、本文なし403ではSessionを維持する。409後の詳細再取得中に401／403／404となった場合は古い競合案内より
+現在の認証・認可・公開範囲を優先する。member除外の204確定後に詳細再取得が401となる経路もSessionを破棄してLoginへ戻す。
+409回復の401優先statusを外すmutationは古い競合文言と再取得失敗の残存を検出して失敗し、復元後のProject core関連3 file・
+34件と全80 test file・645 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。次はProject Templateを
+同じ契約へ移行する。
 
 ## 変更時の確認
 
