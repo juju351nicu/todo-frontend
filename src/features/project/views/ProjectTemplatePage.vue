@@ -19,7 +19,7 @@ const {
   cancelEditing,
   closeArchiveConfirm,
   editForm,
-  errorMessage,
+  errorMessages,
   initialize,
   isApplying,
   isArchiveConfirmOpen,
@@ -86,8 +86,10 @@ onBeforeMount(initialize);
       </v-card-subtitle>
 
       <v-card-text>
-        <v-alert v-if="errorMessage" type="error" class="mb-4">
-          {{ errorMessage }}
+        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+          <div v-for="message in errorMessages" :key="message">
+            {{ message }}
+          </div>
         </v-alert>
         <v-alert v-if="successMessage" type="success" closable class="mb-4">
           {{ successMessage }}

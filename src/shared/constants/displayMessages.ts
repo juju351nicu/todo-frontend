@@ -57,6 +57,22 @@ export const DISPLAY_MESSAGES = {
       memberRemovedRefreshFailed:
         "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
     },
+    template: {
+      readForbidden:
+        "Project Templateを参照するpermissionがありません。",
+      operationForbidden:
+        "Project Templateを操作するpermissionがありません。",
+      resourceNotFound:
+        "対象のProjectまたはProject Templateが見つかりません。",
+      listLoadFailed: "Project Template一覧を取得できませんでした。",
+      detailLoadFailed: "Project Template詳細を取得できませんでした。",
+      captureFailed: "ProjectをTemplateとして保存できませんでした。",
+      updateFailed: "Project Templateを更新できませんでした。",
+      archiveFailed: "Project Templateをアーカイブできませんでした。",
+      applyFailed: "Project TemplateからProjectを作成できませんでした。",
+      reloadFailed:
+        "最新のProject Templateを再取得できませんでした。再読込してください。",
+    },
   },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",

@@ -12,9 +12,18 @@ import type {
   ProjectTemplateUpdateRequest,
 } from "@/features/project/types/projectTemplate";
 import {
+  PROJECT_RECOVERY_PRIORITY_STATUSES,
+  PROJECT_TEMPLATE_ERROR_CODES,
+} from "@/features/project/utils/apiErrors";
+import {
   isValidLocalDateInput,
   toLocalDateInputValue,
 } from "@/features/project/utils/projectTemplateDate";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 /** Project Template header編集フォーム。 */
 export interface ProjectTemplateEditForm {
@@ -78,7 +87,7 @@ export const useProjectTemplatePage = () => {
   const selectedTemplate = ref<ProjectTemplate | null>(null);
   const editForm = ref<ProjectTemplateEditForm>(createEmptyEditForm());
   const applyForm = ref<ProjectTemplateApplyForm>(createEmptyApplyForm());
-  const errorMessage = ref("");
+  const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isArchiveConfirmOpen = ref(false);
   const isApplying = ref(false);
@@ -98,17 +107,29 @@ export const useProjectTemplatePage = () => {
     () => isApplying.value || isArchiving.value || isSaving.value
   );
 
-  /** Backend共通ErrorResponseから最初の利用者向けメッセージを取得する。 */
-  const getErrorMessage = (error: unknown, fallback: string): string =>
-    error instanceof ProjectTemplateApiError
-      ? error.errorResponse?.fieldErrors?.[0]?.message ?? fallback
-      : fallback;
+  /** 機能資格不足をpermission不足のbodyなし403と区別する。 */
+  const isFeatureNotEntitled = (error: ProjectTemplateApiError): boolean =>
+    error.status === 403 &&
+    hasApiFieldError(
+      error.errorResponse,
+      "FEATURE_NOT_ENTITLED",
+      "featureCode"
+    );
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
     if (!(error instanceof ProjectTemplateApiError) || error.status !== 401) {
       return false;
     }
+    templates.value = [];
+    selectedTemplateId.value = null;
+    selectedTemplate.value = null;
+    editForm.value = createEmptyEditForm();
+    applyForm.value = createEmptyApplyForm();
+    errorMessages.value = [];
+    successMessage.value = "";
+    isEditing.value = false;
+    isArchiveConfirmOpen.value = false;
     userStore.clearSession();
     await router.push({ name: "Login" });
     return true;
@@ -152,7 +173,7 @@ export const useProjectTemplatePage = () => {
   const loadTemplates = async (): Promise<boolean> => {
     if (isLoadingList.value) return false;
     isLoadingList.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     try {
       templates.value = await ProjectTemplateApi.findOwnTemplates();
       if (
@@ -166,12 +187,10 @@ export const useProjectTemplatePage = () => {
       }
       return true;
     } catch (error: unknown) {
-      if (!(await handleUnauthorized(error))) {
-        errorMessage.value = getErrorMessage(
-          error,
-          "Project Template一覧を取得できませんでした。"
-        );
-      }
+      await handleReadError(
+        error,
+        DISPLAY_MESSAGES.project.template.listLoadFailed
+      );
       return false;
     } finally {
       isLoadingList.value = false;
@@ -183,7 +202,7 @@ export const useProjectTemplatePage = () => {
     const templateId = selectedTemplateId.value;
     if (templateId === null || isLoadingDetail.value) return false;
     isLoadingDetail.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     try {
       const detail = await ProjectTemplateApi.getOwnTemplate(templateId);
       // 選択変更中に遅いResponseが戻っても、別Templateの詳細へ上書きしない。
@@ -192,17 +211,19 @@ export const useProjectTemplatePage = () => {
       synchronizeForms(detail);
       return true;
     } catch (error: unknown) {
-      if (await handleUnauthorized(error)) return false;
-      if (
-        error instanceof ProjectTemplateApiError &&
-        error.status === 404
-      ) {
+      if (error instanceof ProjectTemplateApiError && error.status === 404) {
+        const notFoundMessages = [
+          DISPLAY_MESSAGES.project.template.resourceNotFound,
+        ];
         clearSelection();
-        await loadTemplates();
+        if (await loadTemplates()) {
+          errorMessages.value = notFoundMessages;
+        }
+        return false;
       }
-      errorMessage.value = getErrorMessage(
+      await handleReadError(
         error,
-        "Project Template詳細を取得できませんでした。"
+        DISPLAY_MESSAGES.project.template.detailLoadFailed
       );
       return false;
     } finally {
@@ -235,7 +256,7 @@ export const useProjectTemplatePage = () => {
     }
     synchronizeForms(selectedTemplate.value);
     isEditing.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
   };
 
@@ -250,11 +271,11 @@ export const useProjectTemplatePage = () => {
     const name = editForm.value.name.trim();
     const description = editForm.value.description.trim();
     if (!name || name.length > 100) {
-      errorMessage.value = "Template名を1〜100文字で入力してください。";
+      errorMessages.value = ["Template名を1〜100文字で入力してください。"];
       return null;
     }
     if (description.length > 2000) {
-      errorMessage.value = "説明は2000文字以内で入力してください。";
+      errorMessages.value = ["説明は2000文字以内で入力してください。"];
       return null;
     }
     return {
@@ -271,7 +292,7 @@ export const useProjectTemplatePage = () => {
     const request = buildUpdateRequest();
     if (request === null) return;
     isSaving.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       const updated = await ProjectTemplateApi.update(
@@ -290,7 +311,7 @@ export const useProjectTemplatePage = () => {
     } catch (error: unknown) {
       await handleMutationError(
         error,
-        "Project Templateを更新できませんでした。"
+        DISPLAY_MESSAGES.project.template.updateFailed
       );
     } finally {
       isSaving.value = false;
@@ -302,7 +323,7 @@ export const useProjectTemplatePage = () => {
     if (!selectedTemplate.value || !canEditTemplate.value || isMutating.value) {
       return;
     }
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     isArchiveConfirmOpen.value = true;
   };
@@ -317,7 +338,7 @@ export const useProjectTemplatePage = () => {
     const template = selectedTemplate.value;
     if (!template || !canEditTemplate.value || isMutating.value) return;
     isArchiving.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       await ProjectTemplateApi.archive(
@@ -332,14 +353,15 @@ export const useProjectTemplatePage = () => {
       successMessage.value = "Project Templateをアーカイブしました。";
       if (templates.value.length > 0) {
         selectedTemplateId.value = templates.value[0].projectTemplateId;
-        await loadSelectedTemplate();
-        successMessage.value = "Project Templateをアーカイブしました。";
+        if (!(await loadSelectedTemplate())) {
+          successMessage.value = "";
+        }
       }
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
       await handleMutationError(
         error,
-        "Project Templateをアーカイブできませんでした。"
+        DISPLAY_MESSAGES.project.template.archiveFailed
       );
     } finally {
       isArchiving.value = false;
@@ -357,7 +379,7 @@ export const useProjectTemplatePage = () => {
       const rawAccountId = applyForm.value.memberMappings[slot.slotKey] ?? null;
       if ((rawAccountId === null || rawAccountId === "") && slot.slotKey === "OWNER_1") {
         if (userStore.memberId === null) {
-          errorMessage.value = "SessionのアカウントIDを確認できません。";
+          errorMessages.value = ["SessionのアカウントIDを確認できません。"];
           return null;
         }
         actorIsOwner = true;
@@ -367,11 +389,15 @@ export const useProjectTemplatePage = () => {
       }
       const accountId = parseAccountId(rawAccountId);
       if (accountId === null) {
-        errorMessage.value = `${slot.displayName}へ正の整数のアカウントIDを割り当ててください。`;
+        errorMessages.value = [
+          `${slot.displayName}へ正の整数のアカウントIDを割り当ててください。`,
+        ];
         return null;
       }
       if (accountIds.has(accountId)) {
-        errorMessage.value = "同じアカウントを複数のmember slotへ割り当てることはできません。";
+        errorMessages.value = [
+          "同じアカウントを複数のmember slotへ割り当てることはできません。",
+        ];
         return null;
       }
       accountIds.add(accountId);
@@ -381,7 +407,9 @@ export const useProjectTemplatePage = () => {
       mappings.push({ slotKey: slot.slotKey, accountId });
     }
     if (!actorIsOwner) {
-      errorMessage.value = "自分のアカウントIDをOWNER slotへ割り当ててください。";
+      errorMessages.value = [
+        "自分のアカウントIDをOWNER slotへ割り当ててください。",
+      ];
       return null;
     }
     return mappings;
@@ -394,22 +422,24 @@ export const useProjectTemplatePage = () => {
     const projectKey = applyForm.value.projectKey.trim().toUpperCase();
     const name = applyForm.value.name.trim();
     if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(projectKey) || projectKey.length > 30) {
-      errorMessage.value = "Projectキーは30文字以内の大文字英数字をハイフンで区切って入力してください。";
+      errorMessages.value = [
+        "Projectキーは30文字以内の大文字英数字をハイフンで区切って入力してください。",
+      ];
       return;
     }
     if (!name || name.length > 100) {
-      errorMessage.value = "Project名を1〜100文字で入力してください。";
+      errorMessages.value = ["Project名を1〜100文字で入力してください。"];
       return;
     }
     if (!isValidLocalDateInput(applyForm.value.projectStartDate)) {
-      errorMessage.value = "Project開始日を正しく入力してください。";
+      errorMessages.value = ["Project開始日を正しく入力してください。"];
       return;
     }
     const memberMappings = buildMemberMappings();
     if (memberMappings === null) return;
 
     isApplying.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       const created = await ProjectTemplateApi.apply(
@@ -428,45 +458,136 @@ export const useProjectTemplatePage = () => {
     } catch (error: unknown) {
       await handleMutationError(
         error,
-        "Project TemplateからProjectを作成できませんでした。"
+        DISPLAY_MESSAGES.project.template.applyFailed
       );
     } finally {
       isApplying.value = false;
     }
   };
 
-  /** 更新系APIの401と404／409を処理し、古いversion・mapping draftを残さない。 */
+  /** 参照APIのstatusをSession、permission、公開範囲、業務エラーへ変換する。 */
+  async function handleReadError(
+    error: unknown,
+    fallback: string
+  ): Promise<void> {
+    if (!(error instanceof ProjectTemplateApiError)) {
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      return;
+    }
+    if (await handleUnauthorized(error)) return;
+    if (error.status === 403) {
+      errorMessages.value = [DISPLAY_MESSAGES.project.template.readForbidden];
+      return;
+    }
+    if (error.status === 404) {
+      errorMessages.value = [
+        DISPLAY_MESSAGES.project.template.resourceNotFound,
+      ];
+      return;
+    }
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      PROJECT_TEMPLATE_ERROR_CODES,
+      fallback
+    );
+  }
+
+  /** 404／409後に一覧と選択snapshotを再取得し、回復時点の認証・認可を優先する。 */
+  async function reloadTemplateAfterConflict(
+    messagesBeforeReload: string[]
+  ): Promise<void> {
+    const currentId = selectedTemplateId.value;
+    isLoadingList.value = true;
+    try {
+      templates.value = await ProjectTemplateApi.findOwnTemplates();
+      if (
+        currentId === null ||
+        !templates.value.some(
+          (template) => template.projectTemplateId === currentId
+        )
+      ) {
+        clearSelection();
+        errorMessages.value = messagesBeforeReload;
+        return;
+      }
+
+      isLoadingDetail.value = true;
+      const detail = await ProjectTemplateApi.getOwnTemplate(currentId);
+      selectedTemplateId.value = currentId;
+      selectedTemplate.value = detail;
+      synchronizeForms(detail);
+      errorMessages.value = messagesBeforeReload;
+    } catch (error: unknown) {
+      if (
+        error instanceof ProjectTemplateApiError &&
+        PROJECT_RECOVERY_PRIORITY_STATUSES.has(error.status)
+      ) {
+        if (error.status === 403) {
+          templates.value = [];
+          clearSelection();
+        } else if (error.status === 404) {
+          templates.value = templates.value.filter(
+            (template) => template.projectTemplateId !== currentId
+          );
+          clearSelection();
+        }
+        await handleReadError(
+          error,
+          DISPLAY_MESSAGES.project.template.reloadFailed
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.project.template.reloadFailed,
+      ];
+    } finally {
+      isLoadingDetail.value = false;
+      isLoadingList.value = false;
+    }
+  }
+
+  /** 更新系APIのstatusとcodeを処理し、404／409では古いdraftを破棄して再取得する。 */
   async function handleMutationError(
     error: unknown,
     fallback: string
   ): Promise<void> {
-    if (await handleUnauthorized(error)) return;
-    if (
-      error instanceof ProjectTemplateApiError &&
-      (error.status === 404 || error.status === 409)
-    ) {
-      const message = getErrorMessage(
-        error,
-        "Project Templateが変更されています。最新の状態を表示しました。"
-      );
-      isEditing.value = false;
-      isArchiveConfirmOpen.value = false;
-      const currentId = selectedTemplateId.value;
-      if (await loadTemplates()) {
-        if (
-          currentId !== null &&
-          templates.value.some(
-            (template) => template.projectTemplateId === currentId
-          )
-        ) {
-          selectedTemplateId.value = currentId;
-          await loadSelectedTemplate();
-        }
-        errorMessage.value = message;
-      }
+    if (!(error instanceof ProjectTemplateApiError)) {
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
-    errorMessage.value = getErrorMessage(error, fallback);
+    if (await handleUnauthorized(error)) return;
+    if (error.status === 403) {
+      errorMessages.value = isFeatureNotEntitled(error)
+        ? resolveApiErrorMessages(
+            error.errorResponse,
+            PROJECT_TEMPLATE_ERROR_CODES,
+            fallback
+          )
+        : [DISPLAY_MESSAGES.project.template.operationForbidden];
+      return;
+    }
+    if (error.status === 404 || error.status === 409) {
+      const messages =
+        error.status === 404
+          ? [DISPLAY_MESSAGES.project.template.resourceNotFound]
+          : resolveApiErrorMessages(
+              error.errorResponse,
+              PROJECT_TEMPLATE_ERROR_CODES,
+              fallback
+            );
+      isEditing.value = false;
+      isArchiveConfirmOpen.value = false;
+      selectedTemplate.value = null;
+      synchronizeForms(null);
+      await reloadTemplateAfterConflict(messages);
+      return;
+    }
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      PROJECT_TEMPLATE_ERROR_CODES,
+      fallback
+    );
   }
 
   return {
@@ -479,7 +600,7 @@ export const useProjectTemplatePage = () => {
     cancelEditing,
     closeArchiveConfirm,
     editForm,
-    errorMessage,
+    errorMessages,
     initialize,
     isApplying,
     isArchiveConfirmOpen,

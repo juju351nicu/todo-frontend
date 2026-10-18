@@ -547,8 +547,16 @@ TypeScript／Vue／E2E型検査、production buildが成功した。
 固定fallbackへ閉じ、本文なし403ではSessionを維持する。409後の詳細再取得中に401／403／404となった場合は古い競合案内より
 現在の認証・認可・公開範囲を優先する。member除外の204確定後に詳細再取得が401となる経路もSessionを破棄してLoginへ戻す。
 409回復の401優先statusを外すmutationは古い競合文言と再取得失敗の残存を検出して失敗し、復元後のProject core関連3 file・
-34件と全80 test file・645 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。次はProject Templateを
-同じ契約へ移行する。
+34件と全80 test file・645 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+
+続いてProject Templateのcapture、一覧、詳細、header更新、archive、Project適用を移行した。共通Bean Validationを含む
+契約済み11 error codeを明示し、複数messageはBackend順で表示する。未知code、空message、構造不正、本文なし、非JSONは
+操作別fallbackへ閉じる。403は`FEATURE_NOT_ENTITLED`／`featureCode`だけを機能資格案内として扱い、bodyなしまたは
+field不一致の403はpermission不足としてSessionを維持する。404／409後は古いsnapshot、version、member mapping draftを
+破棄して一覧・詳細を再取得し、回復中の401／403／404は元の競合案内より優先する。通信失敗では競合理由と再取得失敗を
+併記し、archiveの204確定後に次Templateの取得が401となった場合は成功案内を残さずLoginへ戻す。401優先statusを外す
+mutationは意図した回帰1件が失敗し、復元後のProject Template関連3 file・32件と全80 test file・658 Vitest、
+TypeScript／Vue／E2E型検査、production buildが成功した。次はBoard／Task coreを同じ契約へ移行する。
 
 ## 変更時の確認
 

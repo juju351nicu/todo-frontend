@@ -15,7 +15,7 @@ const {
   baseDate,
   capture,
   close,
-  errorMessage,
+  errorMessages,
   isOpen,
   isSaving,
   name,
@@ -73,8 +73,15 @@ const canCapture = computed(
           member role、Board列、WBS Task階層、checklist、Task依存関係を本人専用Templateへ保存します。
           コメント、進捗、実績、calendar、baseline、EVM、勤怠は含みません。
         </p>
-        <v-alert v-if="errorMessage" type="error" density="compact" class="mb-3">
-          {{ errorMessage }}
+        <v-alert
+          v-if="errorMessages.length"
+          type="error"
+          density="compact"
+          class="mb-3"
+        >
+          <div v-for="message in errorMessages" :key="message">
+            {{ message }}
+          </div>
         </v-alert>
         <v-text-field
           v-model="name"

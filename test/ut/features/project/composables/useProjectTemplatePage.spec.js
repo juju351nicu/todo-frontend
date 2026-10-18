@@ -198,7 +198,9 @@ describe("useProjectTemplatePage", () => {
     await page.applyTemplate();
 
     expect(mocks.projectTemplateApi.apply).not.toHaveBeenCalled();
-    expect(page.errorMessage.value).toContain("Project開始日");
+    expect(page.errorMessages.value).toEqual([
+      "Project開始日を正しく入力してください。",
+    ]);
   });
 
   it("同じaccountの複数slot割当はAPI送信前に拒否する", async () => {
@@ -211,7 +213,9 @@ describe("useProjectTemplatePage", () => {
     await page.applyTemplate();
 
     expect(mocks.projectTemplateApi.apply).not.toHaveBeenCalled();
-    expect(page.errorMessage.value).toContain("同じアカウント");
+    expect(page.errorMessages.value).toEqual([
+      "同じアカウントを複数のmember slotへ割り当てることはできません。",
+    ]);
   });
 
   it("archive成功後はactive一覧と選択から除外する", async () => {
@@ -258,7 +262,231 @@ describe("useProjectTemplatePage", () => {
     expect(mocks.projectTemplateApi.getOwnTemplate).toHaveBeenCalledTimes(2);
     expect(page.selectedTemplate.value.name).toBe("別tab更新");
     expect(page.isEditing.value).toBe(false);
-    expect(page.errorMessage.value).toBe("別の操作で更新されました。");
+    expect(page.errorMessages.value).toEqual(["別の操作で更新されました。"]);
+  });
+
+  it("一覧の本文なし403はSessionを維持して参照permission不足を表示する", async () => {
+    mocks.projectTemplateApi.findOwnTemplates.mockRejectedValue(
+      new ProjectTemplateApiError(403, null)
+    );
+    const page = useProjectTemplatePage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "Project Templateを参照するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("一覧の未知codeはBackend本文を表示せず一覧fallbackへ閉じる", async () => {
+    mocks.projectTemplateApi.findOwnTemplates.mockRejectedValue(
+      new ProjectTemplateApiError(500, {
+        fieldErrors: [
+          {
+            field: "exception",
+            errorCode: "INTERNAL_DETAIL",
+            message: "内部例外とpathを含む文言",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "Project Template一覧を取得できませんでした。",
+    ]);
+  });
+
+  it("機能資格403だけはBackendのupgrade案内を表示する", async () => {
+    mocks.projectTemplateApi.update.mockRejectedValue(
+      new ProjectTemplateApiError(403, {
+        fieldErrors: [
+          {
+            field: "featureCode",
+            errorCode: "FEATURE_NOT_ENTITLED",
+            message: "現在のPlanでは利用できません。",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessages.value).toEqual([
+      "現在のPlanでは利用できません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("featureCode以外の資格codeはupgrade案内にせずpermission不足を表示する", async () => {
+    mocks.projectTemplateApi.update.mockRejectedValue(
+      new ProjectTemplateApiError(403, {
+        fieldErrors: [
+          {
+            field: "permission",
+            errorCode: "FEATURE_NOT_ENTITLED",
+            message: "誤ったfieldの案内",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessages.value).toEqual([
+      "Project Templateを操作するpermissionがありません。",
+    ]);
+  });
+
+  it("契約済みの複数入力エラーをBackend順で表示する", async () => {
+    mocks.projectTemplateApi.apply.mockRejectedValue(
+      new ProjectTemplateApiError(400, {
+        fieldErrors: [
+          {
+            field: "projectKey",
+            errorCode: "INVALID_REQUEST_BODY",
+            message: "Projectキーを確認してください。",
+          },
+          {
+            field: "memberMappings",
+            errorCode: "INVALID_REQUEST_BODY",
+            message: "member mappingを確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.applyForm.value.projectKey = "NEW-PROJECT";
+    page.applyForm.value.name = "新Project";
+    page.applyForm.value.memberMappings.MEMBER_1 = 8;
+
+    await page.applyTemplate();
+
+    expect(page.errorMessages.value).toEqual([
+      "Projectキーを確認してください。",
+      "member mappingを確認してください。",
+    ]);
+  });
+
+  it("409回復中の401は競合案内とsnapshotを破棄してLoginへ戻す", async () => {
+    mocks.projectTemplateApi.getOwnTemplate
+      .mockResolvedValueOnce(structuredClone(template))
+      .mockRejectedValueOnce(new ProjectTemplateApiError(401, null));
+    mocks.projectTemplateApi.update.mockRejectedValue(
+      new ProjectTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "version",
+            errorCode: "PROJECT_TEMPLATE_VERSION_CONFLICT",
+            message: "別の操作で更新されました。",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.templates.value).toEqual([]);
+    expect(page.selectedTemplate.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it.each([
+    [403, "Project Templateを参照するpermissionがありません。"],
+    [404, "対象のProjectまたはProject Templateが見つかりません。"],
+  ])(
+    "409回復中の%sは古い競合案内より現在の参照状態を優先する",
+    async (status, expectedMessage) => {
+      mocks.projectTemplateApi.getOwnTemplate
+        .mockResolvedValueOnce(structuredClone(template))
+        .mockRejectedValueOnce(new ProjectTemplateApiError(status, null));
+      mocks.projectTemplateApi.update.mockRejectedValue(
+        new ProjectTemplateApiError(409, {
+          fieldErrors: [
+            {
+              field: "version",
+              errorCode: "PROJECT_TEMPLATE_VERSION_CONFLICT",
+              message: "古い競合案内",
+            },
+          ],
+        })
+      );
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      page.beginEditing();
+
+      await page.saveTemplate();
+
+      expect(page.errorMessages.value).toEqual([expectedMessage]);
+      expect(page.selectedTemplate.value).toBeNull();
+      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    }
+  );
+
+  it("409回復の通信失敗では競合理由を維持して再取得失敗を追加する", async () => {
+    mocks.projectTemplateApi.findOwnTemplates
+      .mockResolvedValueOnce([structuredClone(summary)])
+      .mockRejectedValueOnce(new TypeError("network"));
+    mocks.projectTemplateApi.update.mockRejectedValue(
+      new ProjectTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "version",
+            errorCode: "PROJECT_TEMPLATE_VERSION_CONFLICT",
+            message: "別の操作で更新されました。",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessages.value).toEqual([
+      "別の操作で更新されました。",
+      "最新のProject Templateを再取得できませんでした。再読込してください。",
+    ]);
+    expect(page.selectedTemplate.value).toBeNull();
+  });
+
+  it("archive確定後の次Template詳細取得401は成功案内を残さずLoginへ戻す", async () => {
+    const secondSummary = { ...summary, projectTemplateId: 82, name: "次Template" };
+    mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([
+      structuredClone(summary),
+      secondSummary,
+    ]);
+    mocks.projectTemplateApi.getOwnTemplate
+      .mockResolvedValueOnce(structuredClone(template))
+      .mockRejectedValueOnce(new ProjectTemplateApiError(401, null));
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.openArchiveConfirm();
+
+    await page.archiveTemplate();
+
+    expect(page.successMessage.value).toBe("");
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.templates.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
@@ -271,5 +499,6 @@ describe("useProjectTemplatePage", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(page.errorMessages.value).toEqual([]);
   });
 });

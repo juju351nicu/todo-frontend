@@ -16,6 +16,21 @@ export const PROJECT_ERROR_CODES: ReadonlySet<string> = new Set([
   "PROJECT_LAST_OWNER",
 ]);
 
+/** Project Templateのcapture・管理・適用でFrontendが表示契約を持つerror code集合。 */
+export const PROJECT_TEMPLATE_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+  "PROJECT_NOT_FOUND",
+  "PROJECT_KEY_CONFLICT",
+  "PROJECT_ARCHIVED",
+  "PROJECT_TEMPLATE_NOT_FOUND",
+  "PROJECT_TEMPLATE_NAME_CONFLICT",
+  "PROJECT_TEMPLATE_VERSION_CONFLICT",
+  "PROJECT_TEMPLATE_ARCHIVED",
+  "PROJECT_TEMPLATE_STRUCTURE_INVALID",
+  "PROJECT_TEMPLATE_MEMBER_MAPPING_INVALID",
+  "FEATURE_NOT_ENTITLED",
+]);
+
 /** 409回復中に古い競合案内より優先する認証・認可・公開範囲のHTTP status。 */
 export const PROJECT_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
   401,

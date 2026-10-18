@@ -68,7 +68,9 @@ describe("useProjectTemplateCapture", () => {
     await state.capture();
 
     expect(mocks.projectTemplateApi.capture).not.toHaveBeenCalled();
-    expect(state.errorMessage.value).toContain("基準日");
+    expect(state.errorMessages.value).toEqual([
+      "Task日付の基準日を入力してください。",
+    ]);
   });
 
   it("機能資格403ではBackendのupgrade案内をDialogへ表示する", async () => {
@@ -90,8 +92,79 @@ describe("useProjectTemplateCapture", () => {
 
     await state.capture();
 
-    expect(state.errorMessage.value).toBe("現在のPlanでは利用できません。");
+    expect(state.errorMessages.value).toEqual([
+      "現在のPlanでは利用できません。",
+    ]);
     expect(state.isOpen.value).toBe(true);
+  });
+
+  it("本文なし403はSessionを維持してpermission不足を表示する", async () => {
+    mocks.projectTemplateApi.capture.mockRejectedValue(
+      new ProjectTemplateApiError(403, null)
+    );
+    const state = useProjectTemplateCapture(ref(5), ref(false));
+    state.open();
+    state.name.value = "開発Template";
+
+    await state.capture();
+
+    expect(state.errorMessages.value).toEqual([
+      "Project Templateを操作するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("未知codeはBackend本文を表示せずcapture用fallbackへ閉じる", async () => {
+    mocks.projectTemplateApi.capture.mockRejectedValue(
+      new ProjectTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "internalPath",
+            errorCode: "INTERNAL_DETAIL",
+            message: "内部例外とpathを含む文言",
+          },
+        ],
+      })
+    );
+    const state = useProjectTemplateCapture(ref(5), ref(false));
+    state.open();
+    state.name.value = "開発Template";
+
+    await state.capture();
+
+    expect(state.errorMessages.value).toEqual([
+      "ProjectをTemplateとして保存できませんでした。",
+    ]);
+  });
+
+  it("契約済みの複数入力エラーをBackend順で表示する", async () => {
+    mocks.projectTemplateApi.capture.mockRejectedValue(
+      new ProjectTemplateApiError(400, {
+        fieldErrors: [
+          {
+            field: "name",
+            errorCode: "INVALID_REQUEST_BODY",
+            message: "Template名を入力してください。",
+          },
+          {
+            field: "baseDate",
+            errorCode: "INVALID_REQUEST_BODY",
+            message: "基準日を入力してください。",
+          },
+        ],
+      })
+    );
+    const state = useProjectTemplateCapture(ref(5), ref(false));
+    state.open();
+    state.name.value = "開発Template";
+
+    await state.capture();
+
+    expect(state.errorMessages.value).toEqual([
+      "Template名を入力してください。",
+      "基準日を入力してください。",
+    ]);
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
@@ -106,5 +179,7 @@ describe("useProjectTemplateCapture", () => {
 
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(state.isOpen.value).toBe(false);
+    expect(state.errorMessages.value).toEqual([]);
   });
 });

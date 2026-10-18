@@ -6,10 +6,16 @@ import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
 import type { ProjectTemplate } from "@/features/project/types/projectTemplate";
+import { PROJECT_TEMPLATE_ERROR_CODES } from "@/features/project/utils/apiErrors";
 import {
   isValidLocalDateInput,
   toLocalDateInputValue,
 } from "@/features/project/utils/projectTemplateDate";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 /** Project全体を本人所有TemplateへcaptureするDialog状態を管理する。 */
 export const useProjectTemplateCapture = (
@@ -21,7 +27,7 @@ export const useProjectTemplateCapture = (
   const isOpen = ref(false);
   const name = ref("");
   const baseDate = ref(toLocalDateInputValue());
-  const errorMessage = ref("");
+  const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isSaving = ref(false);
 
@@ -30,7 +36,7 @@ export const useProjectTemplateCapture = (
     if (disabled.value || isSaving.value) return;
     name.value = "";
     baseDate.value = toLocalDateInputValue();
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     isOpen.value = true;
   };
@@ -45,15 +51,15 @@ export const useProjectTemplateCapture = (
     const normalizedName = name.value.trim();
     if (disabled.value || isSaving.value) return null;
     if (!normalizedName || normalizedName.length > 100) {
-      errorMessage.value = "Template名を1〜100文字で入力してください。";
+      errorMessages.value = ["Template名を1〜100文字で入力してください。"];
       return null;
     }
     if (!isValidLocalDateInput(baseDate.value)) {
-      errorMessage.value = "Task日付の基準日を入力してください。";
+      errorMessages.value = ["Task日付の基準日を入力してください。"];
       return null;
     }
     isSaving.value = true;
-    errorMessage.value = "";
+    errorMessages.value = [];
     successMessage.value = "";
     try {
       const created = await ProjectTemplateApi.capture(projectId.value, {
@@ -66,15 +72,42 @@ export const useProjectTemplateCapture = (
       return created;
     } catch (error: unknown) {
       if (error instanceof ProjectTemplateApiError && error.status === 401) {
+        isOpen.value = false;
+        errorMessages.value = [];
+        successMessage.value = "";
         userStore.clearSession();
         await router.push({ name: "Login" });
         return null;
       }
-      errorMessage.value =
-        error instanceof ProjectTemplateApiError
-          ? error.errorResponse?.fieldErrors?.[0]?.message ??
-            "ProjectをTemplateとして保存できませんでした。"
-          : "ProjectをTemplateとして保存できませんでした。";
+      if (!(error instanceof ProjectTemplateApiError)) {
+        errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+        return null;
+      }
+      if (error.status === 403) {
+        errorMessages.value = hasApiFieldError(
+          error.errorResponse,
+          "FEATURE_NOT_ENTITLED",
+          "featureCode"
+        )
+          ? resolveApiErrorMessages(
+              error.errorResponse,
+              PROJECT_TEMPLATE_ERROR_CODES,
+              DISPLAY_MESSAGES.project.template.captureFailed
+            )
+          : [DISPLAY_MESSAGES.project.template.operationForbidden];
+        return null;
+      }
+      if (error.status === 404) {
+        errorMessages.value = [
+          DISPLAY_MESSAGES.project.template.resourceNotFound,
+        ];
+        return null;
+      }
+      errorMessages.value = resolveApiErrorMessages(
+        error.errorResponse,
+        PROJECT_TEMPLATE_ERROR_CODES,
+        DISPLAY_MESSAGES.project.template.captureFailed
+      );
       return null;
     } finally {
       isSaving.value = false;
@@ -85,7 +118,7 @@ export const useProjectTemplateCapture = (
     baseDate,
     capture,
     close,
-    errorMessage,
+    errorMessages,
     isOpen,
     isSaving,
     name,
