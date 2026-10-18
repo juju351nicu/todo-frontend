@@ -5,7 +5,10 @@ import AdministrationApi, {
   AdministrationApiError,
 } from "@/features/administration/api/administrationApi";
 import type { AuthorizationAuditLog } from "@/features/administration/types/administration";
+import { AUTHORIZATION_AUDIT_ERROR_CODES } from "@/features/administration/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface AuthorizationAuditTableHeader {
   title: string;
@@ -44,6 +47,13 @@ export const useAuthorizationAuditListPage = () => {
   const pageSizes = AUTHORIZATION_AUDIT_PAGE_SIZES;
   const totalElements = ref(0);
   const totalPages = ref(0);
+
+  /** 認証・認可状態が変化した場合に監査ログと件数を画面から破棄する。 */
+  const clearProtectedState = (): void => {
+    auditLogs.value = [];
+    totalElements.value = 0;
+    totalPages.value = 0;
+  };
 
   /** 現在選択中のページをBackendから再取得する。読込中の二重実行は無視する。 */
   const loadAuditLogs = async (): Promise<void> => {
@@ -90,25 +100,28 @@ export const useAuthorizationAuditListPage = () => {
   /** 監査APIの失敗を、認証状態と画面メッセージへ変換する。 */
   const handleApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof AdministrationApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
+      clearProtectedState();
+      errorMessages.value = [];
       userStore.clearSession();
       await router.push({ name: "Login" });
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["監査ログを参照するpermissionがありません。"];
+      clearProtectedState();
+      errorMessages.value = [
+        DISPLAY_MESSAGES.administration.audit.readForbidden,
+      ];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      AUTHORIZATION_AUDIT_ERROR_CODES,
+      DISPLAY_MESSAGES.administration.audit.loadFailed
     );
-    errorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["権限変更監査ログを取得できませんでした。"];
   };
 
   return {

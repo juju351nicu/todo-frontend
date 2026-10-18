@@ -268,6 +268,190 @@ describe("useAccountAdministrationPage", () => {
     expect(page.isEditorOpen.value).toBe(false);
   });
 
+  it("契約済み入力エラーはBackend順で複数表示する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "roleCodes",
+            message: "ロールを1件以上指定してください。",
+          },
+          {
+            errorCode: "INVALID_ROLE_ASSIGNMENT",
+            field: "roleCodes",
+            message: "指定されたロールを確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "ロールを1件以上指定してください。",
+      "指定されたロールを確認してください。",
+    ]);
+  });
+
+  it("未知codeのBackend本文は表示せず更新用fallbackへ閉じる", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNEXPECTED_INTERNAL_DETAIL",
+            field: "roleCodes",
+            message: "内部のrole idは999です。",
+          },
+        ],
+      })
+    );
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "アカウントのロールを更新できませんでした。",
+    ]);
+  });
+
+  it("本文なし409はfallbackを表示して最新versionへ回復する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(409, null)
+    );
+    mocks.administrationApi.getAccounts
+      .mockResolvedValueOnce(accounts)
+      .mockResolvedValueOnce([{ ...accounts[1], version: 3 }]);
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "アカウントのロールを更新できませんでした。",
+    ]);
+    expect(page.accounts.value[0].version).toBe(3);
+    expect(page.selectedAccount.value).toBeNull();
+  });
+
+  it("404ではBackend本文を表示せず対象を破棄して一覧を再取得する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "ACCOUNT_NOT_FOUND",
+            field: "accountId",
+            message: "account_id=2の内部情報です。",
+          },
+        ],
+      })
+    );
+    mocks.administrationApi.getAccounts
+      .mockResolvedValueOnce(accounts)
+      .mockResolvedValueOnce([accounts[0]]);
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "対象のアカウントが見つかりません。",
+    ]);
+    expect(page.accounts.value).toEqual([accounts[0]]);
+    expect(page.isEditorOpen.value).toBe(false);
+  });
+
+  it("409回復中の401は競合案内より優先して保護状態とSessionを破棄する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "AUTHORIZATION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.administrationApi.getAccounts
+      .mockResolvedValueOnce(accounts)
+      .mockRejectedValueOnce(new AdministrationApiError(401, null));
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.accounts.value).toEqual([]);
+    expect(page.roles.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409回復中の403は競合案内より現在の参照permission不足を優先する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "AUTHORIZATION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.administrationApi.getAccounts
+      .mockResolvedValueOnce(accounts)
+      .mockRejectedValueOnce(new AdministrationApiError(403, null));
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.accounts.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      "アカウントとロールを参照するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("409回復中の通信失敗は競合理由と再取得失敗を併記する", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "AUTHORIZATION_CONFLICT",
+            field: "version",
+            message: "他の操作で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.administrationApi.getAccounts
+      .mockResolvedValueOnce(accounts)
+      .mockRejectedValueOnce(new TypeError("network failed"));
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "他の操作で更新されています。",
+      "最新のアカウント情報を再取得できませんでした。再読込してください。",
+    ]);
+    expect(page.accounts.value).toEqual([]);
+  });
+
   it("403は権限不足として表示し、Sessionを破棄しない", async () => {
     mocks.administrationApi.updateAccountRoles.mockRejectedValue(
       new AdministrationApiError(403, null)
@@ -279,7 +463,23 @@ describe("useAccountAdministrationPage", () => {
     await page.saveRoles();
 
     expect(page.errorMessages.value).toEqual([
-      "この操作を実行するpermissionがありません。",
+      "アカウントのロールを変更するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("初期取得の本文なし403は保護状態を破棄して参照permission不足を表示する", async () => {
+    mocks.administrationApi.getAccounts.mockRejectedValue(
+      new AdministrationApiError(403, null)
+    );
+    const page = useAccountAdministrationPage();
+
+    await page.initialize();
+
+    expect(page.accounts.value).toEqual([]);
+    expect(page.roles.value).toEqual([]);
+    expect(page.errorMessages.value).toEqual([
+      "アカウントとロールを参照するpermissionがありません。",
     ]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });

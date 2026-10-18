@@ -107,4 +107,24 @@ describe("Notification API", () => {
       expect(error).toBeInstanceOf(NotificationApiError)
     );
   });
+
+  it("非JSONの403も本文なしstatus付き例外へ変換する", async () => {
+    HttpClient.postRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("not json")),
+    });
+
+    await expect(
+      NotificationApi.createAnnouncement({
+        title: "件名",
+        message: "本文",
+        expiresAt: null,
+      })
+    ).rejects.toMatchObject({
+      name: "NotificationApiError",
+      status: 403,
+      errorResponse: null,
+    });
+  });
 });

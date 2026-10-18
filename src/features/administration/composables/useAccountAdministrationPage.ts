@@ -8,11 +8,17 @@ import type {
   AccountAuthorization,
   AdministrationRole,
 } from "@/features/administration/types/administration";
+import {
+  ACCOUNT_ADMINISTRATION_ERROR_CODES,
+  ADMINISTRATION_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/administration/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   DATA_TABLE_PAGE_OPTIONS,
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 interface AdministrationTableHeader {
   title: string;
@@ -103,6 +109,16 @@ export const useAccountAdministrationPage = () => {
     () => selectedAccount.value?.accountId === userStore.memberId
   );
 
+  /** 認証・認可・公開範囲が変化した場合に管理対象データと編集draftを破棄する。 */
+  const clearProtectedState = (): void => {
+    accounts.value = [];
+    roles.value = [];
+    isEditorOpen.value = false;
+    selectedAccount.value = null;
+    selectedRoleCodes.value = [];
+    successMessage.value = "";
+  };
+
   /** 一覧と選択可能ロールを同じ画面スナップショットとして再取得する。 */
   const loadAdministrationData = async (): Promise<void> => {
     isLoading.value = true;
@@ -115,7 +131,17 @@ export const useAccountAdministrationPage = () => {
       accounts.value = accountValues;
       roles.value = roleValues;
     } catch (error: unknown) {
-      await handleApiError(error, "アカウントとロールを取得できませんでした。");
+      if (
+        error instanceof AdministrationApiError &&
+        (error.status === 403 || error.status === 404)
+      ) {
+        clearProtectedState();
+      }
+      await handleApiError(
+        error,
+        DISPLAY_MESSAGES.administration.account.loadFailed,
+        DISPLAY_MESSAGES.administration.account.readForbidden
+      );
     } finally {
       isLoading.value = false;
     }
@@ -131,7 +157,9 @@ export const useAccountAdministrationPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     if (!canEditRoles.value) {
-      errorMessages.value = ["アカウントのロールを変更するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.administration.account.operationForbidden,
+      ];
       return;
     }
     selectedAccount.value = account;
@@ -163,15 +191,21 @@ export const useAccountAdministrationPage = () => {
       return;
     }
     if (!canEditRoles.value) {
-      errorMessages.value = ["アカウントのロールを変更するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.administration.account.operationForbidden,
+      ];
       return;
     }
     if (account === null) {
-      errorMessages.value = ["変更対象のアカウントを選択してください。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.administration.account.targetRequired,
+      ];
       return;
     }
     if (selectedRoleCodes.value.length === 0) {
-      errorMessages.value = ["ロールを1件以上選択してください。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.administration.account.roleSelectionRequired,
+      ];
       return;
     }
 
@@ -197,16 +231,30 @@ export const useAccountAdministrationPage = () => {
 
       if (account.accountId === userStore.memberId && rolesChanged) {
         // Backendは権限変更commit後に対象者の全HttpSessionを削除するため、古い画面権限を保持しない。
+        clearProtectedState();
+        errorMessages.value = [];
         userStore.clearSession();
         await router.push({ name: "Login" });
         return;
       }
       successMessage.value = `${updatedAccount.displayName}さんのロールを更新しました。`;
     } catch (error: unknown) {
-      await handleApiError(error, "アカウントのロールを更新できませんでした。");
-      if (error instanceof AdministrationApiError && error.status === 409) {
+      if (await handleUnauthorized(error)) {
+        return;
+      }
+      const operationMessages = getErrorMessages(
+        error,
+        DISPLAY_MESSAGES.administration.account.updateFailed,
+        DISPLAY_MESSAGES.administration.account.operationForbidden
+      );
+      errorMessages.value = operationMessages;
+      if (
+        error instanceof AdministrationApiError &&
+        (error.status === 404 || error.status === 409)
+      ) {
         closeRoleEditorAfterSaving();
-        await reloadAccountsAfterConflict();
+        accounts.value = [];
+        await reloadAccountsAfterConflict(operationMessages);
       }
     } finally {
       isSaving.value = false;
@@ -220,37 +268,83 @@ export const useAccountAdministrationPage = () => {
     selectedRoleCodes.value = [];
   };
 
-  /** 競合後に最新versionを再取得し、利用者が新しい内容を確認して再編集できる状態へ戻す。 */
-  const reloadAccountsAfterConflict = async (): Promise<void> => {
+  /** 404／409後に最新versionを再取得し、古い対象と編集draftを画面へ残さない。 */
+  const reloadAccountsAfterConflict = async (
+    operationMessages: string[]
+  ): Promise<void> => {
     try {
       accounts.value = await AdministrationApi.getAccounts();
-    } catch (_error: unknown) {
-      errorMessages.value.push("最新のアカウント情報を再取得できませんでした。");
+    } catch (error: unknown) {
+      if (
+        error instanceof AdministrationApiError &&
+        ADMINISTRATION_RECOVERY_PRIORITY_STATUSES.has(error.status)
+      ) {
+        if (await handleUnauthorized(error)) {
+          return;
+        }
+        clearProtectedState();
+        errorMessages.value = getErrorMessages(
+          error,
+          DISPLAY_MESSAGES.administration.account.reloadFailed,
+          DISPLAY_MESSAGES.administration.account.readForbidden
+        );
+        return;
+      }
+      errorMessages.value = [
+        ...operationMessages,
+        DISPLAY_MESSAGES.administration.account.reloadFailed,
+      ];
     }
+  };
+
+  /** API statusと契約済みerror codeをAccount管理向け表示へ変換する。 */
+  const getErrorMessages = (
+    error: unknown,
+    fallbackMessage: string,
+    forbiddenMessage: string
+  ): string[] => {
+    if (!(error instanceof AdministrationApiError)) {
+      return [DISPLAY_MESSAGES.common.connectionFailed];
+    }
+    if (error.status === 403) {
+      return [forbiddenMessage];
+    }
+    if (error.status === 404) {
+      return [DISPLAY_MESSAGES.administration.account.resourceNotFound];
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      ACCOUNT_ADMINISTRATION_ERROR_CODES,
+      fallbackMessage
+    );
+  };
+
+  /** 401では管理対象データとSession表示を破棄してLoginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof AdministrationApiError) || error.status !== 401) {
+      return false;
+    }
+    clearProtectedState();
+    errorMessages.value = [];
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
   };
 
   /** HTTP statusと共通項目エラーを、認証状態を含む画面動作へ変換する。 */
   const handleApiError = async (
     error: unknown,
-    fallbackMessage: string
+    fallbackMessage: string,
+    forbiddenMessage: string
   ): Promise<void> => {
-    if (!(error instanceof AdministrationApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+    if (await handleUnauthorized(error)) {
       return;
     }
-    if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
-      return;
-    }
-    if (error.status === 403) {
-      errorMessages.value = ["この操作を実行するpermissionがありません。"];
-      return;
-    }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = getErrorMessages(
+      error,
+      fallbackMessage,
+      forbiddenMessage
     );
-    errorMessages.value = fieldMessages.length > 0 ? fieldMessages : [fallbackMessage];
   };
 
   return {

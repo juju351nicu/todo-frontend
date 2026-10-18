@@ -8,6 +8,34 @@ export const DISPLAY_MESSAGES = {
     requestFailed:
       "処理を完了できませんでした。しばらくしてから再度お試しください。",
   },
+  administration: {
+    account: {
+      readForbidden: "アカウントとロールを参照するpermissionがありません。",
+      operationForbidden:
+        "アカウントのロールを変更するpermissionがありません。",
+      resourceNotFound: "対象のアカウントが見つかりません。",
+      targetRequired: "変更対象のアカウントを選択してください。",
+      roleSelectionRequired: "ロールを1件以上選択してください。",
+      loadFailed: "アカウントとロールを取得できませんでした。",
+      updateFailed: "アカウントのロールを更新できませんでした。",
+      reloadFailed:
+        "最新のアカウント情報を再取得できませんでした。再読込してください。",
+    },
+    audit: {
+      readForbidden: "監査ログを参照するpermissionがありません。",
+      loadFailed: "権限変更監査ログを取得できませんでした。",
+    },
+  },
+  notification: {
+    announcement: {
+      invalidInput: "件名と本文を入力上限内で入力してください。",
+      invalidExpiration: "表示終了日時を正しく入力してください。",
+      operationForbidden: "お知らせを配信するpermissionがありません。",
+      publishFailed:
+        "お知らせを配信できませんでした。入力内容を確認してください。",
+      published: "お知らせを全利用者へ配信しました。",
+    },
+  },
   dashboard: {
     loadFailed: "Dashboardを取得できませんでした。",
     advancedConnectionFailed: "高度Dashboardへ接続できませんでした。",

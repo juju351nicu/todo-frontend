@@ -152,13 +152,19 @@ describe("useAuthorizationAuditListPage", () => {
     expect(page.errorMessages.value).toEqual([
       "監査ログを参照するpermissionがありません。",
     ]);
+    expect(page.auditLogs.value).toEqual([]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
   it("400項目エラーはBackendメッセージを表示する", async () => {
     mocks.administrationApi.getAuthorizationAuditLogs.mockRejectedValue(
       new AdministrationApiError(400, {
         fieldErrors: [
-          { field: "size", message: "100以下で指定してください。" },
+          {
+            errorCode: "INVALID_REQUEST_PARAMETER",
+            field: "size",
+            message: "100以下で指定してください。",
+          },
         ],
       })
     );
@@ -167,5 +173,39 @@ describe("useAuthorizationAuditListPage", () => {
     await page.initialize();
 
     expect(page.errorMessages.value).toEqual(["100以下で指定してください。"]);
+  });
+
+  it("未知codeのBackend本文は表示せず監査一覧用fallbackへ閉じる", async () => {
+    mocks.administrationApi.getAuthorizationAuditLogs.mockRejectedValue(
+      new AdministrationApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_AUDIT_ERROR",
+            field: "size",
+            message: "SQLの内部情報です。",
+          },
+        ],
+      })
+    );
+    const page = useAuthorizationAuditListPage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "権限変更監査ログを取得できませんでした。",
+    ]);
+  });
+
+  it("本文なし400は監査一覧用fallbackへ閉じる", async () => {
+    mocks.administrationApi.getAuthorizationAuditLogs.mockRejectedValue(
+      new AdministrationApiError(400, null)
+    );
+    const page = useAuthorizationAuditListPage();
+
+    await page.initialize();
+
+    expect(page.errorMessages.value).toEqual([
+      "権限変更監査ログを取得できませんでした。",
+    ]);
   });
 });

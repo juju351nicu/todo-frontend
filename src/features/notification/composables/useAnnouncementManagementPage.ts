@@ -6,6 +6,9 @@ import NotificationApi, {
   NotificationApiError,
 } from "@/features/notification/api/notificationApi";
 import { NOTIFICATION_REFRESH_EVENT } from "@/features/notification/composables/useNotificationCenter";
+import { ANNOUNCEMENT_ERROR_CODES } from "@/features/notification/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** 管理者お知らせ入力の最大文字数。Backend Bean Validationと同じ上限に保つ。 */
 export const ANNOUNCEMENT_TITLE_MAX_LENGTH = 100;
@@ -36,15 +39,25 @@ export const useAnnouncementManagementPage = () => {
 
   /** 入力値をBackend契約へ変換してお知らせを発行し、同じ画面のベルも再取得させる。 */
   const submitAnnouncement = async (): Promise<void> => {
+    successMessage.value = "";
     if (!canSubmit.value) {
-      errorMessages.value = ["件名と本文を入力上限内で入力してください。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.notification.announcement.invalidInput,
+      ];
+      return;
+    }
+    let expiresAt: string | null;
+    try {
+      expiresAt = buildExpiresAt();
+    } catch (_error: unknown) {
+      errorMessages.value = [
+        DISPLAY_MESSAGES.notification.announcement.invalidExpiration,
+      ];
       return;
     }
     isSubmitting.value = true;
     errorMessages.value = [];
-    successMessage.value = "";
     try {
-      const expiresAt = buildExpiresAt();
       await NotificationApi.createAnnouncement({
         title: title.value.trim(),
         message: message.value.trim(),
@@ -53,7 +66,8 @@ export const useAnnouncementManagementPage = () => {
       title.value = "";
       message.value = "";
       expiresAtLocal.value = "";
-      successMessage.value = "お知らせを全利用者へ配信しました。";
+      successMessage.value =
+        DISPLAY_MESSAGES.notification.announcement.published;
       window.dispatchEvent(new Event(NOTIFICATION_REFRESH_EVENT));
     } catch (error: unknown) {
       await handleApiError(error);
@@ -77,7 +91,7 @@ export const useAnnouncementManagementPage = () => {
   /** 通知APIの失敗をSession遷移または利用者向けメッセージへ変換する。 */
   const handleApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof NotificationApiError)) {
-      errorMessages.value = ["Backendへ接続できませんでした。"];
+      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -86,16 +100,16 @@ export const useAnnouncementManagementPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = ["お知らせを配信するpermissionがありません。"];
+      errorMessages.value = [
+        DISPLAY_MESSAGES.notification.announcement.operationForbidden,
+      ];
       return;
     }
-    const fieldMessages = (error.errorResponse?.fieldErrors ?? []).map(
-      (fieldError) => fieldError.message
+    errorMessages.value = resolveApiErrorMessages(
+      error.errorResponse,
+      ANNOUNCEMENT_ERROR_CODES,
+      DISPLAY_MESSAGES.notification.announcement.publishFailed
     );
-    errorMessages.value =
-      fieldMessages.length > 0
-        ? fieldMessages
-        : ["お知らせを配信できませんでした。入力内容を確認してください。"];
   };
 
   return {

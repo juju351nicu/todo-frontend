@@ -77,7 +77,7 @@ describe("useAnnouncementManagementPage", () => {
       new NotificationApiError(400, {
         fieldErrors: [
           {
-            errorCode: "VALIDATION_ERROR",
+            errorCode: "INVALID_REQUEST_BODY",
             field: "expiresAt",
             message: "表示終了時刻は現在より後を指定してください。",
           },
@@ -93,6 +93,90 @@ describe("useAnnouncementManagementPage", () => {
     expect(page.errorMessages.value).toEqual([
       "表示終了時刻は現在より後を指定してください。",
     ]);
+  });
+
+  it("契約済み複数項目エラーをBackend順で表示する", async () => {
+    mocks.notificationApi.createAnnouncement.mockRejectedValue(
+      new NotificationApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "title",
+            message: "件名を入力してください。",
+          },
+          {
+            errorCode: "INVALID_REQUEST_BODY",
+            field: "message",
+            message: "本文を入力してください。",
+          },
+        ],
+      })
+    );
+    const page = useAnnouncementManagementPage();
+    page.title.value = "件名";
+    page.message.value = "本文";
+
+    await page.submitAnnouncement();
+
+    expect(page.errorMessages.value).toEqual([
+      "件名を入力してください。",
+      "本文を入力してください。",
+    ]);
+  });
+
+  it("未知codeのBackend本文は表示せず配信用fallbackへ閉じる", async () => {
+    mocks.notificationApi.createAnnouncement.mockRejectedValue(
+      new NotificationApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_NOTIFICATION_ERROR",
+            field: "title",
+            message: "内部通知IDは123です。",
+          },
+        ],
+      })
+    );
+    const page = useAnnouncementManagementPage();
+    page.title.value = "件名";
+    page.message.value = "本文";
+
+    await page.submitAnnouncement();
+
+    expect(page.errorMessages.value).toEqual([
+      "お知らせを配信できませんでした。入力内容を確認してください。",
+    ]);
+  });
+
+  it("本文なし403はpermission不足として表示しSessionを維持する", async () => {
+    mocks.notificationApi.createAnnouncement.mockRejectedValue(
+      new NotificationApiError(403, null)
+    );
+    const page = useAnnouncementManagementPage();
+    page.title.value = "件名";
+    page.message.value = "本文";
+
+    await page.submitAnnouncement();
+
+    expect(page.errorMessages.value).toEqual([
+      "お知らせを配信するpermissionがありません。",
+    ]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("不正な表示終了日時はAPIを呼ばず入力案内を表示する", async () => {
+    const page = useAnnouncementManagementPage();
+    page.successMessage.value = "以前の配信成功";
+    page.title.value = "件名";
+    page.message.value = "本文";
+    page.expiresAtLocal.value = "invalid-date";
+
+    await page.submitAnnouncement();
+
+    expect(mocks.notificationApi.createAnnouncement).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual([
+      "表示終了日時を正しく入力してください。",
+    ]);
+    expect(page.successMessage.value).toBe("");
   });
 
   it("401ではSession表示を破棄してログイン画面へ戻す", async () => {
