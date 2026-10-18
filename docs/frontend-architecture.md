@@ -587,6 +587,17 @@ Saved View適用中の候補取得が失敗した場合は後続検索を送ら�
 全80 test file・694 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
 次はTask Template／繰り返しTaskを同じ契約へ移行する。
 
+続いてTask Templateのcapture・一覧・更新・archive・Project適用と、繰り返しTaskの規則CRUD・生成履歴・retryを
+移行した。それぞれのBackend契約に対応するerror code集合を明示し、契約済みの複数messageだけをBackend順で表示する。
+未知code、本文なし、非JSONは操作別fallbackへ閉じ、403は`FEATURE_NOT_ENTITLED`かつ`featureCode`だけを機能資格不足と
+判定する。通常permission 403はSessionを維持し、404はresourceの存在や所有者をBackend本文から漏らさない固定案内とした。
+404／409後は選択、編集draft、取得時点version、生成履歴を先に破棄して最新状態を再取得し、回復中の401／403／404を
+元の競合理由より優先する。通信失敗では競合理由と再取得失敗を併記する。繰り返し規則のarchive／retry確定後の再取得失敗は
+操作失敗と分離し、古いversionの再送と二重実行を防ぐ。機能資格のfield判定を一時的に誤らせるmutationは、機能資格を
+permissionへ誤変換する回帰と通常permissionでBackend本文を表示する回帰の2件を検出した。復元後の対象5 test file・55件と
+全80 test file・714 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+次はMy Tasks／旧Todo画面を同じ契約へ移行する。
+
 ## 変更時の確認
 
 ```bash

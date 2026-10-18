@@ -163,6 +163,134 @@ describe("useTaskTemplates", () => {
     expect(page.errorMessage.value).toBe("別の操作で変更されました。");
   });
 
+  it("一覧のpermission 403では固定文言を表示して取得済みTemplateを破棄する", async () => {
+    const page = createPage();
+    await page.loadTemplates();
+    page.selectTemplate(page.templates.value[0]);
+    mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(
+      new TaskTemplateApiError(403, null)
+    );
+
+    await page.loadTemplates();
+
+    expect(page.errorMessage.value).toBe(
+      "Task Templateを参照するpermissionがありません。"
+    );
+    expect(page.templates.value).toEqual([]);
+    expect(page.selectedTemplate.value).toBeNull();
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
+
+  it("404のBackend文言を表示せず固定文言で最新一覧へ回復する", async () => {
+    mocks.taskTemplateApi.findOwnTemplates
+      .mockResolvedValueOnce([structuredClone(template)])
+      .mockResolvedValueOnce([structuredClone(template)]);
+    mocks.taskTemplateApi.update.mockRejectedValue(
+      new TaskTemplateApiError(404, {
+        fieldErrors: [
+          {
+            field: "taskTemplateId",
+            errorCode: "TASK_TEMPLATE_NOT_FOUND",
+            message: "所有者情報を含む表示禁止文言",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await page.loadTemplates();
+    page.selectTemplate(page.templates.value[0]);
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessage.value).toBe(
+      "対象のProject、TaskまたはTask Templateが見つかりません。"
+    );
+    expect(page.selectedTemplate.value.taskTemplateId).toBe(81);
+    expect(page.isEditing.value).toBe(false);
+  });
+
+  it("未知error codeではBackend文言を表示せず更新固定文言へfallbackする", async () => {
+    mocks.taskTemplateApi.update.mockRejectedValue(
+      new TaskTemplateApiError(400, {
+        fieldErrors: [
+          {
+            field: "name",
+            errorCode: "UNKNOWN_TEMPLATE_ERROR",
+            message: "内部構造を含む未契約メッセージ",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await page.loadTemplates();
+    page.selectTemplate(page.templates.value[0]);
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessage.value).toBe(
+      "Task Templateを更新できませんでした。"
+    );
+  });
+
+  it("409回復中の401では古いTemplateを破棄してLoginへ戻す", async () => {
+    mocks.taskTemplateApi.findOwnTemplates
+      .mockResolvedValueOnce([structuredClone(template)])
+      .mockRejectedValueOnce(new TaskTemplateApiError(401, null));
+    mocks.taskTemplateApi.update.mockRejectedValue(
+      new TaskTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "version",
+            errorCode: "TASK_TEMPLATE_VERSION_CONFLICT",
+            message: "別の操作で変更されました。",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await page.loadTemplates();
+    page.selectTemplate(page.templates.value[0]);
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.templates.value).toEqual([]);
+    expect(page.selectedTemplate.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409回復中の通信失敗では競合理由と再取得失敗を併記する", async () => {
+    mocks.taskTemplateApi.findOwnTemplates
+      .mockResolvedValueOnce([structuredClone(template)])
+      .mockRejectedValueOnce(new TypeError("Network error"));
+    mocks.taskTemplateApi.update.mockRejectedValue(
+      new TaskTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "version",
+            errorCode: "TASK_TEMPLATE_VERSION_CONFLICT",
+            message: "別の操作で変更されました。",
+          },
+        ],
+      })
+    );
+    const page = createPage();
+    await page.loadTemplates();
+    page.selectTemplate(page.templates.value[0]);
+    page.beginEditing();
+
+    await page.saveTemplate();
+
+    expect(page.errorMessage.value).toBe(
+      "別の操作で変更されました。\n最新のTask Template一覧を取得できませんでした。再読込してください。"
+    );
+    expect(page.templates.value).toEqual([]);
+    expect(page.selectedTemplate.value).toBeNull();
+  });
+
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
     mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(
       new TaskTemplateApiError(401, null)

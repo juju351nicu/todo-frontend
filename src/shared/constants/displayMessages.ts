@@ -134,6 +134,35 @@ export const DISPLAY_MESSAGES = {
       savedRefreshFailed:
         "Saved Viewの変更は完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
     },
+    template: {
+      readForbidden: "Task Templateを参照するpermissionがありません。",
+      operationForbidden: "このTask Template操作を実行するpermissionがありません。",
+      resourceNotFound:
+        "対象のProject、TaskまたはTask Templateが見つかりません。",
+      listLoadFailed: "Task Templateを取得できませんでした。",
+      captureFailed: "TaskをTemplateとして保存できませんでした。",
+      updateFailed: "Task Templateを更新できませんでした。",
+      archiveFailed: "Task Templateをアーカイブできませんでした。",
+      applyFailed: "Task TemplateをProjectへ適用できませんでした。",
+      reloadFailed:
+        "最新のTask Template一覧を取得できませんでした。再読込してください。",
+    },
+    recurrence: {
+      readForbidden: "繰り返しTask規則を参照するpermissionがありません。",
+      operationForbidden: "この繰り返しTask操作を実行するpermissionがありません。",
+      resourceNotFound:
+        "対象のProject、繰り返しTask規則、生成履歴またはTask Templateが見つかりません。",
+      listLoadFailed: "繰り返しTask規則を取得できませんでした。",
+      generationLoadFailed: "生成履歴を取得できませんでした。",
+      createFailed: "繰り返しTask規則を作成できませんでした。",
+      updateFailed: "繰り返しTask規則を更新できませんでした。",
+      archiveFailed: "繰り返しTask規則をアーカイブできませんでした。",
+      retryFailed: "生成を再試行できませんでした。",
+      reloadFailed:
+        "最新の繰り返しTask規則と生成履歴を取得できませんでした。再読込してください。",
+      completedRefreshFailed:
+        "操作は完了しましたが、最新の繰り返しTask規則と生成履歴を取得できませんでした。再読込してください。",
+    },
   },
   timeTracking: {
     currentLoadFailed: "現在Timerを取得できませんでした。",

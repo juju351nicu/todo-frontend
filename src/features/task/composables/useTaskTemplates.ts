@@ -11,6 +11,15 @@ import type {
   TaskTemplateApplyResponse,
   TaskTemplateUpdateRequest,
 } from "@/features/task/types/taskTemplate";
+import {
+  TASK_RECOVERY_PRIORITY_STATUSES,
+  TASK_TEMPLATE_ERROR_CODES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 /** Task Template編集Dialogが保持する入力値。 */
 export interface TaskTemplateEditForm {
@@ -80,17 +89,55 @@ export const useTaskTemplates = (
       ) ?? null
   );
 
-  /** Backend共通ErrorResponseから最初の利用者向けメッセージを取得する。 */
-  const getErrorMessage = (error: unknown, fallback: string): string =>
-    error instanceof TaskTemplateApiError
-      ? error.errorResponse?.fieldErrors?.[0]?.message ?? fallback
-      : fallback;
+  /** 選択、編集、適用上書き値を破棄し、古いTemplate versionを再利用できない状態へ戻す。 */
+  const clearTemplateState = (clearList: boolean): void => {
+    if (clearList) templates.value = [];
+    selectedTemplateId.value = null;
+    isEditing.value = false;
+    editForm.value = createEmptyEditForm();
+    applyDateFrom.value = getToday();
+    applyAssigneeAccountId.value = null;
+    applyTaskStatusId.value = null;
+  };
+
+  /** API statusと契約済みerror codeを利用者向けの安全な表示文言へ変換する。 */
+  const getErrorMessage = (
+    error: unknown,
+    fallback: string,
+    forbidden: string = DISPLAY_MESSAGES.task.template.operationForbidden
+  ): string => {
+    if (!(error instanceof TaskTemplateApiError)) {
+      return DISPLAY_MESSAGES.common.connectionFailed;
+    }
+    if (error.status === 403) {
+      if (
+        !hasApiFieldError(
+          error.errorResponse,
+          "FEATURE_NOT_ENTITLED",
+          "featureCode"
+        )
+      ) {
+        return forbidden;
+      }
+    }
+    if (error.status === 404) {
+      return DISPLAY_MESSAGES.task.template.resourceNotFound;
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_TEMPLATE_ERROR_CODES,
+      fallback
+    ).join("\n");
+  };
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
     if (!(error instanceof TaskTemplateApiError) || error.status !== 401) {
       return false;
     }
+    clearTemplateState(true);
+    errorMessage.value = "";
+    successMessage.value = "";
     userStore.clearSession();
     await router.push({ name: "Login" });
     return true;
@@ -115,9 +162,16 @@ export const useTaskTemplates = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
+        if (
+          error instanceof TaskTemplateApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearTemplateState(true);
+        }
         errorMessage.value = getErrorMessage(
           error,
-          "Task Templateを取得できませんでした。"
+          DISPLAY_MESSAGES.task.template.listLoadFailed,
+          DISPLAY_MESSAGES.task.template.readForbidden
         );
       }
       return false;
@@ -246,7 +300,10 @@ export const useTaskTemplates = (
       cancelEditing();
       successMessage.value = "Task Templateを更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(error, "Task Templateを更新できませんでした。");
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.template.updateFailed
+      );
     } finally {
       isSaving.value = false;
     }
@@ -273,7 +330,7 @@ export const useTaskTemplates = (
     } catch (error: unknown) {
       await handleMutationError(
         error,
-        "Task Templateをアーカイブできませんでした。"
+        DISPLAY_MESSAGES.task.template.archiveFailed
       );
     } finally {
       isArchiving.value = false;
@@ -305,11 +362,52 @@ export const useTaskTemplates = (
     } catch (error: unknown) {
       await handleMutationError(
         error,
-        "Task TemplateをProjectへ適用できませんでした。"
+        DISPLAY_MESSAGES.task.template.applyFailed
       );
       return null;
     } finally {
       isApplying.value = false;
+    }
+  };
+
+  /** 404／409後に古いversionを破棄し、本人所有の最新Template一覧へ回復する。 */
+  const recoverTemplates = async (
+    error: TaskTemplateApiError,
+    fallback: string
+  ): Promise<void> => {
+    const preferredId = selectedTemplateId.value;
+    const mutationMessage = getErrorMessage(error, fallback);
+    clearTemplateState(true);
+    errorMessage.value = "";
+    successMessage.value = "";
+    isLoading.value = true;
+    try {
+      const latest = await TaskTemplateApi.findOwnTemplates();
+      templates.value = latest;
+      if (
+        preferredId !== null &&
+        latest.some((template) => template.taskTemplateId === preferredId)
+      ) {
+        selectedTemplateId.value = preferredId;
+      }
+      errorMessage.value = mutationMessage;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) return;
+      if (
+        reloadError instanceof TaskTemplateApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        clearTemplateState(true);
+        errorMessage.value = getErrorMessage(
+          reloadError,
+          DISPLAY_MESSAGES.task.template.reloadFailed,
+          DISPLAY_MESSAGES.task.template.readForbidden
+        );
+        return;
+      }
+      errorMessage.value = `${mutationMessage}\n${DISPLAY_MESSAGES.task.template.reloadFailed}`;
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -323,12 +421,10 @@ export const useTaskTemplates = (
       error instanceof TaskTemplateApiError &&
       (error.status === 404 || error.status === 409)
     ) {
-      const message = getErrorMessage(
+      await recoverTemplates(
         error,
         "Task Templateが変更されています。最新の一覧を表示しました。"
       );
-      cancelEditing();
-      if (await loadTemplates()) errorMessage.value = message;
       return;
     }
     errorMessage.value = getErrorMessage(error, fallback);

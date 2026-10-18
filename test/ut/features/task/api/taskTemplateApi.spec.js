@@ -139,4 +139,17 @@ describe("Task Template API", () => {
       TaskTemplateApi.capture(5, 31, { name: "API実装" })
     ).rejects.toMatchObject({ status: 403, errorResponse });
   });
+
+  it("Securityの非JSONエラー本文はnullとして安全に保持する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected token")),
+    });
+
+    await expect(TaskTemplateApi.findOwnTemplates()).rejects.toMatchObject({
+      status: 403,
+      errorResponse: null,
+    });
+  });
 });

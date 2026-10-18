@@ -74,4 +74,60 @@ describe("useTaskTemplateCapture", () => {
     expect(state.errorMessage.value).toBe("現在のPlanでは利用できません。");
     expect(state.isOpen.value).toBe(true);
   });
+
+  it("本文なしのpermission 403では固定文言を表示してSessionを維持する", async () => {
+    mocks.taskTemplateApi.capture.mockRejectedValue(
+      new TaskTemplateApiError(403, null)
+    );
+    const state = useTaskTemplateCapture(ref(5), ref(31), ref(false));
+    state.open();
+    state.name.value = "API実装";
+
+    await state.capture();
+
+    expect(state.errorMessage.value).toBe(
+      "このTask Template操作を実行するpermissionがありません。"
+    );
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(state.isOpen.value).toBe(true);
+  });
+
+  it("未知error codeのBackend文言を表示せずcapture固定文言へfallbackする", async () => {
+    mocks.taskTemplateApi.capture.mockRejectedValue(
+      new TaskTemplateApiError(400, {
+        fieldErrors: [
+          {
+            field: "name",
+            errorCode: "UNKNOWN_TEMPLATE_ERROR",
+            message: "内部構造を含む未契約メッセージ",
+          },
+        ],
+      })
+    );
+    const state = useTaskTemplateCapture(ref(5), ref(31), ref(false));
+    state.open();
+    state.name.value = "API実装";
+
+    await state.capture();
+
+    expect(state.errorMessage.value).toBe(
+      "TaskをTemplateとして保存できませんでした。"
+    );
+  });
+
+  it("401では入力とDialogを破棄してLoginへ戻す", async () => {
+    mocks.taskTemplateApi.capture.mockRejectedValue(
+      new TaskTemplateApiError(401, null)
+    );
+    const state = useTaskTemplateCapture(ref(5), ref(31), ref(false));
+    state.open();
+    state.name.value = "API実装";
+
+    await state.capture();
+
+    expect(state.name.value).toBe("");
+    expect(state.isOpen.value).toBe(false);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
 });

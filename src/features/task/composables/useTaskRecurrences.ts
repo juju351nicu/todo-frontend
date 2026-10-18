@@ -19,6 +19,16 @@ import type {
   TaskRecurrenceWeekday,
 } from "@/features/task/types/taskRecurrence";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
+import {
+  TASK_RECOVERY_PRIORITY_STATUSES,
+  TASK_RECURRENCE_ERROR_CODES,
+  TASK_TEMPLATE_ERROR_CODES,
+} from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 /** 繰り返し規則の作成元。 */
 export type TaskRecurrenceCreationMode = "DIRECT" | "TEMPLATE";
@@ -140,15 +150,60 @@ export const useTaskRecurrences = (
       retryingGenerationId.value !== null
   );
 
-  /** Backend共通ErrorResponseから最初の利用者向けメッセージを取得する。 */
-  const getErrorMessage = (error: unknown, fallback: string): string => {
+  /** 選択中規則、生成履歴、作成・編集draftを破棄し、古いversionを再利用できない状態へ戻す。 */
+  const clearRuleState = (clearRules: boolean): void => {
+    if (clearRules) rules.value = [];
+    selectedRuleId.value = null;
+    generations.value = [];
+    form.value = createEmptyForm();
+    creationMode.value = "DIRECT";
+    isCreating.value = false;
+    isEditing.value = false;
+  };
+
+  /** 認証・認可状態が変化した場合にServer由来の全状態を破棄する。 */
+  const clearProtectedState = (): void => {
+    clearRuleState(true);
+    templates.value = [];
+  };
+
+  /** API statusと契約済みerror codeを利用者向けの安全な表示文言へ変換する。 */
+  const getErrorMessage = (
+    error: unknown,
+    fallback: string,
+    forbidden: string = DISPLAY_MESSAGES.task.recurrence.operationForbidden
+  ): string => {
     if (
-      error instanceof TaskRecurrenceApiError ||
-      error instanceof TaskTemplateApiError
+      !(
+        error instanceof TaskRecurrenceApiError ||
+        error instanceof TaskTemplateApiError
+      )
     ) {
-      return error.errorResponse?.fieldErrors?.[0]?.message ?? fallback;
+      return DISPLAY_MESSAGES.common.connectionFailed;
     }
-    return fallback;
+    if (error.status === 403) {
+      if (
+        !hasApiFieldError(
+          error.errorResponse,
+          "FEATURE_NOT_ENTITLED",
+          "featureCode"
+        )
+      ) {
+        return forbidden;
+      }
+    }
+    if (error.status === 404) {
+      return error instanceof TaskTemplateApiError
+        ? DISPLAY_MESSAGES.task.template.resourceNotFound
+        : DISPLAY_MESSAGES.task.recurrence.resourceNotFound;
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      error instanceof TaskTemplateApiError
+        ? TASK_TEMPLATE_ERROR_CODES
+        : TASK_RECURRENCE_ERROR_CODES,
+      fallback
+    ).join("\n");
   };
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
@@ -162,6 +217,9 @@ export const useTaskRecurrences = (
     ) {
       return false;
     }
+    clearProtectedState();
+    errorMessage.value = "";
+    successMessage.value = "";
     userStore.clearSession();
     await router.push({ name: "Login" });
     return true;
@@ -188,9 +246,16 @@ export const useTaskRecurrences = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
+        if (
+          error instanceof TaskRecurrenceApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearRuleState(true);
+        }
         errorMessage.value = getErrorMessage(
           error,
-          "繰り返しTask規則を取得できませんでした。"
+          DISPLAY_MESSAGES.task.recurrence.listLoadFailed,
+          DISPLAY_MESSAGES.task.recurrence.readForbidden
         );
       }
       return false;
@@ -209,9 +274,12 @@ export const useTaskRecurrences = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
+        templates.value = [];
+        form.value.taskTemplateId = null;
         errorMessage.value = getErrorMessage(
           error,
-          "Task Templateを取得できませんでした。"
+          DISPLAY_MESSAGES.task.template.listLoadFailed,
+          DISPLAY_MESSAGES.task.template.readForbidden
         );
       }
       return false;
@@ -239,9 +307,17 @@ export const useTaskRecurrences = (
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
+        generations.value = [];
+        if (
+          error instanceof TaskRecurrenceApiError &&
+          (error.status === 403 || error.status === 404)
+        ) {
+          clearRuleState(true);
+        }
         errorMessage.value = getErrorMessage(
           error,
-          "生成履歴を取得できませんでした。"
+          DISPLAY_MESSAGES.task.recurrence.generationLoadFailed,
+          DISPLAY_MESSAGES.task.recurrence.readForbidden
         );
       }
       return false;
@@ -446,7 +522,11 @@ export const useTaskRecurrences = (
       isCreating.value = false;
       successMessage.value = "繰り返しTask規則を作成しました。";
     } catch (error: unknown) {
-      await handleMutationError(error, "繰り返しTask規則を作成できませんでした。", false);
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.recurrence.createFailed,
+        false
+      );
     } finally {
       isSaving.value = false;
     }
@@ -489,7 +569,11 @@ export const useTaskRecurrences = (
       isEditing.value = false;
       successMessage.value = "繰り返しTask規則を更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(error, "繰り返しTask規則を更新できませんでした。", true);
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.recurrence.updateFailed,
+        true
+      );
     } finally {
       isSaving.value = false;
     }
@@ -503,18 +587,23 @@ export const useTaskRecurrences = (
     errorMessage.value = "";
     successMessage.value = "";
     try {
-      await TaskRecurrenceApi.archive(
-        projectId.value,
+      try {
+        await TaskRecurrenceApi.archive(
+          projectId.value,
+          rule.taskRecurrenceRuleId,
+          rule.version
+        );
+      } catch (error: unknown) {
+        await handleMutationError(
+          error,
+          DISPLAY_MESSAGES.task.recurrence.archiveFailed,
+          true
+        );
+        return;
+      }
+      await refreshAfterCompletedMutation(
         rule.taskRecurrenceRuleId,
-        rule.version
-      );
-      await refreshAfterMutation(rule.taskRecurrenceRuleId);
-      successMessage.value = "繰り返しTask規則をアーカイブしました。";
-    } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        "繰り返しTask規則をアーカイブできませんでした。",
-        true
+        "繰り返しTask規則をアーカイブしました。"
       );
     } finally {
       isArchiving.value = false;
@@ -538,41 +627,117 @@ export const useTaskRecurrences = (
     errorMessage.value = "";
     successMessage.value = "";
     try {
-      await TaskRecurrenceApi.retryGeneration(
-        projectId.value,
+      try {
+        await TaskRecurrenceApi.retryGeneration(
+          projectId.value,
+          rule.taskRecurrenceRuleId,
+          generation.taskRecurrenceGenerationId,
+          rule.version
+        );
+      } catch (error: unknown) {
+        await handleMutationError(
+          error,
+          DISPLAY_MESSAGES.task.recurrence.retryFailed,
+          true
+        );
+        return;
+      }
+      await refreshAfterCompletedMutation(
         rule.taskRecurrenceRuleId,
-        generation.taskRecurrenceGenerationId,
-        rule.version
+        "生成の再試行を受け付けました。"
       );
-      await refreshAfterMutation(rule.taskRecurrenceRuleId);
-      successMessage.value = "生成の再試行を受け付けました。";
-    } catch (error: unknown) {
-      await handleMutationError(error, "生成を再試行できませんでした。", true);
     } finally {
       retryingGenerationId.value = null;
     }
   };
 
-  /** 更新成功後に規則と生成履歴を再取得し、versionを同期する。 */
+  /** 規則と生成履歴を一時変数へ取得し、両方揃った時だけ画面状態を置き換える。 */
   const refreshAfterMutation = async (ruleId: number): Promise<void> => {
     if (projectId.value === null) return;
-    rules.value = await TaskRecurrenceApi.findRules(projectId.value);
-    const latest = rules.value.find(
+    const latestRules = await TaskRecurrenceApi.findRules(projectId.value);
+    const latest = latestRules.find(
       (rule) => rule.taskRecurrenceRuleId === ruleId
     );
     if (latest === undefined) {
-      selectedRuleId.value = null;
-      generations.value = [];
-      isEditing.value = false;
+      rules.value = latestRules;
+      clearRuleState(false);
       return;
     }
-    selectedRuleId.value = latest.taskRecurrenceRuleId;
-    form.value = buildForm(latest);
-    isEditing.value = false;
-    generations.value = await TaskRecurrenceApi.findGenerations(
+    const latestGenerations = await TaskRecurrenceApi.findGenerations(
       projectId.value,
       latest.taskRecurrenceRuleId
     );
+    rules.value = latestRules;
+    selectedRuleId.value = latest.taskRecurrenceRuleId;
+    form.value = buildForm(latest);
+    isCreating.value = false;
+    isEditing.value = false;
+    generations.value = latestGenerations;
+  };
+
+  /** 確定済み操作後に古いversionを先に破棄し、再取得失敗を操作失敗と混同しない。 */
+  const refreshAfterCompletedMutation = async (
+    ruleId: number,
+    completedMessage: string
+  ): Promise<void> => {
+    clearRuleState(true);
+    isLoading.value = true;
+    try {
+      await refreshAfterMutation(ruleId);
+      successMessage.value = completedMessage;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) return;
+      if (
+        reloadError instanceof TaskRecurrenceApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        clearRuleState(true);
+        errorMessage.value = getErrorMessage(
+          reloadError,
+          DISPLAY_MESSAGES.task.recurrence.completedRefreshFailed,
+          DISPLAY_MESSAGES.task.recurrence.readForbidden
+        );
+        return;
+      }
+      errorMessage.value =
+        DISPLAY_MESSAGES.task.recurrence.completedRefreshFailed;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /** 404／409後に古いversionとdraftを破棄し、最新規則・生成履歴へ回復する。 */
+  const recoverRuleState = async (
+    error: TaskRecurrenceApiError,
+    fallback: string
+  ): Promise<void> => {
+    const ruleId = selectedRuleId.value;
+    const mutationMessage = getErrorMessage(error, fallback);
+    clearRuleState(true);
+    errorMessage.value = "";
+    successMessage.value = "";
+    isLoading.value = true;
+    try {
+      if (ruleId !== null) await refreshAfterMutation(ruleId);
+      errorMessage.value = mutationMessage;
+    } catch (reloadError: unknown) {
+      if (await handleUnauthorized(reloadError)) return;
+      if (
+        reloadError instanceof TaskRecurrenceApiError &&
+        TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
+      ) {
+        clearRuleState(true);
+        errorMessage.value = getErrorMessage(
+          reloadError,
+          DISPLAY_MESSAGES.task.recurrence.reloadFailed,
+          DISPLAY_MESSAGES.task.recurrence.readForbidden
+        );
+        return;
+      }
+      errorMessage.value = `${mutationMessage}\n${DISPLAY_MESSAGES.task.recurrence.reloadFailed}`;
+    } finally {
+      isLoading.value = false;
+    }
   };
 
   /** 更新系APIの401と404／409に対するSession破棄・最新状態再取得を共通処理する。 */
@@ -588,14 +753,8 @@ export const useTaskRecurrences = (
       error instanceof TaskRecurrenceApiError &&
       (error.status === 404 || error.status === 409)
     ) {
-      const ruleId = selectedRuleId.value;
-      isEditing.value = false;
-      try {
-        if (ruleId !== null) await refreshAfterMutation(ruleId);
-      } catch (_reloadError: unknown) {
-        errorMessage.value = `${message} 最新状態も再取得できませんでした。`;
-        return;
-      }
+      await recoverRuleState(error, fallback);
+      return;
     }
     errorMessage.value = message;
   }

@@ -6,6 +6,12 @@ import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
+import { TASK_TEMPLATE_ERROR_CODES } from "@/features/task/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 /** 既存Taskと未完了checklistを本人用Templateへ保存するDialog状態を管理する。 */
 export const useTaskTemplateCapture = (
@@ -20,6 +26,46 @@ export const useTaskTemplateCapture = (
   const errorMessage = ref("");
   const successMessage = ref("");
   const isSaving = ref(false);
+
+  /** API statusと契約済みerror codeをcapture用の安全な表示文言へ変換する。 */
+  const getErrorMessage = (error: unknown): string => {
+    if (!(error instanceof TaskTemplateApiError)) {
+      return DISPLAY_MESSAGES.common.connectionFailed;
+    }
+    if (error.status === 403) {
+      if (
+        !hasApiFieldError(
+          error.errorResponse,
+          "FEATURE_NOT_ENTITLED",
+          "featureCode"
+        )
+      ) {
+        return DISPLAY_MESSAGES.task.template.operationForbidden;
+      }
+    }
+    if (error.status === 404) {
+      return DISPLAY_MESSAGES.task.template.resourceNotFound;
+    }
+    return resolveApiErrorMessages(
+      error.errorResponse,
+      TASK_TEMPLATE_ERROR_CODES,
+      DISPLAY_MESSAGES.task.template.captureFailed
+    ).join("\n");
+  };
+
+  /** 認証切れ時にTask由来の入力と結果を破棄し、Loginへ戻す。 */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskTemplateApiError) || error.status !== 401) {
+      return false;
+    }
+    name.value = "";
+    isOpen.value = false;
+    errorMessage.value = "";
+    successMessage.value = "";
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
+  };
 
   /** capture Dialogを空の入力状態で開く。 */
   const open = (): void => {
@@ -57,16 +103,8 @@ export const useTaskTemplateCapture = (
       successMessage.value = "TaskをTemplateとして保存しました。";
       return created;
     } catch (error: unknown) {
-      if (error instanceof TaskTemplateApiError && error.status === 401) {
-        userStore.clearSession();
-        await router.push({ name: "Login" });
-        return null;
-      }
-      errorMessage.value =
-        error instanceof TaskTemplateApiError
-          ? error.errorResponse?.fieldErrors?.[0]?.message ??
-            "TaskをTemplateとして保存できませんでした。"
-          : "TaskをTemplateとして保存できませんでした。";
+      if (await handleUnauthorized(error)) return null;
+      errorMessage.value = getErrorMessage(error);
       return null;
     } finally {
       isSaving.value = false;

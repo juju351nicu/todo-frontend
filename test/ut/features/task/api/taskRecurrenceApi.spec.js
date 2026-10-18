@@ -186,4 +186,17 @@ describe("Task Recurrence API", () => {
       TaskRecurrenceApi.retryGeneration(5, 71, 91, 3)
     ).rejects.toMatchObject({ status: 403, errorResponse });
   });
+
+  it("Securityの本文なしエラーはnullとして安全に保持する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: vi.fn().mockRejectedValue(new SyntaxError("Unexpected end")),
+    });
+
+    await expect(TaskRecurrenceApi.findRules(5)).rejects.toMatchObject({
+      status: 401,
+      errorResponse: null,
+    });
+  });
 });
