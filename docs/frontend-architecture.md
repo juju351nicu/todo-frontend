@@ -516,6 +516,13 @@ Frontendの`FieldError`から`rejectedValue`を削除した。
 409と通信失敗では従来どおり直前snapshotを維持する。純粋utility、Dashboard API、composableのVitestで複数field、
 未知／null code、空本文、非JSON、401／403、資格判定を固定した。未知code判定を外すmutationは対象3件が失敗し、
 復元後の対象35件と全80 test file・587 Vitest、TypeScript／Vue／E2E型検査、production buildが成功した。
+
+次の移行対象はTime Trackingとした。Timer操作、本人履歴、Task工数監査で契約済みerror code集合と固定fallbackを共有し、
+未知codeのBackend本文は表示しない。409はcodeとfieldの組み合わせだけで案内を選び、先に現在Timerを再取得してから
+表示する。409回復中に401となった場合は、競合案内を残さずTimerとSession表示を破棄してLoginへ戻す。本文なし／非JSON、
+複数message、401／403／404、pagingとDialog状態をVitestで固定した。再取得失敗時は成功済みと案内せず、通信またはAPIの
+再取得エラーを保持する。409のfield対応を誤らせるmutationは期待文言との差で失敗し、復元後の対象50件と
+全80 test file・606 Vitest、型検査、production buildが成功した。
 後続featureも同じ契約へ小さい単位で移行する。
 
 ## 変更時の確認

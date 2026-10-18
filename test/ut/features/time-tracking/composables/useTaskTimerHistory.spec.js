@@ -93,6 +93,70 @@ describe("useTaskTimerHistory", () => {
     );
   });
 
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    mocks.api.getSessions.mockRejectedValue(
+      new TimeTrackingApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "dateFrom",
+            message: " 開始日を確認してください。 ",
+          },
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "dateTo",
+            message: "終了日を確認してください。",
+          },
+        ],
+      })
+    );
+    const history = useTaskTimerHistory();
+
+    await history.openDialog();
+
+    expect(history.errorMessages.value).toEqual([
+      "開始日を確認してください。",
+      "終了日を確認してください。",
+    ]);
+  });
+
+  it("未知codeではBackend messageを表示せず履歴用fallbackへ閉じる", async () => {
+    mocks.api.getSessions.mockRejectedValue(
+      new TimeTrackingApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_TIMER_ERROR",
+            field: "dateFrom",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const history = useTaskTimerHistory();
+
+    await history.openDialog();
+
+    expect(history.errorMessages.value).toEqual([
+      "Timer履歴を取得できませんでした。",
+    ]);
+  });
+
+  it("本文なし403ではSessionとDialogを維持して履歴用fallbackを表示する", async () => {
+    mocks.api.getSessions.mockRejectedValue(
+      new TimeTrackingApiError(403, null)
+    );
+    const history = useTaskTimerHistory();
+
+    await history.openDialog();
+
+    expect(history.errorMessages.value).toEqual([
+      "Timer履歴を取得できませんでした。",
+    ]);
+    expect(history.isOpen.value).toBe(true);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
   it("401ではDialogとSession表示を破棄してLoginへ戻す", async () => {
     mocks.api.getSessions.mockRejectedValue(
       new TimeTrackingApiError(401, null)

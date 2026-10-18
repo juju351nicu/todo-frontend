@@ -174,4 +174,16 @@ describe("TimeTrackingApi", () => {
       TimeTrackingApiError
     );
   });
+
+  it.each([
+    ["本文なし", ""],
+    ["非JSON本文", "Forbidden"],
+  ])("%sの403を本文なしAPI例外へ変換する", async (_condition, body) => {
+    mocks.getRequest.mockResolvedValue(new Response(body, { status: 403 }));
+
+    await expect(TimeTrackingApi.getCurrentTimer()).rejects.toMatchObject({
+      status: 403,
+      errorResponse: null,
+    });
+  });
 });

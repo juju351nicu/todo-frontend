@@ -71,6 +71,75 @@ describe("useTaskWorkLogAudits", () => {
     ]);
   });
 
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    mocks.api.getWorkLogAudits.mockRejectedValue(
+      new TimeTrackingApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "page",
+            message: " pageを確認してください。 ",
+          },
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "size",
+            message: "sizeを確認してください。",
+          },
+        ],
+      })
+    );
+    const audits = useTaskWorkLogAudits(12, 345);
+
+    await audits.openDialog();
+
+    expect(audits.errorMessages.value).toEqual([
+      "pageを確認してください。",
+      "sizeを確認してください。",
+    ]);
+  });
+
+  it("未知codeではBackend messageを表示せず監査用fallbackへ閉じる", async () => {
+    mocks.api.getWorkLogAudits.mockRejectedValue(
+      new TimeTrackingApiError(500, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_AUDIT_ERROR",
+            field: "request",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const audits = useTaskWorkLogAudits(12, 345);
+
+    await audits.openDialog();
+
+    expect(audits.errorMessages.value).toEqual([
+      "Task実績工数の変更履歴を取得できませんでした。",
+    ]);
+  });
+
+  it("404ではBackend本文に依存せず対象なしを表示する", async () => {
+    mocks.api.getWorkLogAudits.mockRejectedValue(
+      new TimeTrackingApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_NOT_FOUND",
+            field: "taskId",
+            message: "localeで変化する対象なし文言",
+          },
+        ],
+      })
+    );
+    const audits = useTaskWorkLogAudits(12, 345);
+
+    await audits.openDialog();
+
+    expect(audits.errorMessages.value).toEqual([
+      "対象のProjectまたはTaskが見つかりません。",
+    ]);
+  });
+
   it("401ではDialogとSession表示を破棄してLoginへ戻す", async () => {
     mocks.api.getWorkLogAudits.mockRejectedValue(
       new TimeTrackingApiError(401, null)

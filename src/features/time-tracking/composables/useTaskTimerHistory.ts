@@ -6,7 +6,10 @@ import TimeTrackingApi, {
   TimeTrackingApiError,
 } from "@/features/time-tracking/api/timeTrackingApi";
 import type { TaskTimerSessionListResponse } from "@/features/time-tracking/types/timeTracking";
+import { TIME_TRACKING_ERROR_CODES } from "@/features/time-tracking/utils/apiErrors";
 import { buildDefaultTimerHistoryRange } from "@/features/time-tracking/utils/timeTracking";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 const PAGE_SIZE = 20;
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -73,15 +76,13 @@ export const useTaskTimerHistory = () => {
           await router.push({ name: "Login" });
           return;
         }
-        const fieldMessages = (error.errorResponse?.fieldErrors ?? [])
-          .map((fieldError) => fieldError.message?.trim())
-          .filter((message): message is string => Boolean(message));
-        errorMessages.value =
-          fieldMessages.length > 0
-            ? fieldMessages
-            : ["Timer履歴を取得できませんでした。"];
+        errorMessages.value = resolveApiErrorMessages(
+          error.errorResponse,
+          TIME_TRACKING_ERROR_CODES,
+          DISPLAY_MESSAGES.timeTracking.historyLoadFailed
+        );
       } else {
-        errorMessages.value = ["Backendへ接続できませんでした。"];
+        errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       }
     } finally {
       isLoading.value = false;

@@ -6,6 +6,9 @@ import TimeTrackingApi, {
   TimeTrackingApiError,
 } from "@/features/time-tracking/api/timeTrackingApi";
 import type { TaskWorkLogAuditListResponse } from "@/features/time-tracking/types/timeTracking";
+import { TIME_TRACKING_ERROR_CODES } from "@/features/time-tracking/utils/apiErrors";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 const PAGE_SIZE = 20;
 
@@ -34,7 +37,7 @@ export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
       );
     } catch (error: unknown) {
       if (!(error instanceof TimeTrackingApiError)) {
-        errorMessages.value = ["Backendへ接続できませんでした。"];
+        errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
         return;
       }
       if (error.status === 401) {
@@ -44,20 +47,18 @@ export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
         return;
       }
       if (error.status === 403) {
-        errorMessages.value = ["Task実績工数の変更履歴を参照する権限がありません。"];
+        errorMessages.value = [DISPLAY_MESSAGES.timeTracking.auditForbidden];
         return;
       }
       if (error.status === 404) {
-        errorMessages.value = ["対象のProjectまたはTaskが見つかりません。"];
+        errorMessages.value = [DISPLAY_MESSAGES.timeTracking.resourceNotFound];
         return;
       }
-      const fieldMessages = (error.errorResponse?.fieldErrors ?? [])
-        .map((fieldError) => fieldError.message?.trim())
-        .filter((message): message is string => Boolean(message));
-      errorMessages.value =
-        fieldMessages.length > 0
-          ? fieldMessages
-          : ["Task実績工数の変更履歴を取得できませんでした。"];
+      errorMessages.value = resolveApiErrorMessages(
+        error.errorResponse,
+        TIME_TRACKING_ERROR_CODES,
+        DISPLAY_MESSAGES.timeTracking.auditLoadFailed
+      );
     } finally {
       isLoading.value = false;
     }

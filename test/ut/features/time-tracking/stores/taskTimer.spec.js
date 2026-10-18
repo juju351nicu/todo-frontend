@@ -151,6 +151,13 @@ describe("useTaskTimerStore", () => {
   });
 
   it("409競合ではFrontend状態を捨てて現在Timerを再取得する", async () => {
+    let completeRefresh;
+    mocks.api.getCurrentTimer.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          completeRefresh = resolve;
+        })
+    );
     mocks.api.startTimer.mockRejectedValue(
       new TimeTrackingApiError(409, {
         fieldErrors: [
@@ -168,11 +175,219 @@ describe("useTaskTimerStore", () => {
       timer: null,
     });
 
-    await expect(store.startTimer(12, 345)).resolves.toBe(false);
+    const result = store.startTimer(12, 345);
+
+    await vi.waitFor(() => {
+      expect(mocks.api.getCurrentTimer).toHaveBeenCalledOnce();
+    });
+    expect(store.errorMessages).toEqual([]);
+    completeRefresh(currentResponse);
+    await expect(result).resolves.toBe(false);
+
+    expect(store.currentTimer).toEqual(timer);
+    expect(store.errorMessages).toEqual([
+      "別の画面またはタブでTimerが開始されています。現在Timerを再取得しました。",
+    ]);
+  });
+
+  it("409のcodeとfieldが契約不一致でも再取得後に固定fallbackを表示する", async () => {
+    mocks.api.startTimer.mockRejectedValue(
+      new TimeTrackingApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_TIMER_VERSION_CONFLICT",
+            field: "timer",
+            message: "表示してはいけない未契約の組み合わせです。",
+          },
+        ],
+      })
+    );
+    const store = useTaskTimerStore();
+    store.applyCurrentResponse({
+      serverTime: "2026-10-03T10:00:00+09:00",
+      timer: null,
+    });
+
+    await store.startTimer(12, 345);
 
     expect(mocks.api.getCurrentTimer).toHaveBeenCalledOnce();
+    expect(store.errorMessages).toEqual([
+      "Timerの状態が別の操作で変更されました。現在状態を再取得しました。",
+    ]);
+  });
+
+  it.each([
+    [
+      "TASK_TIMER_NOT_RUNNING",
+      "timer",
+      "Timerはすでに停止または取消されています。現在状態を再取得しました。",
+    ],
+    [
+      "TASK_TIMER_VERSION_CONFLICT",
+      "version",
+      "Timerが別の操作で更新されました。現在状態を再取得しました。",
+    ],
+    [
+      "TASK_TIMER_DURATION_EXCEEDED",
+      "timer",
+      "連続24時間を超えているため停止できません。Timerを取消し、正しい工数を手入力してください。",
+    ],
+    [
+      "TASK_TIMER_DAILY_LIMIT_EXCEEDED",
+      "workDate",
+      "日別実績が1440分を超えるため停止できません。Timerを取消し、正しい工数を手入力してください。",
+    ],
+  ])("409の%sとfieldを固定案内へ変換する", async (code, field, message) => {
+    const store = useTaskTimerStore();
+
+    await store.handleApiError(
+      new TimeTrackingApiError(409, {
+        fieldErrors: [{ errorCode: code, field, message: "locale依存文言" }],
+      }),
+      "操作に失敗しました。",
+      false
+    );
+
+    expect(store.errorMessages).toEqual([message]);
+  });
+
+  it("409後の再取得で401になった場合は競合案内を残さずSessionを破棄する", async () => {
+    mocks.api.startTimer.mockRejectedValue(
+      new TimeTrackingApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_TIMER_ALREADY_RUNNING",
+            field: "timer",
+            message: "Timerはすでに実行中です。",
+          },
+        ],
+      })
+    );
+    mocks.api.getCurrentTimer.mockRejectedValue(
+      new TimeTrackingApiError(401, null)
+    );
+    const store = useTaskTimerStore();
+
+    await store.startTimer(12, 345);
+
+    expect(store.initialized).toBe(false);
+    expect(store.currentTimer).toBeNull();
+    expect(store.errorMessages).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("409後の再取得が通信失敗した場合は再取得済みと案内しない", async () => {
+    mocks.api.startTimer.mockRejectedValue(
+      new TimeTrackingApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_TIMER_ALREADY_RUNNING",
+            field: "timer",
+            message: "Timerはすでに実行中です。",
+          },
+        ],
+      })
+    );
+    mocks.api.getCurrentTimer.mockRejectedValue(new TypeError("network error"));
+    const store = useTaskTimerStore();
+    store.applyCurrentResponse({
+      serverTime: "2026-10-03T10:00:00+09:00",
+      timer: null,
+    });
+
+    await store.startTimer(12, 345);
+
+    expect(store.errorMessages).toEqual(["Backendへ接続できませんでした。"]);
+    expect(store.errorMessages[0]).not.toContain("再取得しました");
+  });
+
+  it("契約済み400の複数messageをBackend順で表示する", async () => {
+    mocks.api.startTimer.mockRejectedValue(
+      new TimeTrackingApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "projectId",
+            message: " Project IDを確認してください。 ",
+          },
+          {
+            errorCode: "INVALID_TASK_TIMER_REQUEST",
+            field: "taskId",
+            message: "Task IDを確認してください。",
+          },
+        ],
+      })
+    );
+    const store = useTaskTimerStore();
+
+    await store.startTimer(12, 345);
+
+    expect(store.errorMessages).toEqual([
+      "Project IDを確認してください。",
+      "Task IDを確認してください。",
+    ]);
+  });
+
+  it("未知codeのBackend messageを表示せず操作別fallbackへ閉じる", async () => {
+    mocks.api.startTimer.mockRejectedValue(
+      new TimeTrackingApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "UNKNOWN_TIMER_ERROR",
+            field: "request",
+            message: "内部情報を含み得る未契約文言",
+          },
+        ],
+      })
+    );
+    const store = useTaskTimerStore();
+
+    await store.startTimer(12, 345);
+
+    expect(store.errorMessages).toEqual([
+      "TaskのTimerを開始できませんでした。",
+    ]);
+    expect(mocks.api.getCurrentTimer).not.toHaveBeenCalled();
+  });
+
+  it("本文なし403ではSessionを維持してTimer操作の権限不足を表示する", async () => {
+    mocks.api.stopCurrentTimer.mockRejectedValue(
+      new TimeTrackingApiError(403, null)
+    );
+    const store = useTaskTimerStore();
+    store.applyCurrentResponse(currentResponse);
+
+    await store.stopCurrentTimer();
+
+    expect(store.errorMessages).toEqual([
+      "このTaskでTimerを操作する権限がありません。",
+    ]);
     expect(store.currentTimer).toEqual(timer);
-    expect(store.errorMessages[0]).toContain("再取得");
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("404ではBackend本文に依存せず対象なしを表示する", async () => {
+    mocks.api.cancelCurrentTimer.mockRejectedValue(
+      new TimeTrackingApiError(404, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_NOT_FOUND",
+            field: "taskId",
+            message: "localeで変化する対象なし文言",
+          },
+        ],
+      })
+    );
+    const store = useTaskTimerStore();
+    store.applyCurrentResponse(currentResponse);
+
+    await store.cancelCurrentTimer();
+
+    expect(store.errorMessages).toEqual([
+      "対象のProjectまたはTaskが見つかりません。",
+    ]);
   });
 
   it("取消は実績を作らず現在Timerをnullへ更新する", async () => {

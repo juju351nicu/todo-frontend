@@ -10,7 +10,16 @@ import type {
   TaskTimer,
   TaskTimerStopResponse,
 } from "@/features/time-tracking/types/timeTracking";
+import {
+  TIME_TRACKING_ERROR_CODE,
+  TIME_TRACKING_ERROR_CODES,
+} from "@/features/time-tracking/utils/apiErrors";
 import { formatEffortMinutes } from "@/features/time-tracking/utils/timeTracking";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import {
+  hasApiFieldError,
+  resolveApiErrorMessages,
+} from "@/shared/utils/apiError";
 
 type TaskTimerMutation = "START" | "STOP" | "CANCEL";
 
@@ -26,34 +35,55 @@ interface TaskTimerState {
   lastStopResult: TaskTimerStopResponse | null;
 }
 
-/** Backendの先頭field error codeを取得する。 */
-const getErrorCode = (error: TimeTrackingApiError): string | null =>
-  error.errorResponse?.fieldErrors?.[0]?.errorCode ?? null;
-
-/** Backendが返したfield error messageを空文字を除いて取得する。 */
-const getFieldErrorMessages = (error: TimeTrackingApiError): string[] =>
-  (error.errorResponse?.fieldErrors ?? [])
-    .map((fieldError) => fieldError.message?.trim())
-    .filter((message): message is string => Boolean(message));
-
 /** Time Trackingの409 codeを、現在状態から再操作できる利用者向け案内へ変換する。 */
 const getConflictMessage = (error: TimeTrackingApiError): string => {
-  const code = getErrorCode(error);
-  return (
-    {
-      TASK_TIMER_ALREADY_RUNNING:
-        "別の画面またはタブでTimerが開始されています。現在Timerを再取得しました。",
-      TASK_TIMER_NOT_RUNNING:
-        "Timerはすでに停止または取消されています。現在状態を再取得しました。",
-      TASK_TIMER_VERSION_CONFLICT:
-        "Timerが別の操作で更新されました。現在状態を再取得しました。",
-      TASK_TIMER_DURATION_EXCEEDED:
-        "連続24時間を超えているため停止できません。Timerを取消し、正しい工数を手入力してください。",
-      TASK_TIMER_DAILY_LIMIT_EXCEEDED:
-        "日別実績が1440分を超えるため停止できません。Timerを取消し、正しい工数を手入力してください。",
-    }[code ?? ""] ??
-    "Timerの状態が別の操作で変更されました。現在状態を再取得しました。"
-  );
+  const response = error.errorResponse;
+  if (
+    hasApiFieldError(
+      response,
+      TIME_TRACKING_ERROR_CODE.timerAlreadyRunning,
+      "timer"
+    )
+  ) {
+    return DISPLAY_MESSAGES.timeTracking.conflict.alreadyRunning;
+  }
+  if (
+    hasApiFieldError(
+      response,
+      TIME_TRACKING_ERROR_CODE.timerNotRunning,
+      "timer"
+    )
+  ) {
+    return DISPLAY_MESSAGES.timeTracking.conflict.notRunning;
+  }
+  if (
+    hasApiFieldError(
+      response,
+      TIME_TRACKING_ERROR_CODE.timerVersionConflict,
+      "version"
+    )
+  ) {
+    return DISPLAY_MESSAGES.timeTracking.conflict.version;
+  }
+  if (
+    hasApiFieldError(
+      response,
+      TIME_TRACKING_ERROR_CODE.timerDurationExceeded,
+      "timer"
+    )
+  ) {
+    return DISPLAY_MESSAGES.timeTracking.conflict.durationExceeded;
+  }
+  if (
+    hasApiFieldError(
+      response,
+      TIME_TRACKING_ERROR_CODE.timerDailyLimitExceeded,
+      "workDate"
+    )
+  ) {
+    return DISPLAY_MESSAGES.timeTracking.conflict.dailyLimitExceeded;
+  }
+  return DISPLAY_MESSAGES.timeTracking.conflict.changed;
 };
 
 /**
@@ -129,7 +159,11 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.applyCurrentResponse(await TimeTrackingApi.getCurrentTimer());
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(error, "現在Timerを取得できませんでした。", false);
+        await this.handleApiError(
+          error,
+          DISPLAY_MESSAGES.timeTracking.currentLoadFailed,
+          false
+        );
         return false;
       } finally {
         if (showLoading) {
@@ -163,7 +197,11 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.successMessage = "TaskのTimerを開始しました。";
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(error, "TaskのTimerを開始できませんでした。", true);
+        await this.handleApiError(
+          error,
+          DISPLAY_MESSAGES.timeTracking.startFailed,
+          true
+        );
         return false;
       } finally {
         this.pendingMutation = null;
@@ -200,7 +238,11 @@ export const useTaskTimerStore = defineStore("taskTimer", {
             : `Timerを停止し、日別実績へ${formatEffortMinutes(creditedMinutes)}加算しました。`;
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(error, "Timerを停止できませんでした。", true);
+        await this.handleApiError(
+          error,
+          DISPLAY_MESSAGES.timeTracking.stopFailed,
+          true
+        );
         return false;
       } finally {
         this.pendingMutation = null;
@@ -225,7 +267,11 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.successMessage = "Timerを実績へ反映せず取消しました。";
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(error, "Timerを取消できませんでした。", true);
+        await this.handleApiError(
+          error,
+          DISPLAY_MESSAGES.timeTracking.cancelFailed,
+          true
+        );
         return false;
       } finally {
         this.pendingMutation = null;
@@ -238,7 +284,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
       refreshOnConflict: boolean
     ): Promise<void> {
       if (!(error instanceof TimeTrackingApiError)) {
-        this.errorMessages = ["Backendへ接続できませんでした。"];
+        this.errorMessages = [DISPLAY_MESSAGES.common.connectionFailed];
         return;
       }
       if (error.status === 401) {
@@ -251,25 +297,29 @@ export const useTaskTimerStore = defineStore("taskTimer", {
       if (error.status === 409) {
         const conflictMessage = getConflictMessage(error);
         if (refreshOnConflict) {
-          await this.refreshCurrent(false);
+          const refreshed = await this.refreshCurrent(false);
+          if (!refreshed) {
+            return;
+          }
         }
         this.errorMessages = [conflictMessage];
         return;
       }
-      const fieldMessages = getFieldErrorMessages(error);
-      if (fieldMessages.length > 0) {
-        this.errorMessages = fieldMessages;
-        return;
-      }
       if (error.status === 403) {
-        this.errorMessages = ["このTaskでTimerを操作する権限がありません。"];
+        this.errorMessages = [
+          DISPLAY_MESSAGES.timeTracking.operationForbidden,
+        ];
         return;
       }
       if (error.status === 404) {
-        this.errorMessages = ["対象のProjectまたはTaskが見つかりません。"];
+        this.errorMessages = [DISPLAY_MESSAGES.timeTracking.resourceNotFound];
         return;
       }
-      this.errorMessages = [fallbackMessage];
+      this.errorMessages = resolveApiErrorMessages(
+        error.errorResponse,
+        TIME_TRACKING_ERROR_CODES,
+        fallbackMessage
+      );
     },
   },
 });
