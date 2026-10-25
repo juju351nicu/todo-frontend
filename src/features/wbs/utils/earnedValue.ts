@@ -1,4 +1,5 @@
 import { isValidIsoLocalDate } from "@/features/wbs/utils/effort";
+import type { SemanticColor } from "@/shared/types/color";
 
 const DECIMAL_MINUTES_FORMATTER = new Intl.NumberFormat("ja-JP", {
   maximumFractionDigits: 2,
@@ -47,7 +48,7 @@ export const formatEarnedValuePercent = (percent: number | null): string =>
 /** 1以上を健全とするSPI・CPIをEVM表示の注意色へ変換する。 */
 export const getEarnedValueRatioColor = (
   ratio: number | null
-): string | undefined => {
+): SemanticColor | undefined => {
   if (ratio === null || !Number.isFinite(ratio)) {
     return undefined;
   }
@@ -57,7 +58,7 @@ export const getEarnedValueRatioColor = (
 /** 0以上を健全とするSV・CVをEVM表示の注意色へ変換する。 */
 export const getEarnedValueVarianceColor = (
   variance: number
-): string | undefined => {
+): SemanticColor | undefined => {
   if (!Number.isFinite(variance)) {
     return undefined;
   }

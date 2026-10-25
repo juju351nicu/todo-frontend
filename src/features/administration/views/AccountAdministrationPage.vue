@@ -8,6 +8,7 @@ import {
 } from "@/features/administration/utils/accountStatus";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import SearchField from "@/shared/components/SearchField.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
@@ -45,21 +46,7 @@ onBeforeMount(initialize);
         <div class="flex flex-wrap items-center gap-3">
           <UIcon name="i-mdi-account-key" class="size-6" />
           アカウント・ロール管理
-          <UFormField label="アカウント検索" class="ms-auto w-90 pb-0 text-base font-normal tracking-normal">
-            <UInput v-model="searchText" placeholder="表示名・メール・ロール" icon="i-mdi-magnify" size="sm" class="w-full">
-              <template v-if="searchText" #trailing>
-                <UButton
-                  icon="i-mdi-close-circle"
-                  variant="ghost"
-                  size="xs"
-                  square
-                  class="text-black/60"
-                  aria-label="検索条件をクリア"
-                  @click="searchText = ''"
-                />
-              </template>
-            </UInput>
-          </UFormField>
+          <SearchField v-model="searchText" label="アカウント検索" placeholder="表示名・メール・ロール" class="ms-auto w-90" />
         </div>
       </template>
 

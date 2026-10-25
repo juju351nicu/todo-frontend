@@ -5,7 +5,7 @@ import vuetify from "vite-plugin-vuetify";
 import { configDefaults } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 
-import { nuxtUiTheme } from "./src/app/theme/nuxtUiTheme";
+import { nuxtUiTheme, themeColors } from "./src/app/theme/nuxtUiTheme";
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
@@ -41,6 +41,9 @@ export default defineConfig({
     vuetify(),
     ui({
       ui: nuxtUiTheme,
+      theme: {
+        colors: [...themeColors],
+      },
       // Vuetifyの既定どおりlight表示に固定し、OSのdark mode設定で配色を変えない。
       colorMode: false,
       icon: {

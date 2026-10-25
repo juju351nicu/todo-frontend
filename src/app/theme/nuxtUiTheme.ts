@@ -10,8 +10,26 @@
  * - `size`: x-small→`xs`、small→`sm`、default→`md`、large→`lg`
  */
 
-/** Nuxt UIのsemantic color名。`color` propとcompoundVariantsで使用する。 */
-const semanticColors = ["primary", "secondary", "success", "info", "warning", "error"] as const;
+/**
+ * Nuxt UIの`color` propで使う色名。semantic color 6種に加え、移行前の画面がVuetifyのMaterial色名で
+ * 指定していたteal・indigo・amber-darken-3・deep-purpleを同じ名前で使えるようにする。
+ * 移行期間中はVuetifyの同名色class（`!important`付き）が優先されるため、Vuetifyと同じ色値の名前に限っている。
+ * `vite.config.js`の`theme.colors`と`src/app/theme/main.css`の`@source inline`にも同じ一覧を指定する。
+ */
+export const themeColors = [
+  "primary",
+  "secondary",
+  "success",
+  "info",
+  "warning",
+  "error",
+  "teal",
+  "indigo",
+  "amber-darken-3",
+  "deep-purple",
+] as const;
+
+const semanticColors = themeColors;
 
 // Vuetifyのelevated buttonは影付きで、hover時は前景色を4%重ねるだけなので背景をほぼ維持する。
 const buttonSolidVariants = semanticColors.map((color) => ({
@@ -100,6 +118,10 @@ export const nuxtUiTheme = {
     info: "vuetify-info",
     warning: "vuetify-warning",
     error: "vuetify-error",
+    teal: "material-teal",
+    indigo: "material-indigo",
+    "amber-darken-3": "material-amber",
+    "deep-purple": "material-deep-purple",
     neutral: "neutral",
   },
   // Vuetifyと同じMDIの図柄を使い、Nuxt UI既定のLucideとアイコンが混在しないようにする。
@@ -224,6 +246,24 @@ export const nuxtUiTheme = {
       body: "px-6 pt-4 pb-6 sm:px-6 sm:pt-4 sm:pb-6 text-base",
       footer: "justify-end gap-2 px-4 py-2 sm:px-4",
       close: "hidden",
+    },
+  },
+  // Vuetify v-tabsと同じく、区切り線なし・高さ48px・大文字表記で、選択中のtabだけprimary色と2pxの下線を付ける。
+  tabs: {
+    slots: {
+      list: "p-0",
+      trigger: "h-12 rounded-none px-4 uppercase tracking-[.0892857143em] data-[state=inactive]:text-black/60",
+      content: "pt-4",
+    },
+    compoundVariants: [
+      {
+        orientation: "horizontal" as const,
+        variant: "link" as const,
+        class: { list: "border-b-0 mb-0", indicator: "bottom-0 h-0.5" },
+      },
+    ],
+    defaultVariants: {
+      variant: "link" as const,
     },
   },
   // Vuetify v-data-table（density compact）の行高40px・区切り線・見出し太さ。
