@@ -18,11 +18,8 @@ import {
   getNotificationEventIcon,
   normalizeNotificationNavigationPath,
 } from "@/features/notification/utils/notification";
-import {
-  formatMyTaskRemainingDays,
-  getTodoPriorityColor,
-  getTodoPriorityLabel,
-} from "@/features/task/utils/taskDisplay";
+import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
 import {
   formatEarnedValueMinutes,
   formatEarnedValuePercent,
@@ -32,6 +29,7 @@ import {
   getEarnedValueVarianceColor,
 } from "@/features/wbs/utils/earnedValue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   advancedDashboard,
@@ -57,22 +55,29 @@ const {
 } = useDashboardPage();
 
 onBeforeMount(loadDashboard);
+
+// 移行前のv-card-title直下のv-dividerと同じく、見出しと本文を線で区切り、本文の上余白を残す。
+const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4" };
 </script>
 
 <template>
-  <v-container fluid class="dashboard-page pa-4 pa-md-6">
-    <div class="d-flex align-start align-sm-center justify-space-between ga-4 mb-6">
+  <div class="max-w-360 p-4 max-sm:px-3 md:p-6">
+    <div class="mb-6 flex items-start justify-between gap-4 sm:items-center">
       <div>
-        <div class="text-overline text-medium-emphasis">Work Management</div>
-        <h1 class="text-h4 font-weight-bold">{{ displayName }}さんのDashboard</h1>
-        <p v-if="dashboard" class="text-body-2 text-medium-emphasis mt-1 mb-0">
+        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">Work Management</div>
+        <h1 class="text-[2.125rem] leading-10 font-bold tracking-[.0073529412em]">{{ displayName }}さんのDashboard</h1>
+        <p v-if="dashboard" class="mt-1 mb-0 text-sm text-muted">
           {{ formatDashboardBusinessDate(dashboard.businessDate) }} ・
           {{ dashboard.businessZoneId }}
         </p>
       </div>
-      <v-btn
-        icon="mdi-refresh"
-        variant="text"
+      <UButton
+        icon="i-mdi-refresh"
+        variant="ghost"
+        square
+        size="lg"
+        class="size-12"
+        :ui="{ leadingIcon: 'size-6' }"
         aria-label="Dashboardを再読み込み"
         title="再読み込み"
         :loading="isLoading"
@@ -81,395 +86,316 @@ onBeforeMount(loadDashboard);
     </div>
 
     <LoadingIndicator v-if="isInitialLoading" />
-    <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-    </v-alert>
+    </StatusAlert>
 
-    <v-row v-if="dashboard" align="stretch">
-      <v-col cols="12" lg="7">
-        <v-card class="dashboard-card h-100" variant="outlined">
-          <v-card-title class="d-flex align-center flex-wrap ga-2">
-            <v-icon icon="mdi-format-list-checks" color="primary" />
-            My Tasks
-            <v-spacer />
-            <v-chip v-if="dashboard.myTasks.available" color="primary" size="small">
-              未完了 {{ dashboard.myTasks.totalCount }}件
-            </v-chip>
-          </v-card-title>
-          <v-divider />
-          <v-card-text v-if="dashboard.myTasks.available">
-            <v-row dense class="mb-3">
-              <v-col cols="6" sm="3">
-                <v-sheet class="metric pa-3" rounded color="red-lighten-5">
-                  <div class="text-caption text-medium-emphasis">期限超過</div>
-                  <div class="text-h5 font-weight-bold text-error">
-                    {{ dashboard.myTasks.overdueCount }}
-                  </div>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet class="metric pa-3" rounded color="orange-lighten-5">
-                  <div class="text-caption text-medium-emphasis">今日</div>
-                  <div class="text-h5 font-weight-bold">
-                    {{ dashboard.myTasks.dueTodayCount }}
-                  </div>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet class="metric pa-3" rounded color="blue-lighten-5">
-                  <div class="text-caption text-medium-emphasis">今週</div>
-                  <div class="text-h5 font-weight-bold">
-                    {{ dashboard.myTasks.dueThisWeekCount }}
-                  </div>
-                </v-sheet>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <v-sheet class="metric pa-3" rounded color="grey-lighten-4">
-                  <div class="text-caption text-medium-emphasis">今後</div>
-                  <div class="text-h5 font-weight-bold">
-                    {{ dashboard.myTasks.upcomingCount }}
-                  </div>
-                </v-sheet>
-              </v-col>
-            </v-row>
-
-            <v-list v-if="dashboard.myTasks.items.length" lines="three" density="compact">
-              <v-list-item
-                v-for="task in dashboard.myTasks.items"
-                :key="task.taskId"
-                class="dashboard-list-item"
-                link
-                @click="openTask(task)"
-              >
-                <template #prepend>
-                  <v-chip :color="getTodoPriorityColor(task.priority)" size="x-small" class="mr-3">
-                    {{ getTodoPriorityLabel(task.priority) }}
-                  </v-chip>
-                </template>
-                <v-list-item-title class="font-weight-medium">{{ task.title }}</v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ task.projectName }} ・ {{ task.statusName }}<br />
-                  期限 {{ task.dueDate }} ・ {{ formatMyTaskRemainingDays(task.remainingDays) }} ・
-                  進捗 {{ Number(task.progressPercent) }}%
-                </v-list-item-subtitle>
-                <template #append>
-                  <v-icon icon="mdi-chevron-right" />
-                </template>
-              </v-list-item>
-            </v-list>
-            <v-alert v-else type="success" variant="tonal">
-              未完了の担当Taskはありません。
-            </v-alert>
-          </v-card-text>
-          <v-card-text v-else>
-            <v-alert type="info" variant="tonal">
-              My Tasksを参照するpermissionがありません。
-            </v-alert>
-          </v-card-text>
-          <v-card-actions v-if="dashboard.myTasks.available">
-            <v-spacer />
-            <v-btn color="primary" variant="text" append-icon="mdi-arrow-right" @click="openMyTasks">
-              My Tasksを開く
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" lg="5">
-        <v-card class="dashboard-card h-100" variant="outlined">
-          <v-card-title class="d-flex align-center flex-wrap ga-2">
-            <v-icon icon="mdi-bell-outline" color="deep-purple" />
-            通知
-            <v-spacer />
-            <v-chip color="deep-purple" size="small">
-              {{ dashboard.notifications.badgeCount }}件
-            </v-chip>
-          </v-card-title>
-          <v-divider />
-          <v-card-text>
-            <div class="d-flex flex-wrap ga-2 mb-3">
-              <v-chip variant="tonal" size="small">
-                未読 {{ dashboard.notifications.unreadEventCount }}件
-              </v-chip>
-              <v-chip color="warning" variant="tonal" size="small">
-                未解決 {{ dashboard.notifications.unresolvedAlertCount }}件
-              </v-chip>
+    <div v-if="dashboard" class="-m-3 flex flex-wrap items-stretch">
+      <div class="w-full p-3 lg:w-7/12">
+        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+          <template #header>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-mdi-format-list-checks" class="size-6 text-primary" />
+              My Tasks
+              <UBadge v-if="dashboard.myTasks.available" color="primary" size="sm" class="ms-auto">
+                未完了 {{ dashboard.myTasks.totalCount }}件
+              </UBadge>
             </div>
-            <v-list v-if="dashboard.notifications.recentEvents.length" lines="three" density="compact">
-              <v-list-item
-                v-for="event in dashboard.notifications.recentEvents"
-                :key="event.notificationEventId"
-                class="dashboard-list-item"
-                :link="normalizeNotificationNavigationPath(event.navigationPath) !== null"
+          </template>
+          <template v-if="dashboard.myTasks.available">
+            <div class="-m-1 mb-2 flex flex-wrap">
+              <div class="w-1/2 p-1 sm:w-1/4">
+                <div class="min-h-19 rounded-sm bg-[#FFEBEE] p-3">
+                  <div class="text-xs text-muted">期限超過</div>
+                  <div class="text-2xl font-bold text-error">{{ dashboard.myTasks.overdueCount }}</div>
+                </div>
+              </div>
+              <div class="w-1/2 p-1 sm:w-1/4">
+                <div class="min-h-19 rounded-sm bg-[#FFF3E0] p-3">
+                  <div class="text-xs text-muted">今日</div>
+                  <div class="text-2xl font-bold">{{ dashboard.myTasks.dueTodayCount }}</div>
+                </div>
+              </div>
+              <div class="w-1/2 p-1 sm:w-1/4">
+                <div class="min-h-19 rounded-sm bg-[#E3F2FD] p-3">
+                  <div class="text-xs text-muted">今週</div>
+                  <div class="text-2xl font-bold">{{ dashboard.myTasks.dueThisWeekCount }}</div>
+                </div>
+              </div>
+              <div class="w-1/2 p-1 sm:w-1/4">
+                <div class="min-h-19 rounded-sm bg-[#F5F5F5] p-3">
+                  <div class="text-xs text-muted">今後</div>
+                  <div class="text-2xl font-bold">{{ dashboard.myTasks.upcomingCount }}</div>
+                </div>
+              </div>
+            </div>
+
+            <ul v-if="dashboard.myTasks.items.length" class="py-2">
+              <li v-for="task in dashboard.myTasks.items" :key="task.taskId" class="border-b border-default last:border-b-0">
+                <button
+                  type="button"
+                  class="flex w-full items-start px-4 py-2 text-start hover:bg-black/4"
+                  @click="openTask(task)"
+                >
+                  <TodoPriorityBadge :priority="task.priority" size="xs" class="me-3 mt-0.5" />
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-base font-medium">{{ task.title }}</span>
+                    <span class="line-clamp-2 text-sm text-muted">
+                      {{ task.projectName }} ・ {{ task.statusName }}<br />
+                      期限 {{ task.dueDate }} ・ {{ formatMyTaskRemainingDays(task.remainingDays) }} ・
+                      進捗 {{ Number(task.progressPercent) }}%
+                    </span>
+                  </span>
+                  <UIcon name="i-mdi-chevron-right" class="ms-2 size-6 text-muted" />
+                </button>
+              </li>
+            </ul>
+            <StatusAlert v-else type="success" variant="soft">未完了の担当Taskはありません。</StatusAlert>
+          </template>
+          <StatusAlert v-else type="info" variant="soft">My Tasksを参照するpermissionがありません。</StatusAlert>
+          <template v-if="dashboard.myTasks.available" #footer>
+            <UButton
+              color="primary"
+              variant="ghost"
+              trailing-icon="i-mdi-arrow-right"
+              class="ms-auto"
+              @click="openMyTasks"
+            >
+              My Tasksを開く
+            </UButton>
+          </template>
+        </UCard>
+      </div>
+
+      <div class="w-full p-3 lg:w-5/12">
+        <UCard variant="outline" class="h-full border-black/28" :ui="dividedCardUi">
+          <template #header>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-mdi-bell-outline" class="size-6 text-deep-purple" />
+              通知
+              <UBadge color="deep-purple" size="sm" class="ms-auto">{{ dashboard.notifications.badgeCount }}件</UBadge>
+            </div>
+          </template>
+          <div class="mb-3 flex flex-wrap gap-2">
+            <UBadge size="sm">未読 {{ dashboard.notifications.unreadEventCount }}件</UBadge>
+            <UBadge color="warning" size="sm">未解決 {{ dashboard.notifications.unresolvedAlertCount }}件</UBadge>
+          </div>
+          <ul v-if="dashboard.notifications.recentEvents.length" class="py-2">
+            <li
+              v-for="event in dashboard.notifications.recentEvents"
+              :key="event.notificationEventId"
+              class="border-b border-default last:border-b-0"
+            >
+              <button
+                type="button"
+                class="flex w-full items-start px-4 py-2 text-start"
+                :class="normalizeNotificationNavigationPath(event.navigationPath) !== null ? 'hover:bg-black/4' : 'cursor-default'"
                 @click="openNotificationEvent(event)"
               >
-                <template #prepend>
-                  <v-icon :icon="getNotificationEventIcon(event.eventType)" class="mr-3" />
-                </template>
-                <v-list-item-title :class="{ 'font-weight-bold': !event.read }">
-                  {{ event.title }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  {{ event.message }}<br />
-                  {{ formatNotificationOccurredAt(event.occurredAt) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-            <v-alert v-else type="success" variant="tonal">
-              新しいイベント通知はありません。
-            </v-alert>
-          </v-card-text>
-        </v-card>
-      </v-col>
+                <UIcon :name="getNotificationEventIcon(event.eventType)" class="me-3 size-6 shrink-0" />
+                <span class="min-w-0">
+                  <span class="block text-base" :class="{ 'font-bold': !event.read }">{{ event.title }}</span>
+                  <span class="line-clamp-2 text-sm text-muted">
+                    {{ event.message }}<br />
+                    {{ formatNotificationOccurredAt(event.occurredAt) }}
+                  </span>
+                </span>
+              </button>
+            </li>
+          </ul>
+          <StatusAlert v-else type="success" variant="soft">新しいイベント通知はありません。</StatusAlert>
+        </UCard>
+      </div>
 
-      <v-col cols="12" lg="8">
-        <v-card class="dashboard-card h-100" variant="outlined">
-          <v-card-title class="d-flex align-center flex-wrap ga-2">
-            <v-icon icon="mdi-folder-multiple-outline" color="teal" />
-            Projects
-            <v-spacer />
-            <v-chip v-if="dashboard.projects.available" color="teal" size="small">
-              ACTIVE {{ dashboard.projects.activeProjectCount }}件
-            </v-chip>
-          </v-card-title>
-          <v-divider />
-          <v-card-text v-if="dashboard.projects.available">
-            <v-row v-if="dashboard.projects.cards.length" dense>
-              <v-col
-                v-for="project in dashboard.projects.cards"
-                :key="project.projectId"
-                cols="12"
-                md="6"
-              >
-                <v-card
-                  variant="tonal"
-                  color="teal"
-                  height="100%"
-                  link
+      <div class="w-full p-3 lg:w-2/3">
+        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+          <template #header>
+            <div class="flex flex-wrap items-center gap-2">
+              <UIcon name="i-mdi-folder-multiple-outline" class="size-6 text-teal" />
+              Projects
+              <UBadge v-if="dashboard.projects.available" color="teal" size="sm" class="ms-auto">
+                ACTIVE {{ dashboard.projects.activeProjectCount }}件
+              </UBadge>
+            </div>
+          </template>
+          <template v-if="dashboard.projects.available">
+            <div v-if="dashboard.projects.cards.length" class="-m-1 flex flex-wrap">
+              <div v-for="project in dashboard.projects.cards" :key="project.projectId" class="w-full p-1 md:w-1/2">
+                <button
+                  type="button"
+                  class="block h-full w-full rounded-sm bg-teal/12 text-start text-teal hover:bg-teal/16"
                   @click="openProject(project)"
                 >
-                  <v-card-title class="text-subtitle-1 font-weight-bold">
-                    {{ project.projectName }}
-                  </v-card-title>
-                  <v-card-subtitle>
+                  <span class="block px-4 pt-2 text-base font-bold">{{ project.projectName }}</span>
+                  <span class="block px-4 text-sm opacity-60">
                     {{ project.projectKey }} ・ {{ getDashboardProjectRoleLabel(project.projectRole) }}
-                  </v-card-subtitle>
-                  <v-card-text>
-                    <div class="d-flex justify-space-between text-body-2 mb-1">
+                  </span>
+                  <span class="block p-4">
+                    <span class="mb-1 flex justify-between text-sm">
                       <span>平均進捗</span>
                       <strong>{{ Number(project.averageProgressPercent) }}%</strong>
-                    </div>
-                    <v-progress-linear
+                    </span>
+                    <UProgress
                       :model-value="normalizeDashboardProgress(Number(project.averageProgressPercent))"
                       color="teal"
-                      height="8"
-                      rounded
+                      size="md"
                       class="mb-3"
+                      :ui="{ base: 'h-2 bg-teal/24 rounded-full', indicator: 'rounded-full' }"
                     />
-                    <div class="d-flex flex-wrap ga-2">
-                      <v-chip size="small" variant="outlined">
+                    <span class="flex flex-wrap gap-2">
+                      <UBadge size="sm" variant="outline" color="teal">
                         完了 {{ project.completedTaskCount }}/{{ project.totalTaskCount }}
-                      </v-chip>
-                      <v-chip
-                        v-if="project.overdueTaskCount > 0"
-                        size="small"
-                        color="error"
-                        variant="tonal"
-                      >
+                      </UBadge>
+                      <UBadge v-if="project.overdueTaskCount > 0" size="sm" color="error">
                         期限超過 {{ project.overdueTaskCount }}
-                      </v-chip>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-            <v-alert v-else type="info" variant="tonal">
-              参照できるACTIVE Projectはありません。
-            </v-alert>
-          </v-card-text>
-          <v-card-text v-else>
-            <v-alert type="info" variant="tonal">
-              Project進捗を参照するpermissionがありません。
-            </v-alert>
-          </v-card-text>
-          <v-card-actions v-if="dashboard.projects.available">
-            <v-spacer />
-            <v-btn color="teal" variant="text" append-icon="mdi-arrow-right" @click="openProjects">
-              Project一覧を開く
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" lg="4">
-        <v-card class="dashboard-card h-100" variant="outlined">
-          <v-card-title class="d-flex align-center ga-2">
-            <v-icon icon="mdi-clock-outline" color="indigo" />
-            今月の勤怠
-          </v-card-title>
-          <v-divider />
-          <template v-if="dashboard.attendance.available">
-            <v-card-text v-if="dashboard.attendance.status">
-              <div class="d-flex align-center flex-wrap ga-2 mb-4">
-                <span class="text-h6">{{ dashboard.attendance.yearMonth }}</span>
-                <v-chip
-                  :color="getAttendanceMonthStatusColor(dashboard.attendance.status)"
-                  size="small"
-                >
-                  {{ getAttendanceMonthStatusLabel(dashboard.attendance.status) }}
-                </v-chip>
+                      </UBadge>
+                    </span>
+                  </span>
+                </button>
               </div>
-              <v-list density="compact">
-                <v-list-item title="実勤務" prepend-icon="mdi-briefcase-clock-outline">
-                  <template #append>
-                    <strong>{{ formatAttendanceMinutes(dashboard.attendance.netWorkMinutes ?? 0) }}</strong>
-                  </template>
-                </v-list-item>
-                <v-list-item title="総勤務" prepend-icon="mdi-timer-outline">
-                  <template #append>
-                    {{ formatAttendanceMinutes(dashboard.attendance.grossWorkMinutes ?? 0) }}
-                  </template>
-                </v-list-item>
-                <v-list-item title="休憩" prepend-icon="mdi-coffee-outline">
-                  <template #append>
-                    {{ formatAttendanceMinutes(dashboard.attendance.breakMinutes ?? 0) }}
-                  </template>
-                </v-list-item>
-              </v-list>
-              <v-alert
+            </div>
+            <StatusAlert v-else type="info" variant="soft">参照できるACTIVE Projectはありません。</StatusAlert>
+          </template>
+          <StatusAlert v-else type="info" variant="soft">Project進捗を参照するpermissionがありません。</StatusAlert>
+          <template v-if="dashboard.projects.available" #footer>
+            <UButton color="teal" variant="ghost" trailing-icon="i-mdi-arrow-right" class="ms-auto" @click="openProjects">
+              Project一覧を開く
+            </UButton>
+          </template>
+        </UCard>
+      </div>
+
+      <div class="w-full p-3 lg:w-1/3">
+        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UIcon name="i-mdi-clock-outline" class="size-6 text-indigo" />
+              今月の勤怠
+            </div>
+          </template>
+          <template v-if="dashboard.attendance.available">
+            <template v-if="dashboard.attendance.status">
+              <div class="mb-4 flex flex-wrap items-center gap-2">
+                <span class="text-xl font-medium">{{ dashboard.attendance.yearMonth }}</span>
+                <UBadge :color="getAttendanceMonthStatusColor(dashboard.attendance.status)" size="sm">
+                  {{ getAttendanceMonthStatusLabel(dashboard.attendance.status) }}
+                </UBadge>
+              </div>
+              <ul class="py-2 text-base">
+                <li class="flex min-h-10 items-center gap-8 px-4">
+                  <UIcon name="i-mdi-briefcase-clock-outline" class="size-6 opacity-60" />
+                  <span class="flex-1">実勤務</span>
+                  <strong>{{ formatAttendanceMinutes(dashboard.attendance.netWorkMinutes ?? 0) }}</strong>
+                </li>
+                <li class="flex min-h-10 items-center gap-8 px-4">
+                  <UIcon name="i-mdi-timer-outline" class="size-6 opacity-60" />
+                  <span class="flex-1">総勤務</span>
+                  {{ formatAttendanceMinutes(dashboard.attendance.grossWorkMinutes ?? 0) }}
+                </li>
+                <li class="flex min-h-10 items-center gap-8 px-4">
+                  <UIcon name="i-mdi-coffee-outline" class="size-6 opacity-60" />
+                  <span class="flex-1">休憩</span>
+                  {{ formatAttendanceMinutes(dashboard.attendance.breakMinutes ?? 0) }}
+                </li>
+              </ul>
+              <StatusAlert
                 v-if="dashboard.attendance.hasIncompletePeriod"
                 type="warning"
-                variant="tonal"
+                variant="soft"
                 density="compact"
                 class="mt-3"
               >
                 未終了の勤務または休憩があります。
-              </v-alert>
-            </v-card-text>
-            <v-card-text v-else>
-              <v-alert type="warning" variant="tonal">
-                当月の勤怠状態を取得できませんでした。
-              </v-alert>
-            </v-card-text>
+              </StatusAlert>
+            </template>
+            <StatusAlert v-else type="warning" variant="soft">当月の勤怠状態を取得できませんでした。</StatusAlert>
           </template>
-          <v-card-text v-else>
-            <v-alert type="info" variant="tonal">
-              本人勤怠を参照するpermissionがありません。
-            </v-alert>
-          </v-card-text>
-          <v-card-actions v-if="dashboard.attendance.available">
-            <v-spacer />
-            <v-btn color="indigo" variant="text" append-icon="mdi-arrow-right" @click="openAttendance">
+          <StatusAlert v-else type="info" variant="soft">本人勤怠を参照するpermissionがありません。</StatusAlert>
+          <template v-if="dashboard.attendance.available" #footer>
+            <UButton color="indigo" variant="ghost" trailing-icon="i-mdi-arrow-right" class="ms-auto" @click="openAttendance">
               勤怠を開く
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
+            </UButton>
+          </template>
+        </UCard>
+      </div>
+    </div>
 
-    <v-card v-if="dashboard" class="dashboard-card mt-6" variant="outlined">
-      <v-card-title class="d-flex align-center flex-wrap ga-2">
-        <v-icon icon="mdi-chart-box-outline" color="amber-darken-3" />
-        高度Dashboard
-        <v-chip size="small" color="amber-darken-3" variant="tonal">Pro</v-chip>
-        <v-spacer />
-        <v-chip v-if="advancedDashboard" size="small" variant="outlined">
-          基準日 {{ advancedDashboard.statusDate }}
-        </v-chip>
-      </v-card-title>
-      <v-divider />
+    <UCard v-if="dashboard" variant="outline" class="mt-6 border-black/28" :ui="dividedCardUi">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-2">
+          <UIcon name="i-mdi-chart-box-outline" class="size-6 text-amber-darken-3" />
+          高度Dashboard
+          <UBadge size="sm" color="amber-darken-3">Pro</UBadge>
+          <UBadge v-if="advancedDashboard" size="sm" variant="outline" class="ms-auto">
+            基準日 {{ advancedDashboard.statusDate }}
+          </UBadge>
+        </div>
+      </template>
 
-      <v-card-text v-if="!dashboard.myTasks.available">
-        <v-alert type="info" variant="tonal">
-          高度Dashboardの利用にはTask参照permissionが必要です。
-        </v-alert>
-      </v-card-text>
+      <StatusAlert v-if="!dashboard.myTasks.available" type="info" variant="soft">
+        高度Dashboardの利用にはTask参照permissionが必要です。
+      </StatusAlert>
 
-      <v-card-text v-else>
-        <p class="text-body-2 text-medium-emphasis mb-4">
+      <template v-else>
+        <p class="mb-4 text-sm text-muted">
           参照可能なProjectのEVMと、基準日を含む週の本人予定負荷を比較します。
           計算式と参照範囲はBackendが一元管理します。
         </p>
 
-        <v-form
-          v-if="!isAdvancedNotEntitled"
-          class="mb-4"
-          @submit.prevent="loadAdvancedDashboard()"
-        >
-          <v-row align="center" dense>
-            <v-col cols="12" sm="5" md="3">
-              <v-text-field
-                v-model="advancedStatusDate"
-                label="EVM基準日"
-                type="date"
-                :disabled="isAdvancedLoading"
-                hide-details
-              />
-            </v-col>
-            <v-col cols="12" sm="3" md="2">
-              <v-btn
-                type="submit"
-                color="amber-darken-3"
-                prepend-icon="mdi-calculator-variant-outline"
-                :loading="isAdvancedLoading"
-                block
-              >
+        <form v-if="!isAdvancedNotEntitled" class="mb-4" @submit.prevent="loadAdvancedDashboard()">
+          <div class="-m-1 flex flex-wrap items-center">
+            <div class="w-full p-1 sm:w-5/12 md:w-1/4">
+              <UFormField label="EVM基準日" class="pb-0">
+                <UInput v-model="advancedStatusDate" type="date" :disabled="isAdvancedLoading" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-1 sm:w-1/4 md:w-1/6">
+              <UButton type="submit" color="amber-darken-3" icon="i-mdi-calculator-variant-outline" :loading="isAdvancedLoading" block>
                 集計
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-form>
-
-        <v-alert v-if="advancedErrorMessages.length" type="error" class="mb-4">
-          <div v-for="message in advancedErrorMessages" :key="message">
-            {{ message }}
+              </UButton>
+            </div>
           </div>
-        </v-alert>
+        </form>
 
-        <v-alert
+        <StatusAlert v-if="advancedErrorMessages.length" type="error" class="mb-4">
+          <div v-for="message in advancedErrorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
+
+        <StatusAlert
           v-if="isAdvancedNotEntitled"
           type="info"
-          variant="tonal"
+          variant="soft"
           class="mb-2"
           title="高度Dashboardは現在のプランでは利用できません"
         >
-          Project横断EVMと本人の週次予定負荷を利用する場合は、利用プランについてお問い合わせください。
-          <template #append>
-            <v-btn variant="text" color="primary" @click="openAdvancedAccessInquiry">
-              問い合わせる
-            </v-btn>
-          </template>
-        </v-alert>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="flex-1">
+              Project横断EVMと本人の週次予定負荷を利用する場合は、利用プランについてお問い合わせください。
+            </span>
+            <UButton variant="ghost" color="primary" @click="openAdvancedAccessInquiry">問い合わせる</UButton>
+          </div>
+        </StatusAlert>
 
-        <v-skeleton-loader
-          v-else-if="isAdvancedLoading && advancedDashboard === null"
-          type="article, table"
-        />
+        <div v-else-if="isAdvancedLoading && advancedDashboard === null" class="flex flex-col gap-3">
+          <USkeleton class="h-6 w-1/3" />
+          <USkeleton class="h-4 w-full" />
+          <USkeleton class="h-4 w-2/3" />
+          <USkeleton v-for="row in 4" :key="row" class="h-10 w-full" />
+        </div>
 
         <template v-else-if="advancedDashboard">
-          <div class="d-flex flex-wrap ga-2 mb-4">
-            <v-chip variant="outlined">
-              {{ advancedDashboard.projects.length }} Project
-            </v-chip>
-            <v-chip
-              :color="
-                advancedDashboard.projectsWithoutActiveBaselineCount > 0
-                  ? 'warning'
-                  : 'success'
-              "
-              variant="tonal"
-            >
+          <div class="mb-4 flex flex-wrap gap-2">
+            <UBadge variant="outline">{{ advancedDashboard.projects.length }} Project</UBadge>
+            <UBadge :color="advancedDashboard.projectsWithoutActiveBaselineCount > 0 ? 'warning' : 'success'">
               active baselineなし
               {{ advancedDashboard.projectsWithoutActiveBaselineCount }}件
-            </v-chip>
-            <v-chip variant="outlined">
-              timezone {{ advancedDashboard.businessZoneId }}
-            </v-chip>
+            </UBadge>
+            <UBadge variant="outline">timezone {{ advancedDashboard.businessZoneId }}</UBadge>
           </div>
 
           <template v-if="advancedDashboard.projects.length">
-            <div class="advanced-table-scroll d-none d-md-block">
-              <v-table hover class="advanced-table">
+            <div class="hidden overflow-x-auto md:block">
+              <table class="app-table app-table-hover min-w-280 [&_td]:h-13 [&_td]:py-2">
                 <thead>
                   <tr>
                     <th scope="col">Project / baseline</th>
@@ -482,240 +408,139 @@ onBeforeMount(loadDashboard);
                   </tr>
                 </thead>
                 <tbody>
-                  <tr
-                    v-for="project in advancedDashboard.projects"
-                    :key="project.projectId"
-                  >
+                  <tr v-for="project in advancedDashboard.projects" :key="project.projectId">
                     <td>
-                      <v-btn
-                        variant="text"
+                      <UButton
+                        variant="ghost"
                         color="primary"
-                        class="px-0 text-none"
-                        append-icon="mdi-arrow-right"
+                        class="px-0 normal-case"
+                        trailing-icon="i-mdi-arrow-right"
                         @click="openAdvancedProject(project)"
                       >
                         {{ project.projectName }}
-                      </v-btn>
-                      <div class="text-caption text-medium-emphasis">
+                      </UButton>
+                      <div class="text-xs text-muted">
                         {{ project.projectKey }} ・ #{{ project.baselineNumber }}
                         {{ project.baselineName }} ・ {{ project.baselineDate }}
                       </div>
                     </td>
-                    <td class="text-no-wrap">
+                    <td class="whitespace-nowrap">
                       BAC {{ formatEarnedValueMinutes(project.bac) }}<br />
-                      PV {{ formatEarnedValueMinutes(project.pv) }} ・
-                      EV {{ formatEarnedValueMinutes(project.ev) }}<br />
+                      PV {{ formatEarnedValueMinutes(project.pv) }} ・ EV {{ formatEarnedValueMinutes(project.ev) }}<br />
                       AC {{ formatEarnedValueMinutes(project.ac) }}
                     </td>
-                    <td class="text-no-wrap">
+                    <td class="whitespace-nowrap">
                       計画 {{ formatEarnedValuePercent(project.plannedProgressPercent) }}<br />
                       出来高 {{ formatEarnedValuePercent(project.earnedProgressPercent) }}
                     </td>
                     <td>
-                      <div class="d-flex flex-wrap ga-1">
-                        <v-chip
-                          size="small"
-                          :color="getEarnedValueRatioColor(project.spi)"
-                          variant="tonal"
-                        >
+                      <div class="flex flex-wrap gap-1">
+                        <UBadge size="sm" :color="getEarnedValueRatioColor(project.spi)">
                           SPI {{ formatEarnedValueRatio(project.spi) }}
-                        </v-chip>
-                        <v-chip
-                          size="small"
-                          :color="getEarnedValueRatioColor(project.cpi)"
-                          variant="tonal"
-                        >
+                        </UBadge>
+                        <UBadge size="sm" :color="getEarnedValueRatioColor(project.cpi)">
                           CPI {{ formatEarnedValueRatio(project.cpi) }}
-                        </v-chip>
+                        </UBadge>
                       </div>
                     </td>
                     <td>
-                      <div class="d-flex flex-wrap ga-1">
-                        <v-chip
-                          size="small"
-                          :color="getEarnedValueVarianceColor(project.sv)"
-                          variant="tonal"
-                        >
+                      <div class="flex flex-wrap gap-1">
+                        <UBadge size="sm" :color="getEarnedValueVarianceColor(project.sv)">
                           SV {{ formatSignedEarnedValueMinutes(project.sv) }}
-                        </v-chip>
-                        <v-chip
-                          size="small"
-                          :color="getEarnedValueVarianceColor(project.cv)"
-                          variant="tonal"
-                        >
+                        </UBadge>
+                        <UBadge size="sm" :color="getEarnedValueVarianceColor(project.cv)">
                           CV {{ formatSignedEarnedValueMinutes(project.cv) }}
-                        </v-chip>
+                        </UBadge>
                       </div>
                     </td>
-                    <td class="text-no-wrap">
-                      {{ project.workloadWeekStartDate }} ～
-                      {{ project.workloadWeekEndDate }}<br />
+                    <td class="whitespace-nowrap">
+                      {{ project.workloadWeekStartDate }} ～ {{ project.workloadWeekEndDate }}<br />
                       {{ formatAttendanceMinutes(project.ownPlannedWorkloadMinutes) }}
-                      <v-chip
-                        v-if="project.ownOverEightHourDayCount > 0"
-                        color="warning"
-                        size="x-small"
-                        class="ml-1"
-                      >
+                      <UBadge v-if="project.ownOverEightHourDayCount > 0" color="warning" size="xs" class="ms-1">
                         8時間超 {{ project.ownOverEightHourDayCount }}日
-                      </v-chip>
+                      </UBadge>
                     </td>
                     <td>
-                      <div v-if="project.warningCodes.length" class="d-flex flex-column ga-1">
-                        <v-chip
-                          v-for="warningCode in project.warningCodes"
-                          :key="warningCode"
-                          color="warning"
-                          size="small"
-                          variant="tonal"
-                        >
+                      <div v-if="project.warningCodes.length" class="flex flex-col items-start gap-1">
+                        <UBadge v-for="warningCode in project.warningCodes" :key="warningCode" color="warning" size="sm">
                           {{ getAdvancedDashboardWarningLabel(warningCode) }}
-                        </v-chip>
+                        </UBadge>
                       </div>
-                      <span v-else class="text-medium-emphasis">なし</span>
-                      <div class="text-caption text-medium-emphasis mt-1">
+                      <span v-else class="text-muted">なし</span>
+                      <div class="mt-1 text-xs text-muted">
                         baseline配賦差
                         {{ formatSignedEarnedValueMinutes(project.baselineAllocationVarianceMinutes) }}
                       </div>
-                      <div
-                        v-if="project.excludedActualEffortMinutes > 0"
-                        class="text-caption text-warning"
-                      >
+                      <div v-if="project.excludedActualEffortMinutes > 0" class="text-xs text-warning">
                         AC除外 {{ formatEarnedValueMinutes(project.excludedActualEffortMinutes) }}
                       </div>
                     </td>
                   </tr>
                 </tbody>
-              </v-table>
+              </table>
             </div>
 
-            <v-row class="d-md-none" dense>
-              <v-col
-                v-for="project in advancedDashboard.projects"
-                :key="project.projectId"
-                cols="12"
-              >
-                <v-card
-                  variant="tonal"
-                  color="amber-darken-3"
-                  link
+            <div class="-m-1 flex flex-col md:hidden">
+              <div v-for="project in advancedDashboard.projects" :key="project.projectId" class="p-1">
+                <button
+                  type="button"
+                  class="block w-full rounded-sm bg-amber-darken-3/12 text-start text-amber-darken-3 hover:bg-amber-darken-3/16"
                   @click="openAdvancedProject(project)"
                 >
-                  <v-card-title class="text-subtitle-1 font-weight-bold">
-                    {{ project.projectName }}
-                  </v-card-title>
-                  <v-card-subtitle>
+                  <span class="block px-4 pt-2 text-base font-bold">{{ project.projectName }}</span>
+                  <span class="block px-4 text-sm opacity-60">
                     {{ project.projectKey }} ・ baseline #{{ project.baselineNumber }}
-                  </v-card-subtitle>
-                  <v-card-text>
-                    <div class="d-flex flex-wrap ga-1 mb-3">
-                      <v-chip
-                        size="small"
-                        :color="getEarnedValueRatioColor(project.spi)"
-                        variant="tonal"
-                      >
+                  </span>
+                  <span class="block p-4">
+                    <span class="mb-3 flex flex-wrap gap-1">
+                      <UBadge size="sm" :color="getEarnedValueRatioColor(project.spi)">
                         SPI {{ formatEarnedValueRatio(project.spi) }}
-                      </v-chip>
-                      <v-chip
-                        size="small"
-                        :color="getEarnedValueRatioColor(project.cpi)"
-                        variant="tonal"
-                      >
+                      </UBadge>
+                      <UBadge size="sm" :color="getEarnedValueRatioColor(project.cpi)">
                         CPI {{ formatEarnedValueRatio(project.cpi) }}
-                      </v-chip>
-                      <v-chip
-                        v-if="project.warningCodes.length"
-                        size="small"
-                        color="warning"
-                        variant="tonal"
-                      >
+                      </UBadge>
+                      <UBadge v-if="project.warningCodes.length" size="sm" color="warning">
                         警告 {{ project.warningCodes.length }}件
-                      </v-chip>
-                      <v-chip
-                        size="small"
-                        :color="getEarnedValueVarianceColor(project.sv)"
-                        variant="tonal"
-                      >
+                      </UBadge>
+                      <UBadge size="sm" :color="getEarnedValueVarianceColor(project.sv)">
                         SV {{ formatSignedEarnedValueMinutes(project.sv) }}
-                      </v-chip>
-                      <v-chip
-                        size="small"
-                        :color="getEarnedValueVarianceColor(project.cv)"
-                        variant="tonal"
-                      >
+                      </UBadge>
+                      <UBadge size="sm" :color="getEarnedValueVarianceColor(project.cv)">
                         CV {{ formatSignedEarnedValueMinutes(project.cv) }}
-                      </v-chip>
-                    </div>
-                    <div class="text-body-2">
+                      </UBadge>
+                    </span>
+                    <span class="block text-sm">
                       計画 {{ formatEarnedValuePercent(project.plannedProgressPercent) }} ・
                       出来高 {{ formatEarnedValuePercent(project.earnedProgressPercent) }}
-                    </div>
-                    <div class="text-body-2 mt-1">
-                      BAC {{ formatEarnedValueMinutes(project.bac) }} ・
-                      PV {{ formatEarnedValueMinutes(project.pv) }} ・
-                      EV {{ formatEarnedValueMinutes(project.ev) }} ・
-                      AC {{ formatEarnedValueMinutes(project.ac) }}
-                    </div>
-                    <div class="text-body-2 mt-1">
+                    </span>
+                    <span class="mt-1 block text-sm">
+                      BAC {{ formatEarnedValueMinutes(project.bac) }} ・ PV {{ formatEarnedValueMinutes(project.pv) }} ・
+                      EV {{ formatEarnedValueMinutes(project.ev) }} ・ AC {{ formatEarnedValueMinutes(project.ac) }}
+                    </span>
+                    <span class="mt-1 block text-sm">
                       本人予定 {{ formatAttendanceMinutes(project.ownPlannedWorkloadMinutes) }}
                       （{{ project.workloadWeekStartDate }} ～ {{ project.workloadWeekEndDate }}）
-                    </div>
-                    <v-alert
+                    </span>
+                    <StatusAlert
                       v-if="project.ownOverEightHourDayCount > 0"
                       type="warning"
-                      variant="tonal"
+                      variant="soft"
                       density="compact"
                       class="mt-3"
                     >
                       8時間を超える予定日が{{ project.ownOverEightHourDayCount }}日あります。
-                    </v-alert>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
+                    </StatusAlert>
+                  </span>
+                </button>
+              </div>
+            </div>
           </template>
 
-          <v-alert v-else type="info" variant="tonal">
+          <StatusAlert v-else type="info" variant="soft">
             active baselineを持つ参照可能なACTIVE Projectはありません。
-          </v-alert>
+          </StatusAlert>
         </template>
-      </v-card-text>
-    </v-card>
-  </v-container>
+      </template>
+    </UCard>
+  </div>
 </template>
-
-<style scoped>
-.dashboard-page {
-  max-width: 1440px;
-}
-
-.dashboard-card {
-  border-color: rgba(var(--v-border-color), 0.28);
-}
-
-.metric {
-  min-height: 76px;
-}
-
-.dashboard-list-item {
-  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.dashboard-list-item:last-child {
-  border-bottom: 0;
-}
-
-.advanced-table-scroll {
-  overflow-x: auto;
-}
-
-.advanced-table {
-  min-width: 1120px;
-}
-
-@media (max-width: 599px) {
-  .dashboard-page {
-    padding-inline: 12px !important;
-  }
-}
-</style>
