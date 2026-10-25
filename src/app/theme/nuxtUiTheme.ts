@@ -17,7 +17,7 @@ const semanticColors = ["primary", "secondary", "success", "info", "warning", "e
 const buttonSolidVariants = semanticColors.map((color) => ({
   color,
   variant: "solid" as const,
-  class: `shadow-elevation-2 hover:bg-${color}/92 active:bg-${color}/88`,
+  class: `shadow-elevation-2 hover:bg-${color}/92 active:bg-${color}/88 disabled:opacity-40 aria-disabled:opacity-40 disabled:shadow-none`,
 }));
 
 // Vuetifyのoutlinedは前景色そのものの枠線、tonalは前景色12%の背景を使う。
@@ -54,6 +54,43 @@ const badgeOutlineVariants = semanticColors.map((color) => ({
   variant: "outline" as const,
   class: `ring-${color}`,
 }));
+
+// Vuetify v-text-field既定のfilled表示（薄い背景・下線・上角だけ丸める）。Vuetifyのoutlinedは`outline`variantで表す。
+const filledFieldClass =
+  "text-default bg-black/4 hover:bg-black/8 focus:bg-black/12 focus-visible:bg-black/12 data-[state=open]:bg-black/12 " +
+  "rounded-t-sm rounded-b-none border-b border-black/42 focus:border-primary focus-visible:border-primary " +
+  "focus:shadow-[inset_0_-1px_0_0_var(--ui-primary)] focus-visible:shadow-[inset_0_-1px_0_0_var(--ui-primary)] focus-visible:outline-0";
+const outlinedFieldClass =
+  "text-default bg-default rounded-sm ring ring-inset ring-black/38 hover:ring-black/87 focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-0";
+
+/** Vuetifyのdensity default（56px）とcompact（40px）をNuxt UIの`md`／`sm`へ対応させる。 */
+const fieldSizeVariants = {
+  sm: { base: "min-h-10 px-3 text-base gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-6", trailingIcon: "size-6" },
+  md: { base: "min-h-14 px-4 text-base gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-6", trailingIcon: "size-6" },
+};
+
+const fieldTheme = {
+  slots: {
+    leadingIcon: "text-black/60",
+    trailingIcon: "text-black/60",
+  },
+  variants: {
+    size: fieldSizeVariants,
+    variant: {
+      soft: filledFieldClass,
+      outline: outlinedFieldClass,
+    },
+  },
+  compoundVariants: [
+    { leading: true, size: "sm" as const, class: "ps-11" },
+    { leading: true, size: "md" as const, class: "ps-12" },
+    { trailing: true, size: "sm" as const, class: "pe-11" },
+    { trailing: true, size: "md" as const, class: "pe-12" },
+  ],
+  defaultVariants: {
+    variant: "soft" as const,
+  },
+};
 
 export const nuxtUiTheme = {
   colors: {
@@ -99,7 +136,8 @@ export const nuxtUiTheme = {
   },
   button: {
     slots: {
-      base: "rounded-sm font-medium uppercase tracking-[.0892857143em] justify-center",
+      // Vuetify 3.4の無効buttonは、塗りつぶし以外を26%、色付きの塗りつぶしを40%の不透明度で表す。
+      base: "rounded-sm font-medium uppercase tracking-[.0892857143em] justify-center disabled:opacity-26 aria-disabled:opacity-26",
     },
     variants: {
       size: {
@@ -119,7 +157,7 @@ export const nuxtUiTheme = {
       {
         color: "neutral" as const,
         variant: "solid" as const,
-        class: "bg-default text-default shadow-elevation-2 hover:bg-elevated active:bg-accented",
+        class: "bg-default text-default shadow-elevation-2 hover:bg-elevated active:bg-accented disabled:shadow-none",
       },
       { color: "neutral" as const, variant: "outline" as const, class: "ring-current bg-transparent" },
       { color: "neutral" as const, variant: "soft" as const, class: "bg-inverted/12 hover:bg-inverted/16" },
@@ -143,6 +181,46 @@ export const nuxtUiTheme = {
       close: "text-current",
     },
     compoundVariants: [...alertSoftVariants],
+  },
+  // Vuetifyのv-text-fieldと同じく、ラベルを入力欄内の上部へ置き、下に補足・エラー用の22pxを確保する。
+  // Vuetifyの`hide-details`に相当する箇所では、UFormFieldへ`class="pb-0"`を指定する。
+  formField: {
+    slots: {
+      root: "relative pb-5.5 [&:has([data-slot=label])_[data-slot=base]]:pt-5",
+      label: "absolute start-4 top-1.5 z-10 pointer-events-none text-xs leading-4 font-normal text-muted",
+      error: "absolute start-4 bottom-0.5 mt-0 text-xs",
+      help: "absolute start-4 bottom-0.5 mt-0 text-xs",
+      hint: "text-xs",
+    },
+    variants: {
+      orientation: {
+        vertical: { container: "mt-0" },
+      },
+    },
+  },
+  input: fieldTheme,
+  select: fieldTheme,
+  selectMenu: fieldTheme,
+  inputMenu: fieldTheme,
+  textarea: {
+    ...fieldTheme,
+    variants: {
+      ...fieldTheme.variants,
+      size: {
+        sm: { base: "px-3 pt-2 pb-2 text-base" },
+        md: { base: "px-4 pt-4 pb-2 text-base" },
+      },
+    },
+    compoundVariants: [],
+  },
+  // Vuetify v-data-table（density compact）の行高40px・区切り線・見出し太さ。
+  table: {
+    slots: {
+      th: "h-10 px-4 py-0 text-sm font-medium text-default whitespace-nowrap",
+      td: "h-10 px-4 py-0 text-sm text-default whitespace-nowrap",
+      separator: "bg-(--ui-border)",
+      empty: "py-2 text-center text-sm text-default",
+    },
   },
   badge: {
     slots: {
@@ -171,10 +249,10 @@ export const nuxtUiTheme = {
   card: {
     slots: {
       root: "rounded-sm",
-      header: "px-4 py-2 text-xl font-medium leading-8 tracking-[.0125em]",
+      header: "px-4 sm:px-4 py-2 text-xl font-medium leading-8 tracking-[.0125em]",
       // Vuetifyはtitle直後のtextの上paddingを0にする。
-      body: "p-4 text-sm tracking-[.0178571429em] not-first:pt-0",
-      footer: "flex items-center gap-2 p-2 min-h-13",
+      body: "p-4 sm:p-4 text-sm tracking-[.0178571429em] not-first:pt-0",
+      footer: "flex items-center gap-2 p-2 sm:px-2 min-h-13",
     },
     variants: {
       variant: {

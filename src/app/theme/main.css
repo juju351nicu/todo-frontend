@@ -22,6 +22,13 @@
 @theme static {
   --font-sans: "Roboto", sans-serif;
 
+  /* Vuetifyのgrid breakpointと同じ境界にし、v-colの`sm`／`md`等をTailwindの同名prefixへそのまま置き換えられるようにする。 */
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 960px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1920px;
+  --breakpoint-2xl: 2560px;
+
   /* Vuetifyのelevation 1／2／3／4／8と同じ影。 */
   --shadow-elevation-1: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
   --shadow-elevation-2: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
@@ -187,22 +194,21 @@
 
 /*
  * 画面本文の中央寄せcontainer。移行前のVuetify v-containerと同じ余白・最大幅（breakpointの93.75%）にする。
- * Tailwind既定のbreakpointはVuetifyと異なるため、Vuetifyのmd／lg／xl／xxl境界を直接指定する。
  */
 @utility page-container {
   width: 100%;
   margin-inline: auto;
   padding: 1rem;
-  @media (width >= 960px) {
+  @variant md {
     max-width: 900px;
   }
-  @media (width >= 1280px) {
+  @variant lg {
     max-width: 1200px;
   }
-  @media (width >= 1920px) {
+  @variant xl {
     max-width: 1800px;
   }
-  @media (width >= 2560px) {
+  @variant 2xl {
     max-width: 2400px;
   }
 }
