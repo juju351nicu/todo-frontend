@@ -130,4 +130,17 @@ describe("useTaskTemplateCapture", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
+
+  it.each([
+    ["", false, false],
+    ["   ", false, false],
+    ["a".repeat(100), false, true],
+    ["a".repeat(101), false, false],
+    ["Template", true, false],
+  ])("名称%j・参照専用%sの保存可否は%s", (name, disabled, expected) => {
+    const state = useTaskTemplateCapture(ref(5), ref(31), ref(disabled));
+    state.name.value = name;
+
+    expect(state.canCapture.value).toBe(expected);
+  });
 });

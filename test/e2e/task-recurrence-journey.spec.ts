@@ -43,11 +43,7 @@ const selectStatus = async (
   dialog: Locator,
   label: "有効" | "一時停止"
 ): Promise<void> => {
-  await dialog
-    .locator(".v-input")
-    .filter({ hasText: "状態" })
-    .getByRole("combobox")
-    .click();
+  await dialog.getByRole("combobox", { name: "状態", exact: true }).click();
   await page.getByRole("option", { name: label, exact: true }).click();
 };
 

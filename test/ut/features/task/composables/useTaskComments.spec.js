@@ -354,4 +354,38 @@ describe("useTaskComments", () => {
     expect(page.comments.value).toEqual([]);
     expect(page.errorMessages.value).toEqual([]);
   });
+
+  it.each([
+    ["", false],
+    ["   ", false],
+    ["a".repeat(2000), true],
+    ["a".repeat(2001), false],
+  ])("本文%#の投稿可否はtrim後の長さで判定する", async (body, expected) => {
+    const page = createPage();
+    await waitForInitialLoad();
+
+    page.commentBody.value = body;
+    page.editBody.value = body;
+
+    expect(page.canSubmit.value).toBe(expected);
+    expect(page.canSaveEdit.value).toBe(expected);
+  });
+
+  it("参照専用では有効な本文でも投稿できない", async () => {
+    const page = createPage(true);
+    page.commentBody.value = "確認しました";
+
+    expect(page.canSubmit.value).toBe(false);
+  });
+
+  it("削除確認dialogを閉じたときだけ削除対象を破棄する", async () => {
+    const page = createPage();
+    await waitForInitialLoad();
+    page.openDeleteConfirm(ownComment);
+
+    page.handleDeleteDialogVisibility(true);
+    expect(page.deletingComment.value).not.toBeNull();
+    page.handleDeleteDialogVisibility(false);
+    expect(page.deletingComment.value).toBeNull();
+  });
 });

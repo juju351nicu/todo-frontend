@@ -1,107 +1,120 @@
 <script setup lang="ts">
-import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
-import { computed } from "vue";
+import { toRef } from "vue";
 
 import TodoUpsertConfirm from "@/features/task/components/TodoUpsertConfirm.vue";
 import { useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const props = defineProps<{
-    id?: number;
+  id?: number;
 }>();
 
-const todoId = computed(() => props.id);
 const {
-    canAssignTodoOwner,
-    canWriteTodo,
-    clearForm,
-    closeConfirm,
-    confirmSubmit,
-    doneFlagItems,
-    errorMessages,
-    fullName,
-    fullNameItems,
-    isLoading,
-    isShowConfirm,
-    loadError,
-    priorityItems,
-    showConfirm,
-    successMessage,
-    todoForm,
-} = useTodoDetailPage(todoId);
+  canAssignTodoOwner,
+  canWriteTodo,
+  clearForm,
+  closeConfirm,
+  confirmSubmit,
+  doneFlagItems,
+  errorMessages,
+  fullName,
+  fullNameItems,
+  isLoading,
+  isShowConfirm,
+  loadError,
+  priorityItems,
+  showConfirm,
+  successMessage,
+  todoForm,
+} = useTodoDetailPage(toRef(props, "id"));
 </script>
+
 <template>
-    <LoadingIndicator v-if="isLoading" />
-    <TodoUpsertConfirm v-if="isShowConfirm" :todo-form="todoForm" @close-modal="closeConfirm"
-        @confirm-submit="confirmSubmit" />
-    <v-container>
-        <v-alert v-if="loadError" type="error" class="mb-4">
-            {{ loadError }}
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-4">
-            {{ successMessage }}
-        </v-alert>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-            <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-        <v-alert v-if="!canWriteTodo" type="info" class="mb-4">
-            このTodoは参照専用です。
-        </v-alert>
-        <v-card width="800px">
-            <v-card-title>
-                <span> {{ todoForm.todoId > 0 ? todoForm.todoId : ' (新規)' }}</span>
-            </v-card-title>
-            <v-card-text>
-                <v-row>
-                    <template v-if="todoForm.todoId === 0 && canAssignTodoOwner">
-                        <v-col cols="12">
-                            <v-select name="userId" v-model="todoForm.userId" :items="fullNameItems"
-                                item-title="userObjLabel" item-value="userObjId" label="対象ユーザ"></v-select>
-                        </v-col>
-                    </template>
-                    <template v-if="todoForm.todoId > 0">
-                        <v-col cols="12">
-                            <v-text-field :model-value="fullName" label="対象ユーザー" readonly></v-text-field>
-                        </v-col>
-                        <input type="hidden" name="userId" ref="inputUserId">
-                    </template>
-                    <v-col cols="12">
-                        <v-text-field name="dateFrom" v-model="todoForm.dateFrom" label="着手日"
-                            :readonly="!canWriteTodo" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-text-field name="dateTo" v-model="todoForm.dateTo" label="期限日"
-                            :readonly="!canWriteTodo" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-select name="priority" v-model="todoForm.priority" :items="priorityItems"
-                            :readonly="!canWriteTodo"
-                            item-title="priorityLabel" item-value="priority" label="重要度"></v-select>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-select name="doneFlag" v-model="todoForm.doneFlag" :items="doneFlagItems"
-                            :readonly="!canWriteTodo"
-                            item-title="doneFlagLabel" item-value="doneFlag" label="完了フラグ"></v-select>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-text-field name="title" v-model="todoForm.title" label="タイトル"
-                            :readonly="!canWriteTodo" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-textarea name="detail" v-model="todoForm.detail" label="詳細"
-                            :readonly="!canWriteTodo" required>
-                        </v-textarea>
-                    </v-col>
-                    <v-btn v-if="canWriteTodo" class="mr-4" color="success" type="button" @click="showConfirm">
-                        {{ todoForm.todoId > 0 ? '更新する' : '登録する' }}
-                    </v-btn>
-                    <v-btn v-if="canWriteTodo" type="button" @click="clearForm">
-                        クリア
-                    </v-btn>
-                </v-row>
-            </v-card-text>
-        </v-card>
-    </v-container>
+  <LoadingIndicator v-if="isLoading" />
+  <TodoUpsertConfirm v-if="isShowConfirm" :todo-form="todoForm" @close-modal="closeConfirm" @confirm-submit="confirmSubmit" />
+  <div class="page-container">
+    <StatusAlert v-if="loadError" type="error" class="mb-4">{{ loadError }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+      <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+    </StatusAlert>
+    <StatusAlert v-if="!canWriteTodo" type="info" class="mb-4">このTodoは参照専用です。</StatusAlert>
+    <UCard class="w-200">
+      <template #header>
+        <span>{{ todoForm.todoId > 0 ? todoForm.todoId : " (新規)" }}</span>
+      </template>
+      <div class="-m-3 flex flex-wrap">
+        <div v-if="todoForm.todoId === 0 && canAssignTodoOwner" class="w-full p-3">
+          <UFormField label="対象ユーザ">
+            <USelect
+              v-model="todoForm.userId"
+              name="userId"
+              :items="fullNameItems"
+              label-key="userObjLabel"
+              value-key="userObjId"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+        <div v-if="todoForm.todoId > 0" class="w-full p-3">
+          <UFormField label="対象ユーザー">
+            <UInput :model-value="fullName" readonly class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="着手日">
+            <UInput v-model="todoForm.dateFrom" name="dateFrom" :readonly="!canWriteTodo" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="期限日">
+            <UInput v-model="todoForm.dateTo" name="dateTo" :readonly="!canWriteTodo" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="重要度">
+            <USelect
+              v-model="todoForm.priority"
+              name="priority"
+              :items="priorityItems"
+              label-key="priorityLabel"
+              value-key="priority"
+              :disabled="!canWriteTodo"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="完了フラグ">
+            <USelect
+              v-model="todoForm.doneFlag"
+              name="doneFlag"
+              :items="doneFlagItems"
+              label-key="doneFlagLabel"
+              value-key="doneFlag"
+              :disabled="!canWriteTodo"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="タイトル">
+            <UInput v-model="todoForm.title" name="title" :readonly="!canWriteTodo" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="詳細">
+            <UTextarea v-model="todoForm.detail" name="detail" :rows="5" :readonly="!canWriteTodo" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="p-3 pt-0">
+          <UButton v-if="canWriteTodo" class="me-4" color="success" type="button" @click="showConfirm">
+            {{ todoForm.todoId > 0 ? "更新する" : "登録する" }}
+          </UButton>
+          <UButton v-if="canWriteTodo" type="button" @click="clearForm">クリア</UButton>
+        </div>
+      </div>
+    </UCard>
+  </div>
 </template>

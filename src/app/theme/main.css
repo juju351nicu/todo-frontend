@@ -17,6 +17,8 @@
  */
 @source inline("{hover:,active:,}bg-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}/{4,12,16,20,88,92}");
 @source inline("ring-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}");
+/* 状態色をcomposableから受け取りアイコン色にする画面（My Tasks等）のため、文字色classも生成する。 */
+@source inline("text-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}");
 
 /* Vuetify 3.4の既定light themeの色。500を元の色とし、他の濃淡はcolor-mixで作る。 */
 @theme static {

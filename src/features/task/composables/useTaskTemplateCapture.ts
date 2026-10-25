@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -13,6 +13,9 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 
+/** Task Template名の最大文字数（trim後）。Backendの入力制約と同じ値。 */
+export const TASK_TEMPLATE_NAME_MAX_LENGTH = 100;
+
 /** 既存Taskと未完了checklistを本人用Templateへ保存するDialog状態を管理する。 */
 export const useTaskTemplateCapture = (
   projectId: Readonly<Ref<number>>,
@@ -26,6 +29,13 @@ export const useTaskTemplateCapture = (
   const errorMessage = ref("");
   const successMessage = ref("");
   const isSaving = ref(false);
+  /** 参照専用・保存中でなく、Template名がtrim後1～100文字の場合だけ保存できる。 */
+  const canCapture = computed<boolean>(() => {
+    const trimmedName = name.value.trim();
+    return (
+      !disabled.value && !isSaving.value && trimmedName.length > 0 && trimmedName.length <= TASK_TEMPLATE_NAME_MAX_LENGTH
+    );
+  });
 
   /** API statusと契約済みerror codeをcapture用の安全な表示文言へ変換する。 */
   const getErrorMessage = (error: unknown): string => {
@@ -112,6 +122,7 @@ export const useTaskTemplateCapture = (
   };
 
   return {
+    canCapture,
     capture,
     close,
     errorMessage,

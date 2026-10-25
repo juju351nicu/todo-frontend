@@ -12,12 +12,13 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import type { SemanticColor } from "@/shared/types/color";
 
 interface MyTaskGroup {
   key: "overdue" | "today" | "upcoming";
   title: string;
   icon: string;
-  color: string;
+  color: SemanticColor;
   items: MyTaskItem[];
 }
 
@@ -64,21 +65,21 @@ export const useMyTasksPage = () => {
       {
         key: "overdue",
         title: "期限超過",
-        icon: "mdi-alert-circle-outline",
+        icon: "i-mdi-alert-circle-outline",
         color: "error",
         items: overdue,
       },
       {
         key: "today",
         title: "今日",
-        icon: "mdi-calendar-today",
+        icon: "i-mdi-calendar-today",
         color: "warning",
         items: todayTasks,
       },
       {
         key: "upcoming",
         title: "今後",
-        icon: "mdi-calendar-arrow-right",
+        icon: "i-mdi-calendar-arrow-right",
         color: "primary",
         items: upcoming,
       },

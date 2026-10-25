@@ -17,6 +17,15 @@ import {
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
+/** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
+export const TASK_COMMENT_MAX_LENGTH = 2000;
+
+/** trim後1文字以上、最大文字数以下のコメント本文か。 */
+const isValidCommentBody = (body: string): boolean => {
+  const trimmedBody = body.trim();
+  return trimmedBody.length > 0 && trimmedBody.length <= TASK_COMMENT_MAX_LENGTH;
+};
+
 /**
  * Project BoardのTask編集Dialog内でコメント取得・投稿・本人編集・本人削除を扱う。
  * 409では古い編集対象を破棄して一覧を再取得し、取得前versionの再送を防ぐ。
@@ -48,6 +57,12 @@ export const useTaskComments = (
   const isMutating = computed(
     () => isSubmitting.value || isUpdating.value || isDeleting.value
   );
+  /** 参照専用でなく、入力中の本文が有効で、他の更新中でない場合だけ投稿できる。 */
+  const canSubmit = computed<boolean>(
+    () => !disabled.value && isValidCommentBody(commentBody.value) && !isMutating.value
+  );
+  /** 編集中の本文が有効で、他の更新中でない場合だけ更新できる。 */
+  const canSaveEdit = computed<boolean>(() => isValidCommentBody(editBody.value) && !isMutating.value);
 
   /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
   const getErrorMessages = (
@@ -145,7 +160,7 @@ export const useTaskComments = (
     ) {
       return;
     }
-    if (!normalizedBody || normalizedBody.length > 2000) {
+    if (!normalizedBody || normalizedBody.length > TASK_COMMENT_MAX_LENGTH) {
       errorMessages.value = ["コメント本文を1〜2000文字で入力してください。"];
       return;
     }
@@ -262,7 +277,7 @@ export const useTaskComments = (
       return;
     }
     const normalizedBody = editBody.value.trim();
-    if (!normalizedBody || normalizedBody.length > 2000) {
+    if (!normalizedBody || normalizedBody.length > TASK_COMMENT_MAX_LENGTH) {
       errorMessages.value = ["コメント本文を1〜2000文字で入力してください。"];
       return;
     }
@@ -385,10 +400,20 @@ export const useTaskComments = (
     { immediate: true }
   );
 
+  /** 削除確認dialogが閉じられた場合に削除対象を破棄する。 */
+  const handleDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelDelete();
+    }
+  };
+
   return {
     cancelDelete,
     cancelEditing,
     canModifyComment,
+    canSaveEdit,
+    canSubmit,
+    handleDeleteDialogVisibility,
     commentBody,
     comments,
     confirmDelete,

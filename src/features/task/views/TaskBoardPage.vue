@@ -4,7 +4,6 @@ import Draggable from "vuedraggable";
 
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
-import type { TaskPriority } from "@/features/project/types/project";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
@@ -12,9 +11,12 @@ import TaskRecurrenceDialog from "@/features/task/components/TaskRecurrenceDialo
 import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
 import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
+import { getTaskPriorityColor, getTaskPriorityLabel } from "@/features/task/utils/taskDisplay";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import TaskWorkLogAuditDialog from "@/features/time-tracking/components/TaskWorkLogAuditDialog.vue";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   applyProjectDetail,
@@ -59,57 +61,46 @@ const {
   successMessage,
 } = useTaskBoardPage();
 
-/** Task優先度をカード左線とChipに使用する色へ変換する。 */
-const getPriorityColor = (priority: TaskPriority): string =>
-  ({ 1: "error", 2: "warning", 3: "info" })[priority];
-
-/** Task優先度を日本語表示へ変換する。 */
-const getPriorityLabel = (priority: TaskPriority): string =>
-  ({ 1: "低", 2: "中", 3: "高" })[priority];
+// Task cardの左線は優先度色と同じ色にする（getTaskPriorityColorと対応）。
+const PRIORITY_BORDER_CLASSES = { 1: "border-s-info", 2: "border-s-warning", 3: "border-s-error" } as const;
 
 onBeforeMount(initialize);
 </script>
 
 <template>
-  <LoadingIndicator
-    v-if="isLoading || isLoadingTask || isMoving || isArchiving"
-  />
-  <v-container fluid class="pa-6 board-page">
-    <div class="d-flex align-center flex-wrap ga-3 mb-4">
-      <v-btn
+  <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving || isArchiving" />
+  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+      <UButton
         :to="{ name: 'ProjectList' }"
-        icon="mdi-arrow-left"
-        variant="text"
+        icon="i-mdi-arrow-left"
+        variant="ghost"
+        square
+        size="lg"
+        class="size-12 text-inherit hover:bg-white/4"
+        :ui="{ leadingIcon: 'size-6' }"
         aria-label="Project一覧へ戻る"
       />
       <div>
-        <h1 class="text-h5">{{ board?.projectName ?? "Project Board" }}</h1>
-        <div v-if="project" class="text-body-2 text-medium-emphasis">
+        <h1 class="text-2xl">{{ board?.projectName ?? "Project Board" }}</h1>
+        <div v-if="project" class="text-sm opacity-70">
           {{ project.projectKey }}
           <span v-if="project.description">・{{ project.description }}</span>
         </div>
       </div>
-      <v-spacer />
-      <v-chip
-        v-if="project"
-        :color="project.status === 'ACTIVE' ? 'success' : 'default'"
-        size="small"
-      >
+      <UBadge v-if="project" :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm" class="ms-auto">
         {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
-      </v-chip>
-      <v-btn
+      </UBadge>
+      <UButton
         v-if="board"
         :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
-        prepend-icon="mdi-file-tree-outline"
-        variant="tonal"
+        icon="i-mdi-file-tree-outline"
+        variant="soft"
+        class="text-white"
       >
         WBSを開く
-      </v-btn>
-      <ProjectCommentsDialog
-        v-if="board"
-        :project-id="board.projectId"
-        @task-selected="openTaskEditor"
-      />
+      </UButton>
+      <ProjectCommentsDialog v-if="board" :project-id="board.projectId" @task-selected="openTaskEditor" />
       <ProjectTemplateCaptureButton
         v-if="project && canCaptureProjectTemplate"
         :project-id="project.projectId"
@@ -134,63 +125,53 @@ onBeforeMount(initialize);
         :can-update="canUpdateTaskRecurrence"
         :project-active="project.status === 'ACTIVE'"
       />
-      <ProjectSettingsDialog
-        v-if="project"
-        :project="project"
-        @project-updated="applyProjectDetail"
-      />
-      <v-btn
-        v-if="canCreateTask"
-        color="primary"
-        prepend-icon="mdi-plus"
-        @click="openTaskCreator()"
-      >
-        Taskを追加
-      </v-btn>
+      <ProjectSettingsDialog v-if="project" :project="project" @project-updated="applyProjectDetail" />
+      <UButton v-if="canCreateTask" color="primary" icon="i-mdi-plus" @click="openTaskCreator()">Taskを追加</UButton>
     </div>
 
-    <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-    </v-alert>
-    <v-alert v-if="successMessage" type="success" class="mb-4" closable>
+    </StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4" closable @close="successMessage = ''">
       {{ successMessage }}
-    </v-alert>
-    <v-alert v-if="project?.status === 'ARCHIVED'" type="info" class="mb-4">
+    </StatusAlert>
+    <StatusAlert v-if="project?.status === 'ARCHIVED'" type="info" class="mb-4">
       アーカイブ済みProjectのため、Taskは参照のみ可能です。
-    </v-alert>
-    <v-alert v-else-if="canMoveTask" type="info" variant="tonal" class="mb-4">
+    </StatusAlert>
+    <StatusAlert v-else-if="canMoveTask" type="info" variant="soft" class="mb-4">
       Task右上の移動アイコンをドラッグするか、アイコンへフォーカスして方向キーを押すと移動できます。上下キーは列内移動、左右キーは隣の列の末尾への移動です。
-    </v-alert>
+    </StatusAlert>
 
-    <div v-if="board" class="board-columns">
-      <v-card
+    <div v-if="board" class="flex items-start gap-4 overflow-x-auto pb-4">
+      <!-- E2Eはboard-column／task-card classで列とTask cardを特定する。色は移行前のtonal列とその中のcardの見え方に合わせている。 -->
+      <div
         v-for="column in board.columns"
         :key="column.taskStatusId"
-        class="board-column"
-        variant="tonal"
+        class="board-column flex max-h-[calc(100vh-190px)] flex-[0_0_340px] flex-col rounded-sm bg-black/12 text-default"
       >
-        <v-card-title class="d-flex align-center text-subtitle-1">
+        <div class="flex items-center px-4 py-2 text-base">
           {{ column.name }}
-          <v-chip size="x-small" class="ml-2">{{ column.tasks.length }}</v-chip>
-          <v-spacer />
-          <v-btn
+          <UBadge size="xs" class="ms-2">{{ column.tasks.length }}</UBadge>
+          <UButton
             v-if="canCreateTask"
-            icon="mdi-plus"
-            size="small"
-            variant="text"
+            icon="i-mdi-plus"
+            size="sm"
+            variant="ghost"
+            square
+            class="ms-auto"
             :aria-label="`${column.name}へTaskを追加`"
             @click="openTaskCreator(column.taskStatusId)"
           />
-        </v-card-title>
+        </div>
 
         <Draggable
           v-model="column.tasks"
           item-key="taskId"
           tag="div"
-          class="board-task-list pa-4"
+          class="max-h-[calc(100vh-260px)] min-h-24 overflow-y-auto p-4"
           group="project-board-tasks"
           handle=".task-drag-handle"
-          ghost-class="task-card-ghost"
+          ghost-class="opacity-35"
           drag-class="task-card-dragging"
           :disabled="!canMoveTask || isMoving"
           @start="startTaskDrag"
@@ -198,23 +179,22 @@ onBeforeMount(initialize);
           @change="handleTaskDrop($event, column.taskStatusId)"
         >
           <template #item="{ element: task }">
-            <v-card
-              class="mb-3 task-card"
-              :class="`priority-${task.priority}`"
-              variant="elevated"
+            <div
+              class="task-card mb-3 cursor-pointer rounded-sm border-s-4 bg-[#cbcbcb] shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-primary"
+              :class="PRIORITY_BORDER_CLASSES[task.priority as 1 | 2 | 3]"
               tabindex="0"
               @click="openTaskEditor(task.taskId)"
               @keydown.enter="openTaskEditor(task.taskId)"
             >
-              <v-card-title class="d-flex align-start text-subtitle-2 text-wrap">
+              <div class="flex items-start px-4 pt-2 text-sm font-medium break-words">
                 <span>{{ task.title }}</span>
-                <v-spacer />
-                <v-btn
+                <UButton
                   v-if="canMoveTask"
-                  class="task-drag-handle"
-                  icon="mdi-drag"
-                  size="x-small"
-                  variant="text"
+                  class="task-drag-handle ms-auto cursor-grab active:cursor-grabbing"
+                  icon="i-mdi-drag"
+                  size="xs"
+                  variant="ghost"
+                  square
                   :disabled="isMoving"
                   :aria-label="`${task.title}を移動。上下キーで列内移動、左右キーで列移動`"
                   aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
@@ -225,279 +205,171 @@ onBeforeMount(initialize);
                   @keydown.left.stop.prevent="moveTaskByKeyboard(task.taskId, 'LEFT')"
                   @keydown.right.stop.prevent="moveTaskByKeyboard(task.taskId, 'RIGHT')"
                 />
-              </v-card-title>
-              <v-card-text class="pb-2">
-                <div class="task-detail text-body-2 mb-3">{{ task.detail }}</div>
-                <div class="d-flex align-center flex-wrap ga-2">
-                  <v-chip :color="getPriorityColor(task.priority)" size="x-small">
-                    優先度: {{ getPriorityLabel(task.priority) }}
-                  </v-chip>
-                  <v-chip size="x-small" prepend-icon="mdi-account-outline">
-                    ID: {{ task.assigneeAccountId }}
-                  </v-chip>
+              </div>
+              <div class="px-4 pt-4 pb-2 text-sm">
+                <div class="mb-3 line-clamp-3">{{ task.detail }}</div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <UBadge :color="getTaskPriorityColor(task.priority)" size="xs">
+                    優先度: {{ getTaskPriorityLabel(task.priority) }}
+                  </UBadge>
+                  <UBadge size="xs" icon="i-mdi-account-outline">ID: {{ task.assigneeAccountId }}</UBadge>
                 </div>
-                <div class="text-caption text-medium-emphasis mt-2">
-                  {{ task.dateFrom }} ～ {{ task.dateTo }}
-                </div>
-              </v-card-text>
-            </v-card>
+                <div class="mt-2 text-xs text-muted">{{ task.dateFrom }} ～ {{ task.dateTo }}</div>
+              </div>
+            </div>
           </template>
         </Draggable>
-        <v-card-text v-if="column.tasks.length === 0" class="pt-0">
-          <div class="text-body-2 text-medium-emphasis pa-3">
-            Taskはありません。
-          </div>
-        </v-card-text>
-      </v-card>
+        <div v-if="column.tasks.length === 0" class="px-4 pb-4">
+          <div class="p-3 text-sm text-muted">Taskはありません。</div>
+        </div>
+      </div>
     </div>
 
-    <v-dialog v-model="isEditorOpen" max-width="720" :persistent="isSaving">
-      <v-card>
-        <v-card-title>
-          {{ form.taskId === null ? "Taskを追加" : isReadonly ? "Task詳細" : "Taskを編集" }}
-        </v-card-title>
-        <v-card-text>
-          <v-alert v-if="isReadonly" type="info" class="mb-4">
-            このTaskは参照のみ可能です。
-          </v-alert>
-          <v-form @submit.prevent="saveTask">
-            <v-text-field
-              v-model="form.title"
-              label="タイトル"
-              maxlength="45"
-              counter
-              :readonly="isReadonly"
-              :disabled="isSaving"
-              class="mb-2"
-            />
-            <v-textarea
-              v-model="form.detail"
-              label="詳細"
-              maxlength="1000"
-              counter
-              rows="4"
-              :readonly="isReadonly"
-              :disabled="isSaving"
-              class="mb-2"
-            />
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model="form.dateFrom"
-                  label="開始日"
-                  type="date"
-                  :readonly="isReadonly"
-                  :disabled="isSaving"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  v-model="form.dateTo"
-                  label="終了日"
-                  type="date"
-                  :readonly="isReadonly"
-                  :disabled="isSaving"
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="form.assigneeAccountId"
-                  label="担当者"
-                  :items="memberOptions"
-                  :readonly="isReadonly"
-                  :disabled="isSaving"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-select
-                  v-model="form.priority"
-                  label="優先度"
-                  :items="priorityOptions"
-                  :readonly="isReadonly"
-                  :disabled="isSaving"
-                />
-              </v-col>
-            </v-row>
-            <v-select
-              v-model="form.taskStatusId"
-              label="配置先の列"
-              :items="statusOptions"
-              :readonly="isReadonly"
-              :disabled="isSaving || form.taskId !== null"
-              hint="登録後の列変更はBoard上の移動操作で行います。"
-              persistent-hint
-            />
-            <div
-              v-if="form.taskId !== null && board"
-              class="d-flex align-center flex-wrap ga-2 my-4"
-            >
-              <TaskTimerActionButton
-                v-if="canStartTaskTimer"
-                :project-id="board.projectId"
-                :task-id="form.taskId"
-              />
-              <v-btn
-                prepend-icon="mdi-clock-edit-outline"
-                variant="tonal"
-                size="small"
-                @click="openTaskWorkLogs"
-              >
-                日別実績を入力
-              </v-btn>
-              <TaskWorkLogAuditDialog
-                :project-id="board.projectId"
-                :task-id="form.taskId"
-              />
-            </div>
-            <TaskTemplateCaptureButton
-              v-if="form.taskId !== null && project !== null"
-              :project-id="project.projectId"
-              :task-id="form.taskId"
-              :disabled="project.status === 'ARCHIVED'"
-            />
-            <TaskChecklistPanel
-              v-if="form.taskId !== null && project !== null"
-              :project-id="project.projectId"
-              :task-id="form.taskId"
-              :disabled="isReadonly || project.status === 'ARCHIVED'"
-            />
-            <TaskCommentsPanel
-              v-if="form.taskId !== null && board"
-              :project-id="board.projectId"
-              :task-id="form.taskId"
-              :disabled="isReadonly || project?.status === 'ARCHIVED'"
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn
-            v-if="form.taskId !== null && canArchiveTask"
-            color="error"
-            variant="text"
-            prepend-icon="mdi-archive-outline"
-            :disabled="isSaving || isArchiving"
-            @click="openArchiveConfirm"
-          >
-            アーカイブ
-          </v-btn>
-          <v-spacer />
-          <v-btn :disabled="isSaving || isArchiving" @click="closeTaskEditor">
-            {{ isReadonly ? "閉じる" : "キャンセル" }}
-          </v-btn>
-          <v-btn
-            v-if="!isReadonly"
-            color="primary"
-            :loading="isSaving"
-            :disabled="!canSave"
-            @click="saveTask"
-          >
-            保存
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog
-      v-model="isArchiveConfirmOpen"
-      max-width="520"
-      :persistent="isArchiving"
+    <UModal
+      v-model:open="isEditorOpen"
+      :dismissible="!isSaving"
+      :title="form.taskId === null ? 'Taskを追加' : isReadonly ? 'Task詳細' : 'Taskを編集'"
+      :ui="{ content: 'max-w-180' }"
     >
-      <v-card>
-        <v-card-title class="d-flex align-center text-error">
-          <v-icon icon="mdi-archive-alert-outline" class="mr-2" />
+      <template #body>
+        <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>
+        <form @submit.prevent="saveTask">
+          <div class="relative mb-2">
+            <UFormField label="タイトル">
+              <UInput v-model="form.title" :maxlength="45" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+            </UFormField>
+            <FieldCounter :value="form.title" :max="45" />
+          </div>
+          <div class="relative mb-2">
+            <UFormField label="詳細">
+              <UTextarea
+                v-model="form.detail"
+                :maxlength="1000"
+                :rows="4"
+                :readonly="isReadonly"
+                :disabled="isSaving"
+                class="w-full"
+              />
+            </UFormField>
+            <FieldCounter :value="form.detail" :max="1000" />
+          </div>
+          <div class="-m-3 flex flex-wrap">
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="開始日">
+                <UInput v-model="form.dateFrom" type="date" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="終了日">
+                <UInput v-model="form.dateTo" type="date" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="担当者">
+                <USelect
+                  :model-value="form.assigneeAccountId ?? undefined"
+                  @update:model-value="form.assigneeAccountId = $event"
+                  :items="memberOptions"
+                  label-key="title"
+                  value-key="value"
+                  :disabled="isSaving || isReadonly"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="優先度">
+                <USelect
+                  v-model="form.priority"
+                  :items="[...priorityOptions]"
+                  label-key="title"
+                  value-key="value"
+                  :disabled="isSaving || isReadonly"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+          </div>
+          <UFormField label="配置先の列" help="登録後の列変更はBoard上の移動操作で行います。">
+            <USelect
+              :model-value="form.taskStatusId ?? undefined"
+              @update:model-value="form.taskStatusId = $event"
+              :items="statusOptions"
+              label-key="title"
+              value-key="value"
+              :disabled="isSaving || isReadonly || form.taskId !== null"
+              class="w-full"
+            />
+          </UFormField>
+          <div v-if="form.taskId !== null && board" class="my-4 flex flex-wrap items-center gap-2">
+            <TaskTimerActionButton v-if="canStartTaskTimer" :project-id="board.projectId" :task-id="form.taskId" />
+            <UButton icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">日別実績を入力</UButton>
+            <TaskWorkLogAuditDialog :project-id="board.projectId" :task-id="form.taskId" />
+          </div>
+          <TaskTemplateCaptureButton
+            v-if="form.taskId !== null && project !== null"
+            :project-id="project.projectId"
+            :task-id="form.taskId"
+            :disabled="project.status === 'ARCHIVED'"
+          />
+          <TaskChecklistPanel
+            v-if="form.taskId !== null && project !== null"
+            :project-id="project.projectId"
+            :task-id="form.taskId"
+            :disabled="isReadonly || project.status === 'ARCHIVED'"
+          />
+          <TaskCommentsPanel
+            v-if="form.taskId !== null && board"
+            :project-id="board.projectId"
+            :task-id="form.taskId"
+            :disabled="isReadonly || project?.status === 'ARCHIVED'"
+          />
+        </form>
+      </template>
+      <template #footer>
+        <UButton
+          v-if="form.taskId !== null && canArchiveTask"
+          color="error"
+          variant="ghost"
+          icon="i-mdi-archive-outline"
+          class="me-auto"
+          :disabled="isSaving || isArchiving"
+          @click="openArchiveConfirm"
+        >
+          アーカイブ
+        </UButton>
+        <UButton variant="ghost" :disabled="isSaving || isArchiving" @click="closeTaskEditor">
+          {{ isReadonly ? "閉じる" : "キャンセル" }}
+        </UButton>
+        <UButton v-if="!isReadonly" color="primary" variant="ghost" :loading="isSaving" :disabled="!canSave" @click="saveTask">
+          保存
+        </UButton>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="isArchiveConfirmOpen" :dismissible="!isArchiving" :ui="{ content: 'max-w-130' }">
+      <template #title>
+        <span class="flex items-center text-error">
+          <UIcon name="i-mdi-archive-alert-outline" class="me-2 size-6" />
           Taskをアーカイブしますか？
-        </v-card-title>
-        <v-card-text>
-          <p class="mb-3">
-            「{{ form.title }}」をProject Boardから除外します。
-          </p>
-          <v-alert type="warning" variant="tonal">
-            この画面からアーカイブ解除はできません。内容を確認して実行してください。
-          </v-alert>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="isArchiving" @click="closeArchiveConfirm">
-            キャンセル
-          </v-btn>
-          <v-btn color="error" :loading="isArchiving" @click="archiveTask">
-            アーカイブする
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+        </span>
+      </template>
+      <template #body>
+        <p class="mb-3">「{{ form.title }}」をProject Boardから除外します。</p>
+        <StatusAlert type="warning" variant="soft">この画面からアーカイブ解除はできません。内容を確認して実行してください。</StatusAlert>
+      </template>
+      <template #footer>
+        <UButton variant="ghost" :disabled="isArchiving" @click="closeArchiveConfirm">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="isArchiving" @click="archiveTask">アーカイブする</UButton>
+      </template>
+    </UModal>
+  </div>
 </template>
 
 <style scoped>
-.board-page {
-  min-height: calc(100vh - 64px);
-  background: rgb(var(--v-theme-surface-variant));
-}
-
-.board-columns {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 16px;
-}
-
-.board-column {
-  flex: 0 0 340px;
-  max-height: calc(100vh - 190px);
-}
-
-.board-task-list {
-  min-height: 96px;
-  max-height: calc(100vh - 260px);
-  overflow-y: auto;
-}
-
-.task-card {
-  cursor: pointer;
-  border-left: 4px solid transparent;
-}
-
-.task-drag-handle {
-  cursor: grab;
-}
-
-.task-drag-handle:active {
-  cursor: grabbing;
-}
-
-.task-card-ghost {
-  opacity: 0.35;
-}
-
+/* vuedraggableがドラッグ中の要素へ付けるclass。Tailwindのclassは複数指定できないため、ここで定義する。 */
 .task-card-dragging {
   transform: rotate(1deg);
   box-shadow: 0 8px 20px rgb(0 0 0 / 20%);
-}
-
-.task-card:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
-}
-
-.task-card.priority-1 {
-  border-left-color: rgb(var(--v-theme-error));
-}
-
-.task-card.priority-2 {
-  border-left-color: rgb(var(--v-theme-warning));
-}
-
-.task-card.priority-3 {
-  border-left-color: rgb(var(--v-theme-info));
-}
-
-.task-detail {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
 }
 </style>
