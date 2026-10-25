@@ -1,12 +1,9 @@
 <template>
   <v-app>
     <v-main>
-      <router-view />
+      <UApp>
+        <router-view />
+      </UApp>
     </v-main>
   </v-app>
 </template>
-<style scoped>
-[v-cloak] {
-  display: none;
-}
-</style>

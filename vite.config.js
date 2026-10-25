@@ -1,8 +1,11 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import ui from "@nuxt/ui/vite";
 import vuetify from "vite-plugin-vuetify";
 import { configDefaults } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
+
+import { nuxtUiTheme } from "./src/app/theme/nuxtUiTheme";
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
@@ -18,7 +21,23 @@ export default defineConfig({
     host: "localhost",
     port: 8081,
   },
-  plugins: [vue(), vuetify()],
+  plugins: [
+    vue(),
+    vuetify(),
+    ui({
+      ui: nuxtUiTheme,
+      // Vuetifyの既定どおりlight表示に固定し、OSのdark mode設定で配色を変えない。
+      colorMode: false,
+      icon: {
+        // 画面のMDIアイコンをbuildへ同梱し、実行時にIconify APIへ通信しない。
+        clientBundle: {
+          scan: {
+            globInclude: ["src/**/*.{vue,ts}"],
+          },
+        },
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
