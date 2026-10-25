@@ -1,29 +1,38 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 
-/** 4秒後に自動で閉じる通知文とVuetify alert種別。 */
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import type { StatusAlertType } from "@/shared/components/StatusAlert.vue";
+
+/** 表示から4秒後、または閉じる操作で非表示になる通知。Vuetify v-alertのcompact・closable表示を踏襲する。 */
 defineProps<{
-    message: string;
-    type: "success" | "info" | "warning" | "error";
+  message: string;
+  type: StatusAlertType;
 }>();
 
-const alertFlag = ref<boolean>(true);
+const AUTO_CLOSE_MILLISECONDS = 4000;
+// ログイン失敗等の一時通知は、移行前から画面内alertより明るいMaterial redで表示している。
 
-setTimeout(() => {
-    alertFlag.value = false;
-}, 4000);
+const isVisible = ref<boolean>(true);
+
+const autoCloseTimer = setTimeout(() => {
+  isVisible.value = false;
+}, AUTO_CLOSE_MILLISECONDS);
+
+// 4秒以内に画面遷移した場合、破棄済みComponentの状態を更新しないようtimerを止める。
+onBeforeUnmount(() => clearTimeout(autoCloseTimer));
 </script>
+
 <template>
-    <v-alert v-model="alertFlag" :type="type" density="compact" class="alert" closable>
-        {{ message }}
-    </v-alert>
+  <StatusAlert
+    v-if="isVisible"
+    :type="type"
+    density="compact"
+    class="m-1.25 max-w-100"
+    :class="{ 'bg-[#F44336]': type === 'error' }"
+    closable
+    @close="isVisible = false"
+  >
+    {{ message }}
+  </StatusAlert>
 </template>
-<style scoped>
-.alert {
-    margin: 5px;
-    max-width: 400px;
-}
-.bg-error {
-    background-color: #F44336 !important
-}
-</style>

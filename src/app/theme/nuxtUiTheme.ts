@@ -37,6 +37,13 @@ const buttonGhostVariants = semanticColors.map((color) => ({
   class: `hover:bg-${color}/4 active:bg-${color}/12`,
 }));
 
+// Vuetifyのv-alertは塗りつぶし（既定）とtonalで、tonalは前景色12%の背景を使う。
+const alertSoftVariants = semanticColors.map((color) => ({
+  color,
+  variant: "soft" as const,
+  class: { root: `bg-${color}/12` },
+}));
+
 const badgeSoftVariants = semanticColors.map((color) => ({
   color,
   variant: "soft" as const,
@@ -126,6 +133,16 @@ export const nuxtUiTheme = {
       color: "neutral" as const,
       variant: "solid" as const,
     },
+  },
+  alert: {
+    slots: {
+      root: "rounded-sm px-4 gap-4 items-start",
+      icon: "size-7",
+      title: "text-xl font-medium",
+      description: "text-base opacity-100",
+      close: "text-current",
+    },
+    compoundVariants: [...alertSoftVariants],
   },
   badge: {
     slots: {

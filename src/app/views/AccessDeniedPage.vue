@@ -1,26 +1,14 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { useHomeNavigation } from "@/app/composables/useHomeNavigation";
 
-import { resolveAuthenticatedHomeRouteName } from "@/app/router/authorization";
-import { useUserStore } from "@/features/auth/stores/user";
-
-const router = useRouter();
-const userStore = useUserStore();
-
-/** permission別セクションを持つ全認証利用者向けDashboardへ戻る。 */
-const goHome = (): void => {
-  const routeName = resolveAuthenticatedHomeRouteName(userStore.permissionCodes);
-  void router.push({ name: routeName });
-};
+const { goHome } = useHomeNavigation();
 </script>
 
 <template>
-  <v-container class="py-10 text-center">
-    <v-icon color="warning" size="64">mdi-shield-lock-outline</v-icon>
-    <h1 class="mt-4">403: 権限がありません</h1>
+  <div class="page-container py-10 text-center">
+    <UIcon name="i-mdi-shield-lock-outline" class="size-16 text-warning" />
+    <h1 class="mt-4 text-[2em] font-bold">403: 権限がありません</h1>
     <p class="mt-2">この画面を表示するpermissionが付与されていません。</p>
-    <v-btn class="mt-6" color="primary" @click="goHome">
-      利用可能な画面へ戻る
-    </v-btn>
-  </v-container>
+    <UButton class="mt-6" color="primary" @click="goHome">利用可能な画面へ戻る</UButton>
+  </div>
 </template>
