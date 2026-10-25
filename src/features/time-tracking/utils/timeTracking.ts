@@ -2,6 +2,7 @@ import type {
   TaskTimeSessionStatus,
   TaskWorkLogAuditAction,
 } from "@/features/time-tracking/types/timeTracking";
+import type { SemanticColor } from "@/shared/types/color";
 
 const JST_TIME_ZONE = "Asia/Tokyo";
 
@@ -105,3 +106,20 @@ export const getWorkLogAuditActionLabel = (
     MANUAL_DELETE: "手入力削除",
     TIMER_APPLY: "Timer反映",
   })[action];
+
+/** Timer sessionの状態を表示色へ変換する。 */
+export const getTimerSessionStatusColor = (status: TaskTimeSessionStatus): SemanticColor =>
+  ({ RUNNING: "success", STOPPED: "primary", CANCELED: "neutral" } satisfies Record<string, SemanticColor>)[status];
+
+/** 工数監査の操作コードを表示色へ変換する。Timer反映だけを強調し、手入力の操作は同じ色で表す。 */
+export const getWorkLogAuditActionColor = (action: TaskWorkLogAuditAction): SemanticColor =>
+  action === "TIMER_APPLY" ? "primary" : "neutral";
+
+/**
+ * 工数監査の変更前後の分数を表示へ変換する。
+ *
+ * @param minutes 変更前または変更後の分数。新規登録の変更前・削除の変更後はnull
+ * @returns nullの場合は`—`、それ以外は`formatEffortMinutes`と同じ表記
+ */
+export const formatNullableEffortMinutes = (minutes: number | null): string =>
+  minutes === null ? "—" : formatEffortMinutes(minutes);
