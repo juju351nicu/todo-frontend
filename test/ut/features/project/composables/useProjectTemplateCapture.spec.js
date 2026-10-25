@@ -48,6 +48,21 @@ describe("useProjectTemplateCapture", () => {
     );
   });
 
+  it.each([
+    ["", "2026-10-01", false, false],
+    ["   ", "2026-10-01", false, false],
+    ["a".repeat(100), "2026-10-01", false, true],
+    ["a".repeat(101), "2026-10-01", false, false],
+    ["Template", "", false, false],
+    ["Template", "2026-10-01", true, false],
+  ])("名称%j・基準日%j・参照専用%sの保存可否は%s", (name, baseDate, disabled, expected) => {
+    const capture = useProjectTemplateCapture(ref(12), ref(disabled));
+    capture.name.value = name;
+    capture.baseDate.value = baseDate;
+
+    expect(capture.canCapture.value).toBe(expected);
+  });
+
   it("参照専用状態ではDialogを開かずcapture APIも呼ばない", async () => {
     const state = useProjectTemplateCapture(ref(5), ref(true));
 

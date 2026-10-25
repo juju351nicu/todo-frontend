@@ -12,7 +12,7 @@ const RETRY_TITLE = "Browser Retry Recovery Task";
 /** Project一覧から採番IDへ依存せず繰り返しTask専用Boardを開く。 */
 const openDedicatedBoard = async (page: Page): Promise<void> => {
   await page.goto("/projects");
-  const projectCard = page.locator(".v-card").filter({
+  const projectCard = page.getByRole("article").filter({
     has: page.getByText(PROJECT_KEY, { exact: true }),
   });
   await projectCard.getByRole("button", { name: "Boardを開く" }).click();
