@@ -4,6 +4,7 @@ import {
   ANNOUNCEMENT_TITLE_MAX_LENGTH,
   useAnnouncementManagementPage,
 } from "@/features/notification/composables/useAnnouncementManagementPage";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
@@ -46,7 +47,6 @@ const {
       </StatusAlert>
 
       <form @submit.prevent="submitAnnouncement">
-        <!-- Vuetifyのcounterと同じく、入力欄の右下に文字数を表示する。 -->
         <div class="relative">
           <UFormField label="件名">
             <UInput
@@ -58,7 +58,7 @@ const {
               class="w-full"
             />
           </UFormField>
-          <span class="absolute end-4 bottom-0.5 text-xs text-muted">{{ title.length }} / {{ ANNOUNCEMENT_TITLE_MAX_LENGTH }}</span>
+          <FieldCounter :value="title" :max="ANNOUNCEMENT_TITLE_MAX_LENGTH" />
         </div>
         <div class="relative">
           <UFormField label="本文">
@@ -73,7 +73,7 @@ const {
               class="w-full"
             />
           </UFormField>
-          <span class="absolute end-4 bottom-0.5 text-xs text-muted">{{ message.length }} / {{ ANNOUNCEMENT_MESSAGE_MAX_LENGTH }}</span>
+          <FieldCounter :value="message" :max="ANNOUNCEMENT_MESSAGE_MAX_LENGTH" />
         </div>
         <UFormField label="表示終了日時（任意）" help="未入力の場合は無期限で表示します。">
           <UInput v-model="expiresAtLocal" type="datetime-local" variant="outline" :disabled="isSubmitting" class="w-full" />

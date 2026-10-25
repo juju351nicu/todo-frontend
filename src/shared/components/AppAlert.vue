@@ -2,7 +2,7 @@
 import { onBeforeUnmount, ref } from "vue";
 
 import StatusAlert from "@/shared/components/StatusAlert.vue";
-import type { StatusAlertType } from "@/shared/components/StatusAlert.vue";
+import type { StatusAlertType } from "@/shared/types/color";
 
 /** 表示から4秒後、または閉じる操作で非表示になる通知。Vuetify v-alertのcompact・closable表示を踏襲する。 */
 defineProps<{

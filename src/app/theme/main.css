@@ -29,12 +29,13 @@
   --breakpoint-xl: 1920px;
   --breakpoint-2xl: 2560px;
 
-  /* Vuetifyのelevation 1／2／3／4／8と同じ影。 */
+  /* Vuetifyのelevation 1／2／3／4／8／24と同じ影。 */
   --shadow-elevation-1: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
   --shadow-elevation-2: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
   --shadow-elevation-3: 0 3px 3px -2px rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 1px 8px 0 rgba(0, 0, 0, 0.12);
   --shadow-elevation-4: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
   --shadow-elevation-8: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-24: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
 
   --color-vuetify-primary-50: color-mix(in oklab, #1867C0 8%, white);
   --color-vuetify-primary-100: color-mix(in oklab, #1867C0 16%, white);
@@ -210,5 +211,40 @@
   }
   @variant 2xl {
     max-width: 2400px;
+  }
+}
+
+/*
+ * 素のtableをVuetify v-table（density compact）と同じ行高40px・余白・区切り線で表示する。
+ * 並べ替えやページングが必要な一覧は`AppDataTable`を使う。
+ */
+@utility app-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+
+  & th,
+  & td {
+    height: 40px;
+    padding-inline: 16px;
+    border-bottom: thin solid var(--ui-border);
+  }
+
+  & th {
+    font-weight: 500;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  & tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+/* `app-table`と併用し、Vuetify v-tableの`hover`と同じく行へカーソルを重ねたときに背景を薄く塗る。 */
+@utility app-table-hover {
+  & tbody tr:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 }

@@ -1,11 +1,12 @@
 import type { AuthorizationAuditAction } from "@/features/administration/types/administration";
+import type { SemanticColor } from "@/shared/types/color";
 
 const ACTION_LABELS: Readonly<Record<AuthorizationAuditAction, string>> = {
   ROLE_ASSIGNED: "付与",
   ROLE_REVOKED: "取消",
 };
 
-const ACTION_COLORS: Readonly<Record<AuthorizationAuditAction, string>> = {
+const ACTION_COLORS: Readonly<Record<AuthorizationAuditAction, SemanticColor>> = {
   ROLE_ASSIGNED: "success",
   ROLE_REVOKED: "warning",
 };
@@ -15,10 +16,10 @@ export const getAuthorizationAuditActionLabel = (
   action: AuthorizationAuditAction
 ): string => ACTION_LABELS[action];
 
-/** Backendの権限変更操作コードに対応するVuetify色を返す。 */
+/** Backendの権限変更操作コードに対応する表示色を返す。 */
 export const getAuthorizationAuditActionColor = (
   action: AuthorizationAuditAction
-): string => ACTION_COLORS[action];
+): SemanticColor => ACTION_COLORS[action];
 
 /**
  * BackendのUTC Instantを利用端末の日時表示へ変換する。

@@ -213,6 +213,19 @@ export const nuxtUiTheme = {
     },
     compoundVariants: [],
   },
+  // Vuetify v-dialog内のv-cardと同じ余白・影・scrim。Vuetifyのdialogには右上の閉じるbuttonがないため非表示にする。
+  modal: {
+    slots: {
+      overlay: "bg-black/32",
+      content: "rounded-sm shadow-elevation-24 ring-0 divide-y-0 text-default",
+      header: "min-h-0 px-6 pt-4 pb-2.5 sm:px-6",
+      title: "text-xl font-medium text-default",
+      description: "text-sm text-muted",
+      body: "px-6 pt-4 pb-6 sm:px-6 sm:pt-4 sm:pb-6 text-base",
+      footer: "justify-end gap-2 px-4 py-2 sm:px-4",
+      close: "hidden",
+    },
+  },
   // Vuetify v-data-table（density compact）の行高40px・区切り線・見出し太さ。
   table: {
     slots: {

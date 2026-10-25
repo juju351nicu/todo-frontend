@@ -6,7 +6,9 @@ import {
   getAccountStatusColor,
   getAccountStatusLabel,
 } from "@/features/administration/utils/accountStatus";
+import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   canEditRoles,
@@ -22,8 +24,8 @@ const {
   isLoading,
   isSaving,
   itemsPerPage,
+  itemsPerPageOptions,
   openRoleEditor,
-  pages,
   roles,
   saveRoles,
   searchText,
@@ -37,115 +39,103 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <v-container fluid class="pa-6">
-    <v-card class="mx-auto" max-width="1200">
-      <v-card-title class="d-flex align-center flex-wrap ga-3">
-        <v-icon icon="mdi-account-key" />
-        アカウント・ロール管理
-        <v-spacer />
-        <v-text-field
-          v-model="searchText"
-          label="アカウント検索"
-          placeholder="表示名・メール・ロール"
-          prepend-inner-icon="mdi-magnify"
-          density="compact"
-          hide-details
-          clearable
-          max-width="360"
-        />
-      </v-card-title>
+  <div class="p-6">
+    <UCard class="mx-auto max-w-300">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-mdi-account-key" class="size-6" />
+          アカウント・ロール管理
+          <UFormField label="アカウント検索" class="ms-auto w-90 pb-0 text-base font-normal tracking-normal">
+            <UInput v-model="searchText" placeholder="表示名・メール・ロール" icon="i-mdi-magnify" size="sm" class="w-full">
+              <template v-if="searchText" #trailing>
+                <UButton
+                  icon="i-mdi-close-circle"
+                  variant="ghost"
+                  size="xs"
+                  square
+                  class="text-black/60"
+                  aria-label="検索条件をクリア"
+                  @click="searchText = ''"
+                />
+              </template>
+            </UInput>
+          </UFormField>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-4">
-          {{ successMessage }}
-        </v-alert>
-        <v-alert v-if="!canEditRoles" type="info" class="mb-4">
-          現在のロールを参照できます。変更にはACCOUNT_ROLE_UPDATE permissionが必要です。
-        </v-alert>
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4">
+        {{ successMessage }}
+      </StatusAlert>
+      <StatusAlert v-if="!canEditRoles" type="info" class="mb-4">
+        現在のロールを参照できます。変更にはACCOUNT_ROLE_UPDATE permissionが必要です。
+      </StatusAlert>
 
-        <v-data-table
-          v-model:items-per-page="itemsPerPage"
-          :headers="headers"
-          :items="filteredAccounts"
-          :items-per-page-options="pages"
-          :loading="isLoading"
-          item-value="accountId"
-          items-per-page-text="表示行数"
-          density="compact"
-        >
-          <template #item.email="{ value }">
-            {{ value || "未登録" }}
-          </template>
-          <template #item.status="{ value }">
-            <v-chip :color="getAccountStatusColor(value)" size="small">
-              {{ getAccountStatusLabel(value) }}
-            </v-chip>
-          </template>
-          <template #item.roleCodes="{ value }">
-            <div class="d-flex flex-wrap ga-1 py-1">
-              <v-chip v-for="roleCode in value" :key="roleCode" size="small">
-                {{ getRoleName(roleCode) }}
-              </v-chip>
-            </div>
-          </template>
-          <template #item.actions="{ item }">
-            <v-btn
-              v-if="canEditRoles"
-              icon="mdi-account-edit"
-              size="x-small"
-              aria-label="ロールを編集"
-              @click="openRoleEditor(item)"
-            />
-            <span v-else class="text-medium-emphasis">参照のみ</span>
-          </template>
-          <template #no-data>
-            検索条件に一致するアカウントはありません。
-          </template>
-        </v-data-table>
-      </v-card-text>
-    </v-card>
-  </v-container>
+      <AppDataTable
+        v-model:items-per-page="itemsPerPage"
+        :headers="headers"
+        :items="filteredAccounts"
+        :items-per-page-options="itemsPerPageOptions"
+        :loading="isLoading"
+        item-value="accountId"
+        no-data-text="検索条件に一致するアカウントはありません。"
+      >
+        <template #email-cell="{ value }">
+          {{ value || "未登録" }}
+        </template>
+        <template #status-cell="{ item }">
+          <UBadge :color="getAccountStatusColor(item.status)" size="sm">
+            {{ getAccountStatusLabel(item.status) }}
+          </UBadge>
+        </template>
+        <template #roleCodes-cell="{ item }">
+          <div class="flex flex-wrap gap-1 py-1">
+            <UBadge v-for="roleCode in item.roleCodes" :key="roleCode" size="sm">
+              {{ getRoleName(roleCode) }}
+            </UBadge>
+          </div>
+        </template>
+        <template #actions-cell="{ item }">
+          <UButton
+            v-if="canEditRoles"
+            icon="i-mdi-account-edit"
+            size="xs"
+            square
+            class="size-8"
+            aria-label="ロールを編集"
+            @click="openRoleEditor(item)"
+          />
+          <span v-else class="text-muted">参照のみ</span>
+        </template>
+      </AppDataTable>
+    </UCard>
+  </div>
 
-  <v-dialog
-    v-model="isEditorOpen"
-    :persistent="isSaving"
-    max-width="560"
+  <UModal
+    v-model:open="isEditorOpen"
+    :dismissible="!isSaving"
+    title="ロール編集"
+    :description="selectedAccount ? `${selectedAccount.displayName}（ID: ${selectedAccount.accountId}）` : undefined"
+    :ui="{ content: 'max-w-140' }"
   >
-    <v-card v-if="selectedAccount">
-      <v-card-title>ロール編集</v-card-title>
-      <v-card-subtitle>
-        {{ selectedAccount.displayName }}（ID: {{ selectedAccount.accountId }}）
-      </v-card-subtitle>
-      <v-card-text>
-        <v-alert v-if="isEditingCurrentAccount" type="warning" class="mb-4">
-          自分のロールを変更すると、保存後に再ログインが必要です。
-        </v-alert>
-        <p class="mb-2">ロールを1件以上選択してください。</p>
-        <v-checkbox
-          v-for="role in roles"
-          :key="role.roleCode"
-          v-model="selectedRoleCodes"
-          :label="`${role.roleName}（${role.roleCode}）`"
-          :value="role.roleCode"
-          :disabled="isSaving"
-          hide-details
-        />
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isSaving" @click="closeRoleEditor">キャンセル</v-btn>
-        <v-btn
-          color="primary"
-          :disabled="!canSaveRoles"
-          :loading="isSaving"
-          @click="saveRoles"
-        >
-          保存
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <template v-if="selectedAccount" #body>
+      <StatusAlert v-if="isEditingCurrentAccount" type="warning" class="mb-4">
+        自分のロールを変更すると、保存後に再ログインが必要です。
+      </StatusAlert>
+      <p class="mb-2">ロールを1件以上選択してください。</p>
+      <UCheckboxGroup
+        v-model="selectedRoleCodes"
+        :items="roles.map((role) => ({ label: `${role.roleName}（${role.roleCode}）`, value: role.roleCode }))"
+        :disabled="isSaving"
+      />
+    </template>
+    <template v-if="selectedAccount" #footer>
+      <UButton variant="ghost" :disabled="isSaving" @click="closeRoleEditor">キャンセル</UButton>
+      <UButton color="primary" variant="ghost" :disabled="!canSaveRoles" :loading="isSaving" @click="saveRoles">
+        保存
+      </UButton>
+    </template>
+  </UModal>
 </template>

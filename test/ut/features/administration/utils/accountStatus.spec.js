@@ -9,7 +9,7 @@ describe("Account status display", () => {
   it.each([
     ["ACTIVE", "有効", "success"],
     ["LOCKED", "ロック中", "warning"],
-    ["DISABLED", "無効", "default"],
+    ["DISABLED", "無効", "neutral"],
   ])("%sを表示ラベルと色へ変換する", (status, label, color) => {
     expect(getAccountStatusLabel(status)).toBe(label);
     expect(getAccountStatusColor(status)).toBe(color);

@@ -31,12 +31,15 @@ const props = withDefaults(
     itemsPerPageOptions?: readonly DataTablePageOption[];
     hideFooter?: boolean;
     loading?: boolean;
+    /** 表示行が0件の場合の文言。 */
+    noDataText?: string;
   }>(),
   {
     selectable: false,
     itemsPerPageOptions: () => [],
     hideFooter: false,
     loading: false,
+    noDataText: "No data available",
   },
 );
 
@@ -123,7 +126,7 @@ const movePage = (index: number): void => {
       :get-row-id="getRowId"
       :pagination-options="{ getPaginationRowModel: getPaginationRowModel() }"
       :loading="loading"
-      empty="No data available"
+      :empty="noDataText"
     >
       <template #select-header="{ table }">
         <UCheckbox

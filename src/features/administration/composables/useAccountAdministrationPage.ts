@@ -18,16 +18,10 @@ import {
   DATA_TABLE_PAGE_OPTIONS,
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
+import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
-interface AdministrationTableHeader {
-  title: string;
-  align: "start" | "center" | "end";
-  key: string;
-  sortable?: boolean;
-}
-
-const ACCOUNT_TABLE_HEADERS: AdministrationTableHeader[] = [
+const ACCOUNT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "ID", align: "end", key: "accountId" },
   { title: "表示名", align: "start", key: "displayName" },
   { title: "メールアドレス", align: "start", key: "email" },
@@ -64,9 +58,9 @@ export const useAccountAdministrationPage = () => {
   const isLoading = ref(false);
   const isSaving = ref(false);
   const itemsPerPage = ref(DEFAULT_ITEMS_PER_PAGE);
-  const pages = DATA_TABLE_PAGE_OPTIONS;
+  const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const roles = ref<AdministrationRole[]>([]);
-  const searchText = ref<string | null>("");
+  const searchText = ref<string>("");
   const selectedAccount = ref<AccountAuthorization | null>(null);
   const selectedRoleCodes = ref<string[]>([]);
   const successMessage = ref("");
@@ -85,7 +79,7 @@ export const useAccountAdministrationPage = () => {
 
   const filteredAccounts = computed(() => {
     // Vuetifyのclearableはv-modelへnullを設定するため、検索処理の境界で空文字へ正規化する。
-    const keyword = (searchText.value ?? "").trim().toLocaleLowerCase();
+    const keyword = searchText.value.trim().toLocaleLowerCase();
     if (keyword.length === 0) {
       return accounts.value;
     }
@@ -362,8 +356,8 @@ export const useAccountAdministrationPage = () => {
     isLoading,
     isSaving,
     itemsPerPage,
+    itemsPerPageOptions,
     openRoleEditor,
-    pages,
     roles,
     saveRoles,
     searchText,

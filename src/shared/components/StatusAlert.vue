@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-/** 通知の種類。Vuetify v-alertの`type`と同じ4種で、色とアイコンを決める。 */
-export type StatusAlertType = "success" | "info" | "warning" | "error";
+import type { StatusAlertType } from "@/shared/types/color";
 
 /**
  * 成功・情報・警告・エラーを表示する共通alert。Nuxt UIの`UAlert`へ、種類に応じた色・MDIアイコン・`role="alert"`を補う。

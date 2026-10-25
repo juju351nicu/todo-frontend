@@ -8,7 +8,9 @@ import {
   getAuthorizationAuditActionColor,
   getAuthorizationAuditActionLabel,
 } from "@/features/administration/utils/authorizationAudit";
+import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   auditLogs,
@@ -30,71 +32,69 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <v-container fluid class="pa-6">
-    <v-card class="mx-auto" max-width="1400">
-      <v-card-title class="d-flex align-center flex-wrap ga-3">
-        <v-icon icon="mdi-history" />
-        権限変更監査ログ
-        <v-spacer />
-        <span class="text-body-2">全{{ totalElements }}件</span>
-        <v-select
-          :model-value="pageSize"
-          :items="pageSizes"
-          label="表示件数"
-          density="compact"
-          hide-details
-          max-width="140"
+  <div class="p-6">
+    <UCard class="mx-auto max-w-350">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-mdi-history" class="size-6" />
+          権限変更監査ログ
+          <span class="ms-auto text-sm font-normal tracking-normal">全{{ totalElements }}件</span>
+          <UFormField label="表示件数" class="w-35 pb-0 text-base font-normal tracking-normal">
+            <USelect
+              :model-value="pageSize"
+              :items="pageSizes"
+              size="sm"
+              :disabled="isLoading"
+              class="w-full"
+              @update:model-value="changePageSize"
+            />
+          </UFormField>
+        </div>
+      </template>
+
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+
+      <AppDataTable
+        :headers="headers"
+        :items="auditLogs"
+        :loading="isLoading"
+        item-value="authorizationAuditLogId"
+        hide-footer
+        no-data-text="権限変更監査ログはありません。"
+      >
+        <template #occurredAt-cell="{ item }">
+          {{ formatAuthorizationAuditOccurredAt(item.occurredAt) }}
+        </template>
+        <template #actorDisplayName-cell="{ item }">
+          {{ item.actorDisplayName }}（ID: {{ item.actorAccountId }}）
+        </template>
+        <template #targetDisplayName-cell="{ item }">
+          {{ item.targetDisplayName }}（ID: {{ item.targetAccountId }}）
+        </template>
+        <template #action-cell="{ item }">
+          <UBadge :color="getAuthorizationAuditActionColor(item.action)" size="sm">
+            {{ getAuthorizationAuditActionLabel(item.action) }}
+          </UBadge>
+        </template>
+        <template #beforeRoleCodes-cell="{ item }">
+          {{ formatRoleCodes(item.beforeRoleCodes) }}
+        </template>
+        <template #afterRoleCodes-cell="{ item }">
+          {{ formatRoleCodes(item.afterRoleCodes) }}
+        </template>
+      </AppDataTable>
+
+      <div v-if="totalPages > 1" class="mt-4 flex justify-center">
+        <UPagination
+          :page="page"
+          :total="totalElements"
+          :items-per-page="pageSize"
           :disabled="isLoading"
-          @update:model-value="changePageSize"
+          @update:page="changePage"
         />
-      </v-card-title>
-
-      <v-card-text>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-
-        <v-data-table
-          :headers="headers"
-          :items="auditLogs"
-          :loading="isLoading"
-          item-value="authorizationAuditLogId"
-          :items-per-page="-1"
-          hide-default-footer
-          density="compact"
-        >
-          <template #item.occurredAt="{ value }">
-            {{ formatAuthorizationAuditOccurredAt(value) }}
-          </template>
-          <template #item.actorDisplayName="{ item }">
-            {{ item.actorDisplayName }}（ID: {{ item.actorAccountId }}）
-          </template>
-          <template #item.targetDisplayName="{ item }">
-            {{ item.targetDisplayName }}（ID: {{ item.targetAccountId }}）
-          </template>
-          <template #item.action="{ value }">
-            <v-chip :color="getAuthorizationAuditActionColor(value)" size="small">
-              {{ getAuthorizationAuditActionLabel(value) }}
-            </v-chip>
-          </template>
-          <template #item.beforeRoleCodes="{ value }">
-            {{ formatRoleCodes(value) }}
-          </template>
-          <template #item.afterRoleCodes="{ value }">
-            {{ formatRoleCodes(value) }}
-          </template>
-          <template #no-data>権限変更監査ログはありません。</template>
-        </v-data-table>
-
-        <v-pagination
-          v-if="totalPages > 1"
-          :model-value="page"
-          :length="totalPages"
-          :disabled="isLoading"
-          class="mt-4"
-          @update:model-value="changePage"
-        />
-      </v-card-text>
-    </v-card>
-  </v-container>
+      </div>
+    </UCard>
+  </div>
 </template>
