@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { computed } from "vue";
 
@@ -31,7 +30,6 @@ const {
 } = useTodoDetailPage(todoId);
 </script>
 <template>
-    <AppHeader />
     <LoadingIndicator v-if="isLoading" />
     <TodoUpsertConfirm v-if="isShowConfirm" :todo-form="todoForm" @close-modal="closeConfirm"
         @confirm-submit="confirmSubmit" />

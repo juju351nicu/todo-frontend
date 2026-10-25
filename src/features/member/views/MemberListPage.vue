@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { onBeforeMount } from "vue";
 
@@ -21,7 +20,6 @@ onBeforeMount(initialize);
 
 </script>
 <template>
-    <AppHeader />
     <LoadingIndicator v-if="isLoading" />
     <h2>会員一覧</h2>
     <v-data-table density="compact" show-select v-model="selectedIds" v-model:items-per-page="itemsPerPage"

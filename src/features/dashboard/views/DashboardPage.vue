@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
 import {
   formatDashboardBusinessDate,
@@ -61,7 +60,6 @@ onBeforeMount(loadDashboard);
 </script>
 
 <template>
-  <AppHeader />
   <v-container fluid class="dashboard-page pa-4 pa-md-6">
     <div class="d-flex align-start align-sm-center justify-space-between ga-4 mb-6">
       <div>

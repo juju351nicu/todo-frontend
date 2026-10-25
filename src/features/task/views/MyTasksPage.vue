@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { useMyTasksPage } from "@/features/task/composables/useMyTasksPage";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
@@ -29,7 +28,6 @@ onBeforeMount(loadTasks);
 </script>
 
 <template>
-  <AppHeader />
   <v-container fluid class="my-tasks-page">
     <div class="d-flex align-center justify-space-between mb-6">
       <div>

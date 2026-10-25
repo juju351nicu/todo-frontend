@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import AttendanceCorrectionDialog from "@/features/attendance/components/AttendanceCorrectionDialog.vue";
 import AttendancePunchPanel from "@/features/attendance/components/AttendancePunchPanel.vue";
 import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
@@ -71,7 +70,6 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator v-if="isLoading" />
   <v-container fluid class="attendance-page pa-4 pa-md-6">
     <v-card class="mx-auto" max-width="1440">

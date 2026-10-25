@@ -2,7 +2,6 @@
 import { onBeforeMount } from "vue";
 import Draggable from "vuedraggable";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
 import type { TaskPriority } from "@/features/project/types/project";
@@ -72,7 +71,6 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator
     v-if="isLoading || isLoadingTask || isMoving || isArchiving"
   />

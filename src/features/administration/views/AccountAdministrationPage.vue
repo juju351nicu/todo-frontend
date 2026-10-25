@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useAccountAdministrationPage } from "@/features/administration/composables/useAccountAdministrationPage";
 import {
   getAccountStatusColor,
@@ -37,7 +36,6 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator v-if="isLoading" />
   <v-container fluid class="pa-6">
     <v-card class="mx-auto" max-width="1200">

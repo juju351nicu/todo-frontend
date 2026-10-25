@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import { computed } from "vue";
 
@@ -22,7 +21,6 @@ const {
 
 </script>
 <template>
-    <AppHeader />
     <LoadingIndicator v-if="isLoading" />
     <v-container>
         <p>アカウントを削除して退会されたい場合は、以下の注意事項をご確認の上、お手続きいただきますようお願いいたします。</p>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import { useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
 import type { TaskSearchItem } from "@/features/task/types/taskSearch";
 import {
@@ -62,7 +61,6 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <v-container fluid class="task-search-page">
     <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-6">
       <div>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onBeforeMount, ref } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
@@ -198,7 +197,6 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator v-if="isLoading" />
   <v-container fluid class="pa-6 wbs-page">
     <div class="d-flex align-center flex-wrap ga-3 mb-4">

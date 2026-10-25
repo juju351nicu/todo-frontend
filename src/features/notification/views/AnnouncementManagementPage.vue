@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import {
   ANNOUNCEMENT_MESSAGE_MAX_LENGTH,
   ANNOUNCEMENT_TITLE_MAX_LENGTH,
@@ -19,7 +18,6 @@ const {
 </script>
 
 <template>
-  <AppHeader />
   <v-container fluid class="announcement-page pa-4 pa-sm-6">
     <v-card class="mx-auto" max-width="900" elevation="2">
       <v-card-title class="d-flex align-center flex-wrap ga-3 px-6 pt-6">
