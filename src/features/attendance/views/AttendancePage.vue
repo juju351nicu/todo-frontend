@@ -22,6 +22,7 @@ import {
   getAttendanceCorrectionStatusLabel,
 } from "@/features/attendance/utils/attendanceCorrection";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   addCorrectionBreakPeriod,
@@ -42,6 +43,7 @@ const {
   currentUserDisplayName,
   errorMessages,
   executePunch,
+  hasPendingCorrectionInReviewedMonth,
   initialize,
   isLoading,
   isCorrectionDialogOpen,
@@ -55,6 +57,7 @@ const {
   removeCorrectionWorkPeriod,
   selectWorkDate,
   selectedDay,
+  selectedDayAllocationAlertType,
   selectedDaySummary,
   selectedMonth,
   selectedWorkDate,
@@ -71,336 +74,289 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <v-container fluid class="attendance-page pa-4 pa-md-6">
-    <v-card class="mx-auto" max-width="1440">
-      <v-card-title class="d-flex align-center flex-wrap ga-3">
-        <v-icon icon="mdi-clock-outline" />
-        本人勤怠
-        <v-spacer />
-        <v-text-field
-          :model-value="selectedMonth"
-          type="month"
-          label="表示月"
-          density="compact"
-          hide-details
-          max-width="210"
-          :disabled="isLoading || isPunching"
-          @update:model-value="changeMonth(String($event ?? ''))"
-        />
-      </v-card-title>
+  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 md:p-6">
+    <UCard class="mx-auto max-w-360">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-mdi-clock-outline" class="size-6" />
+          本人勤怠
+          <UFormField label="表示月" class="ms-auto w-52.5 pb-0 text-base font-normal tracking-normal">
+            <UInput
+              :model-value="selectedMonth"
+              type="month"
+              size="sm"
+              :disabled="isLoading || isPunching"
+              class="w-full"
+              @update:model-value="changeMonth(String($event ?? ''))"
+            />
+          </UFormField>
+        </div>
+      </template>
 
-      <v-card-text>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4" closable>
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-4" closable>
-          {{ successMessage }}
-        </v-alert>
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4" closable @close="errorMessages = []">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4" closable @close="successMessage = ''">
+        {{ successMessage }}
+      </StatusAlert>
 
-        <AttendancePunchPanel
-          v-if="selectedDay"
-          :work-date="selectedWorkDate"
-          :display-name="currentUserDisplayName"
-          :punch-state="selectedDay.punchState"
-          :can-clock-in="canClockIn"
-          :can-clock-out="canClockOut"
-          :can-start-break="canStartBreak"
-          :can-end-break="canEndBreak"
-          :can-write-attendance="canWriteAttendance"
-          :is-punching="isPunching"
-          :is-today="selectedWorkDate === today"
-          @punch="executePunch"
-        />
+      <AttendancePunchPanel
+        v-if="selectedDay"
+        :work-date="selectedWorkDate"
+        :display-name="currentUserDisplayName"
+        :punch-state="selectedDay.punchState"
+        :can-clock-in="canClockIn"
+        :can-clock-out="canClockOut"
+        :can-start-break="canStartBreak"
+        :can-end-break="canEndBreak"
+        :can-write-attendance="canWriteAttendance"
+        :is-punching="isPunching"
+        :is-today="selectedWorkDate === today"
+        @punch="executePunch"
+      />
 
-        <v-card v-if="monthSummary" variant="tonal" class="mb-4">
-          <v-card-title class="d-flex align-center flex-wrap ga-3">
+      <UCard v-if="monthSummary" variant="soft" class="mb-4">
+        <template #header>
+          <div class="flex flex-wrap items-center gap-3">
             月次申請
-            <v-chip :color="getAttendanceMonthStatusColor(monthSummary.statusCode)" size="small">
+            <UBadge :color="getAttendanceMonthStatusColor(monthSummary.statusCode)" size="sm">
               {{ getAttendanceMonthStatusLabel(monthSummary.statusCode) }}
-            </v-chip>
-            <v-spacer />
-            <v-btn
+            </UBadge>
+            <UButton
               v-if="canSubmitMonth"
               color="primary"
-              prepend-icon="mdi-send"
+              icon="i-mdi-send"
+              class="ms-auto"
               :loading="isSubmittingMonth"
               @click="submitMonth"
             >
               {{ monthSummary.statusCode === "REJECTED" ? "再提出" : "提出" }}
-            </v-btn>
-          </v-card-title>
-          <v-card-text>
-            <v-row dense>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">総勤務</div>
-                <strong>{{ formatAttendanceMinutes(monthSummary.grossWorkMinutes) }}</strong>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">休憩</div>
-                <strong>{{ formatAttendanceMinutes(monthSummary.breakMinutes) }}</strong>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">差引勤務</div>
-                <strong>{{ formatAttendanceMinutes(monthSummary.netWorkMinutes) }}</strong>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">最終提出</div>
-                <strong>{{ formatAttendanceInstant(monthSummary.submittedAt) }}</strong>
-              </v-col>
-            </v-row>
-            <v-alert
-              v-if="monthSummary.hasIncompletePeriod"
-              type="warning"
-              density="compact"
-              class="mt-3"
-            >
-              未終了の勤務・休憩区間があるため提出できません。
-            </v-alert>
-            <v-alert
-              v-if="monthSummary.statusCode === 'REJECTED'"
-              type="warning"
-              density="compact"
-              class="mt-3"
-            >
-              差戻し理由: {{ monthSummary.reviewComment || "理由は登録されていません。" }}
-            </v-alert>
-            <div v-if="monthSummary.statusCode === 'CLOSED'" class="text-body-2 mt-3">
-              締め日時: {{ formatAttendanceInstant(monthSummary.closedAt) }}
-            </div>
-          </v-card-text>
-        </v-card>
+            </UButton>
+          </div>
+        </template>
+        <div class="-m-1 flex flex-wrap">
+          <div class="w-1/2 p-1 sm:w-1/4">
+            <div class="text-xs text-muted">総勤務</div>
+            <strong>{{ formatAttendanceMinutes(monthSummary.grossWorkMinutes) }}</strong>
+          </div>
+          <div class="w-1/2 p-1 sm:w-1/4">
+            <div class="text-xs text-muted">休憩</div>
+            <strong>{{ formatAttendanceMinutes(monthSummary.breakMinutes) }}</strong>
+          </div>
+          <div class="w-1/2 p-1 sm:w-1/4">
+            <div class="text-xs text-muted">差引勤務</div>
+            <strong>{{ formatAttendanceMinutes(monthSummary.netWorkMinutes) }}</strong>
+          </div>
+          <div class="w-1/2 p-1 sm:w-1/4">
+            <div class="text-xs text-muted">最終提出</div>
+            <strong>{{ formatAttendanceInstant(monthSummary.submittedAt) }}</strong>
+          </div>
+        </div>
+        <StatusAlert v-if="monthSummary.hasIncompletePeriod" type="warning" density="compact" class="mt-3">
+          未終了の勤務・休憩区間があるため提出できません。
+        </StatusAlert>
+        <StatusAlert v-if="monthSummary.statusCode === 'REJECTED'" type="warning" density="compact" class="mt-3">
+          差戻し理由: {{ monthSummary.reviewComment || "理由は登録されていません。" }}
+        </StatusAlert>
+        <div v-if="monthSummary.statusCode === 'CLOSED'" class="mt-3 text-sm">
+          締め日時: {{ formatAttendanceInstant(monthSummary.closedAt) }}
+        </div>
+      </UCard>
 
-        <v-row>
-          <v-col cols="12" lg="7">
-            <v-card variant="outlined">
-              <v-card-title class="text-subtitle-1">月間一覧</v-card-title>
-              <v-card-subtitle>
+      <div class="-m-3 flex flex-wrap">
+        <div class="w-full p-3 lg:w-7/12">
+          <UCard variant="outline" :ui="{ body: 'px-0 sm:px-0' }">
+            <template #header>
+              <div class="text-base font-normal">月間一覧</div>
+              <div class="text-sm font-normal tracking-normal text-muted">
                 未打刻日を含む月内全日を表示します。未終了区間は確定時間へ含めません。
-              </v-card-subtitle>
-              <v-card-text class="px-0">
-                <div class="attendance-table-scroll">
-                  <v-table density="compact" hover>
-                    <thead>
-                      <tr>
-                        <th scope="col">勤務日</th>
-                        <th scope="col">状態</th>
-                        <th scope="col" class="text-end">勤務</th>
-                        <th scope="col" class="text-end">休憩</th>
-                        <th scope="col" class="text-end">差引</th>
-                        <th scope="col" class="text-end">Task実績</th>
-                        <th scope="col">照合</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="row in monthRows"
-                        :key="row.workDate"
-                        :class="{
-                          'selected-attendance-row': row.workDate === selectedWorkDate,
-                        }"
-                        tabindex="0"
-                        @click="selectWorkDate(row.workDate)"
-                        @keydown.enter="selectWorkDate(row.workDate)"
-                      >
-                        <td>{{ formatAttendanceDate(row.workDate) }}</td>
-                        <td>
-                          <v-chip
-                            v-if="row.hasRecord"
-                            :color="getAttendancePunchStateColor(row.punchState)"
-                            size="small"
-                          >
-                            {{ getAttendancePunchStateLabel(row.punchState) }}
-                          </v-chip>
-                          <span v-else class="text-medium-emphasis">未打刻</span>
-                        </td>
-                        <td class="text-end">
-                          {{ row.hasRecord ? formatAttendanceMinutes(row.grossWorkMinutes) : "—" }}
-                        </td>
-                        <td class="text-end">
-                          {{ row.hasRecord ? formatAttendanceMinutes(row.breakMinutes) : "—" }}
-                        </td>
-                        <td class="text-end">
-                          <span v-if="row.hasRecord">
-                            {{ formatAttendanceMinutes(row.netWorkMinutes) }}
-                            <small v-if="row.incomplete" class="text-warning">集計中</small>
-                          </span>
-                          <span v-else>—</span>
-                        </td>
-                        <td class="text-end">
-                          {{ formatAttendanceMinutes(row.taskActualMinutes) }}
-                        </td>
-                        <td>
-                          <v-chip
-                            :color="getAttendanceAllocationStatusColor(row.allocationStatus)"
-                            size="small"
-                          >
-                            {{ getAttendanceAllocationStatusLabel(row.allocationStatus) }}
-                          </v-chip>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </v-table>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
+              </div>
+            </template>
+            <div class="max-h-170 overflow-auto">
+              <table class="app-table app-table-hover">
+                <thead>
+                  <tr>
+                    <th scope="col">勤務日</th>
+                    <th scope="col">状態</th>
+                    <th scope="col" class="text-end!">勤務</th>
+                    <th scope="col" class="text-end!">休憩</th>
+                    <th scope="col" class="text-end!">差引</th>
+                    <th scope="col" class="text-end!">Task実績</th>
+                    <th scope="col">照合</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="row in monthRows"
+                    :key="row.workDate"
+                    class="cursor-pointer"
+                    :class="{ 'bg-primary/12': row.workDate === selectedWorkDate }"
+                    tabindex="0"
+                    @click="selectWorkDate(row.workDate)"
+                    @keydown.enter="selectWorkDate(row.workDate)"
+                  >
+                    <td>{{ formatAttendanceDate(row.workDate) }}</td>
+                    <td>
+                      <UBadge v-if="row.hasRecord" :color="getAttendancePunchStateColor(row.punchState)" size="sm">
+                        {{ getAttendancePunchStateLabel(row.punchState) }}
+                      </UBadge>
+                      <span v-else class="text-muted">未打刻</span>
+                    </td>
+                    <td class="text-end">
+                      {{ row.hasRecord ? formatAttendanceMinutes(row.grossWorkMinutes) : "—" }}
+                    </td>
+                    <td class="text-end">
+                      {{ row.hasRecord ? formatAttendanceMinutes(row.breakMinutes) : "—" }}
+                    </td>
+                    <td class="text-end">
+                      <span v-if="row.hasRecord">
+                        {{ formatAttendanceMinutes(row.netWorkMinutes) }}
+                        <small v-if="row.incomplete" class="text-warning">集計中</small>
+                      </span>
+                      <span v-else>—</span>
+                    </td>
+                    <td class="text-end">
+                      {{ formatAttendanceMinutes(row.taskActualMinutes) }}
+                    </td>
+                    <td>
+                      <UBadge :color="getAttendanceAllocationStatusColor(row.allocationStatus)" size="sm">
+                        {{ getAttendanceAllocationStatusLabel(row.allocationStatus) }}
+                      </UBadge>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </UCard>
+        </div>
 
-          <v-col cols="12" lg="5">
-            <v-card variant="outlined" class="attendance-detail-card">
-              <v-card-title class="d-flex align-center flex-wrap ga-2">
+        <div class="w-full p-3 lg:w-5/12">
+          <UCard variant="outline" class="static lg:sticky lg:top-20">
+            <template #header>
+              <div class="flex flex-wrap items-center gap-2">
                 {{ formatAttendanceDate(selectedWorkDate) }}
-                <v-chip
-                  v-if="selectedDay"
-                  :color="getAttendancePunchStateColor(selectedDay.punchState)"
-                  size="small"
-                >
+                <UBadge v-if="selectedDay" :color="getAttendancePunchStateColor(selectedDay.punchState)" size="sm">
                   {{ getAttendancePunchStateLabel(selectedDay.punchState) }}
-                </v-chip>
-                <v-spacer />
-                <v-btn
+                </UBadge>
+                <UButton
                   v-if="canRequestCorrection"
                   color="primary"
-                  size="small"
-                  prepend-icon="mdi-file-edit-outline"
+                  size="sm"
+                  icon="i-mdi-file-edit-outline"
+                  class="ms-auto"
                   @click="openCorrectionDialog"
                 >
                   修正申請
-                </v-btn>
-              </v-card-title>
-              <v-card-subtitle>選択日の確定済み勤務・休憩区間を表示します。</v-card-subtitle>
+                </UButton>
+              </div>
+              <div class="text-sm font-normal tracking-normal text-muted">選択日の確定済み勤務・休憩区間を表示します。</div>
+            </template>
 
-              <v-card-text v-if="selectedDay">
-                <v-row dense class="mb-2">
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text-medium-emphasis">勤務</div>
-                    <strong>{{ formatAttendanceMinutes(selectedDaySummary.grossWorkMinutes) }}</strong>
-                  </v-col>
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text-medium-emphasis">休憩</div>
-                    <strong>{{ formatAttendanceMinutes(selectedDaySummary.breakMinutes) }}</strong>
-                  </v-col>
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text-medium-emphasis">差引</div>
-                    <strong>{{ formatAttendanceMinutes(selectedDaySummary.netWorkMinutes) }}</strong>
-                  </v-col>
-                  <v-col cols="6" sm="3">
-                    <div class="text-caption text-medium-emphasis">Task実績</div>
-                    <strong>{{ formatAttendanceMinutes(selectedDay.taskActualMinutes) }}</strong>
-                  </v-col>
-                </v-row>
+            <template v-if="selectedDay">
+              <div class="-m-1 mb-1 flex flex-wrap">
+                <div class="w-1/2 p-1 sm:w-1/4">
+                  <div class="text-xs text-muted">勤務</div>
+                  <strong>{{ formatAttendanceMinutes(selectedDaySummary.grossWorkMinutes) }}</strong>
+                </div>
+                <div class="w-1/2 p-1 sm:w-1/4">
+                  <div class="text-xs text-muted">休憩</div>
+                  <strong>{{ formatAttendanceMinutes(selectedDaySummary.breakMinutes) }}</strong>
+                </div>
+                <div class="w-1/2 p-1 sm:w-1/4">
+                  <div class="text-xs text-muted">差引</div>
+                  <strong>{{ formatAttendanceMinutes(selectedDaySummary.netWorkMinutes) }}</strong>
+                </div>
+                <div class="w-1/2 p-1 sm:w-1/4">
+                  <div class="text-xs text-muted">Task実績</div>
+                  <strong>{{ formatAttendanceMinutes(selectedDay.taskActualMinutes) }}</strong>
+                </div>
+              </div>
 
-                <v-alert
-                  :type="selectedDay.allocationStatus === 'BALANCED' ? 'success' : selectedDay.allocationStatus === 'OVER_ALLOCATED' ? 'error' : 'warning'"
-                  variant="tonal"
-                  density="compact"
-                  class="mb-4"
+              <StatusAlert :type="selectedDayAllocationAlertType" variant="soft" density="compact" class="mb-4">
+                <div class="flex flex-wrap items-center gap-2">
+                  <strong>Task実績との照合</strong>
+                  <UBadge :color="getAttendanceAllocationStatusColor(selectedDay.allocationStatus)" size="sm">
+                    {{ getAttendanceAllocationStatusLabel(selectedDay.allocationStatus) }}
+                  </UBadge>
+                  <span>{{ formatAttendanceAllocationDifference(selectedDay.unallocatedMinutes) }}</span>
+                </div>
+              </StatusAlert>
+
+              <StatusAlert v-if="selectedDaySummary.incomplete" type="warning" density="compact" class="mb-4">
+                未終了区間があるため、時間は確定分だけを表示しています。
+              </StatusAlert>
+
+              <div v-if="selectedDay.workPeriods.length" class="flex flex-col gap-3">
+                <UCard
+                  v-for="(workPeriod, workIndex) in selectedDay.workPeriods"
+                  :key="workPeriod.attendanceWorkPeriodId"
+                  variant="soft"
                 >
-                  <div class="d-flex align-center flex-wrap ga-2">
-                    <strong>Task実績との照合</strong>
-                    <v-chip
-                      :color="getAttendanceAllocationStatusColor(selectedDay.allocationStatus)"
-                      size="small"
-                    >
-                      {{ getAttendanceAllocationStatusLabel(selectedDay.allocationStatus) }}
-                    </v-chip>
-                    <span>{{ formatAttendanceAllocationDifference(selectedDay.unallocatedMinutes) }}</span>
+                  <template #header>
+                    <div class="text-sm font-medium">勤務区間 {{ workIndex + 1 }}</div>
+                  </template>
+                  <div class="mb-2">
+                    {{ formatAttendanceTime(workPeriod.startedAt) }}
+                    〜 {{ formatAttendanceTime(workPeriod.endedAt) }}
                   </div>
-                </v-alert>
-
-                <v-alert
-                  v-if="selectedDaySummary.incomplete"
-                  type="warning"
-                  density="compact"
-                  class="mb-4"
-                >
-                  未終了区間があるため、時間は確定分だけを表示しています。
-                </v-alert>
-
-                <div v-if="selectedDay.workPeriods.length" class="d-flex flex-column ga-3">
-                  <v-card
-                    v-for="(workPeriod, workIndex) in selectedDay.workPeriods"
-                    :key="workPeriod.attendanceWorkPeriodId"
-                    variant="tonal"
+                  <div
+                    v-for="(breakPeriod, breakIndex) in workPeriod.breakPeriods"
+                    :key="breakPeriod.attendanceBreakPeriodId"
+                    class="text-sm text-muted"
                   >
-                    <v-card-title class="text-subtitle-2">
-                      勤務区間 {{ workIndex + 1 }}
-                    </v-card-title>
-                    <v-card-text>
-                      <div class="mb-2">
-                        {{ formatAttendanceTime(workPeriod.startedAt) }}
-                        〜 {{ formatAttendanceTime(workPeriod.endedAt) }}
-                      </div>
-                      <div
-                        v-for="(breakPeriod, breakIndex) in workPeriod.breakPeriods"
-                        :key="breakPeriod.attendanceBreakPeriodId"
-                        class="text-body-2 text-medium-emphasis"
-                      >
-                        休憩 {{ breakIndex + 1 }}:
-                        {{ formatAttendanceTime(breakPeriod.startedAt) }}
-                        〜 {{ formatAttendanceTime(breakPeriod.endedAt) }}
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </div>
-                <v-sheet v-else rounded color="surface-variant" class="pa-4 text-center">
-                  この日の打刻はありません。
-                </v-sheet>
+                    休憩 {{ breakIndex + 1 }}:
+                    {{ formatAttendanceTime(breakPeriod.startedAt) }}
+                    〜 {{ formatAttendanceTime(breakPeriod.endedAt) }}
+                  </div>
+                </UCard>
+              </div>
+              <div v-else class="rounded-sm bg-[#424242] p-4 text-center text-[#EEEEEE]">
+                この日の打刻はありません。
+              </div>
 
-                <v-divider class="my-4" />
-                <div class="text-subtitle-2 mb-2">
-                  修正申請履歴（{{ correctionRequests.length }}件）
+              <USeparator class="my-4" />
+              <div class="mb-2 text-sm font-medium">修正申請履歴（{{ correctionRequests.length }}件）</div>
+              <StatusAlert v-if="hasPendingCorrectionInReviewedMonth" type="warning" density="compact" class="mb-3">
+                この勤務日は審査待ちです。結果確定または取消後に再申請できます。
+              </StatusAlert>
+              <UCard
+                v-for="request in correctionRequests"
+                :key="request.attendanceCorrectionRequestId"
+                variant="outline"
+                class="mb-2"
+              >
+                <div class="flex flex-wrap items-center gap-2">
+                  <UBadge :color="getAttendanceCorrectionStatusColor(request.statusCode)" size="sm">
+                    {{ getAttendanceCorrectionStatusLabel(request.statusCode) }}
+                  </UBadge>
+                  <span>{{ formatAttendanceInstant(request.requestedAt) }}</span>
+                  <UButton
+                    v-if="request.statusCode === 'PENDING'"
+                    color="error"
+                    variant="ghost"
+                    size="sm"
+                    class="ms-auto"
+                    :loading="cancellingCorrectionId === request.attendanceCorrectionRequestId"
+                    @click="cancelCorrectionRequest(request)"
+                  >
+                    申請取消
+                  </UButton>
                 </div>
-                <v-alert
-                  v-if="['APPROVED', 'CLOSED'].includes(monthSummary?.statusCode ?? '') && correctionRequests.some((request) => request.statusCode === 'PENDING')"
-                  type="warning"
-                  density="compact"
-                  class="mb-3"
-                >
-                  この勤務日は審査待ちです。結果確定または取消後に再申請できます。
-                </v-alert>
-                <v-card
-                  v-for="request in correctionRequests"
-                  :key="request.attendanceCorrectionRequestId"
-                  variant="outlined"
-                  class="mb-2"
-                >
-                  <v-card-text>
-                    <div class="d-flex align-center flex-wrap ga-2">
-                      <v-chip :color="getAttendanceCorrectionStatusColor(request.statusCode)" size="small">
-                        {{ getAttendanceCorrectionStatusLabel(request.statusCode) }}
-                      </v-chip>
-                      <span>{{ formatAttendanceInstant(request.requestedAt) }}</span>
-                      <v-spacer />
-                      <v-btn
-                        v-if="request.statusCode === 'PENDING'"
-                        color="error"
-                        variant="text"
-                        size="small"
-                        :loading="cancellingCorrectionId === request.attendanceCorrectionRequestId"
-                        @click="cancelCorrectionRequest(request)"
-                      >
-                        申請取消
-                      </v-btn>
-                    </div>
-                    <div class="mt-2">理由: {{ request.reason }}</div>
-                    <div class="text-caption text-medium-emphasis">
-                      申請勤務区間: {{ request.workPeriods.length }}件 / version {{ request.version }}
-                    </div>
-                    <v-alert v-if="request.reviewComment" type="info" density="compact" class="mt-2">
-                      審査コメント: {{ request.reviewComment }}
-                    </v-alert>
-                  </v-card-text>
-                </v-card>
-                <div v-if="correctionRequests.length === 0" class="text-medium-emphasis">
-                  この勤務日の修正申請はありません。
+                <div class="mt-2">理由: {{ request.reason }}</div>
+                <div class="text-xs text-muted">
+                  申請勤務区間: {{ request.workPeriods.length }}件 / version {{ request.version }}
                 </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-  </v-container>
+                <StatusAlert v-if="request.reviewComment" type="info" density="compact" class="mt-2">
+                  審査コメント: {{ request.reviewComment }}
+                </StatusAlert>
+              </UCard>
+              <div v-if="correctionRequests.length === 0" class="text-muted">この勤務日の修正申請はありません。</div>
+            </template>
+          </UCard>
+        </div>
+      </div>
+    </UCard>
+  </div>
   <AttendanceCorrectionDialog
     :model-value="isCorrectionDialogOpen"
     :form="correctionForm"
@@ -420,34 +376,3 @@ onBeforeMount(initialize);
     @update-work-started-at="(workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'startedAt', value)"
   />
 </template>
-
-<style scoped>
-.attendance-page {
-  background: rgb(var(--v-theme-surface-variant));
-  min-height: calc(100vh - 64px);
-}
-
-.attendance-table-scroll {
-  max-height: 680px;
-  overflow: auto;
-}
-
-.attendance-table-scroll tbody tr {
-  cursor: pointer;
-}
-
-.selected-attendance-row {
-  background: rgba(var(--v-theme-primary), 0.12);
-}
-
-.attendance-detail-card {
-  position: sticky;
-  top: 80px;
-}
-
-@media (max-width: 1279px) {
-  .attendance-detail-card {
-    position: static;
-  }
-}
-</style>

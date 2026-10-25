@@ -7,6 +7,7 @@ import type {
   AttendanceMonthStatus,
   AttendancePunchState,
 } from "@/features/attendance/types/attendance";
+import type { SemanticColor } from "@/shared/types/color";
 
 const ISO_YEAR_MONTH_PATTERN = /^(\d{4})-(\d{2})$/;
 const MILLISECONDS_PER_MINUTE = 60_000;
@@ -158,11 +159,11 @@ export const getAttendancePunchStateLabel = (
 ): string =>
   ({ OFF_DUTY: "退勤中", WORKING: "勤務中", ON_BREAK: "休憩中" })[state];
 
-/** 勤怠状態をVuetify chip色へ変換する。 */
+/** 勤怠状態を表示色へ変換する。 */
 export const getAttendancePunchStateColor = (
   state: AttendancePunchState
-): string =>
-  ({ OFF_DUTY: "default", WORKING: "success", ON_BREAK: "warning" })[state];
+): SemanticColor =>
+  ({ OFF_DUTY: "neutral", WORKING: "success", ON_BREAK: "warning" } satisfies Record<string, SemanticColor>)[state];
 
 /** Task実績と実勤務の照合状態を本人画面の日本語表示へ変換する。 */
 export const getAttendanceAllocationStatusLabel = (
@@ -175,16 +176,16 @@ export const getAttendanceAllocationStatusLabel = (
     INCOMPLETE: "勤怠未確定",
   })[status];
 
-/** Task実績と実勤務の照合状態をVuetify chip色へ変換する。 */
+/** Task実績と実勤務の照合状態を表示色へ変換する。 */
 export const getAttendanceAllocationStatusColor = (
   status: AttendanceAllocationStatus
-): string =>
+): SemanticColor =>
   ({
     BALANCED: "success",
     UNALLOCATED: "warning",
     OVER_ALLOCATED: "error",
     INCOMPLETE: "info",
-  })[status];
+  } satisfies Record<string, SemanticColor>)[status];
 
 /** 月次workflow状態を本人・管理画面共通の日本語へ変換する。 */
 export const getAttendanceMonthStatusLabel = (
@@ -198,17 +199,17 @@ export const getAttendanceMonthStatusLabel = (
     CLOSED: "締め済み",
   })[status];
 
-/** 月次workflow状態をVuetify chip色へ変換する。 */
+/** 月次workflow状態を表示色へ変換する。 */
 export const getAttendanceMonthStatusColor = (
   status: AttendanceMonthStatus
-): string =>
+): SemanticColor =>
   ({
-    DRAFT: "default",
+    DRAFT: "neutral",
     SUBMITTED: "info",
     APPROVED: "success",
     REJECTED: "warning",
     CLOSED: "secondary",
-  })[status];
+  } satisfies Record<string, SemanticColor>)[status];
 
 /** APIのISO時刻をAsia/Tokyoの年月日時分へ変換する。 */
 export const formatAttendanceInstant = (instant: string | null): string => {

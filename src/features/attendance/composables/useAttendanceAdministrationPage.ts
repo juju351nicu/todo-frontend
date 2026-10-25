@@ -25,9 +25,15 @@ import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
-/** 管理一覧の状態絞込み選択肢。空文字は全状態を表す。 */
+/**
+ * 管理一覧で全状態を対象にする選択値。選択UI（Reka UI）は空文字の選択肢を扱えないため専用値にし、
+ * API呼出時に状態条件なし（`null`）へ変換する。
+ */
+export const ALL_ATTENDANCE_MONTH_STATUSES = "ALL";
+
+/** 管理一覧の状態絞込み選択肢。 */
 export const ATTENDANCE_MONTH_STATUS_OPTIONS = [
-  { title: "すべて", value: "" },
+  { title: "すべて", value: ALL_ATTENDANCE_MONTH_STATUSES },
   { title: "下書き", value: "DRAFT" },
   { title: "提出済み", value: "SUBMITTED" },
   { title: "承認済み", value: "APPROVED" },
@@ -74,7 +80,11 @@ export const useAttendanceAdministrationPage = () => {
   const selectedAccountId = ref<number | null>(null);
   const selectedDetail = ref<AttendanceMonthResponse | null>(null);
   const selectedMonth = ref(getTodayInTokyo().slice(0, 7));
-  const selectedStatus = ref<AttendanceMonthStatus | "">("");
+  const selectedStatus = ref<AttendanceMonthStatus | typeof ALL_ATTENDANCE_MONTH_STATUSES>(ALL_ATTENDANCE_MONTH_STATUSES);
+  /** 状態絞込みをBackendの検索条件へ変換する。全状態の場合は条件なし。 */
+  const statusFilter = computed<AttendanceMonthStatus | null>(() =>
+    selectedStatus.value === ALL_ATTENDANCE_MONTH_STATUSES ? null : selectedStatus.value
+  );
   const successMessage = ref("");
 
   const selectedListItem = computed(
@@ -349,7 +359,7 @@ export const useAttendanceAdministrationPage = () => {
     try {
       const response = await AttendanceApi.getAdministrationMonths(
         selectedMonth.value,
-        selectedStatus.value || null
+        statusFilter.value
       );
       months.value = response.months;
     } catch (error: unknown) {
@@ -555,7 +565,7 @@ export const useAttendanceAdministrationPage = () => {
         AttendanceApi.getAdministrationMonth(accountId, selectedMonth.value),
         AttendanceApi.getAdministrationMonths(
           selectedMonth.value,
-          selectedStatus.value || null
+          statusFilter.value
         ),
       ]);
       selectedDetail.value = detail;
