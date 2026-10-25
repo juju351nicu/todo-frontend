@@ -4,6 +4,8 @@ import type {
   WbsTaskType,
   WbsTreeRow,
 } from "@/features/wbs/types/wbs";
+import { getTaskPriorityColor } from "@/features/task/utils/taskDisplay";
+import type { SemanticColor } from "@/shared/types/color";
 
 interface MutableWbsNode {
   task: WbsTask;
@@ -134,6 +136,5 @@ export const getWbsTaskTypeIcon = (taskType: WbsTaskType): string =>
 export const getWbsPriorityLabel = (priority: WbsTaskPriority): string =>
   ({ 1: "低", 2: "中", 3: "高" })[priority];
 
-/** Task優先度をVuetify colorへ変換する。 */
-export const getWbsPriorityColor = (priority: WbsTaskPriority): string =>
-  ({ 1: "error", 2: "warning", 3: "info" })[priority];
+/** Task優先度を表示色へ変換する。Board表示と同じく高=error、中=warning、低=info。 */
+export const getWbsPriorityColor = (priority: WbsTaskPriority): SemanticColor => getTaskPriorityColor(priority);
