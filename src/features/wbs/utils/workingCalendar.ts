@@ -10,6 +10,7 @@ import type {
   WorkingDayUpdateRequest,
 } from "@/features/wbs/types/wbs";
 import { isValidIsoLocalDate } from "@/features/wbs/utils/effort";
+import type { SemanticColor } from "@/shared/types/color";
 
 const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_CALENDAR_DAYS = 366;
@@ -175,4 +176,12 @@ export const getWorkingDaySourceLabel = (
     return "個人例外";
   }
   return source === "PROJECT" ? "Project共通" : "曜日既定値";
+};
+
+/** 稼働日の設定元（個人例外・Project共通・曜日既定値）を見分ける色へ変換する。 */
+export const getWorkingDaySourceColor = (source: WorkingDaySource): SemanticColor => {
+  if (source === "MEMBER") {
+    return "secondary";
+  }
+  return source === "PROJECT" ? "primary" : "neutral";
 };

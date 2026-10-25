@@ -4,6 +4,10 @@ import {
   buildWbsBaselineComparisonRows,
   buildWbsBaselineCreateRequest,
   validateWbsBaselineCreateForm,
+  formatBaselineCreatedAt,
+  formatBaselinePeriod,
+  getBaselineComparisonStatusColor,
+  getBaselineComparisonStatusLabel,
 } from "@/features/wbs/utils/wbsBaseline";
 
 const buildCurrentTask = (overrides = {}) => ({
@@ -105,5 +109,19 @@ describe("WBS baseline utility", () => {
       currentPlannedEffortMinutes: null,
       plannedEffortDifferenceMinutes: -480,
     });
+  });
+});
+
+describe("baseline表示", () => {
+  it("比較状態を表示名と色へ変換する", () => {
+    expect(getBaselineComparisonStatusLabel("BASELINE_ONLY")).toBe("現在計画から除外");
+    expect(getBaselineComparisonStatusColor("BASELINE_ONLY")).toBe("error");
+    expect(getBaselineComparisonStatusColor("UNCHANGED")).toBe("success");
+  });
+
+  it("期間の片方がない場合は—、作成日時が不正な場合は元の文字列にする", () => {
+    expect(formatBaselinePeriod("2026-10-01", null)).toBe("—");
+    expect(formatBaselinePeriod("2026-10-01", "2026-10-05")).toBe("2026-10-01 ～ 2026-10-05");
+    expect(formatBaselineCreatedAt("invalid")).toBe("invalid");
   });
 });

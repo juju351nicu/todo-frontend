@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 
-import type {
-  WbsParentOption,
-  WbsTask,
-  WbsTaskEditForm,
-  WbsTaskType,
-} from "@/features/wbs/types/wbs";
+import type { WbsParentOption, WbsTask, WbsTaskEditForm, WbsTaskType } from "@/features/wbs/types/wbs";
+import { formatWbsTaskDialogTitle } from "@/features/wbs/utils/wbsDialog";
 import { buildWbsTaskEditForm } from "@/features/wbs/utils/wbsForm";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { useDialogForm } from "@/shared/composables/useDialogForm";
 
 /** WBS Task編集Dialogへ親画面から渡す確定状態。 */
 interface Props {
@@ -18,199 +17,151 @@ interface Props {
   errorMessages: string[];
 }
 
-/** WBS Task種別selectの画面表示名とBackendコード。 */
-interface TaskTypeOption {
-  title: string;
-  value: WbsTaskType;
-}
-
 const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
   save: [form: WbsTaskEditForm];
 }>();
 
-const form = ref<WbsTaskEditForm | null>(null);
-const taskTypeOptions: TaskTypeOption[] = [
+const TASK_TYPE_OPTIONS: { title: string; value: WbsTaskType }[] = [
   { title: "Task", value: "TASK" },
   { title: "Summary", value: "SUMMARY" },
   { title: "Milestone", value: "MILESTONE" },
 ];
-const dialogTitle = computed(() =>
-  props.task === null ? "WBS Taskを編集" : `WBS Taskを編集: ${props.task.title}`
+
+// 選択UI（Reka UI）はnullを未選択として扱うため、最上位（親なし）はTask IDに使われない0で表し、保存前にnullへ戻す。
+const ROOT_PARENT_VALUE = 0;
+const parentSelectOptions = computed(() =>
+  props.parentOptions.map((option) => ({ title: option.title, value: option.value ?? ROOT_PARENT_VALUE })),
 );
 
-/** Dialogを開くたびにBackend取得済みTaskから独立した入力フォームを作る。 */
-const synchronizeForm = (): void => {
-  form.value = props.task === null ? null : buildWbsTaskEditForm(props.task);
-};
+const dialogTitle = computed(() => formatWbsTaskDialogTitle("WBS Taskを編集", props.task, false));
 
-watch(() => [props.open, props.task] as const, synchronizeForm, {
-  immediate: true,
+// Dialogを開くたび、または編集対象が変わるたびに、Backend取得済みTaskから独立した入力フォームを作る。
+const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<WbsTaskEditForm | null>({
+  initialForm: null,
+  syncSources: [() => props.open, () => props.task],
+  buildForm: () => (props.task === null ? null : buildWbsTaskEditForm(props.task)),
+  isBusy: () => props.isSaving,
+  canSubmit: (value) => value !== null,
+  onClose: () => emit("close"),
+  onSave: (value) => {
+    if (value !== null) {
+      emit("save", value);
+    }
+  },
 });
-
-/** 保存中でなければ未確定入力を破棄するよう親composableへ通知する。 */
-const closeDialog = (): void => {
-  if (!props.isSaving) {
-    emit("close");
-  }
-};
-
-/** Vuetifyが外側クリック等で閉じようとした場合だけ通常のclose処理へ渡す。 */
-const handleDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    closeDialog();
-  }
-};
-
-/** 現在の入力値を複製し、検証とAPI送信を担当する親composableへ渡す。 */
-const submitForm = (): void => {
-  if (form.value !== null && !props.isSaving) {
-    emit("save", { ...form.value });
-  }
-};
 </script>
 
 <template>
-  <v-dialog
-    :model-value="open"
-    max-width="760"
-    :persistent="isSaving"
-    @update:model-value="handleDialogModelValue"
+  <UModal
+    :open="open"
+    :dismissible="!isSaving"
+    :title="dialogTitle"
+    :ui="{ content: 'max-w-190' }"
+    @update:open="handleDialogVisibility"
   >
-    <v-card>
-      <v-card-title>{{ dialogTitle }}</v-card-title>
-      <v-card-text v-if="form">
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">
-            {{ message }}
+    <template #body>
+      <template v-if="form">
+        <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
+
+        <form @submit.prevent="submitForm">
+          <div class="-m-3 flex flex-wrap">
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="親Task" help="親にできるのは自分と子孫を除いたSummaryです。">
+                <USelect
+                  :model-value="form.parentTaskId ?? ROOT_PARENT_VALUE"
+                  :items="parentSelectOptions"
+                  label-key="title"
+                  value-key="value"
+                  :disabled="isSaving"
+                  class="w-full"
+                  @update:model-value="form.parentTaskId = $event === ROOT_PARENT_VALUE ? null : $event"
+                />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="Task種別">
+                <USelect
+                  v-model="form.taskType"
+                  :items="TASK_TYPE_OPTIONS"
+                  label-key="title"
+                  value-key="value"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
           </div>
-        </v-alert>
 
-        <v-form @submit.prevent="submitForm">
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.parentTaskId"
-                label="親Task"
-                :items="parentOptions"
-                :disabled="isSaving"
-                hint="親にできるのは自分と子孫を除いたSummaryです。"
-                persistent-hint
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="form.taskType"
-                label="Task種別"
-                :items="taskTypeOptions"
-                :disabled="isSaving"
-              />
-            </v-col>
-          </v-row>
+          <div class="relative">
+            <UFormField label="WBSコード">
+              <UInput v-model="form.wbsCode" :maxlength="100" :disabled="isSaving" placeholder="例: 1.2.1" class="w-full" />
+            </UFormField>
+            <FieldCounter :value="form.wbsCode" :max="100" />
+          </div>
 
-          <v-text-field
-            v-model="form.wbsCode"
-            label="WBSコード"
-            maxlength="100"
-            counter
-            :disabled="isSaving"
-            placeholder="例: 1.2.1"
-          />
+          <div class="-m-3 flex flex-wrap">
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="予定開始日">
+                <UInput v-model="form.plannedStartDate" type="date" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="予定終了日">
+                <UInput v-model="form.plannedEndDate" type="date" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="予定工数（分）">
+                <UInput v-model.nullable="form.plannedEffortMinutes" type="number" min="0" step="1" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="進捗率（%）">
+                <UInput
+                  v-model.nullable="form.progressPercent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
+              </UFormField>
+            </div>
+          </div>
 
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.plannedStartDate"
-                label="予定開始日"
-                type="date"
-                :disabled="isSaving"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.plannedEndDate"
-                label="予定終了日"
-                type="date"
-                :disabled="isSaving"
-              />
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model.number="form.plannedEffortMinutes"
-                label="予定工数（分）"
-                type="number"
-                min="0"
-                step="1"
-                :disabled="isSaving"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model.number="form.progressPercent"
-                label="進捗率（%）"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                :disabled="isSaving"
-              />
-            </v-col>
-          </v-row>
-
-          <v-divider class="my-4" />
-          <div class="text-subtitle-2 mb-2">実績期間（任意）</div>
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.actualStartDate"
-                label="実績開始日"
-                type="date"
-                :disabled="isSaving"
-                clearable
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                v-model="form.actualEndDate"
-                label="実績終了日"
-                type="date"
-                :disabled="isSaving"
-                clearable
-              />
-            </v-col>
-          </v-row>
-          <p class="text-caption text-medium-emphasis mt-n2 mb-4">
+          <USeparator class="my-4" />
+          <div class="mb-2 text-sm font-medium">実績期間（任意）</div>
+          <div class="-m-3 flex flex-wrap">
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="実績開始日">
+                <UInput v-model="form.actualStartDate" type="date" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+            <div class="w-full p-3 sm:w-1/2">
+              <UFormField label="実績終了日">
+                <UInput v-model="form.actualEndDate" type="date" :disabled="isSaving" class="w-full" />
+              </UFormField>
+            </div>
+          </div>
+          <p class="-mt-2 mb-4 text-xs text-muted">
             開始日だけで作業中を表します。実績日の保存では進捗率やBoard列を自動変更しません。
           </p>
 
-          <v-alert
-            v-if="form.taskType === 'MILESTONE'"
-            type="info"
-            variant="tonal"
-          >
+          <StatusAlert v-if="form.taskType === 'MILESTONE'" type="info" variant="soft">
             Milestoneは予定開始日と終了日を同日にし、予定工数を0分にします。
-          </v-alert>
-        </v-form>
-      </v-card-text>
-      <v-card-text v-else>
-        編集対象のTaskを読み込めませんでした。
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isSaving" @click="closeDialog">キャンセル</v-btn>
-        <v-btn
-          color="primary"
-          :loading="isSaving"
-          :disabled="form === null"
-          @click="submitForm"
-        >
-          保存
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+          </StatusAlert>
+        </form>
+      </template>
+      <template v-else>編集対象のTaskを読み込めませんでした。</template>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="isSaving" @click="closeDialog">キャンセル</UButton>
+      <UButton color="primary" variant="ghost" :loading="isSaving" :disabled="form === null" @click="submitForm">保存</UButton>
+    </template>
+  </UModal>
 </template>

@@ -127,9 +127,9 @@ export const getWbsTaskTypeLabel = (taskType: WbsTaskType): string =>
 /** BackendのTask種別コードをWBS階層表のMaterial Design Iconへ変換する。 */
 export const getWbsTaskTypeIcon = (taskType: WbsTaskType): string =>
   ({
-    TASK: "mdi-checkbox-blank-circle-outline",
-    SUMMARY: "mdi-folder-outline",
-    MILESTONE: "mdi-diamond-outline",
+    TASK: "i-mdi-checkbox-blank-circle-outline",
+    SUMMARY: "i-mdi-folder-outline",
+    MILESTONE: "i-mdi-diamond-outline",
   })[taskType];
 
 /** Task優先度をWBS階層表の日本語表示へ変換する。 */

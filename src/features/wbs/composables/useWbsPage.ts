@@ -41,6 +41,7 @@ import type {
   WbsResponse,
   WbsTask,
   WbsTaskEditForm,
+  WbsViewMode,
 } from "@/features/wbs/types/wbs";
 import {
   WBS_ERROR_CODES,
@@ -93,6 +94,8 @@ export const useWbsPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
 
+  /** WBSの表示形式。Gantt libraryは表示切替時に初めて読み込むため、既定は階層表。 */
+  const activeView = ref<WbsViewMode>("table");
   const dependencyEditorErrorMessages = ref<string[]>([]);
   const earnedValue = ref<EarnedValueResponse | null>(null);
   const earnedValueErrorMessages = ref<string[]>([]);
@@ -2527,7 +2530,44 @@ export const useWbsPage = () => {
     });
   };
 
+
+  /**
+   * 削除確認dialogが閉じられた場合だけ未確定の削除対象を破棄する。
+   * 確認dialogの開閉は削除対象の有無で決まるため、閉じる操作をここで削除対象の破棄へ変換する。
+   */
+  const handleDependencyDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelDependencyDelete();
+    }
+  };
+
+  /** 日別予定の削除確認dialogが閉じられた場合だけ確認対象を破棄する。 */
+  const handleEffortPlanDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelEffortPlanDelete();
+    }
+  };
+
+  /** 日別実績の削除確認dialogが閉じられた場合だけ確認対象を破棄する。 */
+  const handleWorkLogDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelWorkLogDelete();
+    }
+  };
+
+  /** 稼働日例外の削除確認dialogが閉じられた場合だけ確認対象を破棄する。 */
+  const handleWorkingDayDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelWorkingDayDelete();
+    }
+  };
+
   return {
+    activeView,
+    handleDependencyDeleteDialogVisibility,
+    handleEffortPlanDeleteDialogVisibility,
+    handleWorkLogDeleteDialogVisibility,
+    handleWorkingDayDeleteDialogVisibility,
     activateWbsBaseline,
     activeBaseline,
     activeBaselineDetail,

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveWorkloadCapacityStatus } from "@/features/wbs/utils/taskWorkload";
+import {
+  resolveWorkloadCapacityStatus,
+  getWorkloadCapacityColor,
+  getWorkloadCapacityLabel,
+  getWorkloadVarianceColor,
+} from "@/features/wbs/utils/taskWorkload";
 
 /** 容量判定に不要な表示項目を共通化したworkload fixtureを作る。 */
 const buildWorkload = (overrides = {}) => ({
@@ -46,5 +51,25 @@ describe("taskWorkload", () => {
         })
       )
     ).toBe("HOLIDAY_ALLOCATION");
+  });
+});
+
+describe("workload表示", () => {
+  it.each([
+    [30, "error"],
+    [-30, "warning"],
+    [0, "success"],
+  ])("実績-予定の差分%i分を%sで表示する", (variance, color) => {
+    expect(getWorkloadVarianceColor(variance)).toBe(color);
+  });
+
+  it("休日配賦を過配賦より先に判定して表示する", () => {
+    const holiday = { overAllocated: true, availableMinutes: 0, plannedEffortMinutes: 60 };
+    const within = { overAllocated: false, availableMinutes: 480, plannedEffortMinutes: 60 };
+
+    expect(getWorkloadCapacityLabel(holiday)).toBe("休日配賦");
+    expect(getWorkloadCapacityColor(holiday)).toBe("error");
+    expect(getWorkloadCapacityLabel(within)).toBe("配賦内");
+    expect(getWorkloadCapacityColor(within)).toBe("success");
   });
 });

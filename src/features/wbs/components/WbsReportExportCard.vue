@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
-
 import type { WbsReportType } from "@/features/wbs/types/wbs";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { useSyncedDraft } from "@/shared/composables/useSyncedDraft";
 
 /** WBS Excel出力cardへ親画面から渡す共通基準日とdownload状態。 */
 interface Props {
@@ -15,15 +15,9 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   download: [reportType: WbsReportType, statusDate: string];
 }>();
-const formStatusDate = ref(props.statusDate);
 
-/** EVM集計等で親composableの共通基準日が変わった場合に入力欄へ同期する。 */
-watch(
-  () => props.statusDate,
-  (statusDate) => {
-    formStatusDate.value = statusDate;
-  }
-);
+// EVM集計等で親composableの共通基準日が変わった場合に入力欄へ同期する。
+const formStatusDate = useSyncedDraft(() => props.statusDate);
 
 /** 二重送信を避け、選択した期間と入力中の基準日を親composableへ渡す。 */
 const requestDownload = (reportType: WbsReportType): void => {
@@ -34,68 +28,56 @@ const requestDownload = (reportType: WbsReportType): void => {
 </script>
 
 <template>
-  <v-card max-width="1600" class="mx-auto mt-4">
-    <v-card-title class="d-flex align-center flex-wrap ga-2">
-      <v-icon icon="mdi-file-excel-outline" />
-      WBS Excel帳票
-      <v-spacer />
-      <v-chip size="small" variant="outlined">.xlsx</v-chip>
-    </v-card-title>
-    <v-card-text>
-      <p class="text-body-2 text-medium-emphasis mb-4">
-        active baselineのEVM、現在WBS、担当者別工数、警告を週次または月次のExcelへ出力します。
-        基準日はEVM集計と共通です。
-      </p>
+  <UCard class="mx-auto mt-4 max-w-400">
+    <template #header>
+      <div class="flex flex-wrap items-center gap-2">
+        <UIcon name="i-mdi-file-excel-outline" class="size-6" />
+        WBS Excel帳票
+        <UBadge size="sm" variant="outline" class="ms-auto">.xlsx</UBadge>
+      </div>
+    </template>
+    <p class="mb-4 text-sm text-muted">
+      active baselineのEVM、現在WBS、担当者別工数、警告を週次または月次のExcelへ出力します。 基準日はEVM集計と共通です。
+    </p>
 
-      <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-        <div v-for="message in errorMessages" :key="message">
-          {{ message }}
-        </div>
-      </v-alert>
-      <v-alert v-if="successMessage" type="success" class="mb-4">
-        {{ successMessage }}
-      </v-alert>
+    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+      <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+    </StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-      <v-row align="center">
-        <v-col cols="12" sm="5" md="3">
-          <v-text-field
-            v-model="formStatusDate"
-            label="帳票基準日"
-            type="date"
-            :disabled="exportingReportType !== null"
-            hide-details
-          />
-        </v-col>
-        <v-col cols="12" sm="3" md="2">
-          <v-btn
-            color="success"
-            prepend-icon="mdi-calendar-week"
-            :loading="exportingReportType === 'weekly'"
-            :disabled="exportingReportType !== null"
-            block
-            @click="requestDownload('weekly')"
-          >
-            週次Excel
-          </v-btn>
-        </v-col>
-        <v-col cols="12" sm="3" md="2">
-          <v-btn
-            color="success"
-            variant="tonal"
-            prepend-icon="mdi-calendar-month"
-            :loading="exportingReportType === 'monthly'"
-            :disabled="exportingReportType !== null"
-            block
-            @click="requestDownload('monthly')"
-          >
-            月次Excel
-          </v-btn>
-        </v-col>
-      </v-row>
+    <div class="-m-3 flex flex-wrap items-center">
+      <div class="w-full p-3 sm:w-5/12 md:w-1/4">
+        <UFormField label="帳票基準日" class="pb-0">
+          <UInput v-model="formStatusDate" type="date" :disabled="exportingReportType !== null" class="w-full" />
+        </UFormField>
+      </div>
+      <div class="w-full p-3 sm:w-1/4 md:w-1/6">
+        <UButton
+          color="success"
+          icon="i-mdi-calendar-week"
+          :loading="exportingReportType === 'weekly'"
+          :disabled="exportingReportType !== null"
+          block
+          @click="requestDownload('weekly')"
+        >
+          週次Excel
+        </UButton>
+      </div>
+      <div class="w-full p-3 sm:w-1/4 md:w-1/6">
+        <UButton
+          color="success"
+          variant="soft"
+          icon="i-mdi-calendar-month"
+          :loading="exportingReportType === 'monthly'"
+          :disabled="exportingReportType !== null"
+          block
+          @click="requestDownload('monthly')"
+        >
+          月次Excel
+        </UButton>
+      </div>
+    </div>
 
-      <p class="text-caption text-medium-emphasis mt-3 mb-0">
-        週次は基準日を含む月曜日から、月次は基準月の1日から基準日までを対象にします。
-      </p>
-    </v-card-text>
-  </v-card>
+    <p class="mt-3 mb-0 text-xs text-muted">週次は基準日を含む月曜日から、月次は基準月の1日から基準日までを対象にします。</p>
+  </UCard>
 </template>

@@ -2205,4 +2205,22 @@ describe("useWbsPage", () => {
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(mocks.createObjectUrl).not.toHaveBeenCalled();
   });
+
+  it("WBSの表示形式は階層表を既定にする", () => {
+    expect(useWbsPage().activeView.value).toBe("table");
+  });
+
+  it.each([
+    ["handleEffortPlanDeleteDialogVisibility", "effortPlanPendingDelete"],
+    ["handleWorkLogDeleteDialogVisibility", "workLogPendingDelete"],
+    ["handleWorkingDayDeleteDialogVisibility", "workingDayPendingDelete"],
+  ])("%sは削除確認dialogを閉じたときだけ%sを破棄する", (handlerName, pendingName) => {
+    const page = useWbsPage();
+    page[pendingName].value = { id: 1 };
+
+    page[handlerName](true);
+    expect(page[pendingName].value).not.toBeNull();
+    page[handlerName](false);
+    expect(page[pendingName].value).toBeNull();
+  });
 });

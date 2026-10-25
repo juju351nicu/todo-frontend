@@ -9,6 +9,7 @@ import {
   parseWorkingCalendarTargetKey,
   validateWorkingCalendarDateRange,
   validateWorkingDayForm,
+  getWorkingDaySourceColor,
 } from "@/features/wbs/utils/workingCalendar";
 
 const projectOverride = {
@@ -144,5 +145,15 @@ describe("稼働日calendar変換", () => {
       ...form,
       version: 4,
     });
+  });
+});
+
+describe("getWorkingDaySourceColor", () => {
+  it.each([
+    ["MEMBER", "secondary"],
+    ["PROJECT", "primary"],
+    ["DEFAULT", "neutral"],
+  ])("設定元%sを%sで表示する", (source, color) => {
+    expect(getWorkingDaySourceColor(source)).toBe(color);
   });
 });
