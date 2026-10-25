@@ -4,6 +4,7 @@ import {
   ANNOUNCEMENT_TITLE_MAX_LENGTH,
   useAnnouncementManagementPage,
 } from "@/features/notification/composables/useAnnouncementManagementPage";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   canSubmit,
@@ -18,85 +19,80 @@ const {
 </script>
 
 <template>
-  <v-container fluid class="announcement-page pa-4 pa-sm-6">
-    <v-card class="mx-auto" max-width="900" elevation="2">
-      <v-card-title class="d-flex align-center flex-wrap ga-3 px-6 pt-6">
-        <v-avatar color="deep-purple-lighten-5" size="48">
-          <v-icon icon="mdi-bullhorn-outline" color="deep-purple" />
-        </v-avatar>
-        <div>
-          <div class="text-h5">お知らせ配信</div>
-          <div class="text-body-2 text-medium-emphasis mt-1">
-            全利用者のヘッダーにあるベルへお知らせを配信します。
+  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 sm:p-6">
+    <UCard class="mx-auto max-w-225 shadow-elevation-2" :ui="{ body: 'p-6 sm:p-6' }">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-3 px-2 pt-4">
+          <UAvatar icon="i-mdi-bullhorn-outline" size="3xl" class="bg-[#EDE7F6] text-material-deep-purple-500" />
+          <div>
+            <div class="text-2xl font-normal">お知らせ配信</div>
+            <div class="mt-1 text-sm font-normal tracking-normal text-muted">
+              全利用者のヘッダーにあるベルへお知らせを配信します。
+            </div>
           </div>
         </div>
-      </v-card-title>
+      </template>
 
-      <v-card-text class="pa-6">
-        <v-alert type="info" variant="tonal" class="mb-5">
-          Task割当と勤怠差戻しは業務操作に連動して自動通知されます。この画面では管理者からの全体お知らせだけを作成します。
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-5">
-          {{ successMessage }}
-        </v-alert>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-5">
-          <div v-for="errorMessage in errorMessages" :key="errorMessage">
-            {{ errorMessage }}
-          </div>
-        </v-alert>
+      <StatusAlert type="info" variant="soft" class="mb-5">
+        Task割当と勤怠差戻しは業務操作に連動して自動通知されます。この画面では管理者からの全体お知らせだけを作成します。
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-5">
+        {{ successMessage }}
+      </StatusAlert>
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-5">
+        <div v-for="errorMessage in errorMessages" :key="errorMessage">
+          {{ errorMessage }}
+        </div>
+      </StatusAlert>
 
-        <v-form @submit.prevent="submitAnnouncement">
-          <v-text-field
-            v-model="title"
-            label="件名"
-            variant="outlined"
-            :maxlength="ANNOUNCEMENT_TITLE_MAX_LENGTH"
-            counter
-            required
-            :disabled="isSubmitting"
-          />
-          <v-textarea
-            v-model="message"
-            label="本文"
-            variant="outlined"
-            rows="8"
-            auto-grow
-            :maxlength="ANNOUNCEMENT_MESSAGE_MAX_LENGTH"
-            counter
-            required
-            :disabled="isSubmitting"
-          />
-          <v-text-field
-            v-model="expiresAtLocal"
-            label="表示終了日時（任意）"
-            type="datetime-local"
-            variant="outlined"
-            persistent-hint
-            hint="未入力の場合は無期限で表示します。"
-            :disabled="isSubmitting"
-          />
+      <form @submit.prevent="submitAnnouncement">
+        <!-- Vuetifyのcounterと同じく、入力欄の右下に文字数を表示する。 -->
+        <div class="relative">
+          <UFormField label="件名">
+            <UInput
+              v-model="title"
+              variant="outline"
+              :maxlength="ANNOUNCEMENT_TITLE_MAX_LENGTH"
+              required
+              :disabled="isSubmitting"
+              class="w-full"
+            />
+          </UFormField>
+          <span class="absolute end-4 bottom-0.5 text-xs text-muted">{{ title.length }} / {{ ANNOUNCEMENT_TITLE_MAX_LENGTH }}</span>
+        </div>
+        <div class="relative">
+          <UFormField label="本文">
+            <UTextarea
+              v-model="message"
+              variant="outline"
+              :rows="8"
+              autoresize
+              :maxlength="ANNOUNCEMENT_MESSAGE_MAX_LENGTH"
+              required
+              :disabled="isSubmitting"
+              class="w-full"
+            />
+          </UFormField>
+          <span class="absolute end-4 bottom-0.5 text-xs text-muted">{{ message.length }} / {{ ANNOUNCEMENT_MESSAGE_MAX_LENGTH }}</span>
+        </div>
+        <UFormField label="表示終了日時（任意）" help="未入力の場合は無期限で表示します。">
+          <UInput v-model="expiresAtLocal" type="datetime-local" variant="outline" :disabled="isSubmitting" class="w-full" />
+        </UFormField>
 
-          <div class="d-flex justify-end mt-6">
-            <v-btn
-              type="submit"
-              color="deep-purple"
-              size="large"
-              prepend-icon="mdi-send"
-              :disabled="!canSubmit"
-              :loading="isSubmitting"
-            >
-              全利用者へ配信
-            </v-btn>
-          </div>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </v-container>
+        <div class="mt-6 flex justify-end">
+          <UButton
+            type="submit"
+            color="primary"
+            size="lg"
+            icon="i-mdi-send"
+            class="bg-material-deep-purple-500 hover:bg-material-deep-purple-500/92"
+            :disabled="!canSubmit"
+            :loading="isSubmitting"
+          >
+            全利用者へ配信
+          </UButton>
+        </div>
+      </form>
+    </UCard>
+  </div>
 </template>
-
-<style scoped>
-.announcement-page {
-  min-height: calc(100vh - 64px);
-  background: rgb(var(--v-theme-surface-variant));
-}
-</style>

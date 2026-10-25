@@ -6,6 +6,7 @@ import {
   getNotificationAlertIcon,
   getNotificationEventIcon,
 } from "@/features/notification/utils/notification";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   alerts,
@@ -23,152 +24,108 @@ const {
 </script>
 
 <template>
-  <v-menu
-    :model-value="isMenuOpen"
-    :close-on-content-click="false"
-    location="bottom end"
-    @update:model-value="handleMenuVisibility"
+  <UPopover
+    :open="isMenuOpen"
+    :content="{ align: 'end', side: 'bottom', sideOffset: 4 }"
+    :ui="{ content: 'rounded-sm shadow-elevation-8 ring-0' }"
+    @update:open="handleMenuVisibility"
   >
-    <template #activator="{ props }">
-      <v-btn
-        v-bind="props"
-        icon
-        variant="text"
-        aria-label="通知を開く"
-        title="通知"
+    <UButton
+      variant="ghost"
+      square
+      size="lg"
+      class="size-12 text-white hover:bg-white/4"
+      aria-label="通知を開く"
+      title="通知"
+    >
+      <UChip
+        :show="badgeCount > 0"
+        :text="formatNotificationBadge(badgeCount)"
+        size="3xl"
+        :ui="{ base: 'h-5 min-w-5 px-1.5 text-xs font-normal text-white bg-[#FF5252] ring-0' }"
       >
-        <v-badge
-          :model-value="badgeCount > 0"
-          :content="formatNotificationBadge(badgeCount)"
-          color="red-accent-2"
-        >
-          <v-icon icon="mdi-bell-outline" />
-        </v-badge>
-      </v-btn>
-    </template>
+        <UIcon name="i-mdi-bell-outline" class="size-6" />
+      </UChip>
+    </UButton>
 
-    <v-card class="notification-card" elevation="8">
-      <v-card-title class="d-flex align-center py-3">
-        <v-icon icon="mdi-bell-outline" class="mr-2" />
-        通知
-        <v-spacer />
-        <v-btn
-          icon="mdi-refresh"
-          size="small"
-          variant="text"
-          aria-label="通知を再読み込み"
-          :loading="isLoading"
-          @click="loadNotificationCenter"
-        />
-      </v-card-title>
-
-      <v-progress-linear v-if="isLoading" indeterminate color="deep-purple" />
-      <v-alert v-if="errorMessage" type="error" density="compact" class="ma-3">
-        {{ errorMessage }}
-      </v-alert>
-
-      <div v-if="alerts.length > 0">
-        <div class="notification-section-title">
-          未解決の警告
-          <v-chip color="warning" size="x-small" class="ml-2">
-            {{ unresolvedAlertCount }}件
-          </v-chip>
+    <template #content>
+      <div class="max-h-[min(680px,calc(100vh-80px))] w-[min(440px,calc(100vw-24px))] overflow-y-auto bg-default text-default">
+        <div class="flex items-center px-4 py-3 text-xl font-medium">
+          <UIcon name="i-mdi-bell-outline" class="me-2 size-6" />
+          通知
+          <UButton
+            icon="i-mdi-refresh"
+            size="sm"
+            variant="ghost"
+            square
+            class="ms-auto"
+            aria-label="通知を再読み込み"
+            :loading="isLoading"
+            @click="loadNotificationCenter"
+          />
         </div>
-        <v-list lines="three" density="compact">
-          <v-list-item
-            v-for="alertItem in alerts"
-            :key="alertItem.alertKey"
-            class="notification-item notification-alert"
-            @click="navigateToNotification(alertItem.navigationPath)"
-          >
-            <template #prepend>
-              <v-icon
-                :icon="getNotificationAlertIcon(alertItem.alertType)"
-                color="warning"
-              />
-            </template>
-            <v-list-item-title>{{ alertItem.title }}</v-list-item-title>
-            <v-list-item-subtitle>{{ alertItem.message }}</v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </div>
 
-      <div v-if="events.length > 0">
-        <div class="notification-section-title">お知らせ・更新</div>
-        <v-list lines="three" density="compact">
-          <v-list-item
-            v-for="eventItem in events"
-            :key="eventItem.notificationEventId"
-            class="notification-item"
-            :class="{ 'notification-unread': !eventItem.read }"
-            @click="navigateToNotification(eventItem.navigationPath)"
-          >
-            <template #prepend>
-              <v-icon
-                :icon="getNotificationEventIcon(eventItem.eventType)"
-                color="deep-purple"
-              />
-            </template>
-            <v-list-item-title class="d-flex align-center ga-2">
-              <span>{{ eventItem.title }}</span>
-              <span v-if="!eventItem.read" class="unread-dot" aria-label="未読" />
-            </v-list-item-title>
-            <v-list-item-subtitle>{{ eventItem.message }}</v-list-item-subtitle>
-            <v-list-item-subtitle class="notification-meta">
-              {{ eventItem.publisherDisplayName }}・{{
-                formatNotificationOccurredAt(eventItem.occurredAt)
-              }}
-            </v-list-item-subtitle>
-          </v-list-item>
-        </v-list>
-      </div>
+        <UProgress v-if="isLoading" size="xs" color="secondary" class="[--ui-secondary:var(--color-material-deep-purple-500)]" />
+        <StatusAlert v-if="errorMessage" type="error" density="compact" class="m-3 w-auto">
+          {{ errorMessage }}
+        </StatusAlert>
 
-      <v-card-text v-if="!isLoading && !hasItems" class="text-center text-medium-emphasis py-8">
-        <v-icon icon="mdi-bell-check-outline" size="36" class="mb-2" />
-        <div>新しい通知はありません。</div>
-      </v-card-text>
-    </v-card>
-  </v-menu>
+        <div v-if="alerts.length > 0">
+          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-black/60">
+            未解決の警告
+            <UBadge color="warning" size="xs" class="ms-2">{{ unresolvedAlertCount }}件</UBadge>
+          </div>
+          <ul>
+            <li v-for="alertItem in alerts" :key="alertItem.alertKey">
+              <button
+                type="button"
+                class="flex w-full gap-8 border-t border-default bg-warning/7 px-4 py-2 text-start hover:bg-warning/12"
+                @click="navigateToNotification(alertItem.navigationPath)"
+              >
+                <UIcon :name="getNotificationAlertIcon(alertItem.alertType)" class="mt-0.5 size-6 shrink-0 text-warning" />
+                <span class="min-w-0">
+                  <span class="block text-base">{{ alertItem.title }}</span>
+                  <span class="line-clamp-2 text-sm text-black/60">{{ alertItem.message }}</span>
+                </span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="events.length > 0">
+          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-black/60">お知らせ・更新</div>
+          <ul>
+            <li v-for="eventItem in events" :key="eventItem.notificationEventId">
+              <button
+                type="button"
+                class="flex w-full gap-8 border-t border-default px-4 py-2 text-start hover:bg-black/4"
+                :class="{ 'bg-primary/6': !eventItem.read }"
+                @click="navigateToNotification(eventItem.navigationPath)"
+              >
+                <UIcon
+                  :name="getNotificationEventIcon(eventItem.eventType)"
+                  class="mt-0.5 size-6 shrink-0 text-material-deep-purple-500"
+                />
+                <span class="min-w-0">
+                  <span class="flex items-center gap-2 text-base">
+                    <span>{{ eventItem.title }}</span>
+                    <span v-if="!eventItem.read" class="size-2 shrink-0 rounded-full bg-primary" aria-label="未読" />
+                  </span>
+                  <span class="line-clamp-2 text-sm text-black/60">{{ eventItem.message }}</span>
+                  <span class="mt-1 block text-[0.72rem] text-black/60">
+                    {{ eventItem.publisherDisplayName }}・{{ formatNotificationOccurredAt(eventItem.occurredAt) }}
+                  </span>
+                </span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div v-if="!isLoading && !hasItems" class="px-4 py-8 text-center text-sm text-black/60">
+          <UIcon name="i-mdi-bell-check-outline" class="mb-2 size-9" />
+          <div>新しい通知はありません。</div>
+        </div>
+      </div>
+    </template>
+  </UPopover>
 </template>
-
-<style scoped>
-.notification-card {
-  width: min(440px, calc(100vw - 24px));
-  max-height: min(680px, calc(100vh - 80px));
-  overflow-y: auto;
-}
-
-.notification-section-title {
-  padding: 10px 16px 6px;
-  color: rgb(var(--v-theme-on-surface-variant));
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.notification-item {
-  cursor: pointer;
-  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.notification-alert {
-  background: rgba(var(--v-theme-warning), 0.07);
-}
-
-.notification-unread {
-  background: rgba(var(--v-theme-primary), 0.06);
-}
-
-.notification-meta {
-  margin-top: 4px;
-  font-size: 0.72rem;
-}
-
-.unread-dot {
-  width: 8px;
-  height: 8px;
-  flex: 0 0 8px;
-  border-radius: 50%;
-  background: rgb(var(--v-theme-primary));
-}
-</style>
