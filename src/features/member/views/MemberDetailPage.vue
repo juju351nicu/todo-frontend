@@ -1,83 +1,89 @@
 <script setup lang="ts">
-import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
-import { computed } from "vue";
+import { toRef } from "vue";
 
 import MemberUpsertConfirm from "@/features/member/components/MemberUpsertConfirm.vue";
 import { useMemberDetailPage } from "@/features/member/composables/useMemberDetailPage";
+import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const props = defineProps<{
-    id?: number;
+  id?: number;
 }>();
 
-const memberId = computed<number | undefined>(() => props.id);
-
 const {
-    clearForm,
-    closeConfirm,
-    confirmSubmit,
-    isLoading,
-    isShowConfirm,
-    loadError,
-    memberForm,
-    openConfirm,
-    roleItems,
-} = useMemberDetailPage(memberId);
-
+  clearForm,
+  closeConfirm,
+  confirmSubmit,
+  isLoading,
+  isShowConfirm,
+  loadError,
+  memberForm,
+  openConfirm,
+  roleItems,
+} = useMemberDetailPage(toRef(props, "id"));
 </script>
+
 <template>
-    <LoadingIndicator v-if="isLoading" />
-    <MemberUpsertConfirm v-if="isShowConfirm" :member-form="memberForm" @close-modal="closeConfirm"
-        @confirm-submit="confirmSubmit" />
-    <v-container>
-        <v-alert v-if="loadError" type="error" class="mb-4">
-            {{ loadError }}
-        </v-alert>
-        <v-card width="800px">
-            <v-card-title>
-                <span> {{ memberForm.memberId > 0 ? memberForm.memberId : ' (新規)' }}</span>
-            </v-card-title>
-            <v-card-text>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <v-text-field name="lastName" v-model="memberForm.lastName" color="purple darken-2" label="姓"
-                            placeholder="苗字を入力してください。" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12" sm="6">
-                        <v-text-field name="firstName" v-model="memberForm.firstName" color="blue darken-2" label="名"
-                            placeholder="名前を入力してください。" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-text-field name="loginId" v-model="memberForm.loginId" label="ログインID"
-                            placeholder="ログインIDを入力してください。" required>
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-text-field type="password" name="password" v-model="memberForm.password" label="パスワード"
-                            :placeholder="memberForm.memberId > 0 ? '変更する場合だけ入力してください。' : 'パスワードを入力してください。'"
-                            :required="memberForm.memberId === 0">
-                        </v-text-field>
-                    </v-col>
-                    <v-col cols="12">
-                        <v-text-field type="email" name="email" v-model="memberForm.email" label="Email アドレス"
-                            placeholder="emailを入力してください。" required>
-                        </v-text-field>
-                    </v-col>
-                    <template v-if="memberForm.role === 0">
-                        <v-col cols="12">
-                            <v-select name="role" v-model="memberForm.role" :items="roleItems" item-title="roleLabel"
-                                item-value="role" label="管理者権限"></v-select>
-                        </v-col>
-                    </template>
-                </v-row>
-                <v-btn class="mr-4" color="success" type="button" @click="openConfirm">
-                    {{ memberForm.memberId > 0 ? '更新する' : ' 登録する' }}
-                </v-btn>
-                <v-btn @click="clearForm">
-                    クリア
-                </v-btn>
-            </v-card-text>
-        </v-card>
-    </v-container>
+  <LoadingIndicator v-if="isLoading" />
+  <MemberUpsertConfirm
+    v-if="isShowConfirm"
+    :member-form="memberForm"
+    @close-modal="closeConfirm"
+    @confirm-submit="confirmSubmit"
+  />
+  <div class="page-container">
+    <StatusAlert v-if="loadError" type="error" class="mb-4">
+      {{ loadError }}
+    </StatusAlert>
+    <UCard class="w-200">
+      <template #header>
+        <span>{{ memberForm.memberId > 0 ? memberForm.memberId : " (新規)" }}</span>
+      </template>
+      <div class="-m-3 flex flex-wrap">
+        <div class="w-full p-3 sm:w-1/2">
+          <UFormField label="姓">
+            <UInput v-model="memberForm.lastName" name="lastName" placeholder="苗字を入力してください。" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3 sm:w-1/2">
+          <UFormField label="名">
+            <UInput v-model="memberForm.firstName" name="firstName" placeholder="名前を入力してください。" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="ログインID">
+            <UInput v-model="memberForm.loginId" name="loginId" placeholder="ログインIDを入力してください。" required class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="パスワード">
+            <UInput
+              v-model="memberForm.password"
+              type="password"
+              name="password"
+              :placeholder="memberForm.memberId > 0 ? '変更する場合だけ入力してください。' : 'パスワードを入力してください。'"
+              :required="memberForm.memberId === 0"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+        <div class="w-full p-3">
+          <UFormField label="Email アドレス">
+            <UInput v-model="memberForm.email" type="email" name="email" placeholder="emailを入力してください。" required class="w-full" />
+          </UFormField>
+        </div>
+        <div v-if="memberForm.role === 0" class="w-full p-3">
+          <UFormField label="管理者権限">
+            <USelect v-model="memberForm.role" name="role" :items="roleItems" value-key="role" label-key="roleLabel" class="w-full" />
+          </UFormField>
+        </div>
+      </div>
+      <div>
+        <UButton class="me-4" color="success" type="button" @click="openConfirm">
+          {{ memberForm.memberId > 0 ? "更新する" : " 登録する" }}
+        </UButton>
+        <UButton @click="clearForm">クリア</UButton>
+      </div>
+    </UCard>
+  </div>
 </template>
