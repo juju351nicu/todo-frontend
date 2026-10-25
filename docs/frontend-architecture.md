@@ -15,6 +15,7 @@ src/
 ├── app/
 │   ├── layouts/
 │   ├── router/
+│   ├── theme/
 │   └── views/
 ├── features/
 │   ├── auth/
@@ -33,10 +34,20 @@ src/
 └── shared/
     ├── api/
     ├── components/
+    ├── composables/
     ├── constants/
     ├── types/
     └── utils/
 ```
+
+## UI基盤（Nuxt UI）
+
+2026-10にVuetify 3からNuxt UI 4（Vite plugin）とTailwind CSS 4へ移行した。計画と経緯はリポジトリ外の`../nuxt-ui-migration-plan.md`に残している。
+
+- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。移行前のVuetify既定デザインと同じ見た目になるよう、button・badge・card・alert・入力欄・table・modal・tabの寸法と色を上書きする。
+- `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、Vuetify既定色のpalette、elevation影、breakpoint、`page-container`／`app-table`等の共通utility。
+- `src/shared/components`: `StatusAlert`、`AppAlert`、`AppSnackbar`、`AppDataTable`、`SearchField`、`FieldCounter`。
+- `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`）。
 
 ## 各ディレクトリの責務
 
@@ -47,7 +58,7 @@ src/
 - `stores`: 認証利用者など、複数画面や画面遷移をまたいで共有する状態だけを保持する。
 - `api`: 共通HTTPクライアントを利用してBackend APIを呼び、Vueのreactiveな画面状態を保持しない。
 - `types`: 機能固有のRequest / Responseと画面型を置く。
-- `shared`: 複数機能から利用するHTTP、共通エラー、表示部品、定数、純粋関数を置く。
+- `shared`: 複数機能から利用するHTTP、共通エラー、表示部品、画面操作の共通composable、定数、純粋関数を置く。
 
 依存方向は原則として`view -> composable -> store/api -> shared/api`とする。`shared`から個別の`features`へ依存させない。
 
