@@ -14,7 +14,7 @@ export const formatDashboardBusinessDate = (businessDate: string): string => {
       }).format(date);
 };
 
-/** Backendの進捗率をVuetify progressへ渡せる0〜100へ制限する。 */
+/** Backendの進捗率を進捗バー（UProgress）へ渡せる0〜100へ制限する。 */
 export const normalizeDashboardProgress = (progress: number): number => {
   if (!Number.isFinite(progress)) {
     return 0;

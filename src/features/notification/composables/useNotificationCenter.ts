@@ -70,7 +70,7 @@ export const useNotificationCenter = () => {
     }
   };
 
-  /** Vuetify menuの開閉を反映し、開いた時だけ最新状態の取得と既読更新を行う。 */
+  /** 通知popoverの開閉を反映し、開いた時だけ最新状態の取得と既読更新を行う。 */
   const handleMenuVisibility = async (visible: boolean): Promise<void> => {
     isMenuOpen.value = visible;
     if (!visible) {

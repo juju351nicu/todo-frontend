@@ -13,7 +13,6 @@
 /**
  * Nuxt UIの`color` propで使う色名。semantic color 6種に加え、移行前の画面がVuetifyのMaterial色名で
  * 指定していたteal・indigo・amber-darken-3・deep-purpleを同じ名前で使えるようにする。
- * 移行期間中はVuetifyの同名色class（`!important`付き）が優先されるため、Vuetifyと同じ色値の名前に限っている。
  * `vite.config.js`の`theme.colors`と`src/app/theme/main.css`の`@source inline`にも同じ一覧を指定する。
  */
 export const themeColors = [

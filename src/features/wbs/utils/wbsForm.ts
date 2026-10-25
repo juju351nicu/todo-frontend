@@ -136,7 +136,7 @@ export const validateWbsTaskEditForm = (
   ) {
     messages.push("進捗率は0から100まで、小数第2位以内で入力してください。");
   }
-  // Vuetifyのclearableは実行時にnullを渡すため、API境界へ進む前に空文字へ統一する。
+  // 型上は文字列だが、nullが渡った場合も未入力として扱い、API境界へ進む前に空文字へ統一する。
   const actualStartDate = form.actualStartDate ?? "";
   const actualEndDate = form.actualEndDate ?? "";
   const hasActualStartDate = actualStartDate !== "";

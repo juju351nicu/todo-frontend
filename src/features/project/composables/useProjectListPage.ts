@@ -19,7 +19,6 @@ export const useProjectListPage = () => {
   const searchText = ref<string>("");
 
   const filteredProjects = computed(() => {
-    // Vuetifyのclearableはnullを設定するため、検索境界で空文字へ正規化する。
     const keyword = searchText.value.trim().toLocaleLowerCase();
     if (keyword.length === 0) {
       return projects.value;

@@ -1,15 +1,9 @@
 /*
- * アプリ全体のCSS入口。Tailwind CSS、Nuxt UI、移行期間中のVuetifyを読み込む。
- *
- * cascade layerの順序は、Vuetifyの要素reset（button背景の透明化等）がNuxt UIのutility classを
- * 上書きしないよう、Tailwindのbaseより後・componentsより前へVuetifyを置く。
- * Vuetify削除時は`vuetify`layerの宣言とimportを削除する（../nuxt-ui-migration-plan.md「Phase 7」）。
+ * アプリ全体のCSS入口。Tailwind CSSとNuxt UIを読み込み、移行前のVuetify既定デザインに合わせたtokenを定義する。
+ * Component単位の見た目の調整は`src/app/theme/nuxtUiTheme.ts`に集約する。
  */
-@layer theme, base, vuetify, components, utilities;
-
 @import "tailwindcss";
 @import "@nuxt/ui";
-@import "vuetify/styles" layer(vuetify);
 
 /*
  * nuxtUiTheme.tsはsemantic colorごとのclassを配列から生成するため、Tailwindのsource scanでは検出できない。
@@ -188,6 +182,16 @@
 }
 
 @layer base {
+  /* 移行前のVuetifyと同じく、内容が短い画面でもscrollbar領域を確保し、画面遷移でレイアウト幅が揺れないようにする。 */
+  html {
+    overflow-y: scroll;
+  }
+
+  body {
+    color: var(--ui-text);
+    background-color: var(--ui-bg);
+  }
+
   /* Tailwind v4 Preflightはbuttonのcursorをdefaultにするため、Vuetifyと同じpointerへ戻す。 */
   button:not(:disabled),
   [role="button"]:not(:disabled) {

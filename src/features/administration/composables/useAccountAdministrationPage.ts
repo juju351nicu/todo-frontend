@@ -78,7 +78,6 @@ export const useAccountAdministrationPage = () => {
   );
 
   const filteredAccounts = computed(() => {
-    // Vuetifyのclearableはv-modelへnullを設定するため、検索処理の境界で空文字へ正規化する。
     const keyword = searchText.value.trim().toLocaleLowerCase();
     if (keyword.length === 0) {
       return accounts.value;

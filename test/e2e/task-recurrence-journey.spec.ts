@@ -37,7 +37,7 @@ const openRecurrenceDialog = async (
   return dialog;
 };
 
-/** Vuetify selectを表示ラベルで操作し、内部codeや採番IDへ依存させない。 */
+/** selectを表示ラベルで操作し、内部codeや採番IDへ依存させない。 */
 const selectStatus = async (
   page: Page,
   dialog: Locator,

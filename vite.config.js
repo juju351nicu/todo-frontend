@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import ui from "@nuxt/ui/vite";
-import vuetify from "vite-plugin-vuetify";
 import { configDefaults } from "vitest/config";
 import { fileURLToPath, URL } from "node:url";
 
@@ -38,7 +37,6 @@ export default defineConfig({
   },
   plugins: [
     vue(),
-    vuetify(),
     ui({
       ui: nuxtUiTheme,
       theme: {
