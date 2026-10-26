@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -102,6 +102,12 @@ export const useTaskBoardPage = () => {
 
   const board = ref<TaskBoard | null>(null);
   const errorMessages = ref<string[]>([]);
+  /**
+   * Task作成・編集Dialog内に表示する、入力チェックと保存・archiveの失敗理由。
+   * Dialogを開いている間は画面上部の`errorMessages`がDialogの裏に隠れて見えないため、Dialogの操作結果はここへ出す。
+   * 409競合（Dialogを閉じて最新Boardを取り直す）だけは画面上部へ出す。
+   */
+  const editorErrorMessages = ref<string[]>([]);
   const dragSnapshot = ref<TaskBoard | null>(null);
   const form = ref<TaskForm>(createEmptyTaskForm());
   const isArchiveConfirmOpen = ref(false);
@@ -279,6 +285,7 @@ export const useTaskBoardPage = () => {
   /** 選択列を初期値にしてTask新規登録Dialogを開く。 */
   const openTaskCreator = (taskStatusId?: number): void => {
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     if (!canCreateTask.value) {
       errorMessages.value = ["Taskを登録するpermissionがありません。"];
@@ -305,6 +312,7 @@ export const useTaskBoardPage = () => {
     }
     isLoadingTask.value = true;
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     try {
       const task = await ProjectTaskApi.getTask(projectId.value, taskId);
@@ -362,6 +370,7 @@ export const useTaskBoardPage = () => {
     isArchiveConfirmOpen.value = false;
     isEditorOpen.value = false;
     form.value = createEmptyTaskForm();
+    editorErrorMessages.value = [];
   };
 
   /** Taskフォームの必須項目と日付順序をBackend送信前に検証する。 */
@@ -384,7 +393,7 @@ export const useTaskBoardPage = () => {
     if (!isEditing.value && form.value.taskStatusId === null) {
       messages.push("登録先の列を選択してください。");
     }
-    errorMessages.value = messages;
+    editorErrorMessages.value = messages;
     return messages.length === 0;
   };
 
@@ -418,6 +427,7 @@ export const useTaskBoardPage = () => {
     const taskId = form.value.taskId;
     isSaving.value = true;
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     try {
       if (taskId === null) {
@@ -434,7 +444,12 @@ export const useTaskBoardPage = () => {
       }
     } catch (error: unknown) {
       try {
-        await handleApiError(error, DISPLAY_MESSAGES.task.board.saveFailed);
+        await handleApiError(
+          error,
+          DISPLAY_MESSAGES.task.board.saveFailed,
+          DISPLAY_MESSAGES.task.board.operationForbidden,
+          resolveEditorMessageTarget(error)
+        );
         if (error instanceof ProjectTaskApiError && error.status === 409) {
           closeTaskEditorAfterSaving();
           await reloadBoardAfterConflict();
@@ -468,10 +483,11 @@ export const useTaskBoardPage = () => {
       form.value.taskId === null ||
       form.value.version === null
     ) {
-      errorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
+      editorErrorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
       return;
     }
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     isArchiveConfirmOpen.value = true;
   };
@@ -508,7 +524,12 @@ export const useTaskBoardPage = () => {
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
       try {
-        await handleApiError(error, DISPLAY_MESSAGES.task.board.archiveFailed);
+        await handleApiError(
+          error,
+          DISPLAY_MESSAGES.task.board.archiveFailed,
+          DISPLAY_MESSAGES.task.board.operationForbidden,
+          resolveEditorMessageTarget(error)
+        );
         if (error instanceof ProjectTaskApiError && error.status === 409) {
           closeTaskEditorAfterSaving();
           await reloadBoardAfterConflict();
@@ -802,14 +823,34 @@ export const useTaskBoardPage = () => {
     errorMessages.value = [fallbackMessage];
   };
 
-  /** Project・Task APIのstatusと項目エラーを画面動作へ変換する。 */
+  /**
+   * Task作成・編集Dialogの保存・archiveで起きたAPIエラーの表示先を決める。
+   * 409競合はDialogを閉じて最新Boardを取り直すため画面上部へ、それ以外はDialogを開いたまま中へ出す。
+   *
+   * @param error 保存・archiveで発生したエラー
+   * @returns メッセージを書き込むRef
+   */
+  const resolveEditorMessageTarget = (error: unknown): Ref<string[]> =>
+    error instanceof ProjectTaskApiError && error.status === 409
+      ? errorMessages
+      : editorErrorMessages;
+
+  /**
+   * Project・Task APIのstatusと項目エラーを画面動作へ変換する。
+   *
+   * @param error APIの失敗
+   * @param fallbackMessage 契約済みcodeがない場合のmessage
+   * @param forbiddenMessage 403のmessage
+   * @param messageTarget messageの表示先。既定は画面上部、Dialogの操作では`editorErrorMessages`
+   */
   const handleApiError = async (
     error: unknown,
     fallbackMessage: string,
-    forbiddenMessage: string = DISPLAY_MESSAGES.task.board.operationForbidden
+    forbiddenMessage: string = DISPLAY_MESSAGES.task.board.operationForbidden,
+    messageTarget: Ref<string[]> = errorMessages
   ): Promise<void> => {
     if (!isTaskBoardApiError(error)) {
-      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      messageTarget.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -817,14 +858,14 @@ export const useTaskBoardPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [forbiddenMessage];
+      messageTarget.value = [forbiddenMessage];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [DISPLAY_MESSAGES.task.board.resourceNotFound];
+      messageTarget.value = [DISPLAY_MESSAGES.task.board.resourceNotFound];
       return;
     }
-    errorMessages.value = resolveApiErrorMessages(
+    messageTarget.value = resolveApiErrorMessages(
       error.errorResponse,
       TASK_BOARD_ERROR_CODES,
       fallbackMessage
@@ -858,6 +899,7 @@ export const useTaskBoardPage = () => {
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,
+    editorErrorMessages,
     errorMessages,
     form,
     finishTaskDrag,

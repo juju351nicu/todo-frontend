@@ -33,6 +33,7 @@ const {
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
   closeTaskEditor,
+  editorErrorMessages,
   errorMessages,
   finishTaskDrag,
   form,
@@ -233,6 +234,10 @@ onBeforeMount(initialize);
     >
       <template #body>
         <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>
+        <!-- 画面上部のmessageはDialogの裏に隠れるため、入力チェックと保存・archiveの失敗はDialog内に出す。 -->
+        <StatusAlert v-if="editorErrorMessages.length" type="error" class="mb-4">
+          <div v-for="message in editorErrorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
         <form @submit.prevent="saveTask">
           <div class="relative mb-2">
             <UFormField label="タイトル">

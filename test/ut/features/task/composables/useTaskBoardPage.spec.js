@@ -332,7 +332,7 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "タイトルは45文字以内で入力してください。",
       "期限は開始日以降の日付を指定してください。",
     ]);
@@ -357,10 +357,10 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "Taskを保存できませんでした。",
     ]);
-    expect(page.errorMessages.value).not.toContain("内部Task情報を含む文言");
+    expect(page.editorErrorMessages.value).not.toContain("内部Task情報を含む文言");
   });
 
   it("本文なし403はSessionを維持してTask操作権限不足を表示する", async () => {
@@ -373,11 +373,27 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "このTask操作を実行するpermissionがありません。",
     ]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("入力チェックの結果はTask Dialog内に出し、画面上部（Dialogの裏）には出さない", async () => {
+    const page = useTaskBoardPage();
+    await page.initialize();
+    page.openTaskCreator(11);
+    page.form.value.title = "期限の確認";
+    page.form.value.detail = "詳細";
+    page.form.value.dateFrom = "2026-10-30";
+    page.form.value.dateTo = "2026-10-29";
+
+    await page.saveTask();
+
+    expect(page.editorErrorMessages.value).toEqual(["終了日は開始日以降にしてください。"]);
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.isEditorOpen.value).toBe(true);
   });
 
   it("Task保存確定後のBoard再取得失敗を保存失敗として誤表示しない", async () => {
