@@ -35,11 +35,10 @@ describe("Task日別実績工数Form", () => {
     expect(workLog.actualEffortMinutes).toBe(480);
   });
 
-  it("新規Formへローカル当日と指定作業者を設定する", () => {
+  it("新規Formへ業務日（Asia/Tokyo）の当日と指定作業者を設定する", () => {
     vi.useFakeTimers();
-    // 実行環境のローカル時刻で固定する。オフセット付きの日時で固定すると、
-    // CI（UTC）等のタイムゾーンでは別の日付になる。深夜3時はUTCとの日付差が出やすい境界として残す。
-    vi.setSystemTime(new Date(2026, 7, 22, 3, 0, 0));
+    // 2026-08-22 03:00 JST。UTC等の端末ではまだ8/21だが、Backendと同じ東京の業務日を使う。
+    vi.setSystemTime(new Date("2026-08-21T18:00:00Z"));
 
     try {
       expect(buildTaskWorkLogForm(2)).toEqual({

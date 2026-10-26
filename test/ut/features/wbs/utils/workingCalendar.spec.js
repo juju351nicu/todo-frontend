@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  buildDefaultWorkingCalendarDateRange,
   buildWorkingCalendarTargetKey,
   buildWorkingDayCreateRequest,
   buildWorkingDayForm,
@@ -155,5 +156,20 @@ describe("getWorkingDaySourceColor", () => {
     ["DEFAULT", "neutral"],
   ])("設定元%sを%sで表示する", (source, color) => {
     expect(getWorkingDaySourceColor(source)).toBe(color);
+  });
+
+  it("業務日（Asia/Tokyo）の今月の初日と末日をcalendar初期期間にする", () => {
+    vi.useFakeTimers();
+    // 2026-09-01 00:30 JST。UTC等の端末ではまだ8月だが、東京の業務月（9月）を初期期間にする。
+    vi.setSystemTime(new Date("2026-08-31T15:30:00Z"));
+
+    try {
+      expect(buildDefaultWorkingCalendarDateRange()).toEqual({
+        dateFrom: "2026-09-01",
+        dateTo: "2026-09-30",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -28,9 +28,9 @@ describe("Task日別予定工数utility", () => {
     vi.useRealTimers();
   });
 
-  it("ブラウザー現在月の初日と末日をworkload初期期間にする", () => {
+  it("業務日（Asia/Tokyo）の今月の初日と末日をworkload初期期間にする", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 7, 22, 12, 0, 0));
+    vi.setSystemTime(new Date("2026-08-22T03:00:00Z"));
 
     expect(buildDefaultWorkloadDateRange()).toEqual({
       dateFrom: "2026-08-01",
@@ -38,9 +38,10 @@ describe("Task日別予定工数utility", () => {
     });
   });
 
-  it("新規Formは現在日と初期担当者、編集FormはResponseの複製から作る", () => {
+  it("新規Formは業務日の当日と初期担当者、編集FormはResponseの複製から作る", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 7, 22, 12, 0, 0));
+    // 2026-08-22 12:00 JST。どの端末タイムゾーンでも業務日は8/22になる。
+    vi.setSystemTime(new Date("2026-08-22T03:00:00Z"));
 
     expect(buildTaskEffortPlanForm(2)).toEqual({
       planDate: "2026-08-22",
