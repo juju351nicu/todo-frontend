@@ -19,6 +19,7 @@ const authorizationAdminAuthStatePath = resolve(
 const attendanceMonthEmployeeAuthStatePath = resolve(
   "playwright/.auth/attendance-month-browser.json"
 );
+const wbsAuthStatePath = resolve("playwright/.auth/wbs-browser.json");
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -185,6 +186,18 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: authorizationAdminAuthStatePath,
         // 失効対象を含むSession Cookieはtraceへ保存せず、画面とDBの確定値で診断する。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-wbs-journey",
+      testMatch: /wbs-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: wbsAuthStatePath,
+        // 認証済みjourneyはSession Cookieをtraceへ残さず、安全な診断要約だけをartifact化する。
         trace: "off",
         screenshot: "only-on-failure",
       },

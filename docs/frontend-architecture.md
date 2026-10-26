@@ -526,6 +526,12 @@ Stage 10D-3では、公開ログイン、保護route、認証済みDashboard、S
 Firefox／WebKit同時実行も共通setupを含む16件が成功した。毎週日曜02:00（Asia/Tokyo）または手動起動するBackend CIで
 同じsmokeを継続する。認証済みprojectはbrowserにかかわらずtraceを無効化し、Session Cookieをartifactへ保存しない。
 
+2026-10-26にWBS主要journeyを追加した。Backendの`wbs-journey`専用fixture（`wbs-browser`をOWNERとする
+`BROWSER-WBS-E2E`、未完了Task 1件と予定120分・実績150分の完了Task 1件）をglobal setupでprepareする。
+Boardの「WBSを開く」導線からWBSを開き、見積もり精度cardに完了Taskが参考値として表示されること、日別予定（90分）の
+登録後にworkloadが再集計されること、baselineの作成とactive baseline基準のEVM集計を確認する。日別予定保存後の
+workload再取得を外した変異buildではworkloadの確認で失敗することを確かめた。追加後のChromium全journeyは成功した。
+
 ## APIエラー表示契約
 
 Stage 10E-3では、Frontend固有の固定案内を`DISPLAY_MESSAGES`へ集約し、Backend共通エラーから表示文言を取り出す

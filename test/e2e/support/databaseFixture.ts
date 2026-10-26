@@ -11,7 +11,8 @@ export type BrowserRegressionFixture =
   | "dashboard"
   | "my-tasks"
   | "project-template"
-  | "task-recurrence";
+  | "task-recurrence"
+  | "wbs-journey";
 export type BrowserRegressionFixtureAction =
   | "prepare"
   | "cleanup"

@@ -11,6 +11,7 @@ import {
   MY_TASKS_AUTH_STATE_PATH,
   PROJECT_TEMPLATE_AUTH_STATE_PATH,
   TASK_RECURRENCE_AUTH_STATE_PATH,
+  WBS_AUTH_STATE_PATH,
 } from "./support/paths";
 
 const BOARD_LOGIN_ID = process.env.E2E_BOARD_LOGIN_ID ?? "board-browser";
@@ -36,6 +37,7 @@ const ATTENDANCE_MONTH_REVIEWER_LOGIN_ID =
 const ATTENDANCE_MONTH_CLOSER_LOGIN_ID =
   process.env.E2E_ATTENDANCE_MONTH_CLOSER_LOGIN_ID ??
   "attendance-month-closer";
+const WBS_LOGIN_ID = process.env.E2E_WBS_LOGIN_ID ?? "wbs-browser";
 const PASSWORD = process.env.E2E_PASSWORD ?? "password";
 
 /** 専用accountでログインし、Session Cookieを指定されたGit管理外fileへ保存する。 */
@@ -122,4 +124,8 @@ setup("勤怠月次締め担当accountで認証状態を準備する", async ({ 
     ATTENDANCE_MONTH_CLOSER_LOGIN_ID,
     ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH
   );
+});
+
+setup("WBS専用accountで認証状態を準備する", async ({ page }) => {
+  await authenticate(page, WBS_LOGIN_ID, WBS_AUTH_STATE_PATH);
 });
