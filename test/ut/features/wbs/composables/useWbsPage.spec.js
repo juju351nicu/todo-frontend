@@ -131,6 +131,76 @@ describe("useWbsPage", () => {
     ]);
   });
 
+  it("再読込で取得に失敗した場合は全領域の表示データを破棄する", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.loadEarnedValueMetrics("2026-08-30");
+    expect(page.earnedValue.value).not.toBeNull();
+    mocks.projectApi.getProject.mockRejectedValue(new WbsApiError(500, null));
+
+    await page.initialize();
+
+    expect(page.wbs.value).toBeNull();
+    expect(page.rows.value).toEqual([]);
+    expect(page.dependencies.value).toEqual([]);
+    expect(page.workload.value).toBeNull();
+    expect(page.workingCalendar.value).toBeNull();
+    expect(page.baselineList.value).toBeNull();
+    expect(page.activeBaselineDetail.value).toBeNull();
+    expect(page.earnedValue.value).toBeNull();
+    expect(page.errorMessages.value).toEqual(["WBSを取得できませんでした。"]);
+    expect(page.isLoading.value).toBe(false);
+  });
+
+  it("Session失効時は全領域のエラーを消してからLoginへ戻す", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    page.errorMessages.value = ["古い画面エラー"];
+    page.workloadErrorMessages.value = ["古いworkloadエラー"];
+    page.workingCalendarErrorMessages.value = ["古いcalendarエラー"];
+    page.baselineErrorMessages.value = ["古いbaselineエラー"];
+    page.reportExportErrorMessages.value = ["古い帳票エラー"];
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValue(new WbsApiError(401, null));
+
+    await page.loadEarnedValueMetrics("2026-08-30");
+
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.workloadErrorMessages.value).toEqual([]);
+    expect(page.workingCalendarErrorMessages.value).toEqual([]);
+    expect(page.baselineErrorMessages.value).toEqual([]);
+    expect(page.reportExportErrorMessages.value).toEqual([]);
+    expect(page.earnedValueErrorMessages.value).toEqual([]);
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it.each([
+    [{ panel: "work-logs", taskId: "abc" }, false],
+    [{ panel: "work-logs", taskId: "0" }, false],
+    [{ panel: "effort-plans", taskId: "2" }, false],
+    [{ panel: ["work-logs", "x"], taskId: ["2", "3"] }, true],
+  ])("Board導線のquery %o では日別実績Dialogを開くか: %s", async (query, expectedOpen) => {
+    mocks.route.query = query;
+    const page = useWbsPage();
+
+    await page.initialize();
+
+    expect(page.isWorkLogDialogOpen.value).toBe(expectedOpen);
+    // 不正なTask IDでDialogを開こうとして「Taskが見つかりません」を表示しないことも確認する。
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledTimes(expectedOpen ? 1 : 0);
+  });
+
+  it("route paramのProject IDが配列の場合は先頭の値を使う", async () => {
+    mocks.route.params.projectId = ["7", "8"];
+    const page = useWbsPage();
+
+    await page.initialize();
+
+    expect(page.projectId.value).toBe(7);
+    expect(mocks.wbsApi.getWbs).toHaveBeenCalledWith(7);
+  });
+
   it("現在のProject IDを保持してBoardへ戻る", async () => {
     const page = useWbsPage();
 
@@ -140,254 +210,6 @@ describe("useWbsPage", () => {
       name: "TaskBoard",
       params: { projectId: 7 },
     });
-  });
-
-  it("取得済みTaskから編集Dialogと循環しない親候補を開く", async () => {
-    const page = useWbsPage();
-    await page.initialize();
-
-    page.openTaskEditor(2);
-
-    expect(page.isEditorOpen.value).toBe(true);
-    expect(page.editingTask.value).toMatchObject({ taskId: 2, version: 4 });
-    expect(page.parentOptions.value).toEqual([
-      { title: "最上位", value: null },
-      { title: "1 Phase 1", value: 1 },
-    ]);
-  });
-
-  it("TASK_UPDATEがなければ編集Dialogを開かない", async () => {
-    mocks.permissions.delete("TASK_UPDATE");
-    const page = useWbsPage();
-    await page.initialize();
-
-    page.openTaskEditor(2);
-
-    expect(page.isEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "WBSを更新するpermissionがありません。",
-    ]);
-  });
-
-  it("取得時点のversion付きRequestを送りResponse全体でWBSを更新する", async () => {
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(mocks.wbsApi.updateWbsTask).toHaveBeenCalledWith(7, 2, {
-      parentTaskId: 1,
-      taskType: "TASK",
-      wbsCode: "1.1",
-      plannedStartDate: "2026-08-22",
-      plannedEndDate: "2026-08-24",
-      plannedEffortMinutes: 480,
-      progressPercent: 50,
-      actualStartDate: "2026-08-22",
-      actualEndDate: "2026-08-24",
-      version: 4,
-    });
-    expect(page.wbs.value).toEqual(updatedWbs);
-    expect(page.isEditorOpen.value).toBe(false);
-    expect(page.successMessage.value).toBe("WBS Taskを更新しました。");
-  });
-
-  it("入力不正では更新APIを呼ばずDialogへ理由を表示する", async () => {
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(
-      buildEditForm({
-        plannedStartDate: "2026-08-24",
-        plannedEndDate: "2026-08-22",
-      })
-    );
-
-    expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
-    expect(page.editorErrorMessages.value).toEqual([
-      "予定終了日は予定開始日以降にしてください。",
-    ]);
-    expect(page.isEditorOpen.value).toBe(true);
-  });
-
-  it("実績終了日だけの入力では更新APIを呼ばない", async () => {
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(
-      buildEditForm({ actualStartDate: "", actualEndDate: "2026-08-24" })
-    );
-
-    expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
-    expect(page.editorErrorMessages.value).toEqual([
-      "実績終了日を入力する場合は実績開始日も入力してください。",
-    ]);
-    expect(page.isEditorOpen.value).toBe(true);
-  });
-
-  it("400の項目エラーをDialogへ表示して入力を保持する", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(
-      new WbsApiError(400, {
-        fieldErrors: [
-          {
-            errorCode: "INVALID_WBS_HIERARCHY",
-            field: "parentTaskId",
-            message: "親Taskが不正です。",
-          },
-        ],
-      })
-    );
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.editorErrorMessages.value).toEqual(["親Taskが不正です。"]);
-    expect(page.isEditorOpen.value).toBe(true);
-  });
-
-  it("契約済み400の複数messageをBackend順で表示する", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(
-      new WbsApiError(400, {
-        fieldErrors: [
-          {
-            errorCode: "INVALID_REQUEST_BODY",
-            field: "plannedEndDate",
-            message: " 予定終了日を確認してください。 ",
-          },
-          {
-            errorCode: "INVALID_WBS_ACTUAL_PERIOD",
-            field: "actualEndDate",
-            message: "実績期間を確認してください。",
-          },
-        ],
-      })
-    );
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.editorErrorMessages.value).toEqual([
-      "予定終了日を確認してください。",
-      "実績期間を確認してください。",
-    ]);
-    expect(page.isEditorOpen.value).toBe(true);
-  });
-
-  it("未知codeのBackend messageを表示せずWBS更新fallbackへ閉じる", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(
-      new WbsApiError(400, {
-        fieldErrors: [
-          {
-            errorCode: "UNKNOWN_WBS_ERROR",
-            field: "request",
-            message: "内部情報を含み得る未契約文言",
-          },
-        ],
-      })
-    );
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.editorErrorMessages.value).toEqual([
-      "WBS Taskを更新できませんでした。",
-    ]);
-    expect(page.isEditorOpen.value).toBe(true);
-  });
-
-  it("409競合ではDialogを閉じて最新WBSを再取得する", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(
-      new WbsApiError(409, {
-        fieldErrors: [
-          {
-            errorCode: "TASK_VERSION_CONFLICT",
-            field: "version",
-            message: "他の操作で更新されています。",
-          },
-        ],
-      })
-    );
-    mocks.wbsApi.getWbs
-      .mockResolvedValueOnce(structuredClone(wbs))
-      .mockResolvedValueOnce(structuredClone(updatedWbs));
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.isEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "他の操作で更新されています。",
-    ]);
-    expect(mocks.wbsApi.getWbs).toHaveBeenCalledTimes(2);
-    expect(page.wbs.value).toEqual(updatedWbs);
-  });
-
-  it("WBS更新409後の再取得で401になった場合は競合案内を残さない", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(
-      new WbsApiError(409, {
-        fieldErrors: [
-          {
-            errorCode: "TASK_VERSION_CONFLICT",
-            field: "version",
-            message: "他の操作で更新されています。",
-          },
-        ],
-      })
-    );
-    mocks.wbsApi.getWbs
-      .mockResolvedValueOnce(structuredClone(wbs))
-      .mockRejectedValueOnce(new WbsApiError(401, null));
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.errorMessages.value).toEqual([]);
-    expect(page.isEditorOpen.value).toBe(false);
-    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
-    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
-  });
-
-  it("保存中の再実行では更新APIを二重送信しない", async () => {
-    let resolveRequest;
-    mocks.wbsApi.updateWbsTask.mockImplementation(
-      () => new Promise((resolve) => (resolveRequest = resolve))
-    );
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    const firstSave = page.saveWbsTask(buildEditForm());
-    const secondSave = page.saveWbsTask(buildEditForm());
-
-    expect(mocks.wbsApi.updateWbsTask).toHaveBeenCalledOnce();
-    resolveRequest(updatedWbs);
-    await Promise.all([firstSave, secondSave]);
-  });
-
-  it("更新APIの401は古いDialogとSessionを破棄してログインへ戻す", async () => {
-    mocks.wbsApi.updateWbsTask.mockRejectedValue(new WbsApiError(401, null));
-    const page = useWbsPage();
-    await page.initialize();
-    page.openTaskEditor(2);
-
-    await page.saveWbsTask(buildEditForm());
-
-    expect(page.isEditorOpen.value).toBe(false);
-    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
-    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
   it("WBSの表示形式は階層表を既定にする", () => {
@@ -406,5 +228,59 @@ describe("useWbsPage", () => {
     expect(page[pendingName].value).not.toBeNull();
     page[handlerName](false);
     expect(page[pendingName].value).toBeNull();
+  });
+
+  it("分割前と同じ名前の値・関数をすべて返す（WbsPage.vueとの契約）", () => {
+    // 領域別composableへ分割する前（2026-10-26時点）のuseWbsPageが返していた全項目。
+    const keysBeforeSplit = [
+      "activateWbsBaseline", "activatingBaselineId", "activeBaseline",
+      "activeBaselineDetail", "activeView", "baselineChangedRows", "baselineComparisonRows",
+      "baselineEditorErrorMessages", "baselineErrorMessages", "baselineList",
+      "baselineSuccessMessage", "canEditSelectedEffortPlanTask",
+      "canEditSelectedWorkLogTask", "canEditSelectedWorkingCalendarTarget", "canEditWbs",
+      "canManageAnyEffortPlan", "canManageAnyWorkLog", "canManageBaselines",
+      "cancelDependencyDelete", "cancelEffortPlanDelete", "cancelEffortPlanEdit",
+      "cancelWorkLogDelete", "cancelWorkLogEdit", "cancelWorkingDayDelete",
+      "closeBaselineCreateDialog", "closeDependencyEditor", "closeEffortPlanDialog",
+      "closeTaskEditor", "closeWorkLogDialog", "closeWorkingDayEditor",
+      "confirmDependencyDelete", "confirmEffortPlanDelete", "confirmWorkLogDelete",
+      "confirmWorkingDayDelete", "currentAccountId", "dependencies",
+      "dependencyEditorErrorMessages", "dependencyPendingDelete",
+      "dependencyPendingDeleteRow", "dependencyRows", "dependencyTaskOptions",
+      "downloadWbsReport", "earnedValue", "earnedValueErrorMessages",
+      "earnedValueStatusDate", "editEffortPlan", "editWorkLog", "editingEffortPlan",
+      "editingTask", "editingWorkLog", "editorErrorMessages", "effortPlanAssigneeOptions",
+      "effortPlanEditorErrorMessages", "effortPlanList", "effortPlanPendingDelete",
+      "effortPlanSuccessMessage", "effortPlanTask", "errorMessages", "exportingReportType",
+      "handleDependencyDeleteDialogVisibility", "handleEffortPlanDeleteDialogVisibility",
+      "handleWorkLogDeleteDialogVisibility", "handleWorkingDayDeleteDialogVisibility",
+      "initialize", "isBaselineCreateDialogOpen", "isBaselineMutating",
+      "isCreatingBaseline", "isDeletingDependency", "isDeletingEffortPlan",
+      "isDeletingWorkLog", "isDeletingWorkingDay", "isDependencyEditorOpen",
+      "isDependencyMutating", "isEditorOpen", "isEffortPlanDialogOpen",
+      "isEffortPlanMutating", "isLoading", "isLoadingEarnedValue", "isLoadingEffortPlans",
+      "isLoadingWorkLogs", "isLoadingWorkingCalendar", "isLoadingWorkload", "isSaving",
+      "isSavingDependency", "isSavingEffortPlan", "isSavingWorkLog", "isSavingWorkingDay",
+      "isWorkLogDialogOpen", "isWorkingCalendarMutating", "isWorkingDayEditorOpen",
+      "loadEarnedValueMetrics", "loadTaskWorkload", "loadWorkingCalendar", "milestoneCount",
+      "openBaselineCreateDialog", "openBoard", "openDependencyEditor",
+      "openEffortPlanDialog", "openTaskEditor", "openWorkLogDialog", "openWorkingDayEditor",
+      "parentOptions", "projectId", "reportExportErrorMessages",
+      "reportExportSuccessMessage", "requestDependencyDelete", "requestEffortPlanDelete",
+      "requestWorkLogDelete", "requestWorkingDayDelete", "rows", "saveDependency",
+      "saveEffortPlan", "saveWbsBaseline", "saveWbsTask", "saveWorkLog", "saveWorkingDay",
+      "selectedWorkingCalendarTarget", "successMessage", "summaryCount", "taskCount", "wbs",
+      "workLogEditorErrorMessages", "workLogList", "workLogPendingDelete",
+      "workLogSuccessMessage", "workLogTask", "workLogWorkerOptions", "workingCalendar",
+      "workingCalendarDateRange", "workingCalendarEditorErrorMessages",
+      "workingCalendarErrorMessages", "workingCalendarSelectedTargetKey",
+      "workingCalendarSuccessMessage", "workingCalendarTargetOptions",
+      "workingDayEditingDay", "workingDayPendingDelete", "workload", "workloadDateRange",
+      "workloadErrorMessages",
+    ];
+
+    const page = useWbsPage();
+
+    expect(keysBeforeSplit.filter((key) => !(key in page))).toEqual([]);
   });
 });
