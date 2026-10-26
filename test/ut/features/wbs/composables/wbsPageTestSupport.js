@@ -1,4 +1,7 @@
 import { vi } from "vitest";
+import { computed, ref } from "vue";
+
+import { buildWbsTreeRows } from "@/features/wbs/utils/wbsTree";
 
 /**
  * WBS画面composableのspecで共有するmockとfixture。
@@ -538,4 +541,27 @@ export const resetWbsPageMocks = () => {
       remove: mocks.removeDownloadAnchor,
     })),
   });
+};
+
+/**
+ * 領域別composableを`useWbsPage`を介さず検証するためのWbsPageContextを作る。
+ * 既定はProject 7・通常member（更新可、Project管理不可）で、`handleUnauthorized`はmockとして呼出しだけを記録する。
+ *
+ * @param {Record<string, unknown>} overrides 差し替えるcontext項目
+ */
+export const buildWbsPageContext = (overrides = {}) => {
+  const wbsRef = ref(structuredClone(wbs));
+  return {
+    projectId: computed(() => 7),
+    project: ref(structuredClone(project)),
+    wbs: wbsRef,
+    rows: computed(() => buildWbsTreeRows(wbsRef.value?.tasks ?? [])),
+    canEditWbs: computed(() => true),
+    canManageProject: computed(() => false),
+    errorMessages: ref([]),
+    successMessage: ref(""),
+    handleUnauthorized: vi.fn(async () => {}),
+    isSessionInvalidated: vi.fn(() => false),
+    ...overrides,
+  };
 };

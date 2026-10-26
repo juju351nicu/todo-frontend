@@ -928,37 +928,6 @@ describe("useWbsPage", () => {
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
-  it("初期表示で当月workloadを取得して予定・実績・差分を保持する", async () => {
-    const page = useWbsPage();
-
-    await page.initialize();
-
-    expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(
-      7,
-      page.workloadDateRange.value.dateFrom,
-      page.workloadDateRange.value.dateTo
-    );
-    expect(page.workload.value).toEqual(workloadResponse);
-    expect(page.workloadErrorMessages.value).toEqual([]);
-  });
-
-  it("不正なworkload期間では再取得せず全検証理由を表示する", async () => {
-    const page = useWbsPage();
-    await page.initialize();
-    mocks.wbsApi.getTaskWorkload.mockClear();
-
-    await page.loadTaskWorkload({
-      dateFrom: "2026-08-31",
-      dateTo: "2026-08-01",
-    });
-
-    expect(mocks.wbsApi.getTaskWorkload).not.toHaveBeenCalled();
-    expect(page.workloadErrorMessages.value).toEqual([
-      "集計終了日は集計開始日以降にしてください。",
-    ]);
-    expect(page.workload.value).toEqual(workloadResponse);
-  });
-
   it("通常Taskを選ぶと日別予定一覧と現在利用者の予定担当者候補を取得する", async () => {
     const page = useWbsPage();
     await page.initialize();

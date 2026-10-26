@@ -6,6 +6,8 @@ import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
+import { useWbsWorkload } from "@/features/wbs/composables/useWbsWorkload";
+import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type {
   EarnedValueResponse,
@@ -23,8 +25,6 @@ import type {
   TaskWorkLogForm,
   TaskWorkLogListResponse,
   TaskWorkLogWorkerOption,
-  TaskWorkloadDateRange,
-  TaskWorkloadResponse,
   WorkingCalendarDateRange,
   WorkingCalendarDay,
   WorkingCalendarResponse,
@@ -44,17 +44,15 @@ import type {
   WbsViewMode,
 } from "@/features/wbs/types/wbs";
 import {
-  WBS_ERROR_CODES,
+  resolveWbsErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { getToday } from "@/features/wbs/utils/effort";
 import {
-  buildDefaultWorkloadDateRange,
   buildTaskEffortPlanCreateRequest,
   buildTaskEffortPlanUpdateRequest,
   validateTaskEffortPlanForm,
-  validateTaskWorkloadDateRange,
 } from "@/features/wbs/utils/taskEffortPlan";
 import {
   buildTaskWorkLogCreateRequest,
@@ -83,7 +81,6 @@ import {
   validateWorkingDayForm,
 } from "@/features/wbs/utils/workingCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * WBS画面の読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、競合回復、認証エラーとBoard遷移を管理する。
@@ -125,7 +122,6 @@ export const useWbsPage = () => {
   const isBaselineCreateDialogOpen = ref(false);
   const isCreatingBaseline = ref(false);
   const isLoadingEffortPlans = ref(false);
-  const isLoadingWorkload = ref(false);
   const isSavingDependency = ref(false);
   const isSavingEffortPlan = ref(false);
   const isSaving = ref(false);
@@ -146,11 +142,6 @@ export const useWbsPage = () => {
   const workLogPendingDelete = ref<TaskWorkLog | null>(null);
   const workLogSuccessMessage = ref("");
   const workLogTask = ref<WbsTask | null>(null);
-  const workload = ref<TaskWorkloadResponse | null>(null);
-  const workloadDateRange = ref<TaskWorkloadDateRange>(
-    buildDefaultWorkloadDateRange()
-  );
-  const workloadErrorMessages = ref<string[]>([]);
   const workingCalendar = ref<WorkingCalendarResponse | null>(null);
   const workingCalendarDateRange = ref<WorkingCalendarDateRange>(
     buildDefaultWorkingCalendarDateRange()
@@ -235,6 +226,33 @@ export const useWbsPage = () => {
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER"
   );
+
+  const context: WbsPageContext = {
+    projectId,
+    project,
+    wbs,
+    rows,
+    canEditWbs,
+    canManageProject,
+    errorMessages,
+    successMessage,
+    handleUnauthorized,
+    isSessionInvalidated: () => sessionInvalidated,
+  };
+  const {
+    isLoadingWorkload,
+    loadTaskWorkload,
+    reloadTaskWorkload,
+    workload,
+    workloadDateRange,
+    workloadErrorMessages,
+  } = useWbsWorkload(context, {
+    closeDialogsOnUnauthorized: () => {
+      closeEffortPlanDialogAfterOperation();
+      closeWorkLogDialogAfterOperation();
+    },
+  });
+
   const canManageBaselines = computed(
     () =>
       canEditWbs.value &&
@@ -465,7 +483,7 @@ export const useWbsPage = () => {
     try {
       await loadPageSnapshot();
       await Promise.all([
-        loadTaskWorkload(workloadDateRange.value),
+        reloadTaskWorkload(),
         loadWorkingCalendar(
           workingCalendarDateRange.value,
           workingCalendarSelectedTargetKey.value
@@ -998,61 +1016,6 @@ export const useWbsPage = () => {
     }
   };
 
-  /** 指定期間のProject workloadを検証・取得し、予定・実績比較の確定表示へ反映する。 */
-  const loadTaskWorkload = async (
-    dateRange: TaskWorkloadDateRange
-  ): Promise<void> => {
-    if (projectId.value === null || isLoadingWorkload.value) {
-      return;
-    }
-    const validationMessages = validateTaskWorkloadDateRange(dateRange);
-    if (validationMessages.length > 0) {
-      workloadErrorMessages.value = validationMessages;
-      return;
-    }
-
-    isLoadingWorkload.value = true;
-    workloadErrorMessages.value = [];
-    workloadDateRange.value = { ...dateRange };
-    try {
-      workload.value = await WbsApi.getTaskWorkload(
-        projectId.value,
-        dateRange.dateFrom,
-        dateRange.dateTo
-      );
-    } catch (error: unknown) {
-      await handleWorkloadReadError(error);
-    } finally {
-      isLoadingWorkload.value = false;
-    }
-  };
-
-  /** workload参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
-  const handleWorkloadReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      closeEffortPlanDialogAfterOperation();
-      closeWorkLogDialogAfterOperation();
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.workload.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    workloadErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workload.loadFailed
-    );
-  };
-
   /** 指定期間・対象の稼働日calendarを検証・取得し、既定値を含む確定表示へ反映する。 */
   const loadWorkingCalendar = async (
     dateRange: WorkingCalendarDateRange,
@@ -1446,7 +1409,7 @@ export const useWbsPage = () => {
   const reloadWorkingCalendarAndWorkload = async (): Promise<void> => {
     await Promise.all([
       reloadWorkingCalendar(),
-      loadTaskWorkload(workloadDateRange.value),
+      reloadTaskWorkload(),
     ]);
   };
 
@@ -1653,7 +1616,7 @@ export const useWbsPage = () => {
         currentEffortPlan === null
           ? "Task日別予定を登録しました。"
           : "Task日別予定を更新しました。";
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (error: unknown) {
       await handleEffortPlanMutationError(error);
     } finally {
@@ -1704,7 +1667,7 @@ export const useWbsPage = () => {
   const reloadEffortPlansAfterConflict = async (): Promise<void> => {
     try {
       await loadSelectedTaskEffortPlans();
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (_error: unknown) {
       effortPlanEditorErrorMessages.value.push(
         DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed
@@ -1793,7 +1756,7 @@ export const useWbsPage = () => {
           : editingEffortPlan.value;
       effortPlanPendingDelete.value = null;
       effortPlanSuccessMessage.value = "Task日別予定を削除しました。";
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (error: unknown) {
       await handleEffortPlanDeleteError(error);
     } finally {
@@ -2035,7 +1998,7 @@ export const useWbsPage = () => {
         currentWorkLog === null
           ? "Task日別実績を登録しました。"
           : "Task日別実績を更新しました。";
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (error: unknown) {
       await handleWorkLogMutationError(error);
     } finally {
@@ -2091,7 +2054,7 @@ export const useWbsPage = () => {
         projectId.value,
         task.taskId
       );
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof WbsApiError &&
@@ -2184,7 +2147,7 @@ export const useWbsPage = () => {
           : editingWorkLog.value;
       workLogPendingDelete.value = null;
       workLogSuccessMessage.value = "Task日別実績を削除しました。";
-      await loadTaskWorkload(workloadDateRange.value);
+      await reloadTaskWorkload();
     } catch (error: unknown) {
       await handleWorkLogDeleteError(error);
     } finally {
@@ -2294,17 +2257,6 @@ export const useWbsPage = () => {
       errorMessages.value.push(DISPLAY_MESSAGES.wbs.reloadFailed);
     }
   };
-
-  /** 契約済みWBS codeのBackend messageだけを表示し、未知本文を固定案内へ閉じる。 */
-  const resolveWbsErrorMessages = (
-    error: WbsApiError,
-    fallbackMessage: string
-  ): string[] =>
-    resolveApiErrorMessages(
-      error.errorResponse,
-      WBS_ERROR_CODES,
-      fallbackMessage
-    );
 
   /** WBS更新APIのstatusと項目エラーを、DialogまたはSession動作へ変換する。 */
   const handleUpdateApiError = async (error: unknown): Promise<void> => {
