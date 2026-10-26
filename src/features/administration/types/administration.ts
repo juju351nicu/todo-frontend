@@ -1,5 +1,4 @@
-/** Backendが返すアカウントの利用状態コード。 */
-export type AccountStatus = "ACTIVE" | "LOCKED" | "DISABLED";
+import type { AccountStatus } from "@/shared/types/accountStatus";
 
 /**
  * 権限管理APIが返すアカウントと現在ロールの情報。

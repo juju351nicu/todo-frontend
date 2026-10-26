@@ -5,7 +5,7 @@ import { useAccountAdministrationPage } from "@/features/administration/composab
 import {
   getAccountStatusColor,
   getAccountStatusLabel,
-} from "@/features/administration/utils/accountStatus";
+} from "@/shared/utils/accountStatus";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";

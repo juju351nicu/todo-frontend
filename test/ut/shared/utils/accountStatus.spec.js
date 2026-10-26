@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getAccountStatusColor,
   getAccountStatusLabel,
-} from "@/features/administration/utils/accountStatus";
+} from "@/shared/utils/accountStatus";
 
 describe("Account status display", () => {
   it.each([
