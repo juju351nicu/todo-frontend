@@ -10,7 +10,10 @@ import type {
   TaskEffortPlanListResponse,
   WbsTask,
 } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import {
+  resolveWbsErrorMessages,
+  WBS_RECOVERY_PRIORITY_STATUSES,
+} from "@/features/wbs/utils/apiErrors";
 import {
   buildTaskEffortPlanCreateRequest,
   buildTaskEffortPlanUpdateRequest,
@@ -342,12 +345,33 @@ export const useTaskEffortPlans = (
     );
   };
 
-  /** 競合後に日別予定とworkloadを再取得し、古いversion・配賦集計を残さない。 */
+  /**
+   * 競合後に日別予定とworkloadを再取得し、古いversion・配賦集計を残さない。
+   * 一覧の再取得に失敗した場合は、表示中の競合理由を残して再読込案内を追加し、workloadは再取得しない。
+   */
   const reloadEffortPlansAfterConflict = async (): Promise<void> => {
+    const task = effortPlanTask.value;
+    const projectId = context.projectId.value;
+    if (task === null || projectId === null) {
+      return;
+    }
+    // 例外を内部で案内へ変換するloadSelectedTaskEffortPlansは使わない。競合理由を上書きせず、
+    // 401等の後にworkloadを再取得しないよう、再取得の失敗をここで判定する。
     try {
-      await loadSelectedTaskEffortPlans();
+      effortPlanList.value = await WbsApi.getTaskEffortPlans(
+        projectId,
+        task.taskId
+      );
       await options.reloadWorkload();
-    } catch (_error: unknown) {
+    } catch (refreshError: unknown) {
+      if (
+        refreshError instanceof WbsApiError &&
+        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
+      ) {
+        // 再取得時点の認証・認可・公開範囲を操作時点の競合理由より優先する。
+        await handleEffortPlanReadError(refreshError);
+        return;
+      }
       effortPlanEditorErrorMessages.value.push(
         DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed
       );

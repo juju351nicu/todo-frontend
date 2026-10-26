@@ -375,6 +375,36 @@ describe("useTaskEffortPlans", () => {
       expect(state.effortPlanSuccessMessage.value).toBe("Task日別予定を更新しました。");
     });
 
+    it("競合後の一覧再取得が500なら競合理由を残して再読込案内を追加する", async () => {
+      mocks.wbsApi.updateTaskEffortPlan.mockRejectedValue(new WbsApiError(409, null));
+      const { options, state } = await openEffortPlans();
+      state.editEffortPlan(51);
+      mocks.wbsApi.getTaskEffortPlans.mockRejectedValue(new WbsApiError(500, null));
+
+      await state.saveEffortPlan({ ...form, planDate: "2026-08-22" });
+
+      expect(state.editingEffortPlan.value).toBeNull();
+      expect(state.effortPlanEditorErrorMessages.value).toEqual([
+        DISPLAY_MESSAGES.wbs.effortPlan.conflict,
+        DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed,
+      ]);
+      expect(options.reloadWorkload).not.toHaveBeenCalled();
+    });
+
+    it("競合後の一覧再取得が401ならDialogを閉じ、workloadを再取得せずSession失効処理を呼ぶ", async () => {
+      mocks.wbsApi.deleteTaskEffortPlan.mockRejectedValue(new WbsApiError(409, null));
+      const { context, options, state } = await openEffortPlans();
+      state.requestEffortPlanDelete(51);
+      mocks.wbsApi.getTaskEffortPlans.mockRejectedValue(new WbsApiError(401, null));
+
+      await state.confirmEffortPlanDelete();
+
+      expect(state.isEffortPlanDialogOpen.value).toBe(false);
+      expect(state.effortPlanEditorErrorMessages.value).toEqual([]);
+      expect(context.handleUnauthorized).toHaveBeenCalledOnce();
+      expect(options.reloadWorkload).not.toHaveBeenCalled();
+    });
+
     it("削除確認dialogを閉じたときだけ確認対象を破棄する", async () => {
       const { state } = await openEffortPlans();
       state.requestEffortPlanDelete(51);
