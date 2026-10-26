@@ -12,6 +12,7 @@ import type {
 } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -146,34 +147,18 @@ export const useTaskEffortPlans = (
     }
   };
 
-  /** 日別予定参照APIのstatusをDialog案内またはSession動作へ変換する。 */
+  /** 日別予定参照APIの失敗をDialogの案内またはSession失効処理へ変換する。 */
   const handleEffortPlanReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.effortPlan.readForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.effortPlan.readNotFound,
+      failed: DISPLAY_MESSAGES.wbs.effortPlan.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.effortPlan.readForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.effortPlan.readNotFound,
-      ];
-      return;
-    }
-    effortPlanEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.effortPlan.loadFailed
-    );
+    effortPlanEditorErrorMessages.value = result.messages;
   };
 
   /** 読込・保存・削除中でなければ日別予定Dialogと一時状態を破棄する。 */

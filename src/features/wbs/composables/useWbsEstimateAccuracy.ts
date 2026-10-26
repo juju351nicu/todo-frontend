@@ -1,9 +1,9 @@
 import { ref } from "vue";
 
-import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
+import WbsApi from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { EstimateAccuracyResponse } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 /**
@@ -39,34 +39,18 @@ export const useWbsEstimateAccuracy = (context: WbsPageContext) => {
     }
   };
 
-  /** 見積もり精度APIのstatusをcardの案内またはSession動作へ変換する。 */
-  const handleEstimateAccuracyReadError = async (
-    error: unknown
-  ): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      estimateAccuracyErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
+  /** 見積もり精度APIの失敗をcardの案内またはSession失効処理へ変換する。 */
+  const handleEstimateAccuracyReadError = async (error: unknown): Promise<void> => {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.estimateAccuracy.forbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      failed: DISPLAY_MESSAGES.wbs.estimateAccuracy.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      estimateAccuracyErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.estimateAccuracy.forbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      estimateAccuracyErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    estimateAccuracyErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.estimateAccuracy.loadFailed
-    );
+    estimateAccuracyErrorMessages.value = result.messages;
   };
 
   return {

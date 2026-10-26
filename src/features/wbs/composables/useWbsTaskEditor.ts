@@ -5,6 +5,7 @@ import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { WbsTask, WbsTaskEditForm } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -165,28 +166,18 @@ export const useWbsTaskEditor = (
     }
   };
 
-  /** WBS更新APIのstatusと項目エラーを、DialogまたはSession動作へ変換する。 */
+  /** WBS更新APIの失敗（409以外）を、Dialogの案内またはSession失効処理へ変換する。409は呼出側で競合回復する。 */
   const handleUpdateApiError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.updateForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.taskNotFound,
+      failed: DISPLAY_MESSAGES.wbs.updateFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.updateForbidden];
-      return;
-    }
-    if (error.status === 404) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.taskNotFound];
-      return;
-    }
-    editorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.updateFailed
-    );
+    editorErrorMessages.value = result.messages;
   };
 
   return {

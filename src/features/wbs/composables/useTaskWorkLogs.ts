@@ -12,6 +12,7 @@ import type {
 } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -142,34 +143,18 @@ export const useTaskWorkLogs = (
     }
   };
 
-  /** 日別実績参照APIのstatusをDialog案内またはSession動作へ変換する。 */
+  /** 日別実績参照APIの失敗をDialogの案内またはSession失効処理へ変換する。 */
   const handleWorkLogReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.workLog.readForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.workLog.readNotFound,
+      failed: DISPLAY_MESSAGES.wbs.workLog.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readNotFound,
-      ];
-      return;
-    }
-    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workLog.loadFailed
-    );
+    workLogEditorErrorMessages.value = result.messages;
   };
 
   /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄する。 */

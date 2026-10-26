@@ -13,6 +13,7 @@ import type {
 } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -177,34 +178,18 @@ export const useWbsWorkingCalendar = (
       workingCalendarSelectedTargetKey.value
     );
 
-  /** calendar参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
-  const handleWorkingCalendarReadError = async (
-    error: unknown
-  ): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workingCalendarErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
+  /** calendar参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。 */
+  const handleWorkingCalendarReadError = async (error: unknown): Promise<void> => {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.workingCalendar.readForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      failed: DISPLAY_MESSAGES.wbs.workingCalendar.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      workingCalendarErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workingCalendar.readForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      workingCalendarErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    workingCalendarErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workingCalendar.loadFailed
-    );
+    workingCalendarErrorMessages.value = result.messages;
   };
 
   /**

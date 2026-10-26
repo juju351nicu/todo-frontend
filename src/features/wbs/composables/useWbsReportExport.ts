@@ -1,10 +1,10 @@
 import { ref } from "vue";
 import type { Ref } from "vue";
 
-import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
+import WbsApi from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { WbsReportDownload, WbsReportType } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
@@ -86,37 +86,19 @@ export const useWbsReportExport = (
     }
   };
 
-  /** Excel download APIのstatusを帳票cardの案内またはSession動作へ変換する。 */
-  const handleWbsReportDownloadError = async (
-    error: unknown
-  ): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
+  /** Excel download APIの失敗を帳票cardの案内またはSession失効処理へ変換する。409はactive baselineがないことを表す。 */
+  const handleWbsReportDownloadError = async (error: unknown): Promise<void> => {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.report.forbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      conflict: DISPLAY_MESSAGES.wbs.report.activeBaselineRequired,
+      failed: DISPLAY_MESSAGES.wbs.report.downloadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.report.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    if (error.status === 409) {
-      reportExportErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.report.activeBaselineRequired
-      );
-      return;
-    }
-    reportExportErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.report.downloadFailed
-    );
+    reportExportErrorMessages.value = result.messages;
   };
 
   /** 画面の再読込時に、前回downloadの結果messageを残さない。 */

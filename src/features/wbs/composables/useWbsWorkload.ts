@@ -1,11 +1,11 @@
 import { ref } from "vue";
 
-import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
+import WbsApi from "@/features/wbs/api/wbsApi";
 import type {
   TaskWorkloadDateRange,
   TaskWorkloadResponse,
 } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import {
   buildDefaultWorkloadDateRange,
   validateTaskWorkloadDateRange,
@@ -72,28 +72,18 @@ export const useWbsWorkload = (context: WbsPageContext) => {
   const reloadTaskWorkload = (): Promise<void> =>
     loadTaskWorkload(workloadDateRange.value);
 
-  /** workload参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
+  /** workload参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。 */
   const handleWorkloadReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.workload.forbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      failed: DISPLAY_MESSAGES.wbs.workload.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.workload.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    workloadErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workload.loadFailed
-    );
+    workloadErrorMessages.value = result.messages;
   };
 
   return {
