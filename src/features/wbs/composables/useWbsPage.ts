@@ -7,18 +7,14 @@ import ProjectApi, {
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
+import { useWbsDependencies } from "@/features/wbs/composables/useWbsDependencies";
 import { useWbsEarnedValue } from "@/features/wbs/composables/useWbsEarnedValue";
 import { useWbsReportExport } from "@/features/wbs/composables/useWbsReportExport";
 import { useWbsWorkload } from "@/features/wbs/composables/useWbsWorkload";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type {
-  TaskDependency,
-  TaskDependencyCreateForm,
-  TaskDependencyCreateRequest,
   TaskDependencyListResponse,
-  TaskDependencyRow,
-  TaskDependencyTaskOption,
   TaskEffortPlan,
   TaskEffortPlanAssigneeOption,
   TaskEffortPlanForm,
@@ -81,21 +77,16 @@ export const useWbsPage = () => {
 
   /** WBSの表示形式。Gantt libraryは表示切替時に初めて読み込むため、既定は階層表。 */
   const activeView = ref<WbsViewMode>("table");
-  const dependencyEditorErrorMessages = ref<string[]>([]);
   const dependencyList = ref<TaskDependencyListResponse | null>(null);
-  const dependencyPendingDelete = ref<TaskDependency | null>(null);
   const editingEffortPlan = ref<TaskEffortPlan | null>(null);
   const editingTask = ref<WbsTask | null>(null);
   const editorErrorMessages = ref<string[]>([]);
   const errorMessages = ref<string[]>([]);
-  const isDeletingDependency = ref(false);
   const isDeletingEffortPlan = ref(false);
-  const isDependencyEditorOpen = ref(false);
   const isEditorOpen = ref(false);
   const isEffortPlanDialogOpen = ref(false);
   const isLoading = ref(false);
   const isLoadingEffortPlans = ref(false);
-  const isSavingDependency = ref(false);
   const isSavingEffortPlan = ref(false);
   const isSaving = ref(false);
   const editingWorkLog = ref<TaskWorkLog | null>(null);
@@ -176,7 +167,6 @@ export const useWbsPage = () => {
       : null;
   });
   const rows = computed(() => buildWbsTreeRows(wbs.value?.tasks ?? []));
-  const dependencies = computed(() => dependencyList.value?.dependencies ?? []);
   const taskCount = computed(
     () => rows.value.filter((row) => row.taskType === "TASK").length
   );
@@ -240,6 +230,30 @@ export const useWbsPage = () => {
     reportExportErrorMessages,
     reportExportSuccessMessage,
   } = useWbsReportExport(context, earnedValueStatusDate);
+  const {
+    cancelDependencyDelete,
+    closeDependencyEditor,
+    confirmDependencyDelete,
+    dependencies,
+    dependencyEditorErrorMessages,
+    dependencyPendingDelete,
+    dependencyPendingDeleteRow,
+    dependencyRows,
+    dependencyTaskOptions,
+    handleDependencyDeleteDialogVisibility,
+    isDeletingDependency,
+    isDependencyEditorOpen,
+    isDependencyMutating,
+    isSavingDependency,
+    openDependencyEditor,
+    requestDependencyDelete,
+    saveDependency,
+  } = useWbsDependencies(context, {
+    dependencyList,
+    // 下で宣言する関数を呼出し時に解決するため、参照を直接渡さず関数で包む。
+    reloadPageSnapshot: () => loadPageSnapshot(),
+    handleReadApiError: (error) => handleReadApiError(error),
+  });
   const {
     activateWbsBaseline,
     activatingBaselineId,
@@ -350,36 +364,6 @@ export const useWbsPage = () => {
   const isWorkLogMutating = computed(
     () => isSavingWorkLog.value || isDeletingWorkLog.value
   );
-  const dependencyTaskOptions = computed<TaskDependencyTaskOption[]>(() =>
-    rows.value.map((task) => ({
-      title: buildDependencyTaskLabel(task),
-      value: task.taskId,
-    }))
-  );
-  const dependencyRows = computed<TaskDependencyRow[]>(() => {
-    const labelByTaskId = new Map(
-      dependencyTaskOptions.value.map((option) => [option.value, option.title])
-    );
-    return dependencies.value.map((dependency) => ({
-      ...dependency,
-      predecessorLabel:
-        labelByTaskId.get(dependency.predecessorTaskId) ??
-        `Task ID: ${dependency.predecessorTaskId}（表示対象外）`,
-      successorLabel:
-        labelByTaskId.get(dependency.successorTaskId) ??
-        `Task ID: ${dependency.successorTaskId}（表示対象外）`,
-    }));
-  });
-  const dependencyPendingDeleteRow = computed(() => {
-    const pendingId = dependencyPendingDelete.value?.dependencyId;
-    return pendingId === undefined
-      ? null
-      : dependencyRows.value.find((row) => row.dependencyId === pendingId) ??
-          null;
-  });
-  const isDependencyMutating = computed(
-    () => isSavingDependency.value || isDeletingDependency.value
-  );
   const parentOptions = computed(() =>
     editingTask.value === null
       ? []
@@ -388,13 +372,6 @@ export const useWbsPage = () => {
           editingTask.value.taskId
         )
   );
-
-  /** WBSコードがある場合だけ依存関係selectと一覧のTask名へ前置する。 */
-  function buildDependencyTaskLabel(task: WbsTask): string {
-    return task.wbsCode === null || task.wbsCode.trim() === ""
-      ? task.title
-      : `${task.wbsCode} ${task.title}`;
-  }
 
   /** WBS API Responseを唯一の画面スナップショットとして差し替える。 */
   const loadWbs = async (): Promise<void> => {
@@ -523,308 +500,6 @@ export const useWbsPage = () => {
     isEditorOpen.value = false;
     editingTask.value = null;
     editorErrorMessages.value = [];
-  };
-
-  /** TASK_UPDATEを持ち、依存関係の両端候補が2件以上ある場合だけ追加Dialogを開く。 */
-  const openDependencyEditor = (): void => {
-    errorMessages.value = [];
-    successMessage.value = "";
-    if (!canEditWbs.value) {
-      errorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
-      return;
-    }
-    if (dependencyTaskOptions.value.length < 2) {
-      errorMessages.value = ["依存関係を追加するにはTaskが2件以上必要です。"];
-      return;
-    }
-    dependencyEditorErrorMessages.value = [];
-    isDependencyEditorOpen.value = true;
-  };
-
-  /** 依存関係の保存中でなければ未確定入力を破棄して追加Dialogを閉じる。 */
-  const closeDependencyEditor = (): void => {
-    if (!isSavingDependency.value) {
-      closeDependencyEditorAfterSaving();
-    }
-  };
-
-  /** 作成成功・競合・Session失効時に保存中でも古い入力を破棄する。 */
-  const closeDependencyEditorAfterSaving = (): void => {
-    isDependencyEditorOpen.value = false;
-    dependencyEditorErrorMessages.value = [];
-  };
-
-  /**
-   * 依存関係追加Formを検証し、Backendへ送信できるRequestへ変換する。
-   * graph全体の循環、Project状態、最新Task状態はBackendを最終判定とする。
-   *
-   * @param form Dialogから受け取った未検証入力
-   * @returns 正常時はRequest、入力不正時は利用者向けmessage一覧
-   */
-  const buildDependencyCreateRequest = (
-    form: TaskDependencyCreateForm
-  ):
-    | { request: TaskDependencyCreateRequest; messages: [] }
-    | { request: null; messages: string[] } => {
-    const messages: string[] = [];
-    const predecessorTaskId = form.predecessorTaskId;
-    const successorTaskId = form.successorTaskId;
-    const lagMinutes = form.lagMinutes;
-    const availableTaskIds = new Set(
-      dependencyTaskOptions.value.map((option) => option.value)
-    );
-
-    if (
-      predecessorTaskId === null ||
-      !Number.isSafeInteger(predecessorTaskId) ||
-      predecessorTaskId <= 0 ||
-      !availableTaskIds.has(predecessorTaskId)
-    ) {
-      messages.push("先行Taskを選択してください。");
-    }
-    if (
-      successorTaskId === null ||
-      !Number.isSafeInteger(successorTaskId) ||
-      successorTaskId <= 0 ||
-      !availableTaskIds.has(successorTaskId)
-    ) {
-      messages.push("後続Taskを選択してください。");
-    }
-    if (
-      predecessorTaskId !== null &&
-      successorTaskId !== null &&
-      predecessorTaskId === successorTaskId
-    ) {
-      messages.push("先行Taskと後続Taskには別のTaskを選択してください。");
-    }
-    if (
-      lagMinutes === null ||
-      !Number.isSafeInteger(lagMinutes) ||
-      lagMinutes < 0
-    ) {
-      messages.push("待ち時間は0以上の整数で入力してください。");
-    }
-    if (
-      predecessorTaskId !== null &&
-      successorTaskId !== null &&
-      dependencies.value.some(
-        (dependency) =>
-          dependency.predecessorTaskId === predecessorTaskId &&
-          dependency.successorTaskId === successorTaskId
-      )
-    ) {
-      messages.push("同じ向きのTask依存関係はすでに登録されています。");
-    }
-    if (
-      messages.length > 0 ||
-      predecessorTaskId === null ||
-      successorTaskId === null ||
-      lagMinutes === null
-    ) {
-      return { request: null, messages };
-    }
-    return {
-      request: {
-        predecessorTaskId,
-        successorTaskId,
-        dependencyType: "FINISH_TO_START",
-        lagMinutes,
-      },
-      messages: [],
-    };
-  };
-
-  /**
-   * 検証済みFinish-to-Start依存関係を追加し、成功時はBackendの一覧Responseで差し替える。
-   * 409競合ではDialogを閉じ、WBS Taskと依存関係の両方を再取得する。
-   *
-   * @param form 先行Task、後続Task、分単位待ち時間
-   */
-  const saveDependency = async (
-    form: TaskDependencyCreateForm
-  ): Promise<void> => {
-    if (isSavingDependency.value || projectId.value === null) {
-      return;
-    }
-    if (!canEditWbs.value) {
-      dependencyEditorErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
-      ];
-      return;
-    }
-    const built = buildDependencyCreateRequest(form);
-    if (built.request === null) {
-      dependencyEditorErrorMessages.value = built.messages;
-      return;
-    }
-
-    isSavingDependency.value = true;
-    dependencyEditorErrorMessages.value = [];
-    errorMessages.value = [];
-    successMessage.value = "";
-    try {
-      dependencyList.value = await WbsApi.createTaskDependency(
-        projectId.value,
-        built.request
-      );
-      closeDependencyEditorAfterSaving();
-      successMessage.value = "Task依存関係を追加しました。";
-    } catch (error: unknown) {
-      await handleDependencyCreateError(error);
-    } finally {
-      isSavingDependency.value = false;
-    }
-  };
-
-  /** Task依存関係作成APIのstatusをDialog、競合再読込またはSession動作へ変換する。 */
-  const handleDependencyCreateError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
-      closeDependencyEditorAfterSaving();
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.dependency.forbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.dependency.resourceNotFound,
-      ];
-      return;
-    }
-    if (error.status === 409) {
-      closeDependencyEditorAfterSaving();
-      errorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.dependency.createConflict
-      );
-      await reloadPageAfterDependencyConflict();
-      return;
-    }
-    dependencyEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.dependency.createFailed
-    );
-  };
-
-  /** 削除対象とversionを現在の一覧から確定して確認Dialogを開く。 */
-  const requestDependencyDelete = (dependencyId: number): void => {
-    errorMessages.value = [];
-    successMessage.value = "";
-    if (!canEditWbs.value) {
-      errorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
-      return;
-    }
-    const dependency = dependencies.value.find(
-      (candidate) => candidate.dependencyId === dependencyId
-    );
-    if (dependency === undefined) {
-      errorMessages.value = ["削除対象のTask依存関係が見つかりません。"];
-      return;
-    }
-    dependencyPendingDelete.value = { ...dependency };
-  };
-
-  /** 削除中でなければ確認対象を破棄して削除Dialogを閉じる。 */
-  const cancelDependencyDelete = (): void => {
-    if (!isDeletingDependency.value) {
-      dependencyPendingDelete.value = null;
-    }
-  };
-
-  /** 一覧取得時点versionで依存関係を削除し、204確定後に画面一覧から除外する。 */
-  const confirmDependencyDelete = async (): Promise<void> => {
-    const dependency = dependencyPendingDelete.value;
-    if (
-      dependency === null ||
-      projectId.value === null ||
-      isDeletingDependency.value
-    ) {
-      return;
-    }
-    if (!canEditWbs.value) {
-      errorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
-      return;
-    }
-
-    isDeletingDependency.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
-    try {
-      await WbsApi.deleteTaskDependency(
-        projectId.value,
-        dependency.dependencyId,
-        dependency.version
-      );
-      if (dependencyList.value !== null) {
-        dependencyList.value = {
-          ...dependencyList.value,
-          dependencies: dependencyList.value.dependencies.filter(
-            (candidate) => candidate.dependencyId !== dependency.dependencyId
-          ),
-        };
-      }
-      dependencyPendingDelete.value = null;
-      successMessage.value = "Task依存関係を削除しました。";
-    } catch (error: unknown) {
-      await handleDependencyDeleteError(error);
-    } finally {
-      isDeletingDependency.value = false;
-    }
-  };
-
-  /** Task依存関係削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
-  const handleDependencyDeleteError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      dependencyPendingDelete.value = null;
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      errorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.forbidden];
-      return;
-    }
-    if (error.status === 404 || error.status === 409) {
-      dependencyPendingDelete.value = null;
-      errorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.dependency.stale
-      );
-      await reloadPageAfterDependencyConflict();
-      return;
-    }
-    errorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.deleteFailed];
-  };
-
-  /** 依存関係競合後にWBS Taskと依存関係を再取得し、古い端点とversionを残さない。 */
-  const reloadPageAfterDependencyConflict = async (): Promise<void> => {
-    try {
-      await loadPageSnapshot();
-    } catch (refreshError: unknown) {
-      if (
-        (refreshError instanceof WbsApiError ||
-          refreshError instanceof ProjectApiError) &&
-        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
-      ) {
-        // 認証・認可・公開範囲の変化は、操作時点の競合理由より新しい取得結果を優先する。
-        await handleReadApiError(refreshError);
-        return;
-      }
-      errorMessages.value.push(DISPLAY_MESSAGES.wbs.dependency.reloadFailed);
-    }
   };
 
   /** 指定期間・対象の稼働日calendarを検証・取得し、既定値を含む確定表示へ反映する。 */
@@ -2105,16 +1780,6 @@ export const useWbsPage = () => {
     });
   };
 
-
-  /**
-   * 削除確認dialogが閉じられた場合だけ未確定の削除対象を破棄する。
-   * 確認dialogの開閉は削除対象の有無で決まるため、閉じる操作をここで削除対象の破棄へ変換する。
-   */
-  const handleDependencyDeleteDialogVisibility = (open: boolean): void => {
-    if (!open) {
-      cancelDependencyDelete();
-    }
-  };
 
   /** 日別予定の削除確認dialogが閉じられた場合だけ確認対象を破棄する。 */
   const handleEffortPlanDeleteDialogVisibility = (open: boolean): void => {
