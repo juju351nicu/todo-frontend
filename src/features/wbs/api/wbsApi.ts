@@ -1,5 +1,6 @@
 import type {
   EarnedValueResponse,
+  EstimateAccuracyResponse,
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
   TaskEffortPlanCreateRequest,
@@ -577,6 +578,27 @@ const getTaskWorkload = async (
   };
 };
 
+/**
+ * Project内の完了済み通常Taskについて、予定工数と実績工数の見積もり精度を取得する。
+ *
+ * @param projectId 集計対象Project ID
+ * @returns 除外件数、中央値、許容範囲内の件数、Task別の誤差。完了済みTaskがない場合は件数0と空配列
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
+ */
+const getEstimateAccuracy = async (
+  projectId: number
+): Promise<EstimateAccuracyResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/estimate-accuracy`
+  );
+  await ensureSuccess(response);
+  const payload = (await response.json()) as EstimateAccuracyResponse;
+  return {
+    ...payload,
+    tasks: payload.tasks ?? [],
+  };
+};
+
 /** API Responseで欠落したcalendar日付一覧を画面へ伝播させず空配列へ正規化する。 */
 const normalizeWorkingCalendar = (
   payload: WorkingCalendarResponse
@@ -767,6 +789,7 @@ export default {
   downloadWbsReport,
   getTaskDependencies,
   getEarnedValueMetrics,
+  getEstimateAccuracy,
   getTaskEffortPlans,
   getTaskWorkLogs,
   getTaskWorkload,

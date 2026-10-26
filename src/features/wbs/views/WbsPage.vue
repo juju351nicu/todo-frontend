@@ -10,6 +10,7 @@ import WbsBaselineCard from "@/features/wbs/components/WbsBaselineCard.vue";
 import WbsBaselineCreateDialog from "@/features/wbs/components/WbsBaselineCreateDialog.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsEarnedValueCard from "@/features/wbs/components/WbsEarnedValueCard.vue";
+import WbsEstimateAccuracyCard from "@/features/wbs/components/WbsEstimateAccuracyCard.vue";
 import WbsReportExportCard from "@/features/wbs/components/WbsReportExportCard.vue";
 import WbsTaskEditDialog from "@/features/wbs/components/WbsTaskEditDialog.vue";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -88,6 +89,8 @@ const {
   editWorkLog,
   editorErrorMessages,
   errorMessages,
+  estimateAccuracy,
+  estimateAccuracyErrorMessages,
   exportingReportType,
   handleDependencyDeleteDialogVisibility,
   handleEffortPlanDeleteDialogVisibility,
@@ -107,6 +110,7 @@ const {
   isEffortPlanDialogOpen,
   isLoading,
   isLoadingEarnedValue,
+  isLoadingEstimateAccuracy,
   isLoadingEffortPlans,
   isLoadingWorkload,
   isLoadingWorkLogs,
@@ -156,6 +160,7 @@ const {
   workloadErrorMessages,
   loadTaskWorkload,
   loadEarnedValueMetrics,
+  loadEstimateAccuracy,
   loadWorkingCalendar,
   selectedWorkingCalendarTarget,
   workingCalendar,
@@ -410,6 +415,14 @@ const VIEW_OPTIONS = [
       :is-loading="isLoadingWorkload"
       :error-messages="workloadErrorMessages"
       @load="loadTaskWorkload"
+    />
+
+    <WbsEstimateAccuracyCard
+      v-if="wbs"
+      :estimate-accuracy="estimateAccuracy"
+      :is-loading="isLoadingEstimateAccuracy"
+      :error-messages="estimateAccuracyErrorMessages"
+      @load="loadEstimateAccuracy"
     />
 
     <UCard v-if="wbs" class="mx-auto mt-4 max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
