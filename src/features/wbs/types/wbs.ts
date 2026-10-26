@@ -123,6 +123,8 @@ export interface TaskDependencyRow extends TaskDependency {
   predecessorLabel: string;
   /** 後続TaskのWBSコード付き表示名。 */
   successorLabel: string;
+  /** 現在の利用者がこの依存関係を削除できるか。先行・後続の両方を変更できる場合だけtrue。 */
+  canDelete: boolean;
 }
 
 /** Taskへ計上された1作業者・1業務日単位の実績工数。 */

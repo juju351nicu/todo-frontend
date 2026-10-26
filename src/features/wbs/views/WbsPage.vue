@@ -328,7 +328,9 @@ const VIEW_OPTIONS = [
               <td><UBadge size="xs" variant="outline">Finish-to-Start</UBadge></td>
               <td>{{ dependency.lagMinutes }}分</td>
               <td v-if="page.canEditWbs">
+                <span v-if="!dependency.canDelete" class="text-xs text-muted">参照のみ</span>
                 <UButton
+                  v-else
                   icon="i-mdi-link-variant-remove"
                   color="error"
                   size="sm"

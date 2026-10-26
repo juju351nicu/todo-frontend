@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import type { Ref } from "vue";
 
+import { useUserStore } from "@/features/auth/stores/user";
 import { ProjectApiError } from "@/features/project/api/projectApi";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
@@ -17,6 +18,7 @@ import {
   buildDependencyRows,
   buildDependencyTaskOptions,
   buildTaskDependencyCreateRequest,
+  canChangeDependencyEndpoint,
 } from "@/features/wbs/utils/taskDependency";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
@@ -43,7 +45,10 @@ export interface UseWbsDependenciesOptions {
  *
  * - 呼び出すAPI: `WbsApi.createTaskDependency`（作成後の一覧Responseで差し替え）、
  *   `WbsApi.deleteTaskDependency`（取得時点version付き、204確定後に一覧から除外）。
- * - 更新にはTASK_UPDATE permissionが必要。循環・Project状態・最新Task状態はBackendが最終判定する。
+ * - 更新にはTASK_UPDATE permissionが必要。Project管理権限（SYSTEM_ADMIN・OWNER・MANAGER）がなければ、
+ *   先行・後続の両方が本人担当のTaskだけを追加・削除できる（Backendと同じ条件）。
+ *   選べないTaskは追加Dialogの候補から外し、削除できない行には削除ボタンを出さない。
+ * - 循環・Project状態・最新Task状態はBackendが最終判定する。
  * - 作成の409、削除の404・409ではDialogを閉じ、`reloadPageSnapshot`で画面全体を取り直す。
  *   再取得の401・403・404は操作時点の競合理由より優先する。
  * - Dialog外の操作結果は画面上部の`context.errorMessages`・`context.successMessage`へ表示する。
@@ -56,6 +61,7 @@ export const useWbsDependencies = (
   options: UseWbsDependenciesOptions
 ) => {
   const { dependencyList } = options;
+  const userStore = useUserStore();
   const dependencyEditorErrorMessages = ref<string[]>([]);
   /** 削除確認中の依存関係と取得時点version。確認Dialogの開閉もこの値の有無で決まる。 */
   const dependencyPendingDelete = ref<TaskDependency | null>(null);
@@ -64,11 +70,39 @@ export const useWbsDependencies = (
   const isSavingDependency = ref(false);
 
   const dependencies = computed(() => dependencyList.value?.dependencies ?? []);
-  const dependencyTaskOptions = computed(() =>
+  /** WBSに表示している全Task。依存関係一覧の端点の表示名を引き当てるために使う。 */
+  const allTaskOptions = computed(() =>
     buildDependencyTaskOptions(context.rows.value)
   );
+  const taskById = computed(
+    () => new Map(context.rows.value.map((row) => [row.taskId, row]))
+  );
+
+  /**
+   * 現在の利用者が、このTaskを依存関係の端点として追加・削除に使えるか。
+   * TASK_UPDATEがなければ常にfalse。MEMBERは本人担当のTaskだけ（Backendと同じ条件）。
+   *
+   * @param taskId 判定するTask ID
+   * @returns 端点として使える場合はtrue
+   */
+  const canChangeTaskId = (taskId: number): boolean =>
+    context.canEditWbs.value &&
+    canChangeDependencyEndpoint(
+      taskById.value.get(taskId),
+      userStore.memberId,
+      context.canManageProject.value
+    );
+
+  /** 追加Dialogで先行・後続に選べるTask。送信後に403となる担当外のTaskは候補から外す。 */
+  const dependencyTaskOptions = computed(() =>
+    allTaskOptions.value.filter((option) => canChangeTaskId(option.value))
+  );
   const dependencyRows = computed(() =>
-    buildDependencyRows(dependencies.value, dependencyTaskOptions.value)
+    buildDependencyRows(
+      dependencies.value,
+      allTaskOptions.value,
+      canChangeTaskId
+    )
   );
   /** 削除確認Dialogへ表示する、表示名付きの削除対象行。確認中でなければnull。 */
   const dependencyPendingDeleteRow = computed(() => {
@@ -82,7 +116,7 @@ export const useWbsDependencies = (
     () => isSavingDependency.value || isDeletingDependency.value
   );
 
-  /** TASK_UPDATEを持ち、依存関係の両端候補が2件以上ある場合だけ追加Dialogを開く。 */
+  /** TASK_UPDATEを持ち、依存関係の両端に選べるTaskが2件以上ある場合だけ追加Dialogを開く。 */
   const openDependencyEditor = (): void => {
     context.errorMessages.value = [];
     context.successMessage.value = "";
@@ -94,7 +128,7 @@ export const useWbsDependencies = (
     }
     if (dependencyTaskOptions.value.length < 2) {
       context.errorMessages.value = [
-        "依存関係を追加するにはTaskが2件以上必要です。",
+        "依存関係を追加するには、変更できるTaskが2件以上必要です。",
       ];
       return;
     }
@@ -218,8 +252,15 @@ export const useWbsDependencies = (
     const dependency = dependencies.value.find(
       (candidate) => candidate.dependencyId === dependencyId
     );
-    if (dependency === undefined) {
+    const row = dependencyRows.value.find(
+      (candidate) => candidate.dependencyId === dependencyId
+    );
+    if (dependency === undefined || row === undefined) {
       context.errorMessages.value = ["削除対象のTask依存関係が見つかりません。"];
+      return;
+    }
+    if (!row.canDelete) {
+      context.errorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.forbidden];
       return;
     }
     dependencyPendingDelete.value = { ...dependency };
@@ -276,8 +317,12 @@ export const useWbsDependencies = (
     }
   };
 
-  /** Task依存関係削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
+  /**
+   * Task依存関係削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。
+   * 結果は画面上部へ出すため、確認Dialogは閉じる（開いたままだと案内がDialogの裏に隠れ、何も起きないように見える）。
+   */
   const handleDependencyDeleteError = async (error: unknown): Promise<void> => {
+    dependencyPendingDelete.value = null;
     if (!(error instanceof WbsApiError)) {
       context.errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
@@ -291,7 +336,6 @@ export const useWbsDependencies = (
       return;
     }
     if (error.status === 404 || error.status === 409) {
-      dependencyPendingDelete.value = null;
       context.errorMessages.value = resolveWbsErrorMessages(
         error,
         DISPLAY_MESSAGES.wbs.dependency.stale
