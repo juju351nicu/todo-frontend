@@ -11,6 +11,7 @@ import type {
 } from "@/features/wbs/types/wbs";
 import { isValidIsoLocalDate } from "@/features/wbs/utils/effort";
 import type { SemanticColor } from "@/shared/types/color";
+import { getBusinessMonthRange } from "@/shared/utils/businessDate";
 
 const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_CALENDAR_DAYS = 366;
@@ -23,25 +24,12 @@ const parseIsoLocalDate = (value: string): Date => {
   return new Date(Date.UTC(year, month - 1, day));
 };
 
-/** date inputへ渡す日付をブラウザーのローカル年月から組み立てる。 */
-const formatLocalDate = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-/** 初期calendar検索期間としてブラウザー現在月の初日・末日を返す。 */
+/**
+ * 初期calendar検索期間として、業務日（Asia/Tokyo）の今月の初日・末日を返す。
+ * 稼働日例外は業務日で保存されるため、利用端末のタイムゾーンでは月初・月末に1日ずれる。
+ */
 export const buildDefaultWorkingCalendarDateRange =
-  (): WorkingCalendarDateRange => {
-    const now = new Date();
-    return {
-      dateFrom: formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1)),
-      dateTo: formatLocalDate(
-        new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      ),
-    };
-  };
+  (): WorkingCalendarDateRange => getBusinessMonthRange();
 
 /** Project共通またはmember固有の対象をselectへ保存できる一意な文字列へ変換する。 */
 export const buildWorkingCalendarTargetKey = (

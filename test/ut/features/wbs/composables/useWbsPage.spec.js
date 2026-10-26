@@ -201,6 +201,55 @@ describe("useWbsPage", () => {
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledWith(7);
   });
 
+  it("どの領域の401でも、開いている全領域のDialogと削除確認を閉じてからLoginへ戻す", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+    page.openBaselineCreateDialog();
+    page.openWorkingDayEditor("2026-08-22");
+    page.requestDependencyDelete(31);
+    await page.openEffortPlanDialog(2);
+    await page.openWorkLogDialog(2);
+    page.requestWorkLogDelete(41);
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValue(new WbsApiError(401, null));
+
+    // EVMはDialogを持たない領域だが、401では画面全体の古いversionを残さない。
+    await page.loadEarnedValueMetrics("2026-08-30");
+
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(page.editingTask.value).toBeNull();
+    expect(page.isBaselineCreateDialogOpen.value).toBe(false);
+    expect(page.isWorkingDayEditorOpen.value).toBe(false);
+    expect(page.workingDayEditingDay.value).toBeNull();
+    expect(page.dependencyPendingDelete.value).toBeNull();
+    expect(page.isEffortPlanDialogOpen.value).toBe(false);
+    expect(page.isWorkLogDialogOpen.value).toBe(false);
+    expect(page.workLogPendingDelete.value).toBeNull();
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  it("並列の再取得が両方401でもSession破棄とLogin遷移は1回だけ行う", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+    page.openWorkingDayEditor("2026-08-22");
+    mocks.wbsApi.getWorkingCalendar.mockRejectedValue(new WbsApiError(401, null));
+    mocks.wbsApi.getTaskWorkload.mockRejectedValue(new WbsApiError(401, null));
+
+    // 保存成功後にcalendarとworkloadを並列で再取得し、両方が401になる。
+    await page.saveWorkingDay({
+      workDate: "2026-08-22",
+      dayType: "WORKING_DAY",
+      availableMinutes: 480,
+    });
+
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
   it("現在のProject IDを保持してBoardへ戻る", async () => {
     const page = useWbsPage();
 

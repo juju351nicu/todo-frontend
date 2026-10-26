@@ -5,6 +5,7 @@ import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { WbsTask, WbsTaskEditForm } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -32,7 +33,7 @@ export interface UseWbsTaskEditorOptions {
  * - 呼び出すAPI: `WbsApi.updateWbsTask`（取得時点version付き）。成功時はResponseのWBS全体で`context.wbs`を差し替える。
  * - 更新にはTASK_UPDATE permissionが必要。階層の循環・計画の整合はBackendが最終判定する。
  * - 409競合ではDialogを閉じ、`reloadWbs`で最新WBSを再取得して再編集を促す。再取得の401・403・404は競合理由より優先する。
- * - 401ではDialogを閉じてから`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ね、Dialogは統括の`useWbsPage`が`discardTaskEditor`で閉じる。
  *
  * @param context Project ID、WBS Task、権限、画面上部message、Session失効処理を提供する画面共通context
  * @param options 競合時のWBS再取得と画面全体の参照エラー処理
@@ -88,7 +89,10 @@ export const useWbsTaskEditor = (
     }
   };
 
-  /** 更新成功・競合・Session失効時に、保存中でも古いversionを破棄する。 */
+  /**
+   * 更新成功・競合・Session失効時に、保存中でも古いversionを破棄する。
+   * Session失効時は統括の`useWbsPage`が`discardTaskEditor`として呼ぶ。
+   */
   const closeTaskEditorAfterSaving = (): void => {
     isEditorOpen.value = false;
     editingTask.value = null;
@@ -162,33 +166,23 @@ export const useWbsTaskEditor = (
     }
   };
 
-  /** WBS更新APIのstatusと項目エラーを、DialogまたはSession動作へ変換する。 */
+  /** WBS更新APIの失敗（409以外）を、Dialogの案内またはSession失効処理へ変換する。409は呼出側で競合回復する。 */
   const handleUpdateApiError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      closeTaskEditorAfterSaving();
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.updateForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.taskNotFound,
+      failed: DISPLAY_MESSAGES.wbs.updateFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.updateForbidden];
-      return;
-    }
-    if (error.status === 404) {
-      editorErrorMessages.value = [DISPLAY_MESSAGES.wbs.taskNotFound];
-      return;
-    }
-    editorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.updateFailed
-    );
+    editorErrorMessages.value = result.messages;
   };
 
   return {
     closeTaskEditor,
+    discardTaskEditor: closeTaskEditorAfterSaving,
     editingTask,
     editorErrorMessages,
     isEditorOpen,

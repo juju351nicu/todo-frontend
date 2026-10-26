@@ -37,7 +37,7 @@ export interface UseWbsBaselinesOptions {
  *   `createWbsBaseline`（現在計画の保存）、`activateWbsBaseline`（取得時点version付きの切替）。
  * - 作成・有効化はProjectがACTIVEで、TASK_UPDATEとProject管理権限（SYSTEM_ADMIN・OWNER・MANAGER）がある場合だけ許可する。
  * - 409競合では理由を表示し、一覧とactive baseline詳細をBackendの最新状態へ取り直す。
- * - 401では作成Dialogを閉じてから`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ね、作成Dialogは統括の`useWbsPage`が`discardBaselineDialogs`で閉じる。
  *
  * @param context Project ID、WBS Task、権限、Session失効処理を提供する画面共通context
  * @param options active baseline変更をEVMへ伝えるcallback
@@ -124,7 +124,10 @@ export const useWbsBaselines = (
     }
   };
 
-  /** API成功またはSession失効後にbaseline作成Dialogを強制的に閉じる。 */
+  /**
+   * API成功またはSession失効後にbaseline作成Dialogを強制的に閉じる。
+   * Session失効時は統括の`useWbsPage`が`discardBaselineDialogs`として呼ぶ。
+   */
   const closeBaselineCreateDialogAfterSaving = (): void => {
     isBaselineCreateDialogOpen.value = false;
     baselineEditorErrorMessages.value = [];
@@ -170,7 +173,6 @@ export const useWbsBaselines = (
       return;
     }
     if (error.status === 401) {
-      closeBaselineCreateDialogAfterSaving();
       await context.handleUnauthorized();
       return;
     }
@@ -326,6 +328,7 @@ export const useWbsBaselines = (
     clearBaselineMessages,
     clearBaselines,
     closeBaselineCreateDialog,
+    discardBaselineDialogs: closeBaselineCreateDialogAfterSaving,
     isBaselineCreateDialogOpen,
     isBaselineMutating,
     isCreatingBaseline,

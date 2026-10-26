@@ -1,11 +1,11 @@
 import { ref } from "vue";
 
-import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
+import WbsApi from "@/features/wbs/api/wbsApi";
 import type {
   TaskWorkloadDateRange,
   TaskWorkloadResponse,
 } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import {
   buildDefaultWorkloadDateRange,
   validateTaskWorkloadDateRange,
@@ -13,30 +13,17 @@ import {
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
-/** `useWbsWorkload`が画面の他領域へ委ねる操作。 */
-export interface UseWbsWorkloadOptions {
-  /**
-   * workload参照が401になったとき、Session破棄の前に呼ぶ。
-   * workloadは日別予定・実績の保存後にも再取得されるため、それらのDialogに古いversionを残さないよう閉じる。
-   */
-  readonly closeDialogsOnUnauthorized: () => void;
-}
-
 /**
  * WBS画面の担当者別workload（日別の予定・実績・稼働可能時間・過配賦）の取得状態を管理する。
  *
  * - 呼び出すAPI: `WbsApi.getTaskWorkload`（Project配下の`GET /wbs/workload`）。
  * - 集計はBackendの確定値を表示し、Frontendでは再計算しない。
  * - 日別予定・実績・稼働日例外の変更後は、各領域が`reloadTaskWorkload`で現在の期間を再取得する。
- * - 401では`closeDialogsOnUnauthorized`の後に`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ねる。日別予定・実績Dialog等の片付けは統括の`useWbsPage`が行う。
  *
  * @param context Project IDとSession失効処理を提供する画面共通context
- * @param options 401時に閉じる他領域のDialog
  */
-export const useWbsWorkload = (
-  context: WbsPageContext,
-  options: UseWbsWorkloadOptions
-) => {
+export const useWbsWorkload = (context: WbsPageContext) => {
   /** 最後に取得成功したworkload。取得失敗時も直前の確定値を残し、初期表示の失敗時だけ画面側でnullへ戻す。 */
   const workload = ref<TaskWorkloadResponse | null>(null);
   /** 最後に取得を開始した集計期間。初期値はブラウザー現在月の初日・末日。 */
@@ -85,29 +72,18 @@ export const useWbsWorkload = (
   const reloadTaskWorkload = (): Promise<void> =>
     loadTaskWorkload(workloadDateRange.value);
 
-  /** workload参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
+  /** workload参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。 */
   const handleWorkloadReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      options.closeDialogsOnUnauthorized();
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.workload.forbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      failed: DISPLAY_MESSAGES.wbs.workload.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.workload.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      workloadErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    workloadErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workload.loadFailed
-    );
+    workloadErrorMessages.value = result.messages;
   };
 
   return {

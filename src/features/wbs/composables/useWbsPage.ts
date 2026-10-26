@@ -53,7 +53,7 @@ const parsePositiveId = (
  *   取得順序は「スナップショット → workload・calendar・見積もり精度（並列） → Board導線の日別実績Dialog」で、
  *   いずれかが例外になった場合は全領域の表示データを破棄して画面上部へ理由を表示する。
  * - 階層表の行・種別件数、TASK_UPDATE permissionとProject管理権限の判定、Boardへの遷移。
- * - 401時のSession破棄・全領域のエラー消去・Login遷移（`WbsPageContext.handleUnauthorized`）。
+ * - 401時の全領域のDialogの片付け・エラー消去・Session破棄・Login遷移（`WbsPageContext.handleUnauthorized`）。
  *
  * 領域ごとの状態と操作は次のcomposableへ委ね、それぞれの戻り値を同じ名前のまま返す:
  * `useWbsTaskEditor`（Task編集）、`useWbsDependencies`（依存関係）、`useWbsWorkload`（担当者別workload）、
@@ -112,9 +112,18 @@ export const useWbsPage = () => {
       currentProjectRole.value === "MANAGER"
   );
 
-  /** 401受信を記録し、並行中の再取得が古い競合案内を復元できない状態でLoginへ戻す。 */
+  /**
+   * 401受信を記録し、全領域のDialogを閉じてからLoginへ戻す。
+   * 記録した後は、並行中の再取得が古い競合案内を復元できない（`isSessionInvalidated`）。
+   */
   const handleUnauthorized = async (): Promise<void> => {
+    // 並列の再取得（例: 稼働日例外の保存後のcalendarとworkload）が両方401になっても、
+    // Session破棄とLogin遷移は最初の1回だけ行う。
+    if (sessionInvalidated) {
+      return;
+    }
     sessionInvalidated = true;
+    discardAllDialogs();
     clearWbsApiErrorMessages();
     userStore.clearSession();
     await router.push({ name: "Login" });
@@ -144,12 +153,7 @@ export const useWbsPage = () => {
     reloadPageSnapshot: () => loadPageSnapshot(),
     handleReadApiError: (error) => handleReadApiError(error),
   });
-  const workloadState = useWbsWorkload(context, {
-    closeDialogsOnUnauthorized: () => {
-      effortPlanState.closeEffortPlanDialogAfterOperation();
-      workLogState.closeWorkLogDialogAfterOperation();
-    },
-  });
+  const workloadState = useWbsWorkload(context);
   const workingCalendarState = useWbsWorkingCalendar(context, {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),
   });
@@ -168,6 +172,19 @@ export const useWbsPage = () => {
     onActiveBaselineChanged: () => earnedValueState.clearEarnedValue(),
   });
   const estimateAccuracyState = useWbsEstimateAccuracy(context);
+
+  /**
+   * Session失効時に、401を受けた領域に限らず全領域のDialogと削除確認を閉じる。
+   * Login遷移前の画面に、取得時点versionを持つ編集中の入力や削除対象を残さない。
+   */
+  const discardAllDialogs = (): void => {
+    taskEditor.discardTaskEditor();
+    dependencyState.discardDependencyDialogs();
+    workingCalendarState.discardWorkingDayDialogs();
+    effortPlanState.discardEffortPlanDialog();
+    workLogState.discardWorkLogDialog();
+    baselineState.discardBaselineDialogs();
+  };
 
   /** Session失効時に別cardや閉じる直前のDialogへ古いAPIエラーを残さない。 */
   const clearWbsApiErrorMessages = (): void => {

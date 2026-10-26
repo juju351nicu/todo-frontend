@@ -12,6 +12,7 @@ import type {
 } from "@/features/wbs/types/wbs";
 import {
   resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
 import {
@@ -37,7 +38,7 @@ export interface UseTaskWorkLogsOptions {
  *   それ以外は本人担当Taskの本人の実績だけ。最終判定はBackendが行う。
  * - Boardの「日別実績」導線（URLの`panel=work-logs&taskId=…`）では、`useWbsPage`が初期表示後にこのDialogを開く。
  * - 変更後と404・409の後は`reloadWorkload`でworkloadも再取得する。
- * - 401ではDialogを閉じてから`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ね、Dialogは統括の`useWbsPage`が`discardWorkLogDialog`で閉じる。
  *
  * @param context Project ID、WBS Task、Project member、権限、画面上部message、Session失効処理を提供する画面共通context
  * @param options 変更後のworkload再取得
@@ -142,35 +143,18 @@ export const useTaskWorkLogs = (
     }
   };
 
-  /** 日別実績参照APIのstatusをDialog案内またはSession動作へ変換する。 */
+  /** 日別実績参照APIの失敗をDialogの案内またはSession失効処理へ変換する。 */
   const handleWorkLogReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.workLog.readForbidden,
+      notFound: DISPLAY_MESSAGES.wbs.workLog.readNotFound,
+      failed: DISPLAY_MESSAGES.wbs.workLog.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readNotFound,
-      ];
-      return;
-    }
-    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workLog.loadFailed
-    );
+    workLogEditorErrorMessages.value = result.messages;
   };
 
   /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄する。 */
@@ -182,7 +166,7 @@ export const useTaskWorkLogs = (
 
   /**
    * Session失効や確定操作後にも使用できるよう、処理中状態に依存せずDialogを閉じる。
-   * workloadの401等、他領域のSession失効時にも`useWbsPage`から呼ばれる。
+   * Session失効時は統括の`useWbsPage`が`discardWorkLogDialog`として呼ぶ。
    */
   const closeWorkLogDialogAfterOperation = (): void => {
     isWorkLogDialogOpen.value = false;
@@ -308,7 +292,6 @@ export const useTaskWorkLogs = (
       return;
     }
     if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -461,7 +444,6 @@ export const useTaskWorkLogs = (
       return;
     }
     if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -503,7 +485,7 @@ export const useTaskWorkLogs = (
     cancelWorkLogDelete,
     cancelWorkLogEdit,
     closeWorkLogDialog,
-    closeWorkLogDialogAfterOperation,
+    discardWorkLogDialog: closeWorkLogDialogAfterOperation,
     confirmWorkLogDelete,
     editWorkLog,
     editingWorkLog,

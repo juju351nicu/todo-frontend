@@ -391,7 +391,7 @@ describe("useTaskEffortPlans", () => {
       expect(options.reloadWorkload).not.toHaveBeenCalled();
     });
 
-    it("競合後の一覧再取得が401ならDialogを閉じ、workloadを再取得せずSession失効処理を呼ぶ", async () => {
+    it("競合後の一覧再取得が401ならworkloadを再取得せずSession失効処理へ委ねる", async () => {
       mocks.wbsApi.deleteTaskEffortPlan.mockRejectedValue(new WbsApiError(409, null));
       const { context, options, state } = await openEffortPlans();
       state.requestEffortPlanDelete(51);
@@ -399,10 +399,11 @@ describe("useTaskEffortPlans", () => {
 
       await state.confirmEffortPlanDelete();
 
-      expect(state.isEffortPlanDialogOpen.value).toBe(false);
-      expect(state.effortPlanEditorErrorMessages.value).toEqual([]);
       expect(context.handleUnauthorized).toHaveBeenCalledOnce();
       expect(options.reloadWorkload).not.toHaveBeenCalled();
+      state.discardEffortPlanDialog();
+      expect(state.isEffortPlanDialogOpen.value).toBe(false);
+      expect(state.effortPlanPendingDelete.value).toBeNull();
     });
 
     it("削除確認dialogを閉じたときだけ確認対象を破棄する", async () => {

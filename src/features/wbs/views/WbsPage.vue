@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeMount } from "vue";
+import { defineAsyncComponent, onBeforeMount, reactive } from "vue";
 
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
@@ -32,149 +32,11 @@ const WbsGanttChart = defineAsyncComponent(
   () => import("@/features/wbs/components/WbsGanttChart.vue")
 );
 
-const {
-  activateWbsBaseline,
-  activeView,
-  activeBaselineDetail,
-  activatingBaselineId,
-  baselineChangedRows,
-  baselineEditorErrorMessages,
-  baselineErrorMessages,
-  baselineList,
-  baselineSuccessMessage,
-  cancelDependencyDelete,
-  cancelEffortPlanDelete,
-  cancelEffortPlanEdit,
-  cancelWorkLogDelete,
-  cancelWorkLogEdit,
-  cancelWorkingDayDelete,
-  canEditSelectedWorkingCalendarTarget,
-  canEditSelectedEffortPlanTask,
-  canEditSelectedWorkLogTask,
-  canEditWbs,
-  canManageAnyEffortPlan,
-  canManageAnyWorkLog,
-  canManageBaselines,
-  closeBaselineCreateDialog,
-  closeDependencyEditor,
-  closeEffortPlanDialog,
-  closeTaskEditor,
-  closeWorkLogDialog,
-  closeWorkingDayEditor,
-  confirmDependencyDelete,
-  confirmEffortPlanDelete,
-  confirmWorkLogDelete,
-  confirmWorkingDayDelete,
-  currentAccountId,
-  dependencies,
-  dependencyEditorErrorMessages,
-  dependencyPendingDelete,
-  dependencyPendingDeleteRow,
-  dependencyRows,
-  dependencyTaskOptions,
-  downloadWbsReport,
-  earnedValue,
-  earnedValueErrorMessages,
-  earnedValueStatusDate,
-  editingEffortPlan,
-  editingTask,
-  editingWorkLog,
-  editEffortPlan,
-  effortPlanAssigneeOptions,
-  effortPlanEditorErrorMessages,
-  effortPlanList,
-  effortPlanPendingDelete,
-  effortPlanSuccessMessage,
-  effortPlanTask,
-  editWorkLog,
-  editorErrorMessages,
-  errorMessages,
-  estimateAccuracy,
-  estimateAccuracyErrorMessages,
-  exportingReportType,
-  handleDependencyDeleteDialogVisibility,
-  handleEffortPlanDeleteDialogVisibility,
-  handleWorkLogDeleteDialogVisibility,
-  handleWorkingDayDeleteDialogVisibility,
-  initialize,
-  isDeletingDependency,
-  isDeletingEffortPlan,
-  isDeletingWorkLog,
-  isDeletingWorkingDay,
-  isBaselineCreateDialogOpen,
-  isBaselineMutating,
-  isCreatingBaseline,
-  isDependencyEditorOpen,
-  isDependencyMutating,
-  isEditorOpen,
-  isEffortPlanDialogOpen,
-  isLoading,
-  isLoadingEarnedValue,
-  isLoadingEstimateAccuracy,
-  isLoadingEffortPlans,
-  isLoadingWorkload,
-  isLoadingWorkLogs,
-  isLoadingWorkingCalendar,
-  isSavingDependency,
-  isSavingEffortPlan,
-  isSaving,
-  isSavingWorkLog,
-  isSavingWorkingDay,
-  isWorkLogDialogOpen,
-  isWorkingCalendarMutating,
-  isWorkingDayEditorOpen,
-  milestoneCount,
-  openBaselineCreateDialog,
-  openBoard,
-  openDependencyEditor,
-  openEffortPlanDialog,
-  openTaskEditor,
-  openWorkLogDialog,
-  openWorkingDayEditor,
-  parentOptions,
-  requestDependencyDelete,
-  requestEffortPlanDelete,
-  requestWorkLogDelete,
-  requestWorkingDayDelete,
-  reportExportErrorMessages,
-  reportExportSuccessMessage,
-  rows,
-  saveDependency,
-  saveWbsBaseline,
-  saveEffortPlan,
-  saveWbsTask,
-  saveWorkLog,
-  saveWorkingDay,
-  successMessage,
-  summaryCount,
-  taskCount,
-  wbs,
-  workLogEditorErrorMessages,
-  workLogList,
-  workLogPendingDelete,
-  workLogSuccessMessage,
-  workLogTask,
-  workLogWorkerOptions,
-  workload,
-  workloadDateRange,
-  workloadErrorMessages,
-  loadTaskWorkload,
-  loadEarnedValueMetrics,
-  loadEstimateAccuracy,
-  loadWorkingCalendar,
-  selectedWorkingCalendarTarget,
-  workingCalendar,
-  workingCalendarDateRange,
-  workingCalendarEditorErrorMessages,
-  workingCalendarErrorMessages,
-  workingCalendarSelectedTargetKey,
-  workingCalendarSuccessMessage,
-  workingCalendarTargetOptions,
-  workingDayEditingDay,
-  workingDayPendingDelete,
-} = useWbsPage();
+// 画面の状態と操作は約140項目あるため、分割代入せず1つの名前で受け取り、templateで`page.`から参照する。
+// reactiveで包むと中のref・computedが自動で展開され、templateでも`.value`なしで読み書きできる。
+const page = reactive(useWbsPage());
 
-onBeforeMount(initialize);
+onBeforeMount(page.initialize);
 
 const VIEW_OPTIONS = [
   { value: "table", label: "階層表", icon: "i-mdi-table-tree" },
@@ -183,7 +45,7 @@ const VIEW_OPTIONS = [
 </script>
 
 <template>
-  <LoadingIndicator v-if="isLoading" />
+  <LoadingIndicator v-if="page.isLoading" />
   <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
     <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
       <UButton
@@ -197,43 +59,43 @@ const VIEW_OPTIONS = [
         aria-label="Project一覧へ戻る"
       />
       <div>
-        <h1 class="text-2xl">{{ wbs?.projectName ?? "WBS" }}</h1>
+        <h1 class="text-2xl">{{ page.wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-sm opacity-70">Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理</div>
       </div>
-      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto text-white" :disabled="isLoading" @click="openBoard">
+      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto text-white" :disabled="page.isLoading" @click="page.openBoard">
         Boardを開く
       </UButton>
-      <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="isLoading" @click="initialize">再読込</UButton>
+      <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="page.isLoading" @click="page.initialize">再読込</UButton>
     </div>
 
-    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
-      <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+    <StatusAlert v-if="page.errorMessages.length" type="error" class="mb-4">
+      <div v-for="message in page.errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="page.successMessage" type="success" class="mb-4">{{ page.successMessage }}</StatusAlert>
 
-    <UCard v-if="wbs" class="mx-auto max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
+    <UCard v-if="page.wbs" class="mx-auto max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
       <template #header>
         <div class="flex flex-wrap items-center gap-2">
           <UIcon name="i-mdi-file-tree-outline" class="size-6" />
           WBS階層表
-          <UBadge size="sm" variant="outline" class="ms-auto">Task {{ taskCount }}</UBadge>
-          <UBadge size="sm" variant="outline">Summary {{ summaryCount }}</UBadge>
-          <UBadge size="sm" variant="outline">Milestone {{ milestoneCount }}</UBadge>
+          <UBadge size="sm" variant="outline" class="ms-auto">Task {{ page.taskCount }}</UBadge>
+          <UBadge size="sm" variant="outline">Summary {{ page.summaryCount }}</UBadge>
+          <UBadge size="sm" variant="outline">Milestone {{ page.milestoneCount }}</UBadge>
         </div>
       </template>
 
-      <div v-if="rows.length" class="px-4 pt-4 pb-3">
+      <div v-if="page.rows.length" class="px-4 pt-4 pb-3">
         <UFieldGroup role="group" aria-label="WBS表示形式">
           <UButton
             v-for="option in VIEW_OPTIONS"
             :key="option.value"
             :icon="option.icon"
             size="lg"
-            :color="activeView === option.value ? 'primary' : 'neutral'"
-            :variant="activeView === option.value ? 'soft' : 'ghost'"
+            :color="page.activeView === option.value ? 'primary' : 'neutral'"
+            :variant="page.activeView === option.value ? 'soft' : 'ghost'"
             class="shadow-none"
-            :aria-pressed="activeView === option.value"
-            @click="activeView = option.value"
+            :aria-pressed="page.activeView === option.value"
+            @click="page.activeView = option.value"
           >
             {{ option.label }}
           </UButton>
@@ -243,7 +105,7 @@ const VIEW_OPTIONS = [
         </p>
       </div>
 
-      <div v-if="rows.length && activeView === 'table'" class="overflow-x-auto">
+      <div v-if="page.rows.length && page.activeView === 'table'" class="overflow-x-auto">
         <table class="wbs-table app-table app-table-hover min-w-320 [&_td]:h-13 [&_td]:py-2 [&_th]:h-13">
           <thead>
             <tr>
@@ -261,7 +123,7 @@ const VIEW_OPTIONS = [
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in rows" :key="row.taskId">
+            <tr v-for="row in page.rows" :key="row.taskId">
               <td class="whitespace-nowrap">{{ row.wbsCode || "—" }}</td>
               <!-- 階層の深さを字下げで表す。1階層ごとに24pxずつ右へずらす。 -->
               <td class="min-w-80" :style="{ paddingInlineStart: `${16 + row.depth * 24}px` }">
@@ -311,9 +173,9 @@ const VIEW_OPTIONS = [
                     size="sm"
                     variant="ghost"
                     square
-                    :disabled="isLoadingEffortPlans"
+                    :disabled="page.isLoadingEffortPlans"
                     :aria-label="`${row.title}の日別予定工数を開く`"
-                    @click="openEffortPlanDialog(row.taskId)"
+                    @click="page.openEffortPlanDialog(row.taskId)"
                   />
                   <UButton
                     v-if="row.taskType === 'TASK'"
@@ -322,19 +184,19 @@ const VIEW_OPTIONS = [
                     size="sm"
                     variant="ghost"
                     square
-                    :disabled="isLoadingWorkLogs"
+                    :disabled="page.isLoadingWorkLogs"
                     :aria-label="`${row.title}の日別実績工数を開く`"
-                    @click="openWorkLogDialog(row.taskId)"
+                    @click="page.openWorkLogDialog(row.taskId)"
                   />
                   <UButton
-                    v-if="canEditWbs"
+                    v-if="page.canEditWbs"
                     icon="i-mdi-pencil-outline"
                     size="sm"
                     variant="ghost"
                     square
-                    :disabled="isSaving"
+                    :disabled="page.isSaving"
                     :aria-label="`${row.title}のWBS情報を編集`"
-                    @click="openTaskEditor(row.taskId)"
+                    @click="page.openTaskEditor(row.taskId)"
                   />
                 </div>
               </td>
@@ -343,9 +205,9 @@ const VIEW_OPTIONS = [
         </table>
       </div>
 
-      <div v-else-if="rows.length && activeView === 'gantt'" class="overflow-x-auto">
+      <div v-else-if="page.rows.length && page.activeView === 'gantt'" class="overflow-x-auto">
         <Suspense>
-          <WbsGanttChart :rows="rows" :dependencies="dependencies" />
+          <WbsGanttChart :rows="page.rows" :dependencies="page.dependencies" />
           <template #fallback>
             <div class="p-10 text-center">Ganttを読み込んでいます。</div>
           </template>
@@ -360,92 +222,92 @@ const VIEW_OPTIONS = [
     </UCard>
 
     <WbsBaselineCard
-      v-if="wbs"
-      :baseline-list="baselineList"
-      :active-baseline-detail="activeBaselineDetail"
-      :comparison-rows="baselineChangedRows"
-      :can-manage="canManageBaselines"
-      :is-loading="isLoading"
-      :is-mutating="isBaselineMutating"
-      :activating-baseline-id="activatingBaselineId"
-      :error-messages="baselineErrorMessages"
-      :success-message="baselineSuccessMessage"
-      @create="openBaselineCreateDialog"
-      @activate="activateWbsBaseline"
+      v-if="page.wbs"
+      :baseline-list="page.baselineList"
+      :active-baseline-detail="page.activeBaselineDetail"
+      :comparison-rows="page.baselineChangedRows"
+      :can-manage="page.canManageBaselines"
+      :is-loading="page.isLoading"
+      :is-mutating="page.isBaselineMutating"
+      :activating-baseline-id="page.activatingBaselineId"
+      :error-messages="page.baselineErrorMessages"
+      :success-message="page.baselineSuccessMessage"
+      @create="page.openBaselineCreateDialog"
+      @activate="page.activateWbsBaseline"
     />
 
     <WbsEarnedValueCard
-      v-if="wbs"
-      :status-date="earnedValueStatusDate"
-      :metrics="earnedValue"
-      :is-loading="isLoadingEarnedValue"
-      :error-messages="earnedValueErrorMessages"
-      @load="loadEarnedValueMetrics"
+      v-if="page.wbs"
+      :status-date="page.earnedValueStatusDate"
+      :metrics="page.earnedValue"
+      :is-loading="page.isLoadingEarnedValue"
+      :error-messages="page.earnedValueErrorMessages"
+      @load="page.loadEarnedValueMetrics"
     />
 
     <WbsReportExportCard
-      v-if="wbs"
-      :status-date="earnedValueStatusDate"
-      :exporting-report-type="exportingReportType"
-      :error-messages="reportExportErrorMessages"
-      :success-message="reportExportSuccessMessage"
-      @download="downloadWbsReport"
+      v-if="page.wbs"
+      :status-date="page.earnedValueStatusDate"
+      :exporting-report-type="page.exportingReportType"
+      :error-messages="page.reportExportErrorMessages"
+      :success-message="page.reportExportSuccessMessage"
+      @download="page.downloadWbsReport"
     />
 
     <WorkingCalendarCard
-      v-if="wbs"
-      :date-range="workingCalendarDateRange"
-      :calendar="workingCalendar"
-      :target-options="workingCalendarTargetOptions"
-      :selected-target-key="workingCalendarSelectedTargetKey"
-      :can-edit-selected-target="canEditSelectedWorkingCalendarTarget"
-      :is-loading="isLoadingWorkingCalendar"
-      :is-mutating="isWorkingCalendarMutating"
-      :error-messages="workingCalendarErrorMessages"
-      :success-message="workingCalendarSuccessMessage"
-      @load="loadWorkingCalendar"
-      @edit="openWorkingDayEditor"
-      @request-delete="requestWorkingDayDelete"
+      v-if="page.wbs"
+      :date-range="page.workingCalendarDateRange"
+      :calendar="page.workingCalendar"
+      :target-options="page.workingCalendarTargetOptions"
+      :selected-target-key="page.workingCalendarSelectedTargetKey"
+      :can-edit-selected-target="page.canEditSelectedWorkingCalendarTarget"
+      :is-loading="page.isLoadingWorkingCalendar"
+      :is-mutating="page.isWorkingCalendarMutating"
+      :error-messages="page.workingCalendarErrorMessages"
+      :success-message="page.workingCalendarSuccessMessage"
+      @load="page.loadWorkingCalendar"
+      @edit="page.openWorkingDayEditor"
+      @request-delete="page.requestWorkingDayDelete"
     />
 
     <TaskWorkloadCard
-      v-if="wbs"
-      :date-range="workloadDateRange"
-      :workload="workload"
-      :is-loading="isLoadingWorkload"
-      :error-messages="workloadErrorMessages"
-      @load="loadTaskWorkload"
+      v-if="page.wbs"
+      :date-range="page.workloadDateRange"
+      :workload="page.workload"
+      :is-loading="page.isLoadingWorkload"
+      :error-messages="page.workloadErrorMessages"
+      @load="page.loadTaskWorkload"
     />
 
     <WbsEstimateAccuracyCard
-      v-if="wbs"
-      :estimate-accuracy="estimateAccuracy"
-      :is-loading="isLoadingEstimateAccuracy"
-      :error-messages="estimateAccuracyErrorMessages"
-      @load="loadEstimateAccuracy"
+      v-if="page.wbs"
+      :estimate-accuracy="page.estimateAccuracy"
+      :is-loading="page.isLoadingEstimateAccuracy"
+      :error-messages="page.estimateAccuracyErrorMessages"
+      @load="page.loadEstimateAccuracy"
     />
 
-    <UCard v-if="wbs" class="mx-auto mt-4 max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
+    <UCard v-if="page.wbs" class="mx-auto mt-4 max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
       <template #header>
         <div class="flex flex-wrap items-center gap-2">
           <UIcon name="i-mdi-vector-link" class="size-6" />
           Task依存関係
-          <UBadge size="sm" variant="outline">{{ dependencyRows.length }}件</UBadge>
+          <UBadge size="sm" variant="outline">{{ page.dependencyRows.length }}件</UBadge>
           <UButton
-            v-if="canEditWbs"
+            v-if="page.canEditWbs"
             icon="i-mdi-link-plus"
             color="primary"
             variant="soft"
             class="ms-auto"
-            :disabled="dependencyTaskOptions.length < 2 || isDependencyMutating"
-            @click="openDependencyEditor"
+            :disabled="page.dependencyTaskOptions.length < 2 || page.isDependencyMutating"
+            @click="page.openDependencyEditor"
           >
             依存関係を追加
           </UButton>
         </div>
       </template>
 
-      <div v-if="dependencyRows.length" class="overflow-x-auto">
+      <div v-if="page.dependencyRows.length" class="overflow-x-auto">
         <table class="app-table app-table-hover min-w-205 [&_td]:h-13 [&_th]:h-13">
           <thead>
             <tr>
@@ -453,11 +315,11 @@ const VIEW_OPTIONS = [
               <th scope="col">後続Task</th>
               <th scope="col">依存種別</th>
               <th scope="col">待ち時間</th>
-              <th v-if="canEditWbs" scope="col">操作</th>
+              <th v-if="page.canEditWbs" scope="col">操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="dependency in dependencyRows" :key="dependency.dependencyId">
+            <tr v-for="dependency in page.dependencyRows" :key="dependency.dependencyId">
               <td>{{ dependency.predecessorLabel }}</td>
               <td>
                 <UIcon name="i-mdi-arrow-right" class="me-2 size-5 align-middle" />
@@ -465,16 +327,16 @@ const VIEW_OPTIONS = [
               </td>
               <td><UBadge size="xs" variant="outline">Finish-to-Start</UBadge></td>
               <td>{{ dependency.lagMinutes }}分</td>
-              <td v-if="canEditWbs">
+              <td v-if="page.canEditWbs">
                 <UButton
                   icon="i-mdi-link-variant-remove"
                   color="error"
                   size="sm"
                   variant="ghost"
                   square
-                  :disabled="isDependencyMutating"
+                  :disabled="page.isDependencyMutating"
                   :aria-label="`${dependency.predecessorLabel}から${dependency.successorLabel}への依存関係を削除`"
-                  @click="requestDependencyDelete(dependency.dependencyId)"
+                  @click="page.requestDependencyDelete(dependency.dependencyId)"
                 />
               </td>
             </tr>
@@ -488,160 +350,160 @@ const VIEW_OPTIONS = [
     </UCard>
 
     <WbsTaskEditDialog
-      :open="isEditorOpen"
-      :task="editingTask"
-      :parent-options="parentOptions"
-      :is-saving="isSaving"
-      :error-messages="editorErrorMessages"
-      @close="closeTaskEditor"
-      @save="saveWbsTask"
+      :open="page.isEditorOpen"
+      :task="page.editingTask"
+      :parent-options="page.parentOptions"
+      :is-saving="page.isSaving"
+      :error-messages="page.editorErrorMessages"
+      @close="page.closeTaskEditor"
+      @save="page.saveWbsTask"
     />
 
     <WbsBaselineCreateDialog
-      :open="isBaselineCreateDialogOpen"
-      :is-saving="isCreatingBaseline"
-      :error-messages="baselineEditorErrorMessages"
-      @close="closeBaselineCreateDialog"
-      @save="saveWbsBaseline"
+      :open="page.isBaselineCreateDialogOpen"
+      :is-saving="page.isCreatingBaseline"
+      :error-messages="page.baselineEditorErrorMessages"
+      @close="page.closeBaselineCreateDialog"
+      @save="page.saveWbsBaseline"
     />
 
     <WbsDependencyCreateDialog
-      :open="isDependencyEditorOpen"
-      :task-options="dependencyTaskOptions"
-      :is-saving="isSavingDependency"
-      :error-messages="dependencyEditorErrorMessages"
-      @close="closeDependencyEditor"
-      @save="saveDependency"
+      :open="page.isDependencyEditorOpen"
+      :task-options="page.dependencyTaskOptions"
+      :is-saving="page.isSavingDependency"
+      :error-messages="page.dependencyEditorErrorMessages"
+      @close="page.closeDependencyEditor"
+      @save="page.saveDependency"
     />
 
     <TaskEffortPlanDialog
-      :open="isEffortPlanDialogOpen"
-      :task="effortPlanTask"
-      :effort-plan-list="effortPlanList"
-      :editing-effort-plan="editingEffortPlan"
-      :assignee-options="effortPlanAssigneeOptions"
-      :current-account-id="currentAccountId"
-      :can-edit="canEditSelectedEffortPlanTask"
-      :can-manage-any-effort-plan="canManageAnyEffortPlan"
-      :is-loading="isLoadingEffortPlans"
-      :is-saving="isSavingEffortPlan"
-      :is-deleting="isDeletingEffortPlan"
-      :error-messages="effortPlanEditorErrorMessages"
-      :success-message="effortPlanSuccessMessage"
-      @close="closeEffortPlanDialog"
-      @save="saveEffortPlan"
-      @edit="editEffortPlan"
-      @cancel-edit="cancelEffortPlanEdit"
-      @request-delete="requestEffortPlanDelete"
+      :open="page.isEffortPlanDialogOpen"
+      :task="page.effortPlanTask"
+      :effort-plan-list="page.effortPlanList"
+      :editing-effort-plan="page.editingEffortPlan"
+      :assignee-options="page.effortPlanAssigneeOptions"
+      :current-account-id="page.currentAccountId"
+      :can-edit="page.canEditSelectedEffortPlanTask"
+      :can-manage-any-effort-plan="page.canManageAnyEffortPlan"
+      :is-loading="page.isLoadingEffortPlans"
+      :is-saving="page.isSavingEffortPlan"
+      :is-deleting="page.isDeletingEffortPlan"
+      :error-messages="page.effortPlanEditorErrorMessages"
+      :success-message="page.effortPlanSuccessMessage"
+      @close="page.closeEffortPlanDialog"
+      @save="page.saveEffortPlan"
+      @edit="page.editEffortPlan"
+      @cancel-edit="page.cancelEffortPlanEdit"
+      @request-delete="page.requestEffortPlanDelete"
     />
 
     <TaskWorkLogDialog
-      :open="isWorkLogDialogOpen"
-      :task="workLogTask"
-      :work-log-list="workLogList"
-      :editing-work-log="editingWorkLog"
-      :worker-options="workLogWorkerOptions"
-      :current-account-id="currentAccountId"
-      :can-edit="canEditSelectedWorkLogTask"
-      :can-manage-any-work-log="canManageAnyWorkLog"
-      :is-loading="isLoadingWorkLogs"
-      :is-saving="isSavingWorkLog"
-      :is-deleting="isDeletingWorkLog"
-      :error-messages="workLogEditorErrorMessages"
-      :success-message="workLogSuccessMessage"
-      @close="closeWorkLogDialog"
-      @save="saveWorkLog"
-      @edit="editWorkLog"
-      @cancel-edit="cancelWorkLogEdit"
-      @request-delete="requestWorkLogDelete"
+      :open="page.isWorkLogDialogOpen"
+      :task="page.workLogTask"
+      :work-log-list="page.workLogList"
+      :editing-work-log="page.editingWorkLog"
+      :worker-options="page.workLogWorkerOptions"
+      :current-account-id="page.currentAccountId"
+      :can-edit="page.canEditSelectedWorkLogTask"
+      :can-manage-any-work-log="page.canManageAnyWorkLog"
+      :is-loading="page.isLoadingWorkLogs"
+      :is-saving="page.isSavingWorkLog"
+      :is-deleting="page.isDeletingWorkLog"
+      :error-messages="page.workLogEditorErrorMessages"
+      :success-message="page.workLogSuccessMessage"
+      @close="page.closeWorkLogDialog"
+      @save="page.saveWorkLog"
+      @edit="page.editWorkLog"
+      @cancel-edit="page.cancelWorkLogEdit"
+      @request-delete="page.requestWorkLogDelete"
     />
 
     <WorkingDayEditDialog
-      :open="isWorkingDayEditorOpen"
-      :day="workingDayEditingDay"
-      :target="selectedWorkingCalendarTarget"
-      :is-saving="isSavingWorkingDay"
-      :error-messages="workingCalendarEditorErrorMessages"
-      @close="closeWorkingDayEditor"
-      @save="saveWorkingDay"
+      :open="page.isWorkingDayEditorOpen"
+      :day="page.workingDayEditingDay"
+      :target="page.selectedWorkingCalendarTarget"
+      :is-saving="page.isSavingWorkingDay"
+      :error-messages="page.workingCalendarEditorErrorMessages"
+      @close="page.closeWorkingDayEditor"
+      @save="page.saveWorkingDay"
     />
 
     <UModal
-      :open="workingDayPendingDelete !== null"
-      :dismissible="!isDeletingWorkingDay"
+      :open="page.workingDayPendingDelete !== null"
+      :dismissible="!page.isDeletingWorkingDay"
       title="稼働日例外を削除"
       :ui="{ content: 'max-w-140' }"
-      @update:open="handleWorkingDayDeleteDialogVisibility"
+      @update:open="page.handleWorkingDayDeleteDialogVisibility"
     >
       <template #body>
-        <template v-if="workingDayPendingDelete">
-          {{ workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
+        <template v-if="page.workingDayPendingDelete">
+          {{ page.workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
         </template>
         <template v-else>選択した稼働日例外を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="isDeletingWorkingDay" @click="cancelWorkingDayDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="isDeletingWorkingDay" @click="confirmWorkingDayDelete">削除</UButton>
+        <UButton variant="ghost" :disabled="page.isDeletingWorkingDay" @click="page.cancelWorkingDayDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="page.isDeletingWorkingDay" @click="page.confirmWorkingDayDelete">削除</UButton>
       </template>
     </UModal>
 
     <UModal
-      :open="effortPlanPendingDelete !== null"
-      :dismissible="!isDeletingEffortPlan"
+      :open="page.effortPlanPendingDelete !== null"
+      :dismissible="!page.isDeletingEffortPlan"
       title="Task日別予定を削除"
       :ui="{ content: 'max-w-140' }"
-      @update:open="handleEffortPlanDeleteDialogVisibility"
+      @update:open="page.handleEffortPlanDeleteDialogVisibility"
     >
       <template #body>
-        <template v-if="effortPlanPendingDelete">
-          {{ effortPlanPendingDelete.planDate }}・{{ effortPlanPendingDelete.assigneeDisplayName }}の
-          {{ effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
+        <template v-if="page.effortPlanPendingDelete">
+          {{ page.effortPlanPendingDelete.planDate }}・{{ page.effortPlanPendingDelete.assigneeDisplayName }}の
+          {{ page.effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
         </template>
         <template v-else>選択したTask日別予定を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="isDeletingEffortPlan" @click="cancelEffortPlanDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="isDeletingEffortPlan" @click="confirmEffortPlanDelete">削除</UButton>
+        <UButton variant="ghost" :disabled="page.isDeletingEffortPlan" @click="page.cancelEffortPlanDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="page.isDeletingEffortPlan" @click="page.confirmEffortPlanDelete">削除</UButton>
       </template>
     </UModal>
 
     <UModal
-      :open="workLogPendingDelete !== null"
-      :dismissible="!isDeletingWorkLog"
+      :open="page.workLogPendingDelete !== null"
+      :dismissible="!page.isDeletingWorkLog"
       title="Task日別実績を削除"
       :ui="{ content: 'max-w-140' }"
-      @update:open="handleWorkLogDeleteDialogVisibility"
+      @update:open="page.handleWorkLogDeleteDialogVisibility"
     >
       <template #body>
-        <template v-if="workLogPendingDelete">
-          {{ workLogPendingDelete.workDate }}・{{ workLogPendingDelete.workerDisplayName }}の
-          {{ workLogPendingDelete.actualEffortMinutes }}分を削除します。
+        <template v-if="page.workLogPendingDelete">
+          {{ page.workLogPendingDelete.workDate }}・{{ page.workLogPendingDelete.workerDisplayName }}の
+          {{ page.workLogPendingDelete.actualEffortMinutes }}分を削除します。
         </template>
         <template v-else>選択したTask日別実績を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="isDeletingWorkLog" @click="cancelWorkLogDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="isDeletingWorkLog" @click="confirmWorkLogDelete">削除</UButton>
+        <UButton variant="ghost" :disabled="page.isDeletingWorkLog" @click="page.cancelWorkLogDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="page.isDeletingWorkLog" @click="page.confirmWorkLogDelete">削除</UButton>
       </template>
     </UModal>
 
     <UModal
-      :open="dependencyPendingDelete !== null"
-      :dismissible="!isDeletingDependency"
+      :open="page.dependencyPendingDelete !== null"
+      :dismissible="!page.isDeletingDependency"
       title="Task依存関係を削除"
       :ui="{ content: 'max-w-140' }"
-      @update:open="handleDependencyDeleteDialogVisibility"
+      @update:open="page.handleDependencyDeleteDialogVisibility"
     >
       <template #body>
-        <template v-if="dependencyPendingDeleteRow">
-          「{{ dependencyPendingDeleteRow.predecessorLabel }}」から
-          「{{ dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
+        <template v-if="page.dependencyPendingDeleteRow">
+          「{{ page.dependencyPendingDeleteRow.predecessorLabel }}」から
+          「{{ page.dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
         </template>
         <template v-else>選択したTask依存関係を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="isDeletingDependency" @click="cancelDependencyDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="isDeletingDependency" @click="confirmDependencyDelete">削除</UButton>
+        <UButton variant="ghost" :disabled="page.isDeletingDependency" @click="page.cancelDependencyDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="page.isDeletingDependency" @click="page.confirmDependencyDelete">削除</UButton>
       </template>
     </UModal>
   </div>

@@ -356,7 +356,7 @@ describe("useTaskWorkLogs", () => {
       expect(options.reloadWorkload).not.toHaveBeenCalled();
     });
 
-    it("競合後の一覧再取得が401ならDialogを閉じてSession失効処理を呼ぶ", async () => {
+    it("競合後の一覧再取得が401ならSession失効処理へ委ねる", async () => {
       mocks.wbsApi.deleteTaskWorkLog.mockRejectedValue(new WbsApiError(404, null));
       const { context, state } = await openWorkLogs({ canManageProject: computed(() => true) });
       state.requestWorkLogDelete(41);
@@ -364,9 +364,10 @@ describe("useTaskWorkLogs", () => {
 
       await state.confirmWorkLogDelete();
 
-      expect(state.isWorkLogDialogOpen.value).toBe(false);
-      expect(state.workLogEditorErrorMessages.value).toEqual([]);
       expect(context.handleUnauthorized).toHaveBeenCalledOnce();
+      state.discardWorkLogDialog();
+      expect(state.isWorkLogDialogOpen.value).toBe(false);
+      expect(state.workLogPendingDelete.value).toBeNull();
     });
 
     it("読込中はDialogを閉じず、保存中は編集の取消を受け付けない", async () => {

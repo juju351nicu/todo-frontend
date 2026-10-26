@@ -1,3 +1,5 @@
+import { getBusinessToday } from "@/shared/utils/businessDate";
+
 const ISO_LOCAL_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /** yyyy-MM-ddとして存在する日付かをtimezoneに依存せず検査する。 */
@@ -14,12 +16,13 @@ export const isValidIsoLocalDate = (value: string): boolean => {
   );
 };
 
-/** ブラウザーのローカル日付をdate input用のyyyy-MM-ddへ変換する。 */
-export const getToday = (): string => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
+/**
+ * 日別予定・実績Formの初期日付とEVM・Excel帳票の初期基準日に使う「今日」を、業務日（Asia/Tokyo）で返す。
+ * Backendは業務日で集計するため、利用端末のタイムゾーンで決めると日付の変わり目で1日ずれる。
+ *
+ * @returns yyyy-MM-dd形式の業務日
+ */
+export const getToday = (): string => getBusinessToday();
 
 /** 分単位工数を0分、分だけ、時間と分のいずれかへ整形する。 */
 export const formatEffortMinutes = (minutes: number): string => {

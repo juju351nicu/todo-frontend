@@ -1,9 +1,9 @@
 import { ref } from "vue";
 
-import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
+import WbsApi from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { EarnedValueResponse } from "@/features/wbs/types/wbs";
-import { resolveWbsErrorMessages } from "@/features/wbs/utils/apiErrors";
+import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { getToday } from "@/features/wbs/utils/effort";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -60,35 +60,19 @@ export const useWbsEarnedValue = (context: WbsPageContext) => {
     }
   };
 
-  /** EVM参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
+  /** EVM参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。409はactive baselineがないことを表す。 */
   const handleEarnedValueReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.earnedValue.forbidden,
+      notFound: DISPLAY_MESSAGES.wbs.projectNotFound,
+      conflict: DISPLAY_MESSAGES.wbs.earnedValue.activeBaselineRequired,
+      failed: DISPLAY_MESSAGES.wbs.earnedValue.loadFailed,
+    });
+    if (result.type === "unauthorized") {
       await context.handleUnauthorized();
       return;
     }
-    if (error.status === 403) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.earnedValue.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    if (error.status === 409) {
-      earnedValueErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.earnedValue.activeBaselineRequired
-      );
-      return;
-    }
-    earnedValueErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.earnedValue.loadFailed
-    );
+    earnedValueErrorMessages.value = result.messages;
   };
 
   /**
