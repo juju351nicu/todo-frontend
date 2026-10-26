@@ -51,7 +51,7 @@ describe("useTaskEffortPlans", () => {
     });
     expect(page.effortPlanList.value).toEqual(effortPlanList);
     expect(page.effortPlanAssigneeOptions.value).toEqual([
-      { title: "アカウントID: 2（MEMBER）", value: 2 },
+      { title: "参加 二郎（MEMBER）", value: 2 },
     ]);
   });
 

@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildProjectMemberOptions,
   buildTaskStatusCodeOptions,
   buildTaskStatusIdOptions,
   TASK_PRIORITY_OPTIONS,
@@ -16,12 +15,6 @@ describe("taskFormOptions", () => {
   it("優先度は1=低、3=高の順に並べる", () => {
     expect(TASK_PRIORITY_OPTIONS.map((option) => option.value)).toEqual([1, 2, 3]);
     expect(TASK_PRIORITY_OPTIONS[0].title).toBe("低");
-  });
-
-  it("Project memberをアカウントIDとroleで表示する", () => {
-    expect(buildProjectMemberOptions([{ accountId: 7, projectRole: "OWNER" }])).toEqual([
-      { title: "アカウントID: 7（OWNER）", value: 7 },
-    ]);
   });
 
   it("完了列を除外する指定のときだけ完了列を除く", () => {

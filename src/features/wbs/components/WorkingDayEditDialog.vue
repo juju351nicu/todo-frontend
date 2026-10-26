@@ -8,6 +8,8 @@ interface Props {
   open: boolean;
   day: WorkingCalendarDay | null;
   target: WorkingCalendarTarget | null;
+  /** 個人例外の対象の参加者名。Project共通または不明ならnull。 */
+  targetDisplayName: string | null;
   isSaving: boolean;
   errorMessages: string[];
 }
@@ -24,6 +26,7 @@ const { closeDialog, dialogTitle, editingOverride, form, handleDialogVisibility,
     open: () => props.open,
     day: () => props.day,
     target: () => props.target,
+    targetDisplayName: () => props.targetDisplayName,
     isSaving: () => props.isSaving,
     onClose: () => emit("close"),
     onSave: (value) => emit("save", value),

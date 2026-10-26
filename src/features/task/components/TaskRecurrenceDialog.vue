@@ -62,6 +62,7 @@ const {
   saveRule,
   selectRule,
   selectedRule,
+  selectedRuleAssigneeDisplayName,
   startCreating,
   statusOptions,
   successMessage,
@@ -424,7 +425,7 @@ const CREATION_MODE_OPTIONS = [
                 <strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～ {{ selectedRule.endDate ?? "終了日なし" }}
               </div>
               <div class="w-full p-1 sm:w-1/2"><strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前</div>
-              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> アカウントID {{ selectedRule.assigneeAccountId }}</div>
+              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> {{ selectedRuleAssigneeDisplayName }}</div>
               <div class="w-full p-1 sm:w-1/2"><strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日</div>
               <div class="w-full p-1 sm:w-1/2"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</div>
               <div class="w-full p-1 sm:w-1/2">

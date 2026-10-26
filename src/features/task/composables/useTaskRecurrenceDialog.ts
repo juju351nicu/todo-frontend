@@ -4,7 +4,11 @@ import type { MaybeRefOrGetter, Ref } from "vue";
 import type { ProjectMember, TaskStatus } from "@/features/project/types/project";
 import type { TaskRecurrenceWeekday } from "@/features/task/types/taskRecurrence";
 import { useTaskRecurrences } from "@/features/task/composables/useTaskRecurrences";
-import { buildProjectMemberOptions, buildTaskStatusIdOptions } from "@/features/task/utils/taskFormOptions";
+import {
+  buildProjectMemberOptions,
+  resolveProjectMemberDisplayName,
+} from "@/features/project/utils/projectMember";
+import { buildTaskStatusIdOptions } from "@/features/task/utils/taskFormOptions";
 
 /** `useTaskRecurrenceDialog`へ渡すBoard側の状態。 */
 export interface TaskRecurrenceDialogSource {
@@ -33,6 +37,7 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
   /** archive確認Dialogを開いている場合はtrue。 */
   const isArchiveConfirmOpen = ref<boolean>(false);
 
+  // Backendは停止中アカウントを繰り返しTaskの担当者・作成者に指定できないため、ACTIVEな参加者だけを候補にする。
   const memberOptions = computed(() => buildProjectMemberOptions(toValue(source.members)));
   // 繰り返しで生成するTaskは未完了として作るため、完了列は選べない。
   const statusOptions = computed(() => buildTaskStatusIdOptions(toValue(source.statuses), true));
@@ -90,6 +95,13 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
       : [...weekdays, weekday];
   };
 
+  /** 選択中の規則の担当者名。参加者から外れたアカウントはIDで示す。規則を選んでいなければ空文字。 */
+  const selectedRuleAssigneeDisplayName = computed(() =>
+    selectedRule.value === null
+      ? ""
+      : resolveProjectMemberDisplayName(toValue(source.members), selectedRule.value.assigneeAccountId)
+  );
+
   /** 選択規則をarchiveし、成功・競合いずれの場合も確認Dialogを閉じて最新状態を表示する。 */
   const confirmArchive = async (): Promise<void> => {
     await archiveRule();
@@ -106,6 +118,7 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
     isOpen,
     memberOptions,
     open,
+    selectedRuleAssigneeDisplayName,
     startCreating,
     statusOptions,
     toggleWeekday,

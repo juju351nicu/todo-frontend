@@ -3,8 +3,8 @@ import type { MaybeRefOrGetter, Ref } from "vue";
 
 import type { ProjectMember, TaskDetail, TaskStatus } from "@/features/project/types/project";
 import { useTaskTemplates } from "@/features/task/composables/useTaskTemplates";
+import { buildProjectMemberOptions } from "@/features/project/utils/projectMember";
 import {
-  buildProjectMemberOptions,
   buildTaskStatusCodeOptions,
   buildTaskStatusIdOptions,
 } from "@/features/task/utils/taskFormOptions";
@@ -31,6 +31,7 @@ export const useTaskTemplateDialog = (source: TaskTemplateDialogSource) => {
   /** archive確認Dialogを開いている場合はtrue。 */
   const isArchiveConfirmOpen = ref<boolean>(false);
 
+  // Backendは停止中アカウントをTaskテンプレートの担当者に指定できないため、ACTIVEな参加者だけを候補にする。
   const memberOptions = computed(() => buildProjectMemberOptions(toValue(source.members)));
   const statusIdOptions = computed(() => buildTaskStatusIdOptions(toValue(source.statuses)));
   const statusCodeOptions = computed(() => buildTaskStatusCodeOptions(toValue(source.statuses)));

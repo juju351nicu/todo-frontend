@@ -1,3 +1,5 @@
+import type { AccountStatus } from "@/shared/types/accountStatus";
+
 /** Projectの利用状態。 */
 export type ProjectStatus = "ACTIVE" | "ARCHIVED";
 
@@ -26,6 +28,10 @@ export interface ProjectMember {
   joinedAt: string;
   assignedBy: number;
   version: number;
+  /** 画面へ表示する参加者名。Backendが「姓 名」→メールアドレス→「Account {ID}」の順で必ず空でない値にする。 */
+  displayName: string;
+  /** 参加アカウントの状態。ACTIVE以外は日別予定・日別実績・繰り返しTask等の担当者に指定できない。 */
+  accountStatus: AccountStatus;
 }
 
 /** Boardの列として使用するTask status。 */

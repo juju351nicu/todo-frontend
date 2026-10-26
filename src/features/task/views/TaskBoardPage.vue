@@ -55,6 +55,7 @@ const {
   openTaskWorkLogs,
   priorityOptions,
   project,
+  resolveAssigneeDisplayName,
   saveTask,
   statusOptions,
   startTaskDrag,
@@ -211,7 +212,7 @@ onBeforeMount(initialize);
                   <UBadge :color="getTaskPriorityColor(task.priority)" size="xs">
                     優先度: {{ getTaskPriorityLabel(task.priority) }}
                   </UBadge>
-                  <UBadge size="xs" icon="i-mdi-account-outline">ID: {{ task.assigneeAccountId }}</UBadge>
+                  <UBadge size="xs" icon="i-mdi-account-outline">{{ resolveAssigneeDisplayName(task.assigneeAccountId) }}</UBadge>
                 </div>
                 <div class="mt-2 text-xs text-muted">{{ task.dateFrom }} ～ {{ task.dateTo }}</div>
               </div>

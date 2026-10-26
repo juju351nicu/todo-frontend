@@ -60,7 +60,7 @@ describe("useTaskWorkLogs", () => {
     expect(page.workLogTask.value).toMatchObject({ taskId: 2, taskType: "TASK" });
     expect(page.workLogList.value).toEqual(workLogList);
     expect(page.workLogWorkerOptions.value).toEqual([
-      { title: "アカウントID: 2（MEMBER）", value: 2 },
+      { title: "参加 二郎（MEMBER）", value: 2 },
     ]);
   });
 

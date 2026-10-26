@@ -193,7 +193,7 @@ export interface TaskWorkLogForm {
 
 /** Task日別実績の作業者selectへ表示するProject member候補。 */
 export interface TaskWorkLogWorkerOption {
-  /** アカウントIDとProject roleを含む表示文字列。 */
+  /** 表示名とProject roleを含む表示文字列。 */
   title: string;
   /** 作業者となるProject memberのアカウントID。 */
   value: number;
@@ -270,7 +270,7 @@ export interface TaskEffortPlanForm {
 
 /** Task日別予定の予定担当者selectへ表示するProject member候補。 */
 export interface TaskEffortPlanAssigneeOption {
-  /** アカウントIDとProject roleを含む表示文字列。 */
+  /** 表示名とProject roleを含む表示文字列。 */
   title: string;
   /** 予定担当者となるProject memberのアカウントID。 */
   value: number;

@@ -25,6 +25,9 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import {
   buildProjectMemberOptions,
+  resolveProjectMemberDisplayName,
+} from "@/features/project/utils/projectMember";
+import {
   buildTaskStatusIdOptions,
   TASK_PRIORITY_OPTIONS,
   type TaskSelectOption,
@@ -208,14 +211,26 @@ export const useTaskBoardPage = () => {
       userStore.hasRole("SYSTEM_ADMIN") ||
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER";
+    // Board Taskは停止中アカウントを担当者のまま保存できる。既存Taskの担当者が選択肢から消えないよう、
+    // 停止中の参加者も「（MEMBER・無効）」のように状態付きで候補へ残す。
     return buildProjectMemberOptions(
       (project.value?.members ?? []).filter(
         (member) => canAssignAnyMember || member.accountId === userStore.memberId
-      )
+      ),
+      { includeInactive: true }
     );
   });
 
   const priorityOptions = TASK_PRIORITY_OPTIONS;
+
+  /**
+   * Task cardの担当者バッジに出す参加者名を返す。Projectから外れたアカウントは`ID: {accountId}`で示す。
+   *
+   * @param accountId Taskの担当者アカウントID
+   * @returns 参加者の表示名
+   */
+  const resolveAssigneeDisplayName = (accountId: number): string =>
+    resolveProjectMemberDisplayName(project.value?.members ?? [], accountId);
 
   /** Project管理APIの確定ResponseをBoard見出し・認可・担当者候補へ反映する。 */
   const applyProjectDetail = (updatedProject: ProjectDetail): void => {
@@ -865,6 +880,7 @@ export const useTaskBoardPage = () => {
     openTaskWorkLogs,
     priorityOptions,
     project,
+    resolveAssigneeDisplayName,
     saveTask,
     statusOptions,
     startTaskDrag,

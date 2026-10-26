@@ -21,6 +21,8 @@ export interface UseWorkingDayEditFormOptions {
   readonly day: () => WorkingCalendarDay | null;
   /** 例外の対象（Project共通または個人）。未選択ならnull。 */
   readonly target: () => WorkingCalendarTarget | null;
+  /** 個人例外の対象の参加者名。不明ならnull（アカウントIDで示す）。 */
+  readonly targetDisplayName: () => string | null;
   /** 保存中か。保存中はDialogを閉じさせない。 */
   readonly isSaving: () => boolean;
   /** Dialogを閉じる操作を親へ知らせる。 */
@@ -54,10 +56,13 @@ export const useWorkingDayEditForm = (options: UseWorkingDayEditFormOptions) => 
     return day !== null && target !== null ? getWorkingDayOverride(day, target) : null;
   });
   const dialogTitle = computed(() => (editingOverride.value === null ? "稼働日例外を登録" : "稼働日例外を編集"));
-  /** Dialogの説明に出す例外の対象。個人例外ならアカウントIDを示す。 */
+  /** Dialogの説明に出す例外の対象。個人例外なら参加者名（不明ならアカウントID）を示す。 */
   const targetLabel = computed(() => {
     const target = options.target();
-    return target?.kind === "MEMBER" ? `個人例外（アカウントID: ${target.accountId}）` : "Project共通例外";
+    if (target?.kind !== "MEMBER") {
+      return "Project共通例外";
+    }
+    return `個人例外（${options.targetDisplayName() ?? `アカウントID: ${target.accountId}`}）`;
   });
 
   const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({

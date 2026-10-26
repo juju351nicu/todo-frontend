@@ -44,7 +44,8 @@ describe("Project API", () => {
         json: vi.fn().mockResolvedValue(board),
       });
 
-    await expect(ProjectApi.getProject(7)).resolves.toEqual(detail);
+    // 参加者が含まれない応答でも、参加者一覧を空配列として補う。
+    await expect(ProjectApi.getProject(7)).resolves.toEqual({ ...detail, members: [] });
     await expect(ProjectApi.getTaskBoard(7)).resolves.toEqual(board);
 
     expect(HttpClient.getRequest).toHaveBeenNthCalledWith(1, "/api/v1/projects/7");
@@ -91,11 +92,29 @@ describe("Project API", () => {
       json: vi.fn().mockResolvedValue(updated),
     });
 
-    await expect(ProjectApi.updateProject(7, request)).resolves.toEqual(updated);
+    await expect(ProjectApi.updateProject(7, request)).resolves.toEqual({ ...updated, members: [] });
     expect(HttpClient.putRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7",
       request
     );
+  });
+
+  it("参加者に表示名・状態がない応答（Backendの項目追加前）は、IDの表示名とACTIVEを補い、ある値は変えない", async () => {
+    const detail = {
+      projectId: 7,
+      members: [
+        { accountId: 3, projectRole: "OWNER" },
+        { accountId: 4, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "DISABLED" },
+      ],
+    };
+    HttpClient.getRequest.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(detail) });
+
+    const actual = await ProjectApi.getProject(7);
+
+    expect(actual.members).toEqual([
+      { accountId: 3, projectRole: "OWNER", displayName: "アカウントID: 3", accountStatus: "ACTIVE" },
+      { accountId: 4, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "DISABLED" },
+    ]);
   });
 
   it("Project memberの追加とrole変更をBackend DTO形式で送信する", async () => {

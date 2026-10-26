@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { buildProjectMemberOptions } from "@/features/project/utils/projectMember";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -73,19 +74,19 @@ export const useTaskEffortPlans = (
       (canManageAnyEffortPlan.value ||
         effortPlanTask.value.assigneeAccountId === userStore.memberId)
   );
-  /** 予定担当者の候補。Project管理権限がなければ本人だけ。 */
+  /**
+   * 予定担当者の候補。Project管理権限がなければ本人だけ。
+   * Backendは停止中アカウントを予定担当者に指定できない（400）ため、ACTIVEな参加者だけを表示名付きで出す。
+   */
   const effortPlanAssigneeOptions = computed<TaskEffortPlanAssigneeOption[]>(
     () =>
-      (context.project.value?.members ?? [])
-        .filter(
+      buildProjectMemberOptions(
+        (context.project.value?.members ?? []).filter(
           (member) =>
             canManageAnyEffortPlan.value ||
             member.accountId === userStore.memberId
         )
-        .map((member) => ({
-          title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-          value: member.accountId,
-        }))
+      )
   );
   const isEffortPlanMutating = computed(
     () => isSavingEffortPlan.value || isDeletingEffortPlan.value

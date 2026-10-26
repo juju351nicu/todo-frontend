@@ -161,7 +161,7 @@ const VIEW_OPTIONS = [
                   <span class="text-xs whitespace-nowrap">{{ formatProgressPercent(row.progressPercent) }}%</span>
                 </div>
               </td>
-              <td class="whitespace-nowrap">ID: {{ row.assigneeAccountId }}</td>
+              <td class="whitespace-nowrap">{{ page.resolveAssigneeDisplayName(row.assigneeAccountId) }}</td>
               <td>
                 <UBadge :color="getWbsPriorityColor(row.priority)" size="xs">{{ getWbsPriorityLabel(row.priority) }}</UBadge>
               </td>
@@ -373,6 +373,7 @@ const VIEW_OPTIONS = [
       :open="page.isWorkingDayEditorOpen"
       :day="page.workingDayEditingDay"
       :target="page.selectedWorkingCalendarTarget"
+      :target-display-name="page.selectedWorkingCalendarTargetDisplayName"
       :is-saving="page.isSavingWorkingDay"
       :error-messages="page.workingCalendarEditorErrorMessages"
       @close="page.closeWorkingDayEditor"

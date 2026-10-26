@@ -58,6 +58,8 @@ const project = {
       joinedAt: "2026-08-14T00:00:00Z",
       assignedBy: 1,
       version: 1,
+      displayName: "参加 二郎",
+      accountStatus: "ACTIVE",
     },
   ],
   taskStatuses: [

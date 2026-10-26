@@ -22,8 +22,9 @@ const memberTarget = { kind: "MEMBER", accountId: 5 };
  * テスト用の`useWorkingDayEditForm`を作る。propsはrefで持ち、getter経由で渡す（componentと同じ渡し方）。
  *
  * @param target 例外の対象
+ * @param targetDisplayName 個人例外の対象の参加者名。不明ならnull
  */
-const setup = (target = projectTarget) => {
+const setup = (target = projectTarget, targetDisplayName = null) => {
   const open = ref(true);
   const targetRef = ref(target);
   const onClose = vi.fn();
@@ -32,6 +33,7 @@ const setup = (target = projectTarget) => {
     open: () => open.value,
     day: () => day,
     target: () => targetRef.value,
+    targetDisplayName: () => targetDisplayName,
     isSaving: () => false,
     onClose,
     onSave,
@@ -48,10 +50,16 @@ describe("useWorkingDayEditForm", () => {
     expect(form.form.value).toEqual({ workDate: "2026-08-22", dayType: "HOLIDAY", availableMinutes: 0 });
   });
 
-  it("個人例外がなければ登録として、有効値でFormを作り、対象のアカウントIDを示す", () => {
-    const { form } = setup(memberTarget);
+  it("個人例外がなければ登録として、有効値でFormを作り、対象の参加者名を示す", () => {
+    const { form } = setup(memberTarget, "山田 太郎");
 
     expect(form.dialogTitle.value).toBe("稼働日例外を登録");
+    expect(form.targetLabel.value).toBe("個人例外（山田 太郎）");
+  });
+
+  it("参加者名が分からない個人例外はアカウントIDで示す", () => {
+    const { form } = setup(memberTarget, null);
+
     expect(form.targetLabel.value).toBe("個人例外（アカウントID: 5）");
   });
 

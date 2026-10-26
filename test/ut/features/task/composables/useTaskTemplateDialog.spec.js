@@ -14,7 +14,7 @@ vi.mock("@/features/task/composables/useTaskTemplates", () => ({
 const createDialog = (onTaskCreated = vi.fn()) =>
   useTaskTemplateDialog({
     projectId: ref(5),
-    members: [{ accountId: 7, projectRole: "OWNER" }],
+    members: [{ accountId: 7, projectRole: "OWNER", displayName: "山田 太郎", accountStatus: "ACTIVE" }],
     statuses: [{ taskStatusId: 2, statusCode: "TODO", name: "Todo", completed: false }],
     onTaskCreated,
   });
@@ -75,7 +75,7 @@ describe("useTaskTemplateDialog", () => {
   it("担当者・列IDと列codeの選択肢を作る", () => {
     const dialog = createDialog();
 
-    expect(dialog.memberOptions.value).toEqual([{ title: "アカウントID: 7（OWNER）", value: 7 }]);
+    expect(dialog.memberOptions.value).toEqual([{ title: "山田 太郎（OWNER）", value: 7 }]);
     expect(dialog.statusIdOptions.value).toEqual([{ title: "Todo", value: 2 }]);
     expect(dialog.statusCodeOptions.value).toEqual([{ title: "Todo（TODO）", value: "TODO" }]);
   });

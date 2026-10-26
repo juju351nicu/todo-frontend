@@ -53,7 +53,7 @@ describe("useWbsWorkingCalendar", () => {
     expect(page.workingCalendarTargetOptions.value).toEqual([
       { title: "Project共通", value: "PROJECT" },
       {
-        title: "個人例外: アカウントID 2（MEMBER）",
+        title: "個人例外: 参加 二郎（MEMBER）",
         value: "MEMBER:2",
       },
     ]);

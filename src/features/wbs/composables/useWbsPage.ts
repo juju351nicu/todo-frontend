@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
@@ -330,6 +331,15 @@ export const useWbsPage = () => {
     await router.replace({ query: remainingQuery });
   };
 
+  /**
+   * WBS表の担当者列に出す参加者名を返す。Projectから外れたアカウント（過去の担当者）は`ID: {accountId}`で示す。
+   *
+   * @param accountId Taskの担当者アカウントID
+   * @returns 参加者の表示名
+   */
+  const resolveAssigneeDisplayName = (accountId: number): string =>
+    resolveProjectMemberDisplayName(project.value?.members ?? [], accountId);
+
   /** 現在のProject IDを保持したままTask Boardへ遷移する。Project IDが不正なら遷移しない。 */
   const openBoard = async (): Promise<void> => {
     if (projectId.value === null) {
@@ -361,6 +371,7 @@ export const useWbsPage = () => {
     milestoneCount,
     openBoard,
     projectId,
+    resolveAssigneeDisplayName,
     rows,
     successMessage,
     summaryCount,

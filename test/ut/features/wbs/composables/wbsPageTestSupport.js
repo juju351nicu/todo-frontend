@@ -129,6 +129,8 @@ export const project = {
       joinedAt: "2026-08-01T00:00:00Z",
       assignedBy: 1,
       version: 0,
+      displayName: "管理 一郎",
+      accountStatus: "ACTIVE",
     },
     {
       accountId: 2,
@@ -136,6 +138,8 @@ export const project = {
       joinedAt: "2026-08-01T00:00:00Z",
       assignedBy: 1,
       version: 0,
+      displayName: "参加 二郎",
+      accountStatus: "ACTIVE",
     },
   ],
   taskStatuses: [],

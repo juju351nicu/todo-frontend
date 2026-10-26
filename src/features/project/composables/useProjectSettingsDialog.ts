@@ -17,6 +17,7 @@ import {
   PROJECT_ERROR_CODES,
   PROJECT_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/project/utils/apiErrors";
+import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
@@ -319,7 +320,7 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       addMemberAccountId.value = null;
       addMemberRole.value = "MEMBER";
-      successMessage.value = `アカウントID ${accountId} をProjectへ追加しました。`;
+      successMessage.value = `${resolveProjectMemberDisplayName(updatedProject.members, accountId)}（ID: ${accountId}）をProjectへ追加しました。`;
     } catch (error: unknown) {
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberAddFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
@@ -379,7 +380,7 @@ export const useProjectSettingsDialog = (
         request
       );
       applyProjectDetail(updatedProject);
-      successMessage.value = `アカウントID ${member.accountId} のProject roleを更新しました。`;
+      successMessage.value = `${member.displayName}（ID: ${member.accountId}）のProject roleを更新しました。`;
     } catch (error: unknown) {
       await handleApiError(
         error,
@@ -465,7 +466,7 @@ export const useProjectSettingsDialog = (
     try {
       const updatedProject = await ProjectApi.getProject(current.projectId);
       applyProjectDetail(updatedProject);
-      successMessage.value = `アカウントID ${target.accountId} をProjectから除外しました。`;
+      successMessage.value = `${target.displayName}（ID: ${target.accountId}）をProjectから除外しました。`;
     } catch (error: unknown) {
       // DELETEは確定済みのため再実行を促さず、最新表示の再取得だけを案内する。
       await handleProjectRefreshError(

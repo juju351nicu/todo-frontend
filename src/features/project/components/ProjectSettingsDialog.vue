@@ -4,6 +4,7 @@ import { computed } from "vue";
 import { useProjectSettingsDialog } from "@/features/project/composables/useProjectSettingsDialog";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -209,9 +210,19 @@ const SECTION_TABS = [
               <tr v-for="member in project.members" :key="member.accountId">
                 <td>
                   <div class="font-medium">
-                    ID: {{ member.accountId }}
+                    {{ member.displayName }}
                     <UBadge v-if="isCurrentMember(member)" size="xs" color="primary" class="ms-1">自分</UBadge>
+                    <UBadge
+                      v-if="member.accountStatus !== 'ACTIVE'"
+                      size="xs"
+                      variant="outline"
+                      :color="getAccountStatusColor(member.accountStatus)"
+                      class="ms-1"
+                    >
+                      {{ getAccountStatusLabel(member.accountStatus) }}
+                    </UBadge>
                   </div>
+                  <div class="text-xs text-muted">ID: {{ member.accountId }}</div>
                   <div class="text-xs text-muted">{{ getProjectRoleDescription(member.projectRole) }}</div>
                 </td>
                 <td class="min-w-52.5">
@@ -222,7 +233,7 @@ const SECTION_TABS = [
                     value-key="value"
                     size="sm"
                     :disabled="isBusy || !canManageMembers"
-                    :aria-label="`アカウントID ${member.accountId} のProject role`"
+                    :aria-label="`${member.displayName}（ID: ${member.accountId}）のProject role`"
                     class="w-full"
                   />
                   <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
@@ -240,7 +251,7 @@ const SECTION_TABS = [
                       variant="soft"
                       :loading="isSavingMember"
                       :disabled="!canSaveMemberRole(member)"
-                      :aria-label="`アカウントID ${member.accountId} のroleを保存`"
+                      :aria-label="`${member.displayName}（ID: ${member.accountId}）のroleを保存`"
                       @click="saveMemberRole(member)"
                     >
                       role保存
@@ -252,7 +263,7 @@ const SECTION_TABS = [
                       square
                       icon="i-mdi-account-remove-outline"
                       :disabled="isBusy || isLastOwner(member)"
-                      :aria-label="`アカウントID ${member.accountId} をProjectから除外`"
+                      :aria-label="`${member.displayName}（ID: ${member.accountId}）をProjectから除外`"
                       @click="openRemoveConfirm(member)"
                     />
                   </div>
@@ -296,7 +307,7 @@ const SECTION_TABS = [
       </span>
     </template>
     <template v-if="memberToRemove" #body>
-      <p>アカウントID {{ memberToRemove.accountId }} のmembershipを削除します。</p>
+      <p>{{ memberToRemove.displayName }}（ID: {{ memberToRemove.accountId }}）のmembershipを削除します。</p>
       <StatusAlert v-if="isCurrentMember(memberToRemove)" type="warning" variant="soft" class="mt-3">
         自分を除外すると、このProjectを参照できなくなりProject一覧へ戻ります。
       </StatusAlert>

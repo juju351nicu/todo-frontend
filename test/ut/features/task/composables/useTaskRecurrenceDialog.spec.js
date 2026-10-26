@@ -12,8 +12,8 @@ vi.mock("@/features/task/composables/useTaskRecurrences", () => ({
 }));
 
 const members = [
-  { accountId: 7, projectRole: "OWNER" },
-  { accountId: 8, projectRole: "MEMBER" },
+  { accountId: 7, projectRole: "OWNER", displayName: "山田 太郎", accountStatus: "ACTIVE" },
+  { accountId: 8, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "ACTIVE" },
 ];
 const statuses = [
   { taskStatusId: 1, statusCode: "DONE", name: "完了", completed: true },

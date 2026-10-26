@@ -1,6 +1,10 @@
 import { computed, ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import {
+  formatProjectMemberLabel,
+  resolveProjectMemberDisplayName,
+} from "@/features/project/utils/projectMember";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -91,7 +95,7 @@ export const useWbsWorkingCalendar = (
     );
     return targetOptions.concat(
       members.map((member) => ({
-        title: `個人例外: アカウントID ${member.accountId}（${member.projectRole}）`,
+        title: `個人例外: ${formatProjectMemberLabel(member)}`,
         value: buildWorkingCalendarTargetKey({
           kind: "MEMBER",
           accountId: member.accountId,
@@ -103,6 +107,16 @@ export const useWbsWorkingCalendar = (
   const selectedWorkingCalendarTarget = computed(() =>
     parseWorkingCalendarTargetKey(workingCalendarSelectedTargetKey.value)
   );
+  /** 個人例外を表示している場合の参加者名。稼働日例外Dialogの説明に使う。Project共通ならnull。 */
+  const selectedWorkingCalendarTargetDisplayName = computed(() => {
+    const target = selectedWorkingCalendarTarget.value;
+    return target?.kind === "MEMBER"
+      ? resolveProjectMemberDisplayName(
+          context.project.value?.members ?? [],
+          target.accountId
+        )
+      : null;
+  });
   const canEditSelectedWorkingCalendarTarget = computed(() => {
     const target = selectedWorkingCalendarTarget.value;
     if (
@@ -570,6 +584,7 @@ export const useWbsWorkingCalendar = (
     requestWorkingDayDelete,
     saveWorkingDay,
     selectedWorkingCalendarTarget,
+    selectedWorkingCalendarTargetDisplayName,
     workingCalendar,
     workingCalendarDateRange,
     workingCalendarEditorErrorMessages,
