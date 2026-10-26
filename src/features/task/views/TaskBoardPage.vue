@@ -197,6 +197,7 @@ onBeforeMount(initialize);
                   variant="ghost"
                   square
                   :disabled="isMoving"
+                  :data-task-move-handle="task.taskId"
                   :aria-label="`${task.title}を移動。上下キーで列内移動、左右キーで列移動`"
                   aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
                   title="方向キー: 上下で列内移動、左右で列移動"

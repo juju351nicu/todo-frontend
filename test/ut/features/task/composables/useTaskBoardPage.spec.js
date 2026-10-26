@@ -749,6 +749,27 @@ describe("useTaskBoardPage", () => {
     }
   );
 
+  it("方向キーで移動した後、移動したTaskの移動アイコンへフォーカスを戻す", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));
+    // 単体テストの実行環境にはDOMがないため、Board画面の移動アイコンを探すdocumentを差し替える。
+    // 移動中はアイコンがdisabledになりフォーカスが外れるため、移動後に探し直して戻すことを確かめる。
+    const focus = vi.fn();
+    const querySelector = vi.fn(() => ({ focus }));
+    vi.stubGlobal("document", { querySelector });
+    try {
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.moveTaskByKeyboard(31, "RIGHT");
+
+      expect(querySelector).toHaveBeenCalledWith('[data-task-move-handle="31"]');
+      expect(focus).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("先頭Taskの上・左方向では移動APIを送信しない", async () => {
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
     mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));

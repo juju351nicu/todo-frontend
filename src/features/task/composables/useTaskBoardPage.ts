@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from "vue";
+import { computed, nextTick, ref, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -748,6 +748,25 @@ export const useTaskBoardPage = () => {
       destinationTasks[destinationTaskIndex + 1] ?? null,
       snapshot
     );
+    await restoreMoveHandleFocus(taskId);
+  };
+
+  /**
+   * キーボード移動の後（失敗して元へ戻した場合も含む）、移動したTaskの移動アイコンへフォーカスを戻す。
+   * 移動中はアイコンをdisabledにするためフォーカスが外れ、続けて方向キーで動かせなくなるため。
+   * 移動したTaskはBoardの再描画で別の要素になるので、`data-task-move-handle`属性で探し直す。
+   *
+   * @param taskId 移動したTask ID
+   */
+  const restoreMoveHandleFocus = async (taskId: number): Promise<void> => {
+    await nextTick();
+    // DOMのない実行環境（単体テスト）では何もしない。
+    if (typeof document === "undefined") {
+      return;
+    }
+    document
+      .querySelector<HTMLElement>(`[data-task-move-handle="${taskId}"]`)
+      ?.focus();
   };
 
   /** 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。 */
