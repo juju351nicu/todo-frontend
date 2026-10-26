@@ -162,6 +162,7 @@ export const useWbsPage = () => {
   });
   const workLogState = useTaskWorkLogs(context, {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),
+    onDialogClosed: () => void removeWorkLogPanelQuery(),
   });
   const earnedValueState = useWbsEarnedValue(context);
   const reportExportState = useWbsReportExport(
@@ -312,6 +313,19 @@ export const useWbsPage = () => {
       return;
     }
     errorMessages.value = [DISPLAY_MESSAGES.wbs.readFailed];
+  };
+
+  /**
+   * Boardの導線で付いた`panel=work-logs`と`taskId`をURLから外す。
+   * 残したままだと、再読込やブラウザの戻る操作で閉じた日別実績Dialogが再び開くため。
+   * 履歴を増やさないよう`replace`し、他のqueryは保持する。
+   */
+  const removeWorkLogPanelQuery = async (): Promise<void> => {
+    if (firstRouteValue(route.query.panel) !== "work-logs") {
+      return;
+    }
+    const { panel: _panel, taskId: _taskId, ...remainingQuery } = route.query;
+    await router.replace({ query: remainingQuery });
   };
 
   /** 現在のProject IDを保持したままTask Boardへ遷移する。Project IDが不正なら遷移しない。 */

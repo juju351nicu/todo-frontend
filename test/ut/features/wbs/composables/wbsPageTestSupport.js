@@ -13,7 +13,7 @@ import { buildWbsTreeRows } from "@/features/wbs/utils/wbsTree";
 export const mocks = {
   permissions: new Set(),
   route: { params: { projectId: "7" }, query: {} },
-  router: { push: vi.fn() },
+  router: { push: vi.fn(), replace: vi.fn() },
   userStore: {
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
@@ -494,6 +494,7 @@ export const resetWbsPageMocks = () => {
   mocks.route.params.projectId = "7";
   mocks.route.query = {};
   mocks.router.push.mockResolvedValue(undefined);
+  mocks.router.replace.mockResolvedValue(undefined);
   mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
   mocks.wbsApi.activateWbsBaseline.mockResolvedValue(
     structuredClone({ ...inactiveBaselineSummary, active: true, version: 3 })

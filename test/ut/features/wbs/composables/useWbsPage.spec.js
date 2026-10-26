@@ -191,6 +191,28 @@ describe("useWbsPage", () => {
     expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledTimes(expectedOpen ? 1 : 0);
   });
 
+  it("Board導線で開いた日別実績Dialogを閉じると、panelとtaskIdだけをURLから外す", async () => {
+    mocks.route.query = { panel: "work-logs", taskId: "2", view: "gantt" };
+    const page = useWbsPage();
+    await page.initialize();
+
+    page.closeWorkLogDialog();
+
+    expect(page.isWorkLogDialogOpen.value).toBe(false);
+    // 再読込や戻る操作で閉じたDialogが再び開かないよう、履歴を増やさずqueryを置き換える。
+    expect(mocks.router.replace).toHaveBeenCalledWith({ query: { view: "gantt" } });
+  });
+
+  it("WBS画面の行から開いた日別実績Dialogを閉じてもURLは変えない", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    await page.openWorkLogDialog(2);
+
+    page.closeWorkLogDialog();
+
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
   it("route paramのProject IDが配列の場合は先頭の値を使う", async () => {
     mocks.route.params.projectId = ["7", "8"];
     const page = useWbsPage();
