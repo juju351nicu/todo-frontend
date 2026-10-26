@@ -171,6 +171,8 @@ export const DISPLAY_MESSAGES = {
         "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
       moveFailed: "Taskを移動できませんでした。",
       reloadFailed: "最新のProject Boardを再取得できませんでした。",
+      conflictReloaded:
+        "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     },
     comments: {
       readForbidden: "Taskコメントを参照するpermissionがありません。",

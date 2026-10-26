@@ -769,11 +769,19 @@ export const useTaskBoardPage = () => {
       ?.focus();
   };
 
-  /** 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。 */
+  /**
+   * 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。
+   * 409のmessage（「再読み込みしてください」等）の後ろに、画面側で再取得を済ませたことを添える。
+   * 利用者が手動で再読込しなくてよいと分かるようにするため。
+   */
   const reloadBoardAfterConflict = async (): Promise<void> => {
     const messagesBeforeReload = [...errorMessages.value];
     try {
       await loadBoardData();
+      errorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.task.board.conflictReloaded,
+      ];
     } catch (error: unknown) {
       if (
         isTaskBoardApiError(error) &&

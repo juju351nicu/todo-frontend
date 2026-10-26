@@ -302,7 +302,11 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual(["他の操作で更新されています。"]);
+    expect(page.errorMessages.value).toEqual([
+      "他の操作で更新されています。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
     expect(page.isEditorOpen.value).toBe(false);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
   });
@@ -673,7 +677,11 @@ describe("useTaskBoardPage", () => {
 
     await page.archiveTask();
 
-    expect(page.errorMessages.value).toEqual(["Taskが先に更新されています。"]);
+    expect(page.errorMessages.value).toEqual([
+      "Taskが先に更新されています。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
     expect(page.isArchiveConfirmOpen.value).toBe(false);
     expect(page.isEditorOpen.value).toBe(false);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
@@ -815,6 +823,8 @@ describe("useTaskBoardPage", () => {
 
     expect(page.errorMessages.value).toEqual([
       "移動中にTaskが更新されました。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     ]);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
     expect(page.board.value).toEqual(board);
@@ -887,6 +897,8 @@ describe("useTaskBoardPage", () => {
 
     expect(page.errorMessages.value).toEqual([
       "移動中にTaskが更新されました。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     ]);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
     expect(page.board.value).toEqual(board);
