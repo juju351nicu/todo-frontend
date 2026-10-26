@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
-
+import { DAY_TYPE_OPTIONS, useWorkingDayEditForm } from "@/features/wbs/composables/useWorkingDayEditForm";
 import type { WorkingCalendarDay, WorkingCalendarTarget, WorkingDayForm } from "@/features/wbs/types/wbs";
-import { buildWorkingDayForm, getWorkingDayOverride } from "@/features/wbs/utils/workingCalendar";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
-import { useDialogForm } from "@/shared/composables/useDialogForm";
 
 /** 稼働日例外Dialogへ親画面から渡す選択日、対象階層、処理状態。 */
 interface Props {
@@ -21,51 +18,16 @@ const emit = defineEmits<{
   save: [form: WorkingDayForm];
 }>();
 
-/** 稼働日の既定の稼働可能時間（分）。 */
-const DEFAULT_AVAILABLE_MINUTES = 480;
-
-const DAY_TYPE_OPTIONS = [
-  { title: "稼働日", value: "WORKING_DAY" },
-  { title: "休日", value: "HOLIDAY" },
-] as const;
-
-const createEmptyForm = (): WorkingDayForm => ({
-  workDate: "",
-  dayType: "WORKING_DAY",
-  availableMinutes: DEFAULT_AVAILABLE_MINUTES,
-});
-
-const editingOverride = computed(() =>
-  props.day !== null && props.target !== null ? getWorkingDayOverride(props.day, props.target) : null,
-);
-const dialogTitle = computed(() => (editingOverride.value === null ? "稼働日例外を登録" : "稼働日例外を編集"));
-const targetLabel = computed(() =>
-  props.target?.kind === "MEMBER" ? `個人例外（アカウントID: ${props.target.accountId}）` : "Project共通例外",
-);
-
-// Dialogを開く、対象日を変える、競合再取得するたびにBackend確定値からFormを作り直す。
-const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
-  initialForm: createEmptyForm(),
-  syncSources: [() => props.open, () => props.day, () => props.target],
-  buildForm: () =>
-    props.open && props.day !== null && props.target !== null ? buildWorkingDayForm(props.day, props.target) : createEmptyForm(),
-  isBusy: () => props.isSaving,
-  canSubmit: () => props.day !== null && props.target !== null,
-  onClose: () => emit("close"),
-  onSave: (value) => emit("save", value),
-});
-
-// 種別切替時にBackend制約（休日は0分、稼働日は1分以上）を満たす標準値へ補正し、入力の手戻りを減らす。
-watch(
-  () => form.value.dayType,
-  (dayType) => {
-    if (dayType === "HOLIDAY") {
-      form.value.availableMinutes = 0;
-    } else if (form.value.availableMinutes === 0) {
-      form.value.availableMinutes = DEFAULT_AVAILABLE_MINUTES;
-    }
-  },
-);
+// Formの作り直し・種別切替時の補正・表示文言は composable が持ち、ここは描画だけを行う。
+const { closeDialog, dialogTitle, editingOverride, form, handleDialogVisibility, submitForm, targetLabel } =
+  useWorkingDayEditForm({
+    open: () => props.open,
+    day: () => props.day,
+    target: () => props.target,
+    isSaving: () => props.isSaving,
+    onClose: () => emit("close"),
+    onSave: (value) => emit("save", value),
+  });
 </script>
 
 <template>
