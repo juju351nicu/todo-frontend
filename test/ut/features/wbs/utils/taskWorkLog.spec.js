@@ -37,15 +37,20 @@ describe("Task日別実績工数Form", () => {
 
   it("新規Formへローカル当日と指定作業者を設定する", () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-22T03:00:00+09:00"));
+    // 実行環境のローカル時刻で固定する。オフセット付きの日時で固定すると、
+    // CI（UTC）等のタイムゾーンでは別の日付になる。深夜3時はUTCとの日付差が出やすい境界として残す。
+    vi.setSystemTime(new Date(2026, 7, 22, 3, 0, 0));
 
-    expect(buildTaskWorkLogForm(2)).toEqual({
-      workDate: "2026-08-22",
-      actualEffortMinutes: null,
-      workerAccountId: 2,
-    });
-
-    vi.useRealTimers();
+    try {
+      expect(buildTaskWorkLogForm(2)).toEqual({
+        workDate: "2026-08-22",
+        actualEffortMinutes: null,
+        workerAccountId: 2,
+      });
+    } finally {
+      // 失敗時も後続テストへfake timerを持ち越さない。
+      vi.useRealTimers();
+    }
   });
 
   it("存在しない日・値域外工数・候補外作業者をまとめて拒否する", () => {
