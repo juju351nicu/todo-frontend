@@ -192,6 +192,7 @@ export const useWbsPage = () => {
     errorMessages.value = [];
     taskEditor.editorErrorMessages.value = [];
     dependencyState.dependencyEditorErrorMessages.value = [];
+    dependencyState.dependencyErrorMessages.value = [];
     workloadState.workloadErrorMessages.value = [];
     workingCalendarState.workingCalendarEditorErrorMessages.value = [];
     workingCalendarState.workingCalendarErrorMessages.value = [];
@@ -264,6 +265,7 @@ export const useWbsPage = () => {
     earnedValueState.clearEarnedValue();
     workloadState.workloadErrorMessages.value = [];
     estimateAccuracyState.estimateAccuracyErrorMessages.value = [];
+    dependencyState.clearDependencyMessages();
     workingCalendarState.clearWorkingCalendarMessages();
     baselineState.clearBaselineMessages();
     reportExportState.clearReportExportMessages();
