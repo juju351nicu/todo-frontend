@@ -7,6 +7,7 @@ import ProjectApi, {
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { useTaskEffortPlans } from "@/features/wbs/composables/useTaskEffortPlans";
+import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
 import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsDependencies } from "@/features/wbs/composables/useWbsDependencies";
 import { useWbsEarnedValue } from "@/features/wbs/composables/useWbsEarnedValue";
@@ -17,10 +18,6 @@ import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type {
   TaskDependencyListResponse,
-  TaskWorkLog,
-  TaskWorkLogForm,
-  TaskWorkLogListResponse,
-  TaskWorkLogWorkerOption,
   WbsResponse,
   WbsTask,
   WbsTaskEditForm,
@@ -30,11 +27,6 @@ import {
   resolveWbsErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
-import {
-  buildTaskWorkLogCreateRequest,
-  buildTaskWorkLogUpdateRequest,
-  validateTaskWorkLogForm,
-} from "@/features/wbs/utils/taskWorkLog";
 import {
   buildWbsParentOptions,
   buildWbsTaskUpdateRequest,
@@ -61,18 +53,8 @@ export const useWbsPage = () => {
   const isEditorOpen = ref(false);
   const isLoading = ref(false);
   const isSaving = ref(false);
-  const editingWorkLog = ref<TaskWorkLog | null>(null);
-  const isDeletingWorkLog = ref(false);
-  const isLoadingWorkLogs = ref(false);
-  const isSavingWorkLog = ref(false);
-  const isWorkLogDialogOpen = ref(false);
   const project = ref<ProjectDetail | null>(null);
   const successMessage = ref("");
-  const workLogEditorErrorMessages = ref<string[]>([]);
-  const workLogList = ref<TaskWorkLogListResponse | null>(null);
-  const workLogPendingDelete = ref<TaskWorkLog | null>(null);
-  const workLogSuccessMessage = ref("");
-  const workLogTask = ref<WbsTask | null>(null);
   const wbs = ref<WbsResponse | null>(null);
   let sessionInvalidated = false;
 
@@ -283,29 +265,32 @@ export const useWbsPage = () => {
     requestEffortPlanDelete,
     saveEffortPlan,
   } = useTaskEffortPlans(context, { reloadWorkload: reloadTaskWorkload });
+  const {
+    canEditSelectedWorkLogTask,
+    canManageAnyWorkLog,
+    cancelWorkLogDelete,
+    cancelWorkLogEdit,
+    closeWorkLogDialog,
+    closeWorkLogDialogAfterOperation,
+    confirmWorkLogDelete,
+    editWorkLog,
+    editingWorkLog,
+    handleWorkLogDeleteDialogVisibility,
+    isDeletingWorkLog,
+    isLoadingWorkLogs,
+    isSavingWorkLog,
+    isWorkLogDialogOpen,
+    openWorkLogDialog,
+    requestWorkLogDelete,
+    saveWorkLog,
+    workLogEditorErrorMessages,
+    workLogList,
+    workLogPendingDelete,
+    workLogSuccessMessage,
+    workLogTask,
+    workLogWorkerOptions,
+  } = useTaskWorkLogs(context, { reloadWorkload: reloadTaskWorkload });
 
-  const canManageAnyWorkLog = computed(() => canManageProject.value);
-  const canEditSelectedWorkLogTask = computed(
-    () =>
-      canEditWbs.value &&
-      workLogTask.value !== null &&
-      (canManageAnyWorkLog.value ||
-        workLogTask.value.assigneeAccountId === userStore.memberId)
-  );
-  const workLogWorkerOptions = computed<TaskWorkLogWorkerOption[]>(() =>
-    (project.value?.members ?? [])
-      .filter(
-        (member) =>
-          canManageAnyWorkLog.value || member.accountId === userStore.memberId
-      )
-      .map((member) => ({
-        title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-        value: member.accountId,
-      }))
-  );
-  const isWorkLogMutating = computed(
-    () => isSavingWorkLog.value || isDeletingWorkLog.value
-  );
   const parentOptions = computed(() =>
     editingTask.value === null
       ? []
@@ -440,397 +425,6 @@ export const useWbsPage = () => {
     editorErrorMessages.value = [];
   };
 
-  /** 通常Taskだけを選択し、日別実績Dialogを開いて最新一覧を取得する。 */
-  const openWorkLogDialog = async (taskId: number): Promise<void> => {
-    if (isLoadingWorkLogs.value || isWorkLogMutating.value) {
-      return;
-    }
-    errorMessages.value = [];
-    successMessage.value = "";
-    const task = wbs.value?.tasks.find((candidate) => candidate.taskId === taskId);
-    if (task === undefined) {
-      errorMessages.value = ["実績工数を参照するTaskが見つかりません。"];
-      return;
-    }
-    if (task.taskType !== "TASK") {
-      errorMessages.value = [
-        "日別実績工数を登録できるのは通常Taskだけです。",
-      ];
-      return;
-    }
-
-    workLogTask.value = { ...task };
-    workLogList.value = null;
-    editingWorkLog.value = null;
-    workLogPendingDelete.value = null;
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-    isWorkLogDialogOpen.value = true;
-    await loadSelectedTaskWorkLogs();
-  };
-
-  /** 選択中Taskの日別実績一覧を取得し、Dialogの唯一の一覧スナップショットへ反映する。 */
-  const loadSelectedTaskWorkLogs = async (): Promise<void> => {
-    const task = workLogTask.value;
-    if (
-      task === null ||
-      projectId.value === null ||
-      isLoadingWorkLogs.value
-    ) {
-      return;
-    }
-    isLoadingWorkLogs.value = true;
-    try {
-      workLogList.value = await WbsApi.getTaskWorkLogs(
-        projectId.value,
-        task.taskId
-      );
-    } catch (error: unknown) {
-      await handleWorkLogReadError(error);
-    } finally {
-      isLoadingWorkLogs.value = false;
-    }
-  };
-
-  /** 日別実績参照APIのstatusをDialog案内またはSession動作へ変換する。 */
-  const handleWorkLogReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.readNotFound,
-      ];
-      return;
-    }
-    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workLog.loadFailed
-    );
-  };
-
-  /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄する。 */
-  const closeWorkLogDialog = (): void => {
-    if (!isLoadingWorkLogs.value && !isWorkLogMutating.value) {
-      closeWorkLogDialogAfterOperation();
-    }
-  };
-
-  /** Session失効や確定操作後にも使用できるよう、処理中状態に依存せずDialogを閉じる。 */
-  const closeWorkLogDialogAfterOperation = (): void => {
-    isWorkLogDialogOpen.value = false;
-    workLogTask.value = null;
-    workLogList.value = null;
-    editingWorkLog.value = null;
-    workLogPendingDelete.value = null;
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-  };
-
-  /** 現在のProject roleと作業者IDから日別実績を変更できるか画面上で判定する。 */
-  const canMutateWorkLog = (workLog: TaskWorkLog): boolean =>
-    canEditSelectedWorkLogTask.value &&
-    (canManageAnyWorkLog.value ||
-      workLog.workerAccountId === userStore.memberId);
-
-  /** 取得済み日別実績を複製し、取得時点versionを保持した編集状態へ移す。 */
-  const editWorkLog = (workLogId: number): void => {
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-    const workLog = workLogList.value?.workLogs.find(
-      (candidate) => candidate.workLogId === workLogId
-    );
-    if (workLog === undefined) {
-      workLogEditorErrorMessages.value = [
-        "編集対象の日別実績工数が見つかりません。",
-      ];
-      return;
-    }
-    if (!canMutateWorkLog(workLog)) {
-      workLogEditorErrorMessages.value = [
-        "この日別実績工数を更新する権限がありません。",
-      ];
-      return;
-    }
-    editingWorkLog.value = { ...workLog };
-  };
-
-  /** 保存中でなければ編集対象を破棄し、新規登録Formへ戻す。 */
-  const cancelWorkLogEdit = (): void => {
-    if (!isSavingWorkLog.value) {
-      editingWorkLog.value = null;
-      workLogEditorErrorMessages.value = [];
-      workLogSuccessMessage.value = "";
-    }
-  };
-
-  /**
-   * 日別実績Formを検証し、新規登録または取得時点version付き更新へ振り分ける。
-   * 409競合時は古い編集状態を破棄し、選択中Taskの最新一覧を再取得する。
-   *
-   * @param form 業務日、分単位工数、作業者を含む未検証入力
-   */
-  const saveWorkLog = async (form: TaskWorkLogForm): Promise<void> => {
-    const task = workLogTask.value;
-    if (
-      isSavingWorkLog.value ||
-      task === null ||
-      projectId.value === null
-    ) {
-      return;
-    }
-    if (!canEditSelectedWorkLogTask.value) {
-      workLogEditorErrorMessages.value = [
-        "このTaskの日別実績を更新する権限がありません。",
-      ];
-      return;
-    }
-    const allowedWorkerIds = new Set(
-      workLogWorkerOptions.value.map((option) => option.value)
-    );
-    const validationMessages = validateTaskWorkLogForm(
-      form,
-      allowedWorkerIds
-    );
-    if (validationMessages.length > 0) {
-      workLogEditorErrorMessages.value = validationMessages;
-      return;
-    }
-    const currentWorkLog = editingWorkLog.value;
-    if (currentWorkLog !== null && !canMutateWorkLog(currentWorkLog)) {
-      workLogEditorErrorMessages.value = [
-        "この日別実績工数を更新する権限がありません。",
-      ];
-      return;
-    }
-
-    isSavingWorkLog.value = true;
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-    try {
-      workLogList.value =
-        currentWorkLog === null
-          ? await WbsApi.createTaskWorkLog(
-              projectId.value,
-              task.taskId,
-              buildTaskWorkLogCreateRequest(form)
-            )
-          : await WbsApi.updateTaskWorkLog(
-              projectId.value,
-              task.taskId,
-              currentWorkLog.workLogId,
-              buildTaskWorkLogUpdateRequest(form, currentWorkLog.version)
-            );
-      editingWorkLog.value = null;
-      workLogSuccessMessage.value =
-        currentWorkLog === null
-          ? "Task日別実績を登録しました。"
-          : "Task日別実績を更新しました。";
-      await reloadTaskWorkload();
-    } catch (error: unknown) {
-      await handleWorkLogMutationError(error);
-    } finally {
-      isSavingWorkLog.value = false;
-    }
-  };
-
-  /** 登録・更新APIのstatusを入力案内、競合再読込またはSession動作へ変換する。 */
-  const handleWorkLogMutationError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.updateForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404 || error.status === 409) {
-      editingWorkLog.value = null;
-      workLogPendingDelete.value = null;
-      workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        error.status === 409
-          ? DISPLAY_MESSAGES.wbs.workLog.conflict
-          : DISPLAY_MESSAGES.wbs.workLog.resourceNotFound
-      );
-      await reloadWorkLogsAfterConflict();
-      return;
-    }
-    workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.workLog.saveFailed
-    );
-  };
-
-  /** 更新競合後に最新日別実績とworkloadを取得し、古いversion・集計を残さない。 */
-  const reloadWorkLogsAfterConflict = async (): Promise<void> => {
-    const task = workLogTask.value;
-    if (task === null || projectId.value === null) {
-      return;
-    }
-    try {
-      workLogList.value = await WbsApi.getTaskWorkLogs(
-        projectId.value,
-        task.taskId
-      );
-      await reloadTaskWorkload();
-    } catch (refreshError: unknown) {
-      if (
-        refreshError instanceof WbsApiError &&
-        WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
-      ) {
-        // 再取得時点の認証・認可・公開範囲を操作時点の競合理由より優先する。
-        await handleWorkLogReadError(refreshError);
-        return;
-      }
-      workLogEditorErrorMessages.value.push(
-        DISPLAY_MESSAGES.wbs.workLog.reloadFailed
-      );
-    }
-  };
-
-  /** 取得済み一覧から削除対象とversionを確定して確認Dialogを開く。 */
-  const requestWorkLogDelete = (workLogId: number): void => {
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-    const workLog = workLogList.value?.workLogs.find(
-      (candidate) => candidate.workLogId === workLogId
-    );
-    if (workLog === undefined) {
-      workLogEditorErrorMessages.value = [
-        "削除対象の日別実績工数が見つかりません。",
-      ];
-      return;
-    }
-    if (!canMutateWorkLog(workLog)) {
-      workLogEditorErrorMessages.value = [
-        "この日別実績工数を削除する権限がありません。",
-      ];
-      return;
-    }
-    workLogPendingDelete.value = { ...workLog };
-  };
-
-  /** 削除中でなければ確認対象を破棄して確認Dialogを閉じる。 */
-  const cancelWorkLogDelete = (): void => {
-    if (!isDeletingWorkLog.value) {
-      workLogPendingDelete.value = null;
-    }
-  };
-
-  /** 一覧取得時点versionで日別実績を削除し、204確定後だけ合計と一覧を更新する。 */
-  const confirmWorkLogDelete = async (): Promise<void> => {
-    const task = workLogTask.value;
-    const workLog = workLogPendingDelete.value;
-    if (
-      task === null ||
-      workLog === null ||
-      projectId.value === null ||
-      isDeletingWorkLog.value
-    ) {
-      return;
-    }
-    if (!canMutateWorkLog(workLog)) {
-      workLogEditorErrorMessages.value = [
-        "この日別実績工数を削除する権限がありません。",
-      ];
-      return;
-    }
-
-    isDeletingWorkLog.value = true;
-    workLogEditorErrorMessages.value = [];
-    workLogSuccessMessage.value = "";
-    try {
-      await WbsApi.deleteTaskWorkLog(
-        projectId.value,
-        task.taskId,
-        workLog.workLogId,
-        workLog.version
-      );
-      if (workLogList.value !== null) {
-        const remainingWorkLogs = workLogList.value.workLogs.filter(
-          (candidate) => candidate.workLogId !== workLog.workLogId
-        );
-        workLogList.value = {
-          ...workLogList.value,
-          totalActualEffortMinutes: remainingWorkLogs.reduce(
-            (total, candidate) => total + candidate.actualEffortMinutes,
-            0
-          ),
-          workLogs: remainingWorkLogs,
-        };
-      }
-      editingWorkLog.value =
-        editingWorkLog.value?.workLogId === workLog.workLogId
-          ? null
-          : editingWorkLog.value;
-      workLogPendingDelete.value = null;
-      workLogSuccessMessage.value = "Task日別実績を削除しました。";
-      await reloadTaskWorkload();
-    } catch (error: unknown) {
-      await handleWorkLogDeleteError(error);
-    } finally {
-      isDeletingWorkLog.value = false;
-    }
-  };
-
-  /** 日別実績削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
-  const handleWorkLogDeleteError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
-      return;
-    }
-    if (error.status === 401) {
-      closeWorkLogDialogAfterOperation();
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      workLogEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workLog.deleteForbidden,
-      ];
-      return;
-    }
-    if (error.status === 404 || error.status === 409) {
-      editingWorkLog.value = null;
-      workLogPendingDelete.value = null;
-      workLogEditorErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.workLog.stale
-      );
-      await reloadWorkLogsAfterConflict();
-      return;
-    }
-    workLogEditorErrorMessages.value = [
-      DISPLAY_MESSAGES.wbs.workLog.deleteFailed,
-    ];
-  };
-
   /**
    * 検証済みフォームをWBS更新APIへ送り、成功時はResponse全体で画面を更新する。
    * 409競合では古いDialogを閉じ、最新WBSを再取得して再編集を促す。
@@ -936,13 +530,6 @@ export const useWbsPage = () => {
     });
   };
 
-
-  /** 日別実績の削除確認dialogが閉じられた場合だけ確認対象を破棄する。 */
-  const handleWorkLogDeleteDialogVisibility = (open: boolean): void => {
-    if (!open) {
-      cancelWorkLogDelete();
-    }
-  };
 
   return {
     activeView,
