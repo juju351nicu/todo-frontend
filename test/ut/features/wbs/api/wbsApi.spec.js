@@ -479,6 +479,42 @@ describe("WBS API", () => {
     );
   });
 
+  it("見積もり精度をProject単位で取得し欠落したTask一覧を空配列にする", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        completedTaskCount: 0,
+        sampleCount: 0,
+        medianAbsoluteErrorMinutes: null,
+      }),
+    });
+
+    await expect(WbsApi.getEstimateAccuracy(7)).resolves.toEqual({
+      projectId: 7,
+      completedTaskCount: 0,
+      sampleCount: 0,
+      medianAbsoluteErrorMinutes: null,
+      tasks: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/estimate-accuracy"
+    );
+  });
+
+  it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
+    });
+
+    await expect(WbsApi.getEstimateAccuracy(7)).rejects.toMatchObject({
+      name: "WbsApiError",
+      status: 403,
+    });
+  });
+
   it("Project共通calendarではaccountIdを付けず期間内の全日付を取得する", async () => {
     const response = {
       projectId: 7,

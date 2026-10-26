@@ -322,6 +322,58 @@ export interface TaskWorkloadDateRange {
   dateTo: string;
 }
 
+/**
+ * 予定工数と実績工数の両方が1分以上ある完了済みTaskの見積もり誤差。
+ * Backendの`GET /api/v1/projects/{projectId}/wbs/estimate-accuracy`の`tasks`要素と一致する。
+ */
+export interface EstimateAccuracyTask {
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** 画面表示用WBSコード。未設定の場合はnull。 */
+  wbsCode: string | null;
+  /** Taskタイトル。旧Todo由来のデータではnullの場合がある。 */
+  title: string | null;
+  /** 正式な予定工数（分）。1以上。 */
+  plannedEffortMinutes: number;
+  /** 日別実績工数の合計（分）。1以上。 */
+  actualEffortMinutes: number;
+  /** `実績 - 予定`（分）。正は予定超過（過小見積もり）。 */
+  signedVarianceMinutes: number;
+  /** `|実績 - 予定|`（分）。 */
+  absoluteErrorMinutes: number;
+  /** 絶対誤差が予定工数の許容割合以内（境界を含む）の場合はtrue。 */
+  withinTolerance: boolean;
+}
+
+/**
+ * Project内の完了済み通常Taskについて、正式な予定工数（Final Plan）と実績工数（Actual）を比べた見積もり精度。
+ * 計算規則はBackendの`docs/ai-assisted-effort-estimation-design.md`「16. 先行提供」を正本とし、Frontendでは再計算しない。
+ */
+export interface EstimateAccuracyResponse {
+  /** 集計対象Project ID。 */
+  projectId: number;
+  /** 評価対象とした完了済み通常Taskの件数。予定・実績が未入力で除外したTaskを含む。 */
+  completedTaskCount: number;
+  /** 予定工数が0分のため除外したTaskの件数。 */
+  missingPlanTaskCount: number;
+  /** 予定工数はあるが実績工数が0分のため除外したTaskの件数。 */
+  missingActualTaskCount: number;
+  /** 誤差を計算したTaskの件数。 */
+  sampleCount: number;
+  /** 精度を傾向として読める最低件数。`sampleCount`がこれ未満なら参考値として表示する。 */
+  minimumSampleCount: number;
+  /** 「見積もりどおり」とみなす絶対誤差の上限。予定工数に対する割合（%）。 */
+  tolerancePercent: number;
+  /** 絶対誤差が`tolerancePercent`以内のTaskの件数。 */
+  withinToleranceTaskCount: number;
+  /** 絶対誤差の中央値（分）。`sampleCount`が0の場合はnull。 */
+  medianAbsoluteErrorMinutes: number | null;
+  /** `実績 - 予定`の中央値（分）。正は過小見積もりの傾向。`sampleCount`が0の場合はnull。 */
+  medianSignedVarianceMinutes: number | null;
+  /** 誤差を計算したTask。Task ID順。 */
+  tasks: EstimateAccuracyTask[];
+}
+
 /** 稼働日calendarの1日を稼働日または休日として扱う種別。Backendコードと一致する。 */
 export type WorkingDayType = "WORKING_DAY" | "HOLIDAY";
 

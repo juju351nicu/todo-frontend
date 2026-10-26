@@ -45,6 +45,7 @@ export const mocks = {
     downloadWbsReport: vi.fn(),
     getTaskDependencies: vi.fn(),
     getEarnedValueMetrics: vi.fn(),
+    getEstimateAccuracy: vi.fn(),
     getTaskEffortPlans: vi.fn(),
     getTaskWorkLogs: vi.fn(),
     getTaskWorkload: vi.fn(),
@@ -202,6 +203,45 @@ export const baselineCreateResponse = {
   plannedEffortMinutes: 960,
   allocatedEffortMinutes: 600,
   unallocatedEffortMinutes: 360,
+};
+
+/**
+ * 見積もり精度のResponse。完了Task 3件のうち予定未入力1件を除外し、Task 2（予定480分・実績540分）と
+ * Task 4（予定60分・実績120分）の2件で誤差を計算した状態。2件のため参考値（最低10件）になる。
+ */
+export const estimateAccuracyResponse = {
+  projectId: 7,
+  completedTaskCount: 3,
+  missingPlanTaskCount: 1,
+  missingActualTaskCount: 0,
+  sampleCount: 2,
+  minimumSampleCount: 10,
+  tolerancePercent: 20,
+  withinToleranceTaskCount: 1,
+  medianAbsoluteErrorMinutes: 60,
+  medianSignedVarianceMinutes: 60,
+  tasks: [
+    {
+      taskId: 2,
+      wbsCode: "1.1",
+      title: "実装",
+      plannedEffortMinutes: 480,
+      actualEffortMinutes: 540,
+      signedVarianceMinutes: 60,
+      absoluteErrorMinutes: 60,
+      withinTolerance: true,
+    },
+    {
+      taskId: 4,
+      wbsCode: null,
+      title: "調査",
+      plannedEffortMinutes: 60,
+      actualEffortMinutes: 120,
+      signedVarianceMinutes: 60,
+      absoluteErrorMinutes: 60,
+      withinTolerance: false,
+    },
+  ],
 };
 
 export const earnedValueResponse = {
@@ -490,6 +530,9 @@ export const resetWbsPageMocks = () => {
   );
   mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(
     structuredClone(earnedValueResponse)
+  );
+  mocks.wbsApi.getEstimateAccuracy.mockResolvedValue(
+    structuredClone(estimateAccuracyResponse)
   );
   mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(
     structuredClone(effortPlanList)

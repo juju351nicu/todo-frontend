@@ -165,6 +165,9 @@ src/
 - `src/features/wbs/composables/useTaskEffortPlans.ts`／`useTaskWorkLogs.ts`: 通常Taskの日別予定／日別実績Dialog
 - `src/features/wbs/composables/useWbsBaselines.ts`: baselineの一覧・比較・作成・有効化
 - `src/features/wbs/composables/useWbsEarnedValue.ts`／`useWbsReportExport.ts`: EVMの取得／週次・月次Excel帳票のdownload
+- `src/features/wbs/composables/useWbsEstimateAccuracy.ts`: 完了済み通常Taskの予定工数と実績工数を比べた見積もり精度の取得（Backend `GET /wbs/estimate-accuracy`）
+- `src/features/wbs/composables/useEstimateAccuracyChart.ts`、`src/features/wbs/utils/estimateAccuracy.ts`: 見積もり精度の散布図の座標・目盛り・tooltip対象と表示文言（APIは呼ばない）
+- `src/features/wbs/components/WbsEstimateAccuracyCard.vue`: 誤差の中央値・見積もりどおりの割合・偏りの向き、散布図（予定どおりの対角線と±許容割合の帯）、誤差の大きい順の一覧
 - `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
 - `src/features/wbs/components/WbsReportExportCard.vue`: EVMと共有する基準日、週次／月次Excel download、処理中・error表示
 - `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形

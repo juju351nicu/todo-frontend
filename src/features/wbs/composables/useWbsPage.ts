@@ -12,6 +12,7 @@ import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
 import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsDependencies } from "@/features/wbs/composables/useWbsDependencies";
 import { useWbsEarnedValue } from "@/features/wbs/composables/useWbsEarnedValue";
+import { useWbsEstimateAccuracy } from "@/features/wbs/composables/useWbsEstimateAccuracy";
 import { useWbsReportExport } from "@/features/wbs/composables/useWbsReportExport";
 import { useWbsTaskEditor } from "@/features/wbs/composables/useWbsTaskEditor";
 import { useWbsWorkingCalendar } from "@/features/wbs/composables/useWbsWorkingCalendar";
@@ -49,7 +50,7 @@ const parsePositiveId = (
  *
  * 担当すること:
  * - route paramのProject ID検証、Project・WBS Task・依存関係・baselineの画面スナップショット取得（`initialize`）。
- *   取得順序は「スナップショット → workloadとcalendar（並列） → Board導線の日別実績Dialog」で、
+ *   取得順序は「スナップショット → workload・calendar・見積もり精度（並列） → Board導線の日別実績Dialog」で、
  *   いずれかが例外になった場合は全領域の表示データを破棄して画面上部へ理由を表示する。
  * - 階層表の行・種別件数、TASK_UPDATE permissionとProject管理権限の判定、Boardへの遷移。
  * - 401時のSession破棄・全領域のエラー消去・Login遷移（`WbsPageContext.handleUnauthorized`）。
@@ -57,7 +58,8 @@ const parsePositiveId = (
  * 領域ごとの状態と操作は次のcomposableへ委ね、それぞれの戻り値を同じ名前のまま返す:
  * `useWbsTaskEditor`（Task編集）、`useWbsDependencies`（依存関係）、`useWbsWorkload`（担当者別workload）、
  * `useWbsWorkingCalendar`（稼働日calendar）、`useTaskEffortPlans`（日別予定）、`useTaskWorkLogs`（日別実績）、
- * `useWbsBaselines`（baseline）、`useWbsEarnedValue`（EVM）、`useWbsReportExport`（Excel帳票）。
+ * `useWbsBaselines`（baseline）、`useWbsEarnedValue`（EVM）、`useWbsReportExport`（Excel帳票）、
+ * `useWbsEstimateAccuracy`（完了Taskの予定工数と実績の見積もり精度）。
  * 領域をまたぐ再取得・Dialogのcloseは、各composableのoptionsのcallbackでここから配線する。
  *
  * Boardと同じTaskを正本とし、更新競合後はBackendの最新Responseで表示を作り直す。
@@ -165,6 +167,7 @@ export const useWbsPage = () => {
   const baselineState = useWbsBaselines(context, {
     onActiveBaselineChanged: () => earnedValueState.clearEarnedValue(),
   });
+  const estimateAccuracyState = useWbsEstimateAccuracy(context);
 
   /** Session失効時に別cardや閉じる直前のDialogへ古いAPIエラーを残さない。 */
   const clearWbsApiErrorMessages = (): void => {
@@ -180,6 +183,7 @@ export const useWbsPage = () => {
     reportExportState.reportExportErrorMessages.value = [];
     baselineState.baselineEditorErrorMessages.value = [];
     baselineState.baselineErrorMessages.value = [];
+    estimateAccuracyState.estimateAccuracyErrorMessages.value = [];
   };
 
   /** 画面全体の取得失敗時やProject ID不正時に、別Projectや権限喪失前のデータを表示し続けない。 */
@@ -191,6 +195,7 @@ export const useWbsPage = () => {
     workingCalendarState.workingCalendar.value = null;
     baselineState.clearBaselines();
     earnedValueState.earnedValue.value = null;
+    estimateAccuracyState.estimateAccuracy.value = null;
   };
 
   /**
@@ -240,6 +245,7 @@ export const useWbsPage = () => {
     successMessage.value = "";
     earnedValueState.clearEarnedValue();
     workloadState.workloadErrorMessages.value = [];
+    estimateAccuracyState.estimateAccuracyErrorMessages.value = [];
     workingCalendarState.clearWorkingCalendarMessages();
     baselineState.clearBaselineMessages();
     reportExportState.clearReportExportMessages();
@@ -252,10 +258,12 @@ export const useWbsPage = () => {
     isLoading.value = true;
     try {
       // calendarの表示対象候補はProject memberから作るため、workloadとcalendarはスナップショットの取得後に読み込む。
+      // 見積もり精度も、Projectの参照可否をスナップショットで確定してから取得する。
       await loadPageSnapshot();
       await Promise.all([
         workloadState.reloadTaskWorkload(),
         workingCalendarState.loadCurrentWorkingCalendar(),
+        estimateAccuracyState.loadEstimateAccuracy(),
       ]);
       if (requestedWorkLogTaskId.value !== null) {
         await workLogState.openWorkLogDialog(requestedWorkLogTaskId.value);
@@ -310,6 +318,7 @@ export const useWbsPage = () => {
     ...earnedValueState,
     ...reportExportState,
     ...baselineState,
+    ...estimateAccuracyState,
     activeView,
     canEditWbs,
     currentAccountId: computed(() => userStore.memberId),

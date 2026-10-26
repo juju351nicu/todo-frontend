@@ -309,6 +309,10 @@ export const DISPLAY_MESSAGES = {
       forbidden: "workloadを参照するpermissionがありません。",
       loadFailed: "担当者別workloadを取得できませんでした。",
     },
+    estimateAccuracy: {
+      forbidden: "見積もり精度を参照するpermissionがありません。",
+      loadFailed: "見積もり精度を取得できませんでした。",
+    },
     workingCalendar: {
       readForbidden: "稼働日calendarを参照するpermissionがありません。",
       loadFailed: "稼働日calendarを取得できませんでした。",
