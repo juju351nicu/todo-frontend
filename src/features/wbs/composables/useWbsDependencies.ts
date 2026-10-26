@@ -171,7 +171,6 @@ export const useWbsDependencies = (
       return;
     }
     if (error.status === 401) {
-      closeDependencyEditorAfterSaving();
       await context.handleUnauthorized();
       return;
     }
@@ -284,7 +283,6 @@ export const useWbsDependencies = (
       return;
     }
     if (error.status === 401) {
-      dependencyPendingDelete.value = null;
       await context.handleUnauthorized();
       return;
     }
@@ -325,6 +323,15 @@ export const useWbsDependencies = (
   };
 
   /**
+   * 追加Dialogと削除確認を処理中状態に依存せず閉じ、古い入力とversionを残さない。
+   * Session失効時に統括の`useWbsPage`から呼ばれる。
+   */
+  const discardDependencyDialogs = (): void => {
+    closeDependencyEditorAfterSaving();
+    dependencyPendingDelete.value = null;
+  };
+
+  /**
    * 削除確認dialogが閉じられた場合だけ未確定の削除対象を破棄する。
    * 確認dialogの開閉は削除対象の有無で決まるため、閉じる操作をここで削除対象の破棄へ変換する。
    *
@@ -346,6 +353,7 @@ export const useWbsDependencies = (
     dependencyPendingDeleteRow,
     dependencyRows,
     dependencyTaskOptions,
+    discardDependencyDialogs,
     handleDependencyDeleteDialogVisibility,
     isDeletingDependency,
     isDependencyEditorOpen,

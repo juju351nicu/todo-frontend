@@ -46,7 +46,7 @@ export interface UseWbsWorkingCalendarOptions {
  *   それ以外はProject共通と本人の個人例外だけ。
  * - 変更権限: ProjectがACTIVEでTASK_UPDATEを持ち、Project共通はProject管理権限、個人例外はProject管理権限または本人。
  * - 変更・404・409の後はcalendar全体と`reloadWorkload`でworkloadを再取得する（Backendの変更Responseは対象日だけのため）。
- * - 401では編集Dialogまたは削除確認を閉じてから`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ね、編集Dialogと削除確認は統括の`useWbsPage`が`discardWorkingDayDialogs`で閉じる。
  *
  * @param context Project ID、Project member、権限、Session失効処理を提供する画面共通context
  * @param options calendar変更後のworkload再取得
@@ -188,7 +188,6 @@ export const useWbsWorkingCalendar = (
       return;
     }
     if (error.status === 401) {
-      closeWorkingDayEditorAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -342,7 +341,6 @@ export const useWbsWorkingCalendar = (
       return;
     }
     if (error.status === 401) {
-      closeWorkingDayEditorAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -467,7 +465,6 @@ export const useWbsWorkingCalendar = (
       return;
     }
     if (error.status === 401) {
-      workingDayPendingDelete.value = null;
       await context.handleUnauthorized();
       return;
     }
@@ -544,6 +541,15 @@ export const useWbsWorkingCalendar = (
   };
 
   /**
+   * 編集Dialogと削除確認を処理中状態に依存せず閉じ、古い例外IDとversionを残さない。
+   * Session失効時に統括の`useWbsPage`から呼ばれる。
+   */
+  const discardWorkingDayDialogs = (): void => {
+    closeWorkingDayEditorAfterOperation();
+    workingDayPendingDelete.value = null;
+  };
+
+  /**
    * 稼働日例外の削除確認dialogが閉じられた場合だけ確認対象を破棄する。
    *
    * @param open dialogの新しい開閉状態
@@ -566,6 +572,7 @@ export const useWbsWorkingCalendar = (
     clearWorkingCalendarMessages,
     closeWorkingDayEditor,
     confirmWorkingDayDelete,
+    discardWorkingDayDialogs,
     handleWorkingDayDeleteDialogVisibility,
     isDeletingWorkingDay,
     isLoadingWorkingCalendar,

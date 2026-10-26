@@ -36,7 +36,7 @@ export interface UseTaskEffortPlansOptions {
  * - 変更権限: TASK_UPDATEを持ち、Project管理権限（SYSTEM_ADMIN・OWNER・MANAGER）があれば全予定、
  *   それ以外は本人担当Taskの本人の予定だけ。最終判定はBackendが行う。
  * - 変更後と404・409の後は`reloadWorkload`でworkloadも再取得する。
- * - 401ではDialogを閉じてから`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ね、Dialogは統括の`useWbsPage`が`discardEffortPlanDialog`で閉じる。
  *
  * @param context Project ID、WBS Task、Project member、権限、画面上部message、Session失効処理を提供する画面共通context
  * @param options 変更後のworkload再取得
@@ -155,7 +155,6 @@ export const useTaskEffortPlans = (
       return;
     }
     if (error.status === 401) {
-      closeEffortPlanDialogAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -186,7 +185,7 @@ export const useTaskEffortPlans = (
 
   /**
    * Session失効や確定操作後にも使用できるよう、処理中状態に依存せずDialogを閉じる。
-   * workloadの401等、他領域のSession失効時にも`useWbsPage`から呼ばれる。
+   * Session失効時は統括の`useWbsPage`が`discardEffortPlanDialog`として呼ぶ。
    */
   const closeEffortPlanDialogAfterOperation = (): void => {
     isEffortPlanDialogOpen.value = false;
@@ -317,7 +316,6 @@ export const useTaskEffortPlans = (
       return;
     }
     if (error.status === 401) {
-      closeEffortPlanDialogAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -482,7 +480,6 @@ export const useTaskEffortPlans = (
       return;
     }
     if (error.status === 401) {
-      closeEffortPlanDialogAfterOperation();
       await context.handleUnauthorized();
       return;
     }
@@ -524,7 +521,7 @@ export const useTaskEffortPlans = (
     cancelEffortPlanDelete,
     cancelEffortPlanEdit,
     closeEffortPlanDialog,
-    closeEffortPlanDialogAfterOperation,
+    discardEffortPlanDialog: closeEffortPlanDialogAfterOperation,
     confirmEffortPlanDelete,
     editEffortPlan,
     editingEffortPlan,

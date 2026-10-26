@@ -248,15 +248,18 @@ describe("useWbsBaselines", () => {
       expect(onActiveBaselineChanged).not.toHaveBeenCalled();
     });
 
-    it("作成APIの401は作成Dialogを閉じてからSession失効処理を呼ぶ", async () => {
+    it("作成APIの401はSession失効処理へ委ね、作成Dialogを閉じる関数を提供する", async () => {
       mocks.wbsApi.createWbsBaseline.mockRejectedValue(new WbsApiError(401, null));
       const { context, state } = buildManagerBaselines();
       state.openBaselineCreateDialog();
 
       await state.saveWbsBaseline({ name: "9月計画", description: "" });
 
-      expect(state.isBaselineCreateDialogOpen.value).toBe(false);
       expect(context.handleUnauthorized).toHaveBeenCalledOnce();
+      expect(state.baselineEditorErrorMessages.value).toEqual([]);
+      // Dialogを閉じるのは統括のuseWbsPageの役目。閉じる関数が処理中でも閉じることだけを確かめる。
+      state.discardBaselineDialogs();
+      expect(state.isBaselineCreateDialogOpen.value).toBe(false);
     });
 
     it("作成成功後の一覧再取得が500でも作成成功を残し再読込案内を追加する", async () => {

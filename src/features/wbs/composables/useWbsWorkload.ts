@@ -13,30 +13,17 @@ import {
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
-/** `useWbsWorkload`が画面の他領域へ委ねる操作。 */
-export interface UseWbsWorkloadOptions {
-  /**
-   * workload参照が401になったとき、Session破棄の前に呼ぶ。
-   * workloadは日別予定・実績の保存後にも再取得されるため、それらのDialogに古いversionを残さないよう閉じる。
-   */
-  readonly closeDialogsOnUnauthorized: () => void;
-}
-
 /**
  * WBS画面の担当者別workload（日別の予定・実績・稼働可能時間・過配賦）の取得状態を管理する。
  *
  * - 呼び出すAPI: `WbsApi.getTaskWorkload`（Project配下の`GET /wbs/workload`）。
  * - 集計はBackendの確定値を表示し、Frontendでは再計算しない。
  * - 日別予定・実績・稼働日例外の変更後は、各領域が`reloadTaskWorkload`で現在の期間を再取得する。
- * - 401では`closeDialogsOnUnauthorized`の後に`context.handleUnauthorized`でLoginへ遷移する。
+ * - 401では`context.handleUnauthorized`へ委ねる。日別予定・実績Dialog等の片付けは統括の`useWbsPage`が行う。
  *
  * @param context Project IDとSession失効処理を提供する画面共通context
- * @param options 401時に閉じる他領域のDialog
  */
-export const useWbsWorkload = (
-  context: WbsPageContext,
-  options: UseWbsWorkloadOptions
-) => {
+export const useWbsWorkload = (context: WbsPageContext) => {
   /** 最後に取得成功したworkload。取得失敗時も直前の確定値を残し、初期表示の失敗時だけ画面側でnullへ戻す。 */
   const workload = ref<TaskWorkloadResponse | null>(null);
   /** 最後に取得を開始した集計期間。初期値はブラウザー現在月の初日・末日。 */
@@ -92,7 +79,6 @@ export const useWbsWorkload = (
       return;
     }
     if (error.status === 401) {
-      options.closeDialogsOnUnauthorized();
       await context.handleUnauthorized();
       return;
     }

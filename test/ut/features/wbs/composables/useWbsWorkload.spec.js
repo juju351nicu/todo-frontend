@@ -88,7 +88,7 @@ describe("useWbsWorkload", () => {
 
     it("Project IDがなければworkload APIを呼ばない", async () => {
       const context = buildWbsPageContext({ projectId: { value: null } });
-      const state = useWbsWorkload(context, { closeDialogsOnUnauthorized: vi.fn() });
+      const state = useWbsWorkload(context);
 
       await state.loadTaskWorkload(range);
 
@@ -102,9 +102,7 @@ describe("useWbsWorkload", () => {
           resolveWorkload = resolve;
         })
       );
-      const state = useWbsWorkload(buildWbsPageContext(), {
-        closeDialogsOnUnauthorized: vi.fn(),
-      });
+      const state = useWbsWorkload(buildWbsPageContext());
 
       const first = state.loadTaskWorkload(range);
       await state.loadTaskWorkload(range);
@@ -116,9 +114,7 @@ describe("useWbsWorkload", () => {
     });
 
     it("reloadTaskWorkloadは最後に指定した集計期間で再取得する", async () => {
-      const state = useWbsWorkload(buildWbsPageContext(), {
-        closeDialogsOnUnauthorized: vi.fn(),
-      });
+      const state = useWbsWorkload(buildWbsPageContext());
       await state.loadTaskWorkload(range);
       mocks.wbsApi.getTaskWorkload.mockClear();
 
@@ -131,21 +127,14 @@ describe("useWbsWorkload", () => {
       );
     });
 
-    it("401では他領域のDialogを閉じてからSession失効処理を呼ぶ", async () => {
-      const calls = [];
-      const context = buildWbsPageContext({
-        handleUnauthorized: vi.fn(async () => {
-          calls.push("handleUnauthorized");
-        }),
-      });
+    it("401ではSession失効処理へ委ね、検索欄へ案内を出さない", async () => {
+      const context = buildWbsPageContext();
       mocks.wbsApi.getTaskWorkload.mockRejectedValue(new WbsApiError(401, null));
-      const state = useWbsWorkload(context, {
-        closeDialogsOnUnauthorized: () => calls.push("closeDialogs"),
-      });
+      const state = useWbsWorkload(context);
 
       await state.loadTaskWorkload(range);
 
-      expect(calls).toEqual(["closeDialogs", "handleUnauthorized"]);
+      expect(context.handleUnauthorized).toHaveBeenCalledOnce();
       expect(state.workloadErrorMessages.value).toEqual([]);
     });
 
@@ -155,9 +144,7 @@ describe("useWbsWorkload", () => {
       [new WbsApiError(500, null), DISPLAY_MESSAGES.wbs.workload.loadFailed],
       [new TypeError("Failed to fetch"), DISPLAY_MESSAGES.common.connectionFailed],
     ])("取得失敗%sを検索欄の案内へ変換し直前の確定値を残す", async (error, message) => {
-      const state = useWbsWorkload(buildWbsPageContext(), {
-        closeDialogsOnUnauthorized: vi.fn(),
-      });
+      const state = useWbsWorkload(buildWbsPageContext());
       await state.loadTaskWorkload(range);
       mocks.wbsApi.getTaskWorkload.mockRejectedValue(error);
 
