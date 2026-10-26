@@ -35,8 +35,11 @@ const { activePoint, chart, hidePoint, showPoint, tasksByAbsoluteError } = useEs
   () => props.estimateAccuracy,
 );
 
-/** SVGの座標系。横軸・縦軸の描画領域を同じ長さにし、対角線が45度の「予定どおり」線になるようにする。 */
-const PLOT = { left: 72, top: 16, size: 320, width: 408, height: 392 } as const;
+/**
+ * SVGの座標系。横軸・縦軸の描画領域を同じ長さにし、対角線が45度の「予定どおり」線になるようにする。
+ * 右端の目盛り文字（例: `16時間`）が切れないよう、描画領域の右に余白を取る。
+ */
+const PLOT = { left: 72, top: 16, size: 320, width: 432, height: 392 } as const;
 
 /** 0〜1の割合で表した点を、SVGのpixel座標（左上原点）へ変換する。 */
 const toSvgX = (ratio: number): number => PLOT.left + ratio * PLOT.size;
@@ -108,7 +111,8 @@ const toleranceBandPoints = computed(
       </p>
 
       <div v-if="chart" class="mt-4 grid gap-6 lg:grid-cols-[minmax(0,520px)_1fr]">
-        <figure class="relative m-0">
+        <!-- 1列表示の狭い画面でも文字が拡大されすぎないよう、散布図の幅に上限を設ける。 -->
+        <figure class="relative m-0 w-full max-w-[520px]">
           <svg
             :viewBox="`0 0 ${PLOT.width} ${PLOT.height}`"
             class="block h-auto w-full"
@@ -159,16 +163,6 @@ const toleranceBandPoints = computed(
               stroke-width="2"
               stroke-dasharray="6 4"
             />
-            <text
-              :x="toSvgX(0.97)"
-              :y="toSvgY(0.97) + 16"
-              text-anchor="end"
-              font-size="11"
-              class="text-muted"
-              fill="currentColor"
-            >
-              予定どおり
-            </text>
             <g
               v-for="point in chart.points"
               :key="point.task.taskId"
@@ -206,6 +200,19 @@ const toleranceBandPoints = computed(
             <div>実績 {{ formatEffortMinutes(activePoint.task.actualEffortMinutes) }}</div>
             <div>差 {{ formatSignedEffortMinutes(activePoint.task.signedVarianceMinutes) }}</div>
           </div>
+          <!-- 対角線・帯の意味は、データの点と重ならないよう描画領域の外の凡例で示す。 -->
+          <figcaption class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
+            <span class="inline-flex items-center gap-2">
+              <svg width="24" height="8" aria-hidden="true">
+                <line x1="0" y1="4" x2="24" y2="4" stroke="var(--ui-border-accented)" stroke-width="2" stroke-dasharray="6 4" />
+              </svg>
+              予定どおり（実績 = 予定）
+            </span>
+            <span class="inline-flex items-center gap-2">
+              <span class="inline-block h-3 w-5 rounded-xs bg-primary/8" aria-hidden="true" />
+              誤差が予定の±{{ estimateAccuracy.tolerancePercent }}%以内
+            </span>
+          </figcaption>
         </figure>
 
         <div class="overflow-x-auto">
