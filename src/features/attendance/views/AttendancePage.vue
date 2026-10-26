@@ -74,7 +74,7 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 md:p-6">
+  <div class="page-surface p-4 md:p-6">
     <UCard class="mx-auto max-w-360">
       <template #header>
         <div class="flex flex-wrap items-center gap-3">
@@ -310,7 +310,7 @@ onBeforeMount(initialize);
                   </div>
                 </UCard>
               </div>
-              <div v-else class="rounded-sm bg-[#424242] p-4 text-center text-[#EEEEEE]">
+              <div v-else class="rounded-sm bg-muted p-4 text-center text-muted">
                 この日の打刻はありません。
               </div>
 

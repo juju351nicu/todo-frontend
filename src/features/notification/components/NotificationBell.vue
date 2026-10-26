@@ -42,7 +42,7 @@ const {
         :show="badgeCount > 0"
         :text="formatNotificationBadge(badgeCount)"
         size="3xl"
-        :ui="{ base: 'h-5 min-w-5 px-1.5 text-xs font-normal text-white bg-[#FF5252] ring-0' }"
+        :ui="{ base: 'h-5 min-w-5 px-1.5 text-xs font-normal text-white bg-error ring-0' }"
       >
         <UIcon name="i-mdi-bell-outline" class="size-6" />
       </UChip>
@@ -65,13 +65,13 @@ const {
           />
         </div>
 
-        <UProgress v-if="isLoading" size="xs" color="secondary" class="[--ui-secondary:var(--color-material-deep-purple-500)]" />
+        <UProgress v-if="isLoading" size="xs" color="secondary" />
         <StatusAlert v-if="errorMessage" type="error" density="compact" class="m-3 w-auto">
           {{ errorMessage }}
         </StatusAlert>
 
         <div v-if="alerts.length > 0">
-          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-black/60">
+          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-muted">
             未解決の警告
             <UBadge color="warning" size="xs" class="ms-2">{{ unresolvedAlertCount }}件</UBadge>
           </div>
@@ -85,7 +85,7 @@ const {
                 <UIcon :name="getNotificationAlertIcon(alertItem.alertType)" class="mt-0.5 size-6 shrink-0 text-warning" />
                 <span class="min-w-0">
                   <span class="block text-base">{{ alertItem.title }}</span>
-                  <span class="line-clamp-2 text-sm text-black/60">{{ alertItem.message }}</span>
+                  <span class="line-clamp-2 text-sm text-muted">{{ alertItem.message }}</span>
                 </span>
               </button>
             </li>
@@ -93,26 +93,26 @@ const {
         </div>
 
         <div v-if="events.length > 0">
-          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-black/60">お知らせ・更新</div>
+          <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-muted">お知らせ・更新</div>
           <ul>
             <li v-for="eventItem in events" :key="eventItem.notificationEventId">
               <button
                 type="button"
-                class="flex w-full gap-8 border-t border-default px-4 py-2 text-start hover:bg-black/4"
+                class="flex w-full gap-8 border-t border-default px-4 py-2 text-start hover:bg-elevated"
                 :class="{ 'bg-primary/6': !eventItem.read }"
                 @click="navigateToNotification(eventItem.navigationPath)"
               >
                 <UIcon
                   :name="getNotificationEventIcon(eventItem.eventType)"
-                  class="mt-0.5 size-6 shrink-0 text-material-deep-purple-500"
+                  class="mt-0.5 size-6 shrink-0 text-secondary"
                 />
                 <span class="min-w-0">
                   <span class="flex items-center gap-2 text-base">
                     <span>{{ eventItem.title }}</span>
                     <span v-if="!eventItem.read" class="size-2 shrink-0 rounded-full bg-primary" aria-label="未読" />
                   </span>
-                  <span class="line-clamp-2 text-sm text-black/60">{{ eventItem.message }}</span>
-                  <span class="mt-1 block text-[0.72rem] text-black/60">
+                  <span class="line-clamp-2 text-sm text-muted">{{ eventItem.message }}</span>
+                  <span class="mt-1 block text-[0.72rem] text-muted">
                     {{ eventItem.publisherDisplayName }}・{{ formatNotificationOccurredAt(eventItem.occurredAt) }}
                   </span>
                 </span>
@@ -121,7 +121,7 @@ const {
           </ul>
         </div>
 
-        <div v-if="!isLoading && !hasItems" class="px-4 py-8 text-center text-sm text-black/60">
+        <div v-if="!isLoading && !hasItems" class="px-4 py-8 text-center text-sm text-muted">
           <UIcon name="i-mdi-bell-check-outline" class="mb-2 size-9" />
           <div>新しい通知はありません。</div>
         </div>

@@ -20,7 +20,7 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
 </script>
 
 <template>
-  <UButton icon="i-mdi-comment-multiple-outline" variant="soft" class="text-white" @click="openComments">コメント一覧</UButton>
+  <UButton icon="i-mdi-comment-multiple-outline" variant="soft" @click="openComments">コメント一覧</UButton>
 
   <UModal
     :open="isOpen"
@@ -53,7 +53,7 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
         <li v-for="comment in comments" :key="comment.commentId">
           <button
             type="button"
-            class="flex w-full items-start gap-4 px-4 py-2 text-start enabled:hover:bg-black/4 disabled:opacity-38"
+            class="flex w-full items-start gap-4 px-4 py-2 text-start enabled:hover:bg-elevated disabled:opacity-38"
             :disabled="comment.taskArchived"
             @click="selectTask(comment)"
           >

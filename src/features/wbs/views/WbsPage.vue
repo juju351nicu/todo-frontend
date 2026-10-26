@@ -46,15 +46,15 @@ const VIEW_OPTIONS = [
 
 <template>
   <LoadingIndicator v-if="page.isLoading" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
-    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+  <div class="page-surface p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
         :to="{ name: 'ProjectList' }"
         icon="i-mdi-arrow-left"
         variant="ghost"
         square
         size="lg"
-        class="size-12 text-inherit hover:bg-white/4"
+        class="size-12 text-inherit"
         :ui="{ leadingIcon: 'size-6' }"
         aria-label="Project一覧へ戻る"
       />
@@ -62,7 +62,7 @@ const VIEW_OPTIONS = [
         <h1 class="text-2xl">{{ page.wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-sm opacity-70">Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理</div>
       </div>
-      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto text-white" :disabled="page.isLoading" @click="page.openBoard">
+      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto" :disabled="page.isLoading" @click="page.openBoard">
         Boardを開く
       </UButton>
       <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="page.isLoading" @click="page.initialize">再読込</UButton>

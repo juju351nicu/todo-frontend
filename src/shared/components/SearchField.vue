@@ -23,7 +23,7 @@ const searchText = defineModel<string>({ required: true });
           variant="ghost"
           size="xs"
           square
-          class="text-black/60"
+          class="text-muted"
           aria-label="検索条件をクリア"
           @click="searchText = ''"
         />

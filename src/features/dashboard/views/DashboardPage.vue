@@ -92,7 +92,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
 
     <div v-if="dashboard" class="-m-3 flex flex-wrap items-stretch">
       <div class="w-full p-3 lg:w-7/12">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-format-list-checks" class="size-6 text-primary" />
@@ -105,25 +105,25 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           <template v-if="dashboard.myTasks.available">
             <div class="-m-1 mb-2 flex flex-wrap">
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#FFEBEE] p-3">
+                <div class="min-h-19 rounded-sm bg-error/10 p-3">
                   <div class="text-xs text-muted">期限超過</div>
                   <div class="text-2xl font-bold text-error">{{ dashboard.myTasks.overdueCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#FFF3E0] p-3">
+                <div class="min-h-19 rounded-sm bg-warning/10 p-3">
                   <div class="text-xs text-muted">今日</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.dueTodayCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#E3F2FD] p-3">
+                <div class="min-h-19 rounded-sm bg-info/10 p-3">
                   <div class="text-xs text-muted">今週</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.dueThisWeekCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#F5F5F5] p-3">
+                <div class="min-h-19 rounded-sm bg-elevated p-3">
                   <div class="text-xs text-muted">今後</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.upcomingCount }}</div>
                 </div>
@@ -134,7 +134,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <li v-for="task in dashboard.myTasks.items" :key="task.taskId" class="border-b border-default last:border-b-0">
                 <button
                   type="button"
-                  class="flex w-full items-start px-4 py-2 text-start hover:bg-black/4"
+                  class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
                   @click="openTask(task)"
                 >
                   <TodoPriorityBadge :priority="task.priority" size="xs" class="me-3 mt-0.5" />
@@ -168,7 +168,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-5/12">
-        <UCard variant="outline" class="h-full border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="h-full border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-bell-outline" class="size-6 text-deep-purple" />
@@ -189,7 +189,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <button
                 type="button"
                 class="flex w-full items-start px-4 py-2 text-start"
-                :class="normalizeNotificationNavigationPath(event.navigationPath) !== null ? 'hover:bg-black/4' : 'cursor-default'"
+                :class="normalizeNotificationNavigationPath(event.navigationPath) !== null ? 'hover:bg-elevated' : 'cursor-default'"
                 @click="openNotificationEvent(event)"
               >
                 <UIcon :name="getNotificationEventIcon(event.eventType)" class="me-3 size-6 shrink-0" />
@@ -208,7 +208,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-2/3">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-folder-multiple-outline" class="size-6 text-teal" />
@@ -266,7 +266,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-1/3">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex items-center gap-2">
               <UIcon name="i-mdi-clock-outline" class="size-6 text-indigo" />
@@ -320,7 +320,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
     </div>
 
-    <UCard v-if="dashboard" variant="outline" class="mt-6 border-black/28" :ui="dividedCardUi">
+    <UCard v-if="dashboard" variant="outline" class="mt-6 border-default" :ui="dividedCardUi">
       <template #header>
         <div class="flex flex-wrap items-center gap-2">
           <UIcon name="i-mdi-chart-box-outline" class="size-6 text-amber-darken-3" />

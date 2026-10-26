@@ -58,7 +58,7 @@ const {
 </script>
 
 <template>
-  <UButton icon="i-mdi-file-multiple-outline" variant="soft" class="text-white" @click="open">Task Template</UButton>
+  <UButton icon="i-mdi-file-multiple-outline" variant="soft" @click="open">Task Template</UButton>
 
   <UModal v-model:open="isOpen" :dismissible="!isMutating" :ui="{ content: 'max-w-260' }">
     <template #title>
@@ -90,7 +90,7 @@ const {
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedTemplate?.taskTemplateId === template.taskTemplateId ? 'bg-primary/12 text-primary' : 'hover:bg-black/4'"
+                :class="selectedTemplate?.taskTemplateId === template.taskTemplateId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
                 @click="selectTemplate(template)"
               >
                 <span class="min-w-0 flex-1">

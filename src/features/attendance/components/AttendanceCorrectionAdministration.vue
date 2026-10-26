@@ -111,7 +111,7 @@ defineEmits<{
       </div>
 
       <div class="w-full p-3 lg:w-7/12">
-        <div v-if="selectedCorrection" class="rounded-sm bg-[#424242] p-4 text-[#EEEEEE]">
+        <div v-if="selectedCorrection" class="rounded-sm bg-muted p-4 text-default">
           <div class="mb-3 flex flex-wrap items-center gap-2">
             <strong>{{ selectedCorrection.displayName || `Account ${selectedCorrection.accountId}` }}</strong>
             <span>{{ formatAttendanceDate(selectedCorrection.workDate) }}</span>
@@ -208,7 +208,7 @@ defineEmits<{
             審査コメント: {{ selectedCorrection.reviewComment }}
           </StatusAlert>
         </div>
-        <div v-else class="rounded-sm bg-[#424242] p-8 text-center text-[#EEEEEE]/70">
+        <div v-else class="rounded-sm bg-muted p-8 text-center text-muted">
           左の一覧から確認する修正申請を選択してください。
         </div>
       </div>

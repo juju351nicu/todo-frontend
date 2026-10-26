@@ -68,7 +68,7 @@ const {
     {{ successMessage }}
   </StatusAlert>
   <UProgress v-if="isLoading" size="xs" class="mb-3" />
-  <ul v-if="items.length" class="mb-3 max-h-70 overflow-y-auto bg-[#424242] py-2 text-[#EEEEEE]">
+  <ul v-if="items.length" class="mb-3 max-h-70 overflow-y-auto rounded-sm bg-muted py-2 text-default">
     <li v-for="(item, index) in items" :key="item.checklistItemId" class="flex min-h-10 items-center gap-2 px-4">
       <UCheckbox
         :model-value="item.completed"

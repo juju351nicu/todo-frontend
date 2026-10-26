@@ -20,11 +20,11 @@ const {
 </script>
 
 <template>
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 sm:p-6">
+  <div class="page-surface p-4 sm:p-6">
     <UCard class="mx-auto max-w-225 shadow-elevation-2" :ui="{ body: 'p-6 sm:p-6' }">
       <template #header>
         <div class="flex flex-wrap items-center gap-3 px-2 pt-4">
-          <UAvatar icon="i-mdi-bullhorn-outline" size="3xl" class="bg-[#EDE7F6] text-material-deep-purple-500" />
+          <UAvatar icon="i-mdi-bullhorn-outline" size="3xl" class="bg-secondary/12 text-secondary" />
           <div>
             <div class="text-2xl font-normal">お知らせ配信</div>
             <div class="mt-1 text-sm font-normal tracking-normal text-muted">
@@ -85,7 +85,6 @@ const {
             color="primary"
             size="lg"
             icon="i-mdi-send"
-            class="bg-material-deep-purple-500 hover:bg-material-deep-purple-500/92"
             :disabled="!canSubmit"
             :loading="isSubmitting"
           >

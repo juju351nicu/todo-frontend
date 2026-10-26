@@ -69,8 +69,8 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving || isArchiving" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
-    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+  <div class="page-surface p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
         :to="{ name: 'ProjectList' }"
         icon="i-mdi-arrow-left"
@@ -96,7 +96,6 @@ onBeforeMount(initialize);
         :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
         icon="i-mdi-file-tree-outline"
         variant="soft"
-        class="text-white"
       >
         WBSを開く
       </UButton>
@@ -147,7 +146,7 @@ onBeforeMount(initialize);
       <div
         v-for="column in board.columns"
         :key="column.taskStatusId"
-        class="board-column flex max-h-[calc(100vh-190px)] flex-[0_0_340px] flex-col rounded-sm bg-black/12 text-default"
+        class="board-column flex max-h-[calc(100vh-190px)] flex-[0_0_340px] flex-col rounded-sm bg-elevated text-default"
       >
         <div class="flex items-center px-4 py-2 text-base">
           {{ column.name }}
@@ -180,7 +179,7 @@ onBeforeMount(initialize);
         >
           <template #item="{ element: task }">
             <div
-              class="task-card mb-3 cursor-pointer rounded-sm border-s-4 bg-[#cbcbcb] shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-primary"
+              class="task-card mb-3 cursor-pointer rounded-sm border-s-4 bg-default ring ring-default shadow-elevation-1 focus-visible:outline-2 focus-visible:outline-primary"
               :class="PRIORITY_BORDER_CLASSES[task.priority as 1 | 2 | 3]"
               tabindex="0"
               @click="openTaskEditor(task.taskId)"

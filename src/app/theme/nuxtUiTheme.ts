@@ -1,8 +1,9 @@
 /**
  * Nuxt UIの全体テーマ。`vite.config.js`の`@nuxt/ui/vite`プラグインへ`ui`として渡す。
  *
- * 移行前のVuetify 3既定デザイン（Material Design）と同じ見た目を保つため、色・寸法・大文字表記・影を
- * Vuetifyの既定値へ合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
+ * 移行前のVuetify 3既定デザイン（Material Design）から、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
+ * プラムのアクセント）へ段階的に寄せている。色はこの段階で参考デザインへ移行済みで、寸法・大文字表記・影は
+ * まだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
  * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../nuxt-ui-migration-plan.md`を参照。
  *
  * Vuetifyとの対応:
@@ -110,18 +111,21 @@ const fieldTheme = {
 };
 
 export const nuxtUiTheme = {
+  // 色名とpaletteの対応。brand・plumは`main.css`で定義した独自palette、それ以外はTailwind標準palette。
+  // 移行前のMaterial色名（teal等）は画面側の指定を変えずに、近いTailwind paletteへ対応させる。
   colors: {
-    primary: "vuetify-primary",
-    secondary: "vuetify-secondary",
-    success: "vuetify-success",
-    info: "vuetify-info",
-    warning: "vuetify-warning",
-    error: "vuetify-error",
-    teal: "material-teal",
-    indigo: "material-indigo",
-    "amber-darken-3": "material-amber",
-    "deep-purple": "material-deep-purple",
-    neutral: "neutral",
+    primary: "brand",
+    secondary: "plum",
+    success: "green",
+    info: "sky",
+    warning: "orange",
+    error: "red",
+    teal: "teal",
+    indigo: "indigo",
+    "amber-darken-3": "amber",
+    "deep-purple": "violet",
+    // 参考デザインの温かみのある灰色の背景・文字に合わせる。
+    neutral: "stone",
   },
   // Vuetifyと同じMDIの図柄を使い、Nuxt UI既定のLucideとアイコンが混在しないようにする。
   icons: {

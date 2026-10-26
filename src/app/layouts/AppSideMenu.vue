@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 <template>
   <nav
-    class="absolute start-0 top-16 bottom-0 z-1004 w-64 overflow-y-auto border-e border-default bg-default transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
+    class="absolute start-0 top-16 bottom-0 z-1004 w-64 overflow-y-auto bg-sidebar text-white transition-transform duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
     :class="isOpen ? 'translate-x-0' : '-translate-x-[110%]'"
     :inert="!isOpen"
     aria-label="メインメニュー"
@@ -26,8 +26,8 @@ const emit = defineEmits<{
       <li v-for="link in links" :key="link.label">
         <RouterLink
           :to="link.to"
-          class="flex min-h-12 items-center gap-8 px-4 text-base text-default opacity-62 transition-opacity hover:opacity-100"
-          active-class="text-primary! opacity-100"
+          class="flex min-h-12 items-center gap-8 px-4 text-base opacity-70 transition-opacity hover:bg-white/8 hover:opacity-100"
+          active-class="bg-white/12 text-brand-300! opacity-100"
         >
           <UIcon :name="link.icon" class="size-6 shrink-0" />
           <span class="truncate">{{ link.label }}</span>
@@ -36,7 +36,7 @@ const emit = defineEmits<{
       <li>
         <button
           type="button"
-          class="flex min-h-12 w-full items-center gap-8 px-4 text-base text-default opacity-62 transition-opacity hover:opacity-100"
+          class="flex min-h-12 w-full items-center gap-8 px-4 text-base opacity-70 transition-opacity hover:bg-white/8 hover:opacity-100"
           @click="emit('logout')"
         >
           <UIcon name="i-mdi-export" class="size-6 shrink-0" />

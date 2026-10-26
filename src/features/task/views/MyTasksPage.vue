@@ -91,7 +91,7 @@ const FILTER_OPTIONS = [
               <div
                 role="button"
                 tabindex="0"
-                class="flex cursor-pointer items-start px-4 py-1.5 hover:bg-black/4"
+                class="flex cursor-pointer items-start px-4 py-1.5 hover:bg-elevated"
                 @click="showTask(task)"
                 @keydown.enter="showTask(task)"
               >

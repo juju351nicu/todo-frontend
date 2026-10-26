@@ -133,7 +133,7 @@ onBeforeMount(initialize);
                   variant="ghost"
                   size="xs"
                   square
-                  class="text-black/60"
+                  class="text-muted"
                   aria-label="キーワードをクリア"
                   @click="filters.keyword = ''"
                 />

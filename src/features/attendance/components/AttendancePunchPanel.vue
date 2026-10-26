@@ -51,7 +51,7 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
       </div>
 
       <div class="text-center">
-        <p class="mb-1 text-[1.05rem] font-semibold tracking-[0.04em] text-black/78">
+        <p class="mb-1 text-[1.05rem] font-semibold tracking-[0.04em] text-toned">
           {{ formatAttendanceDate(workDate) }}
         </p>
         <time

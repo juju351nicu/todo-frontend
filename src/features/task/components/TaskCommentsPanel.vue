@@ -51,7 +51,7 @@ const {
   <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
     {{ successMessage }}
   </StatusAlert>
-  <ul v-if="comments.length" class="mb-3 max-h-60 overflow-y-auto bg-[#424242] py-2 text-[#EEEEEE]">
+  <ul v-if="comments.length" class="mb-3 max-h-60 overflow-y-auto rounded-sm bg-muted py-2 text-default">
     <li v-for="comment in comments" :key="comment.commentId" class="flex items-start gap-4 px-4 py-2">
       <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="md" class="bg-primary text-xs text-white" />
       <div class="min-w-0 flex-1">

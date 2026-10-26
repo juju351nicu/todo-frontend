@@ -105,7 +105,7 @@ defineEmits<{
         <div
           v-for="(breakPeriod, breakIndex) in workPeriod.breakPeriods"
           :key="breakIndex"
-          class="mb-2 rounded-sm bg-[#424242] p-3 text-[#EEEEEE]"
+          class="mb-2 rounded-sm bg-muted p-3 text-default"
         >
           <div class="mb-2 flex items-center">
             <strong>休憩 {{ breakIndex + 1 }}</strong>

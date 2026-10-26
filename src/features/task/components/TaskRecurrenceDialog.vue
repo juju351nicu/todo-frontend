@@ -82,7 +82,7 @@ const CREATION_MODE_OPTIONS = [
 </script>
 
 <template>
-  <UButton icon="i-mdi-calendar-sync-outline" variant="soft" class="text-white" @click="open">繰り返しTask</UButton>
+  <UButton icon="i-mdi-calendar-sync-outline" variant="soft" @click="open">繰り返しTask</UButton>
 
   <UModal v-model:open="isOpen" :dismissible="!isMutating" :ui="{ content: 'max-w-320' }">
     <template #title>
@@ -130,7 +130,7 @@ const CREATION_MODE_OPTIONS = [
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-black/4'"
+                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
                 @click="selectRule(rule)"
               >
                 <span class="min-w-0 flex-1">

@@ -45,7 +45,7 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoadingList || isLoadingDetail" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
+  <div class="page-surface p-6">
     <UCard class="mx-auto max-w-360">
       <template #header>
         <div class="flex flex-wrap items-center gap-3">
@@ -78,7 +78,7 @@ onBeforeMount(initialize);
                 :class="
                   selectedTemplate?.projectTemplateId === template.projectTemplateId
                     ? 'bg-primary/12 text-primary'
-                    : 'hover:bg-black/4'
+                    : 'hover:bg-elevated'
                 "
                 :disabled="isMutating || isLoadingDetail"
                 @click="selectTemplate(template)"

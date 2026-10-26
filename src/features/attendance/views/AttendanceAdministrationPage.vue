@@ -59,7 +59,7 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 md:p-6">
+  <div class="page-surface p-4 md:p-6">
     <UCard class="mx-auto max-w-375">
       <template #header>
         <h2 class="flex flex-wrap items-center gap-3">
