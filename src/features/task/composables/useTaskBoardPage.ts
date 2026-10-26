@@ -110,6 +110,11 @@ export const useTaskBoardPage = () => {
   const editorErrorMessages = ref<string[]>([]);
   const dragSnapshot = ref<TaskBoard | null>(null);
   const form = ref<TaskForm>(createEmptyTaskForm());
+  /**
+   * 編集Dialogで開いたTaskの、取得時点の担当者アカウントID。
+   * 担当者欄はフォーム上で変えられるため、MEMBERが更新できるか（現在の担当者が本人か）はこちらで判定する。
+   */
+  const editingTaskAssigneeAccountId = ref<number | null>(null);
   const isArchiveConfirmOpen = ref(false);
   const isArchiving = ref(false);
   const isEditorOpen = ref(false);
@@ -190,7 +195,20 @@ export const useTaskBoardPage = () => {
       canManageProjectTasks.value
   );
   const isEditing = computed(() => form.value.taskId !== null);
-  const isReadonly = computed(() => isEditing.value && !canUpdateTask.value);
+  /**
+   * 開いたTaskを更新できるか。OWNER・MANAGER・SYSTEM_ADMINはProject内の全Task、
+   * MEMBERは現在の担当者が本人のTaskだけ（Backendの`TaskResourceAuthorizationLogic#checkCanUpdate`と同じ規則）。
+   * チェックリストの操作も同じ規則（`checkCanManageChecklist`）。
+   */
+  const canUpdateEditingTask = computed(
+    () =>
+      canUpdateTask.value &&
+      (canManageProjectTasks.value ||
+        editingTaskAssigneeAccountId.value === userStore.memberId)
+  );
+  const isReadonly = computed(
+    () => isEditing.value && !canUpdateEditingTask.value
+  );
   const canStartTaskTimer = computed(
     () =>
       form.value.taskId !== null &&
@@ -204,7 +222,7 @@ export const useTaskBoardPage = () => {
       !isSaving.value &&
       !isArchiving.value &&
       !isReadonly.value &&
-      (isEditing.value ? canUpdateTask.value : canCreateTask.value)
+      (isEditing.value ? canUpdateEditingTask.value : canCreateTask.value)
   );
 
   const statusOptions = computed<TaskSelectOption<number>[]>(() =>
@@ -317,6 +335,7 @@ export const useTaskBoardPage = () => {
     try {
       const task = await ProjectTaskApi.getTask(projectId.value, taskId);
       form.value = buildTaskForm(task);
+      editingTaskAssigneeAccountId.value = task.assigneeAccountId;
       isEditorOpen.value = true;
     } catch (error: unknown) {
       await handleApiError(

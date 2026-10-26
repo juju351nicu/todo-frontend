@@ -328,7 +328,7 @@ onBeforeMount(initialize);
             v-if="form.taskId !== null && board"
             :project-id="board.projectId"
             :task-id="form.taskId"
-            :disabled="isReadonly || project?.status === 'ARCHIVED'"
+            :disabled="!canUpdateTask || project?.status === 'ARCHIVED'"
           />
         </form>
       </template>

@@ -212,6 +212,59 @@ describe("useTaskBoardPage", () => {
     });
   });
 
+  it("MEMBERは自分が担当のTaskを編集できる", async () => {
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(false);
+    expect(page.canSave.value).toBe(true);
+  });
+
+  it("MEMBERは他人が担当のTaskを参照のみで開き、担当者名を選択肢から表示できる", async () => {
+    // Backendは他人が担当のTaskをMEMBERが更新すると403にするため、保存できる見た目にしない。
+    mocks.projectApi.getProject.mockResolvedValue({
+      ...structuredClone(project),
+      members: [
+        ...structuredClone(project.members),
+        { ...project.members[0], accountId: 1, projectRole: "OWNER", displayName: "管理 一郎" },
+      ],
+    });
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(true);
+    expect(page.canSave.value).toBe(false);
+    expect(page.memberOptions.value.map((option) => option.value)).toContain(1);
+  });
+
+  it("MEMBERが担当者欄を自分に変えても、取得時点で他人が担当のTaskは参照のみのままにする", async () => {
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    page.form.value.assigneeAccountId = 2;
+
+    expect(page.isReadonly.value).toBe(true);
+  });
+
+  it("OWNERは他人が担当のTaskも編集できる", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(false);
+    expect(page.canSave.value).toBe(true);
+  });
+
   it("MEMBERは自分が担当しないTaskのTimerを開始表示しない", async () => {
     mocks.projectTaskApi.getTask.mockResolvedValue({
       ...task,
