@@ -13,6 +13,18 @@ import {
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
+/** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
+export const CHECKLIST_ITEM_MAX_LENGTH = 255;
+
+/** 1 Taskに登録できるチェック項目の最大件数。Backendの入力制約と同じ値。 */
+export const CHECKLIST_ITEM_MAX_COUNT = 50;
+
+/** trim後1文字以上、最大文字数以下のチェック項目本文か。 */
+const isValidChecklistContent = (content: string): boolean => {
+  const trimmedContent = content.trim();
+  return trimmedContent.length > 0 && trimmedContent.length <= CHECKLIST_ITEM_MAX_LENGTH;
+};
+
 /**
  * Task詳細内のchecklist取得・追加・更新・並び替え・削除を扱う。
  * 404／409では取得時点versionを破棄し、Backendの最新一覧へ回復する。
@@ -51,10 +63,15 @@ export const useTaskChecklist = (
     () =>
       !disabled.value &&
       !isMutating.value &&
-      items.value.length < 50 &&
-      newContent.value.trim().length > 0 &&
-      newContent.value.trim().length <= 255
+      items.value.length < CHECKLIST_ITEM_MAX_COUNT &&
+      isValidChecklistContent(newContent.value)
   );
+  /** 完了済み項目の割合（0～100の整数）。項目がない場合は0。 */
+  const progressPercent = computed<number>(() =>
+    items.value.length === 0 ? 0 : Math.round((completedCount.value / items.value.length) * 100)
+  );
+  /** 編集中の本文が有効で、他の更新中でない場合だけ保存できる。 */
+  const canSaveEdit = computed<boolean>(() => isValidChecklistContent(editContent.value) && !isMutating.value);
 
   /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
   const getErrorMessages = (
@@ -264,7 +281,7 @@ export const useTaskChecklist = (
       (candidate) => candidate.checklistItemId === editingItemId.value
     );
     const content = editContent.value.trim();
-    if (!item || !content || content.length > 255) {
+    if (!item || !content || content.length > CHECKLIST_ITEM_MAX_LENGTH) {
       errorMessages.value = ["チェック項目を1〜255文字で入力してください。"];
       return;
     }
@@ -455,7 +472,17 @@ export const useTaskChecklist = (
     { immediate: true }
   );
 
+  /** 削除確認dialogが閉じられた場合に削除対象を破棄する。 */
+  const handleDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelDelete();
+    }
+  };
+
   return {
+    canSaveEdit,
+    handleDeleteDialogVisibility,
+    progressPercent,
     addItem,
     canAdd,
     cancelDelete,

@@ -124,11 +124,12 @@ describe("useAccountAdministrationPage", () => {
     ]);
   });
 
-  it("検索欄をclearしてnullになっても全件表示へ戻す", async () => {
+  it("検索欄をclearして空文字になったら全件表示へ戻す", async () => {
     const page = useAccountAdministrationPage();
     await page.initialize();
+    page.searchText.value = "READ_ONLY";
 
-    page.searchText.value = null;
+    page.searchText.value = "";
 
     expect(page.filteredAccounts.value).toHaveLength(2);
   });

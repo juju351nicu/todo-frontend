@@ -1,25 +1,11 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { useHomeNavigation } from "@/app/composables/useHomeNavigation";
 
-import { resolveAuthenticatedHomeRouteName } from "@/app/router/authorization";
-import { useUserStore } from "@/features/auth/stores/user";
-
-const router = useRouter();
-const userStore = useUserStore();
-/**
- * 現在のpermissionで参照できる既定画面へ戻る。
- */
-const goHome = (): void => {
-    const routeName = userStore.isAuthenticated
-        ? resolveAuthenticatedHomeRouteName(userStore.permissionCodes)
-        : "Login";
-    void router.push({ name: routeName });
-};
+const { goHome } = useHomeNavigation();
 </script>
+
 <template>
-    <h1>404: Not Found</h1>
-    <p>ページが見つかりません。</p>
-    <v-btn class="mt-2" color="success" @click="goHome" size="large" width="150px">
-        &laquo; トップページに戻る
-    </v-btn>
+  <h1 class="my-[0.67em] text-[2em] font-bold">404: Not Found</h1>
+  <p>ページが見つかりません。</p>
+  <UButton class="mt-2 w-37.5" color="success" size="lg" @click="goHome">&laquo; トップページに戻る</UButton>
 </template>

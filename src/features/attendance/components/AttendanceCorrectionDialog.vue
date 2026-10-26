@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { AttendanceCorrectionForm } from "@/features/attendance/types/attendance";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
 
 /** 本人画面が所有する修正入力を表示し、全変更と確定操作をEventで返す。 */
 defineProps<{
@@ -27,155 +28,147 @@ defineEmits<{
 </script>
 
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="980"
-    persistent
-    @update:model-value="!$event && $emit('close')"
+  <!-- 入力途中の申請を誤って破棄しないよう、Vuetifyのpersistentと同じく外側クリックやEscでは閉じない。 -->
+  <UModal
+    :open="modelValue"
+    :dismissible="false"
+    :title="`勤怠修正申請（${workDate}）`"
+    description="承認後は、ここで入力した勤務・休憩区間で対象日全体を置き換えます。"
+    :ui="{ content: 'max-w-245', body: 'max-h-[70vh] overflow-y-auto' }"
   >
-    <v-card>
-      <v-card-title>勤怠修正申請（{{ workDate }}）</v-card-title>
-      <v-card-subtitle>
-        承認後は、ここで入力した勤務・休憩区間で対象日全体を置き換えます。
-      </v-card-subtitle>
-      <v-card-text class="attendance-correction-dialog-body">
-        <v-textarea
-          :model-value="form.reason"
-          label="修正理由（必須）"
-          maxlength="1000"
-          rows="2"
-          counter
-          @update:model-value="$emit('updateReason', String($event ?? ''))"
-        />
-        <v-textarea
-          :model-value="form.note"
-          label="承認後のメモ"
-          maxlength="1000"
-          rows="2"
-          counter
-          @update:model-value="$emit('updateNote', String($event ?? ''))"
-        />
+    <template #body>
+      <div class="relative">
+        <UFormField label="修正理由（必須）">
+          <UTextarea
+            :model-value="form.reason"
+            :maxlength="1000"
+            :rows="2"
+            class="w-full"
+            @update:model-value="$emit('updateReason', String($event ?? ''))"
+          />
+        </UFormField>
+        <FieldCounter :value="form.reason" :max="1000" />
+      </div>
+      <div class="relative">
+        <UFormField label="承認後のメモ">
+          <UTextarea
+            :model-value="form.note"
+            :maxlength="1000"
+            :rows="2"
+            class="w-full"
+            @update:model-value="$emit('updateNote', String($event ?? ''))"
+          />
+        </UFormField>
+        <FieldCounter :value="form.note" :max="1000" />
+      </div>
 
-        <v-card
-          v-for="(workPeriod, workIndex) in form.workPeriods"
-          :key="workIndex"
-          variant="outlined"
-          class="mb-4"
-        >
-          <v-card-title class="d-flex align-center text-subtitle-1">
+      <UCard v-for="(workPeriod, workIndex) in form.workPeriods" :key="workIndex" variant="outline" class="mb-4">
+        <template #header>
+          <div class="flex items-center text-base font-normal">
             勤務区間 {{ workIndex + 1 }}
-            <v-spacer />
-            <v-btn
-              icon="mdi-delete-outline"
-              variant="text"
+            <UButton
+              icon="i-mdi-delete-outline"
+              variant="ghost"
               color="error"
+              square
+              class="ms-auto"
               :aria-label="`勤務区間${workIndex + 1}を削除`"
               @click="$emit('removeWork', workIndex)"
             />
-          </v-card-title>
-          <v-card-text>
-            <v-row dense>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  :model-value="workPeriod.startedAt"
+          </div>
+        </template>
+        <div class="-m-1 flex flex-wrap">
+          <div class="w-full p-1 sm:w-1/2">
+            <UFormField label="出勤日時">
+              <UInput
+                :model-value="workPeriod.startedAt"
+                type="datetime-local"
+                step="1"
+                class="w-full"
+                @update:model-value="$emit('updateWorkStartedAt', workIndex, String($event ?? ''))"
+              />
+            </UFormField>
+          </div>
+          <div class="w-full p-1 sm:w-1/2">
+            <UFormField label="退勤日時">
+              <UInput
+                :model-value="workPeriod.endedAt"
+                type="datetime-local"
+                step="1"
+                class="w-full"
+                @update:model-value="$emit('updateWorkEndedAt', workIndex, String($event ?? ''))"
+              />
+            </UFormField>
+          </div>
+        </div>
+
+        <div
+          v-for="(breakPeriod, breakIndex) in workPeriod.breakPeriods"
+          :key="breakIndex"
+          class="mb-2 rounded-sm bg-[#424242] p-3 text-[#EEEEEE]"
+        >
+          <div class="mb-2 flex items-center">
+            <strong>休憩 {{ breakIndex + 1 }}</strong>
+            <UButton
+              icon="i-mdi-delete-outline"
+              size="sm"
+              variant="ghost"
+              color="error"
+              square
+              class="ms-auto"
+              :aria-label="`休憩${breakIndex + 1}を削除`"
+              @click="$emit('removeBreak', workIndex, breakIndex)"
+            />
+          </div>
+          <div class="-m-1 flex flex-wrap">
+            <div class="w-full p-1 sm:w-1/2">
+              <UFormField label="休憩開始日時" class="pb-0">
+                <UInput
+                  :model-value="breakPeriod.startedAt"
                   type="datetime-local"
                   step="1"
-                  label="出勤日時"
-                  @update:model-value="$emit('updateWorkStartedAt', workIndex, String($event ?? ''))"
+                  class="w-full"
+                  @update:model-value="$emit('updateBreakStartedAt', workIndex, breakIndex, String($event ?? ''))"
                 />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                  :model-value="workPeriod.endedAt"
+              </UFormField>
+            </div>
+            <div class="w-full p-1 sm:w-1/2">
+              <UFormField label="休憩終了日時" class="pb-0">
+                <UInput
+                  :model-value="breakPeriod.endedAt"
                   type="datetime-local"
                   step="1"
-                  label="退勤日時"
-                  @update:model-value="$emit('updateWorkEndedAt', workIndex, String($event ?? ''))"
+                  class="w-full"
+                  @update:model-value="$emit('updateBreakEndedAt', workIndex, breakIndex, String($event ?? ''))"
                 />
-              </v-col>
-            </v-row>
-
-            <v-sheet
-              v-for="(breakPeriod, breakIndex) in workPeriod.breakPeriods"
-              :key="breakIndex"
-              rounded
-              color="surface-variant"
-              class="pa-3 mb-2"
-            >
-              <div class="d-flex align-center mb-2">
-                <strong>休憩 {{ breakIndex + 1 }}</strong>
-                <v-spacer />
-                <v-btn
-                  icon="mdi-delete-outline"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  :aria-label="`休憩${breakIndex + 1}を削除`"
-                  @click="$emit('removeBreak', workIndex, breakIndex)"
-                />
-              </div>
-              <v-row dense>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    :model-value="breakPeriod.startedAt"
-                    type="datetime-local"
-                    step="1"
-                    label="休憩開始日時"
-                    hide-details
-                    @update:model-value="$emit('updateBreakStartedAt', workIndex, breakIndex, String($event ?? ''))"
-                  />
-                </v-col>
-                <v-col cols="12" sm="6">
-                  <v-text-field
-                    :model-value="breakPeriod.endedAt"
-                    type="datetime-local"
-                    step="1"
-                    label="休憩終了日時"
-                    hide-details
-                    @update:model-value="$emit('updateBreakEndedAt', workIndex, breakIndex, String($event ?? ''))"
-                  />
-                </v-col>
-              </v-row>
-            </v-sheet>
-            <v-btn
-              variant="tonal"
-              prepend-icon="mdi-coffee-outline"
-              :disabled="workPeriod.breakPeriods.length >= 20"
-              @click="$emit('addBreak', workIndex)"
-            >
-              休憩を追加
-            </v-btn>
-          </v-card-text>
-        </v-card>
-
-        <v-btn
-          variant="outlined"
-          prepend-icon="mdi-plus"
-          :disabled="form.workPeriods.length >= 20"
-          @click="$emit('addWork')"
+              </UFormField>
+            </div>
+          </div>
+        </div>
+        <UButton
+          variant="soft"
+          icon="i-mdi-coffee-outline"
+          :disabled="workPeriod.breakPeriods.length >= 20"
+          @click="$emit('addBreak', workIndex)"
         >
-          勤務区間を追加
-        </v-btn>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="submitting" @click="$emit('close')">キャンセル</v-btn>
-        <v-btn
-          color="primary"
-          :loading="submitting"
-          prepend-icon="mdi-send"
-          @click="$emit('submit')"
-        >
-          申請する
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+          休憩を追加
+        </UButton>
+      </UCard>
+
+      <UButton
+        variant="outline"
+        icon="i-mdi-plus"
+        :disabled="form.workPeriods.length >= 20"
+        @click="$emit('addWork')"
+      >
+        勤務区間を追加
+      </UButton>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="submitting" @click="$emit('close')">キャンセル</UButton>
+      <UButton color="primary" variant="ghost" :loading="submitting" icon="i-mdi-send" @click="$emit('submit')">
+        申請する
+      </UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.attendance-correction-dialog-body {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-</style>

@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, toRef } from "vue";
+import { toRef } from "vue";
 
-import { useTaskComments } from "@/features/task/composables/useTaskComments";
+import { TASK_COMMENT_MAX_LENGTH, useTaskComments } from "@/features/task/composables/useTaskComments";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 const props = withDefaults(
   defineProps<{
@@ -9,16 +12,15 @@ const props = withDefaults(
     taskId: number;
     disabled?: boolean;
   }>(),
-  { disabled: false }
+  { disabled: false },
 );
 
-const projectId = toRef(props, "projectId");
-const taskId = toRef(props, "taskId");
-const disabled = toRef(props, "disabled");
 const {
   cancelDelete,
   cancelEditing,
   canModifyComment,
+  canSaveEdit,
+  canSubmit,
   comments,
   commentBody,
   confirmDelete,
@@ -26,6 +28,7 @@ const {
   editBody,
   editingCommentId,
   errorMessages,
+  handleDeleteDialogVisibility,
   isDeleting,
   isLoading,
   isMutating,
@@ -36,180 +39,109 @@ const {
   submitComment,
   submitEdit,
   successMessage,
-} = useTaskComments(projectId, taskId, disabled);
-
-const canSubmit = computed(
-  () =>
-    !props.disabled &&
-    commentBody.value.trim().length > 0 &&
-    commentBody.value.trim().length <= 2000 &&
-    !isMutating.value
-);
-
-const canSaveEdit = computed(
-  () =>
-    editBody.value.trim().length > 0 &&
-    editBody.value.trim().length <= 2000 &&
-    !isMutating.value
-);
-
-const formatDateTime = (value: string): string =>
-  new Intl.DateTimeFormat("ja-JP", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-
-const updateDeleteDialog = (open: boolean): void => {
-  if (!open) {
-    cancelDelete();
-  }
-};
+} = useTaskComments(toRef(props, "projectId"), toRef(props, "taskId"), toRef(props, "disabled"));
 </script>
 
 <template>
-  <v-divider class="my-4" />
-  <div class="text-subtitle-1 font-weight-bold mb-2">コメント</div>
-  <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+  <USeparator class="my-4" />
+  <div class="mb-2 text-base font-bold">コメント</div>
+  <StatusAlert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-  </v-alert>
-  <v-alert
-    v-if="successMessage"
-    type="success"
-    density="compact"
-    closable
-    class="mb-3"
-  >
+  </StatusAlert>
+  <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
     {{ successMessage }}
-  </v-alert>
-  <v-list v-if="comments.length" lines="three" density="compact" class="comment-list mb-3">
-    <v-list-item v-for="comment in comments" :key="comment.commentId">
-      <template #prepend>
-        <v-avatar color="primary" size="32">
-          <span class="text-caption">{{ comment.authorDisplayName.slice(0, 1) }}</span>
-        </v-avatar>
-      </template>
-      <v-list-item-title class="d-flex justify-space-between ga-2">
-        <span>{{ comment.authorDisplayName }}</span>
-        <span class="text-caption text-medium-emphasis">
-          {{ formatDateTime(comment.updatedAt) }}
-          <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
-        </span>
-      </v-list-item-title>
-      <div v-if="editingCommentId === comment.commentId" class="mt-2">
-        <v-textarea
-          v-model="editBody"
-          label="コメントを編集"
-          maxlength="2000"
-          counter
-          rows="3"
-          autofocus
-          :disabled="isUpdating"
-        />
-        <div class="d-flex justify-end ga-2">
-          <v-btn
-            size="small"
-            variant="text"
-            :disabled="isUpdating"
-            @click="cancelEditing"
-          >
-            キャンセル
-          </v-btn>
-          <v-btn
-            color="primary"
-            size="small"
-            :loading="isUpdating"
-            :disabled="!canSaveEdit"
-            @click="submitEdit"
-          >
-            更新
-          </v-btn>
+  </StatusAlert>
+  <ul v-if="comments.length" class="mb-3 max-h-60 overflow-y-auto bg-[#424242] py-2 text-[#EEEEEE]">
+    <li v-for="comment in comments" :key="comment.commentId" class="flex items-start gap-4 px-4 py-2">
+      <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="md" class="bg-primary text-xs text-white" />
+      <div class="min-w-0 flex-1">
+        <div class="flex justify-between gap-2 text-base">
+          <span>{{ comment.authorDisplayName }}</span>
+          <span class="text-xs opacity-70">
+            {{ formatShortDateTime(comment.updatedAt) }}
+            <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
+          </span>
         </div>
+        <div v-if="editingCommentId === comment.commentId" class="mt-2">
+          <div class="relative">
+            <UFormField label="コメントを編集">
+              <UTextarea
+                v-model="editBody"
+                :maxlength="TASK_COMMENT_MAX_LENGTH"
+                :rows="3"
+                autofocus
+                :disabled="isUpdating"
+                class="w-full"
+              />
+            </UFormField>
+            <FieldCounter :value="editBody" :max="TASK_COMMENT_MAX_LENGTH" />
+          </div>
+          <div class="flex justify-end gap-2">
+            <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="cancelEditing">
+              キャンセル
+            </UButton>
+            <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="submitEdit">更新</UButton>
+          </div>
+        </div>
+        <div v-else class="text-sm whitespace-pre-wrap opacity-70">{{ comment.body }}</div>
       </div>
-      <v-list-item-subtitle v-else class="comment-body">
-        {{ comment.body }}
-      </v-list-item-subtitle>
-      <template
-        v-if="canModifyComment(comment) && editingCommentId !== comment.commentId"
-        #append
-      >
-        <div class="d-flex ga-1 ml-2">
-          <v-btn
-            icon="mdi-pencil-outline"
-            size="x-small"
-            variant="text"
-            :disabled="isMutating"
-            :aria-label="`${comment.authorDisplayName}のコメントを編集`"
-            @click="startEditing(comment)"
-          />
-          <v-btn
-            icon="mdi-delete-outline"
-            color="error"
-            size="x-small"
-            variant="text"
-            :disabled="isMutating"
-            :aria-label="`${comment.authorDisplayName}のコメントを削除`"
-            @click="openDeleteConfirm(comment)"
-          />
-        </div>
-      </template>
-    </v-list-item>
-  </v-list>
-  <div v-else-if="!isLoading" class="text-body-2 text-medium-emphasis mb-3">
-    まだコメントはありません。
-  </div>
-  <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-3" />
-  <v-textarea
-    v-model="commentBody"
-    label="コメントを追加"
-    placeholder="@loginIdでメンションできます"
-    maxlength="2000"
-    counter
-    rows="3"
-    :readonly="disabled"
-    :disabled="disabled || isMutating"
-    class="mb-2"
-  />
-  <div class="d-flex justify-end">
-    <v-btn color="primary" :loading="isSubmitting" :disabled="!canSubmit" @click="submitComment">
-      コメントを投稿
-    </v-btn>
-  </div>
-
-  <v-dialog
-    :model-value="deletingComment !== null"
-    max-width="480"
-    :persistent="isDeleting"
-    @update:model-value="updateDeleteDialog"
-  >
-    <v-card>
-      <v-card-title>コメントを削除しますか？</v-card-title>
-      <v-card-text>
-        削除したコメントは元に戻せません。投稿時に送信済みのメンション通知は履歴として残ります。
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isDeleting" @click="cancelDelete">キャンセル</v-btn>
-        <v-btn
+      <div v-if="canModifyComment(comment) && editingCommentId !== comment.commentId" class="ms-2 flex gap-1">
+        <UButton
+          icon="i-mdi-pencil-outline"
+          size="xs"
+          variant="ghost"
+          square
+          class="text-inherit"
+          :disabled="isMutating"
+          :aria-label="`${comment.authorDisplayName}のコメントを編集`"
+          @click="startEditing(comment)"
+        />
+        <UButton
+          icon="i-mdi-delete-outline"
           color="error"
-          :loading="isDeleting"
-          :disabled="isUpdating || isSubmitting"
-          @click="confirmDelete"
-        >
-          削除
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+          size="xs"
+          variant="ghost"
+          square
+          :disabled="isMutating"
+          :aria-label="`${comment.authorDisplayName}のコメントを削除`"
+          @click="openDeleteConfirm(comment)"
+        />
+      </div>
+    </li>
+  </ul>
+  <div v-else-if="!isLoading" class="mb-3 text-sm text-muted">まだコメントはありません。</div>
+  <UProgress v-if="isLoading" size="xs" class="mb-3" />
+  <div class="relative mb-2">
+    <UFormField label="コメントを追加">
+      <UTextarea
+        v-model="commentBody"
+        placeholder="@loginIdでメンションできます"
+        :maxlength="TASK_COMMENT_MAX_LENGTH"
+        :rows="3"
+        :readonly="disabled"
+        :disabled="disabled || isMutating"
+        class="w-full"
+      />
+    </UFormField>
+    <FieldCounter :value="commentBody" :max="TASK_COMMENT_MAX_LENGTH" />
+  </div>
+  <div class="flex justify-end">
+    <UButton color="primary" :loading="isSubmitting" :disabled="!canSubmit" @click="submitComment">コメントを投稿</UButton>
+  </div>
+
+  <UModal
+    :open="deletingComment !== null"
+    :dismissible="!isDeleting"
+    title="コメントを削除しますか？"
+    :ui="{ content: 'max-w-120' }"
+    @update:open="handleDeleteDialogVisibility"
+  >
+    <template #body>削除したコメントは元に戻せません。投稿時に送信済みのメンション通知は履歴として残ります。</template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="isDeleting" @click="cancelDelete">キャンセル</UButton>
+      <UButton color="error" variant="ghost" :loading="isDeleting" :disabled="isUpdating || isSubmitting" @click="confirmDelete">
+        削除
+      </UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.comment-list {
-  max-height: 240px;
-  overflow-y: auto;
-  background: rgb(var(--v-theme-surface-variant));
-}
-
-.comment-body {
-  white-space: pre-wrap;
-}
-</style>

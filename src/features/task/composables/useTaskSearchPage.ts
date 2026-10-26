@@ -26,6 +26,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 
 interface TaskSearchColumnOption {
   code: TaskSearchColumn;
@@ -570,6 +571,7 @@ export const useTaskSearchPage = () => {
     isSavedViewMutating,
     isSearching,
     options,
+    priorityOptions: TASK_PRIORITY_OPTIONS,
     resetSearch,
     requestDeleteSavedView,
     savedViewName,

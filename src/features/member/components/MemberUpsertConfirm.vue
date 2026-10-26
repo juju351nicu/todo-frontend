@@ -30,33 +30,15 @@ const handleConfirmSubmit = (): void => {
     <div id="modal">
         <div class="modal">
             <h4> {{ memberForm.memberId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
-            <v-container>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ memberForm.lastName }} &nbsp;{{ memberForm.firstName }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ memberForm.loginId }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>パスワード: {{ memberForm.password ? '入力済み' : '変更なし' }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ memberForm.email }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ memberForm.role }}</span>
-                    </v-col>
-                </v-row>
-            </v-container>
+            <div class="page-container">
+                <div class="-m-3 flex flex-col">
+                    <span class="p-3 sm:w-1/2">{{ memberForm.lastName }} &nbsp;{{ memberForm.firstName }}</span>
+                    <span class="p-3 sm:w-1/2">{{ memberForm.loginId }}</span>
+                    <span class="p-3 sm:w-1/2">パスワード: {{ memberForm.password ? '入力済み' : '変更なし' }}</span>
+                    <span class="p-3 sm:w-1/2">{{ memberForm.email }}</span>
+                    <span class="p-3 sm:w-1/2">{{ memberForm.role }}</span>
+                </div>
+            </div>
             <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
             <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ memberForm.memberId > 0 ? '更新' : '登録'
             }}</button>

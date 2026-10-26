@@ -8,16 +8,10 @@ import type { AuthorizationAuditLog } from "@/features/administration/types/admi
 import { AUTHORIZATION_AUDIT_ERROR_CODES } from "@/features/administration/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
-interface AuthorizationAuditTableHeader {
-  title: string;
-  align: "start" | "center" | "end";
-  key: string;
-  sortable?: boolean;
-}
-
-const AUDIT_TABLE_HEADERS: AuthorizationAuditTableHeader[] = [
+const AUDIT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "操作日時", align: "start", key: "occurredAt", sortable: false },
   { title: "操作者", align: "start", key: "actorDisplayName", sortable: false },
   { title: "変更対象", align: "start", key: "targetDisplayName", sortable: false },
@@ -32,7 +26,7 @@ export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
 
 /**
  * 権限変更監査ログ画面のページング取得と認証エラー処理を提供する。
- * Vuetifyの1始まりページ番号はAPI呼出境界でBackendの0始まりへ変換する。
+ * 画面の1始まりページ番号（`UPagination`）はAPI呼出境界でBackendの0始まりへ変換する。
  */
 export const useAuthorizationAuditListPage = () => {
   const router = useRouter();
@@ -44,7 +38,7 @@ export const useAuthorizationAuditListPage = () => {
   const isLoading = ref(false);
   const page = ref(1);
   const pageSize = ref<number>(50);
-  const pageSizes = AUTHORIZATION_AUDIT_PAGE_SIZES;
+  const pageSizes: number[] = [...AUTHORIZATION_AUDIT_PAGE_SIZES];
   const totalElements = ref(0);
   const totalPages = ref(0);
 

@@ -26,22 +26,22 @@ describe("notification表示utility", () => {
 
   it("すべての通知種別へ用途を表すMaterial Design iconを割り当てる", () => {
     expect(getNotificationEventIcon("ADMIN_ANNOUNCEMENT")).toBe(
-      "mdi-bullhorn-outline"
+      "i-mdi-bullhorn-outline"
     );
     expect(getNotificationEventIcon("TASK_ASSIGNED")).toBe(
-      "mdi-account-arrow-left-outline"
+      "i-mdi-account-arrow-left-outline"
     );
     expect(getNotificationEventIcon("ATTENDANCE_REJECTED")).toBe(
-      "mdi-file-undo-outline"
+      "i-mdi-file-undo-outline"
     );
     expect(getNotificationAlertIcon("TASK_OVERDUE")).toBe(
-      "mdi-calendar-alert"
+      "i-mdi-calendar-alert"
     );
     expect(getNotificationAlertIcon("PUNCH_MISSING")).toBe(
-      "mdi-clock-alert-outline"
+      "i-mdi-clock-alert-outline"
     );
     expect(getNotificationAlertIcon("APPROVAL_PENDING")).toBe(
-      "mdi-file-clock-outline"
+      "i-mdi-file-clock-outline"
     );
   });
 });

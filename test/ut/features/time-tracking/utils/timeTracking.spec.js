@@ -5,7 +5,10 @@ import {
   calculateDisplayedElapsedSeconds,
   formatEffortMinutes,
   formatElapsedSeconds,
+  formatNullableEffortMinutes,
+  getTimerSessionStatusColor,
   getTimerSessionStatusLabel,
+  getWorkLogAuditActionColor,
   getWorkLogAuditActionLabel,
 } from "@/features/time-tracking/utils/timeTracking";
 
@@ -33,5 +36,25 @@ describe("timeTracking表示utility", () => {
     expect(
       buildDefaultTimerHistoryRange(new Date("2026-10-03T03:00:00Z"))
     ).toEqual({ dateFrom: "2026-09-04", dateTo: "2026-10-03" });
+  });
+});
+
+describe("time tracking display colors", () => {
+  it.each([
+    ["RUNNING", "success"],
+    ["STOPPED", "primary"],
+    ["CANCELED", "neutral"],
+  ])("Timer状態%sを%sで表示する", (status, color) => {
+    expect(getTimerSessionStatusColor(status)).toBe(color);
+  });
+
+  it("Timer反映だけを強調色にし、手入力の監査操作は中立色にする", () => {
+    expect(getWorkLogAuditActionColor("TIMER_APPLY")).toBe("primary");
+    expect(getWorkLogAuditActionColor("MANUAL_UPDATE")).toBe("neutral");
+  });
+
+  it("監査の変更前後分数がnullなら—を表示する", () => {
+    expect(formatNullableEffortMinutes(null)).toBe("—");
+    expect(formatNullableEffortMinutes(90)).toBe("1時間30分");
   });
 });

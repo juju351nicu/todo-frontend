@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { computed, toRef } from "vue";
+import { toRef } from "vue";
 
-import { useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  CHECKLIST_ITEM_MAX_LENGTH,
+  useTaskChecklist,
+} from "@/features/task/composables/useTaskChecklist";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -9,12 +15,13 @@ const props = withDefaults(
     taskId: number;
     disabled?: boolean;
   }>(),
-  { disabled: false }
+  { disabled: false },
 );
 
 const {
   addItem,
   canAdd,
+  canSaveEdit,
   cancelDelete,
   cancelEditing,
   completedCount,
@@ -23,6 +30,7 @@ const {
   editContent,
   editingItemId,
   errorMessages,
+  handleDeleteDialogVisibility,
   isCreating,
   isDeleting,
   isLoading,
@@ -32,181 +40,138 @@ const {
   moveItem,
   newContent,
   openDeleteConfirm,
+  progressPercent,
   saveEdit,
   startEditing,
   successMessage,
   toggleItem,
-} = useTaskChecklist(
-  toRef(props, "projectId"),
-  toRef(props, "taskId"),
-  toRef(props, "disabled")
-);
-
-const progress = computed(() =>
-  items.value.length === 0
-    ? 0
-    : Math.round((completedCount.value / items.value.length) * 100)
-);
-const canSaveEdit = computed(
-  () =>
-    editContent.value.trim().length > 0 &&
-    editContent.value.trim().length <= 255 &&
-    !isMutating.value
-);
-
-/** Dialogを外部操作で閉じた場合も削除確認対象を破棄する。 */
-const updateDeleteDialog = (open: boolean): void => {
-  if (!open) cancelDelete();
-};
+} = useTaskChecklist(toRef(props, "projectId"), toRef(props, "taskId"), toRef(props, "disabled"));
 </script>
 
 <template>
-  <v-divider class="my-4" />
-  <div class="d-flex align-center justify-space-between mb-2">
-    <div class="text-subtitle-1 font-weight-bold">チェックリスト</div>
-    <div v-if="items.length" class="text-caption text-medium-emphasis">
-      {{ completedCount }} / {{ items.length }}（{{ progress }}%）
-    </div>
+  <USeparator class="my-4" />
+  <div class="mb-2 flex items-center justify-between">
+    <div class="text-base font-bold">チェックリスト</div>
+    <div v-if="items.length" class="text-xs text-muted">{{ completedCount }} / {{ items.length }}（{{ progressPercent }}%）</div>
   </div>
-  <v-progress-linear
+  <UProgress
     v-if="items.length"
-    :model-value="progress"
+    :model-value="progressPercent"
     color="success"
-    height="6"
-    rounded
     class="mb-3"
+    :ui="{ base: 'h-1.5 rounded-full', indicator: 'rounded-full' }"
   />
-  <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+  <StatusAlert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-  </v-alert>
-  <v-alert
-    v-if="successMessage"
-    type="success"
-    density="compact"
-    closable
-    class="mb-3"
-  >
+  </StatusAlert>
+  <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
     {{ successMessage }}
-  </v-alert>
-  <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-3" />
-  <v-list v-if="items.length" density="compact" class="checklist mb-3">
-    <v-list-item v-for="(item, index) in items" :key="item.checklistItemId">
-      <template #prepend>
-        <v-checkbox-btn
-          :model-value="item.completed"
-          :disabled="disabled || isMutating"
-          :aria-label="`${item.content}の完了状態を変更`"
-          @click.prevent="toggleItem(item)"
-        />
-      </template>
-      <div v-if="editingItemId === item.checklistItemId" class="d-flex align-center ga-2 py-1">
-        <v-text-field
-          v-model="editContent"
-          label="チェック項目"
-          maxlength="255"
-          counter
-          density="compact"
-          hide-details="auto"
-          autofocus
-          :disabled="isUpdating"
-          @keydown.enter.prevent="saveEdit"
-        />
-        <v-btn size="small" variant="text" :disabled="isUpdating" @click="cancelEditing">
-          取消
-        </v-btn>
-        <v-btn color="primary" size="small" :loading="isUpdating" :disabled="!canSaveEdit" @click="saveEdit">
-          保存
-        </v-btn>
+  </StatusAlert>
+  <UProgress v-if="isLoading" size="xs" class="mb-3" />
+  <ul v-if="items.length" class="mb-3 max-h-70 overflow-y-auto bg-[#424242] py-2 text-[#EEEEEE]">
+    <li v-for="(item, index) in items" :key="item.checklistItemId" class="flex min-h-10 items-center gap-2 px-4">
+      <UCheckbox
+        :model-value="item.completed"
+        :disabled="disabled || isMutating"
+        :aria-label="`${item.content}の完了状態を変更`"
+        @update:model-value="toggleItem(item)"
+      />
+      <div v-if="editingItemId === item.checklistItemId" class="flex flex-1 items-center gap-2 py-1">
+        <div class="relative flex-1">
+          <UFormField label="チェック項目" class="pb-0">
+            <UInput
+              v-model="editContent"
+              :maxlength="CHECKLIST_ITEM_MAX_LENGTH"
+              size="sm"
+              autofocus
+              :disabled="isUpdating"
+              class="w-full"
+              @keydown.enter.prevent="saveEdit"
+            />
+          </UFormField>
+        </div>
+        <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="cancelEditing">取消</UButton>
+        <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="saveEdit">保存</UButton>
       </div>
-      <v-list-item-title
-        v-else
-        :class="{ 'text-decoration-line-through text-medium-emphasis': item.completed }"
-      >
-        {{ item.content }}
-      </v-list-item-title>
-      <template v-if="editingItemId !== item.checklistItemId" #append>
-        <div class="d-flex ga-1">
-          <v-btn
-            icon="mdi-arrow-up"
-            size="x-small"
-            variant="text"
+      <template v-else>
+        <span class="flex-1 text-base" :class="{ 'line-through opacity-60': item.completed }">{{ item.content }}</span>
+        <div class="flex gap-1">
+          <UButton
+            icon="i-mdi-arrow-up"
+            size="xs"
+            variant="ghost"
+            square
+            class="text-inherit"
             :disabled="disabled || isMutating || index === 0"
             :aria-label="`${item.content}を上へ移動`"
             @click="moveItem(item, -1)"
           />
-          <v-btn
-            icon="mdi-arrow-down"
-            size="x-small"
-            variant="text"
+          <UButton
+            icon="i-mdi-arrow-down"
+            size="xs"
+            variant="ghost"
+            square
+            class="text-inherit"
             :disabled="disabled || isMutating || index === items.length - 1"
             :aria-label="`${item.content}を下へ移動`"
             @click="moveItem(item, 1)"
           />
-          <v-btn
-            icon="mdi-pencil-outline"
-            size="x-small"
-            variant="text"
+          <UButton
+            icon="i-mdi-pencil-outline"
+            size="xs"
+            variant="ghost"
+            square
+            class="text-inherit"
             :disabled="disabled || isMutating"
             :aria-label="`${item.content}を編集`"
             @click="startEditing(item)"
           />
-          <v-btn
-            icon="mdi-delete-outline"
+          <UButton
+            icon="i-mdi-delete-outline"
             color="error"
-            size="x-small"
-            variant="text"
+            size="xs"
+            variant="ghost"
+            square
             :disabled="disabled || isMutating"
             :aria-label="`${item.content}を削除`"
             @click="openDeleteConfirm(item)"
           />
         </div>
       </template>
-    </v-list-item>
-  </v-list>
-  <div v-else-if="!isLoading" class="text-body-2 text-medium-emphasis mb-3">
-    まだチェック項目はありません。
+    </li>
+  </ul>
+  <div v-else-if="!isLoading" class="mb-3 text-sm text-muted">まだチェック項目はありません。</div>
+  <div class="flex items-start gap-2">
+    <div class="relative flex-1">
+      <UFormField label="チェック項目を追加">
+        <UInput
+          v-model="newContent"
+          :maxlength="CHECKLIST_ITEM_MAX_LENGTH"
+          size="sm"
+          :disabled="disabled || isMutating || items.length >= CHECKLIST_ITEM_MAX_COUNT"
+          class="w-full"
+          @keydown.enter.prevent="addItem"
+        />
+      </UFormField>
+      <FieldCounter :value="newContent" :max="CHECKLIST_ITEM_MAX_LENGTH" />
+    </div>
+    <UButton color="primary" :loading="isCreating" :disabled="!canAdd" @click="addItem">追加</UButton>
   </div>
-  <div class="d-flex align-start ga-2">
-    <v-text-field
-      v-model="newContent"
-      label="チェック項目を追加"
-      maxlength="255"
-      counter
-      density="compact"
-      hide-details="auto"
-      :disabled="disabled || isMutating || items.length >= 50"
-      @keydown.enter.prevent="addItem"
-    />
-    <v-btn color="primary" :loading="isCreating" :disabled="!canAdd" @click="addItem">
-      追加
-    </v-btn>
-  </div>
-  <div v-if="items.length >= 50" class="text-caption text-warning mt-1">
-    チェック項目は最大50件です。
+  <div v-if="items.length >= CHECKLIST_ITEM_MAX_COUNT" class="mt-1 text-xs text-warning">
+    チェック項目は最大{{ CHECKLIST_ITEM_MAX_COUNT }}件です。
   </div>
 
-  <v-dialog
-    :model-value="deletingItem !== null"
-    max-width="480"
-    :persistent="isDeleting"
-    @update:model-value="updateDeleteDialog"
+  <UModal
+    :open="deletingItem !== null"
+    :dismissible="!isDeleting"
+    title="チェック項目を削除しますか？"
+    :ui="{ content: 'max-w-120' }"
+    @update:open="handleDeleteDialogVisibility"
   >
-    <v-card>
-      <v-card-title>チェック項目を削除しますか？</v-card-title>
-      <v-card-text>{{ deletingItem?.content }}</v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isDeleting" @click="cancelDelete">キャンセル</v-btn>
-        <v-btn color="error" :loading="isDeleting" @click="confirmDelete">削除</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <template #body>{{ deletingItem?.content }}</template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="isDeleting" @click="cancelDelete">キャンセル</UButton>
+      <UButton color="error" variant="ghost" :loading="isDeleting" @click="confirmDelete">削除</UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.checklist {
-  max-height: 280px;
-  overflow-y: auto;
-  background: rgb(var(--v-theme-surface-variant));
-}
-</style>

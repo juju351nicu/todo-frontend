@@ -1,4 +1,5 @@
 import type { TaskWorkloadRow } from "@/features/wbs/types/wbs";
+import type { SemanticColor } from "@/shared/types/color";
 
 /** workload行の稼働可能時間に対する予定配賦状態。 */
 export type WorkloadCapacityStatus =
@@ -26,3 +27,25 @@ export const resolveWorkloadCapacityStatus = (
   }
   return workload.overAllocated ? "OVER_ALLOCATED" : "WITHIN_CAPACITY";
 };
+
+const CAPACITY_LABELS: Readonly<Record<WorkloadCapacityStatus, string>> = {
+  WITHIN_CAPACITY: "配賦内",
+  OVER_ALLOCATED: "過配賦",
+  HOLIDAY_ALLOCATION: "休日配賦",
+};
+
+/** 実績-予定の差分を注意度の色へ変換する。予定超過はerror、予定未満はwarning、一致はsuccess。 */
+export const getWorkloadVarianceColor = (varianceEffortMinutes: number): SemanticColor => {
+  if (varianceEffortMinutes > 0) {
+    return "error";
+  }
+  return varianceEffortMinutes < 0 ? "warning" : "success";
+};
+
+/** 容量状態を色へ変換する。配賦内だけsuccess、過配賦・休日配賦はerror。 */
+export const getWorkloadCapacityColor = (workload: Readonly<TaskWorkloadRow>): SemanticColor =>
+  resolveWorkloadCapacityStatus(workload) === "WITHIN_CAPACITY" ? "success" : "error";
+
+/** 容量状態を担当者が判断できる日本語へ変換する。 */
+export const getWorkloadCapacityLabel = (workload: Readonly<TaskWorkloadRow>): string =>
+  CAPACITY_LABELS[resolveWorkloadCapacityStatus(workload)];

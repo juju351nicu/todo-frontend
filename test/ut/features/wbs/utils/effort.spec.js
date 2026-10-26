@@ -4,6 +4,7 @@ import {
   formatEffortMinutes,
   formatSignedEffortMinutes,
   isValidIsoLocalDate,
+  formatOptionalEffortMinutes,
 } from "@/features/wbs/utils/effort";
 
 describe("WBS工数共通utility", () => {
@@ -25,5 +26,12 @@ describe("WBS工数共通utility", () => {
     expect(formatSignedEffortMinutes(90)).toBe("+1時間30分");
     expect(formatSignedEffortMinutes(-45)).toBe("-45分");
     expect(formatSignedEffortMinutes(0)).toBe("0分");
+  });
+});
+
+describe("formatOptionalEffortMinutes", () => {
+  it("nullは—、値はformatEffortMinutesと同じ表記にする", () => {
+    expect(formatOptionalEffortMinutes(null)).toBe("—");
+    expect(formatOptionalEffortMinutes(90)).toBe("1時間30分");
   });
 });

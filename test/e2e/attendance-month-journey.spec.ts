@@ -69,9 +69,7 @@ test("本人提出から差戻し・再提出・承認・締めまで月次状�
 
     await reviewerPage.goto("/attendance/administration");
     await expect(
-      reviewerPage.locator(
-        ".attendance-administration-page > .v-card > .v-card-title"
-      )
+      reviewerPage.getByRole("heading", { name: "勤怠月次確認", exact: true })
     ).toBeVisible();
     await selectEmployeeMonth(reviewerPage);
     await reviewerPage

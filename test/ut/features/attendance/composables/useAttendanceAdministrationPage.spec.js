@@ -156,6 +156,19 @@ describe("useAttendanceAdministrationPage", () => {
     expect(page.canApproveOrReject.value).toBe(true);
   });
 
+  it("状態ですべてを選んだ場合は状態条件なしで検索する", async () => {
+    const page = useAttendanceAdministrationPage();
+    page.selectedMonth.value = "2026-09";
+
+    await page.search();
+
+    expect(page.selectedStatus.value).toBe("ALL");
+    expect(mocks.attendanceApi.getAdministrationMonths).toHaveBeenCalledWith(
+      "2026-09",
+      null
+    );
+  });
+
   it("空白だけの差戻し理由ではAPIを呼ばない", async () => {
     const page = useAttendanceAdministrationPage();
     await page.selectMonth(listItem);

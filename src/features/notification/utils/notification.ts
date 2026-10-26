@@ -33,22 +33,22 @@ export const formatNotificationOccurredAt = (value: string): string => {
   return Number.isNaN(date.getTime()) ? "時刻不明" : DATE_TIME_FORMATTER.format(date);
 };
 
-/** イベント種別に対応するMaterial Design iconを返す。 */
+/** イベント種別に対応するMDIアイコンのIconify名（`UIcon`の`name`）を返す。 */
 export const getNotificationEventIcon = (type: NotificationEventType): string => {
   const icons: Record<NotificationEventType, string> = {
-    ADMIN_ANNOUNCEMENT: "mdi-bullhorn-outline",
-    TASK_ASSIGNED: "mdi-account-arrow-left-outline",
-    ATTENDANCE_REJECTED: "mdi-file-undo-outline",
+    ADMIN_ANNOUNCEMENT: "i-mdi-bullhorn-outline",
+    TASK_ASSIGNED: "i-mdi-account-arrow-left-outline",
+    ATTENDANCE_REJECTED: "i-mdi-file-undo-outline",
   };
   return icons[type];
 };
 
-/** 導出警告種別に対応するMaterial Design iconを返す。 */
+/** 導出警告種別に対応するMDIアイコンのIconify名（`UIcon`の`name`）を返す。 */
 export const getNotificationAlertIcon = (type: NotificationAlertType): string => {
   const icons: Record<NotificationAlertType, string> = {
-    TASK_OVERDUE: "mdi-calendar-alert",
-    PUNCH_MISSING: "mdi-clock-alert-outline",
-    APPROVAL_PENDING: "mdi-file-clock-outline",
+    TASK_OVERDUE: "i-mdi-calendar-alert",
+    PUNCH_MISSING: "i-mdi-clock-alert-outline",
+    APPROVAL_PENDING: "i-mdi-file-clock-outline",
   };
   return icons[type];
 };

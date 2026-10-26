@@ -139,7 +139,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
     },
     /**
      * 認証Session復元後の初回だけ現在TimerをBackendから取得する。
-     * route変更でAppHeaderが再生成されても定期pollingや重複取得を行わない。
+     * ログイン画面と共通レイアウトの切替でAppHeaderが再生成されても、定期pollingや重複取得を行わない。
      */
     async initialize(): Promise<void> {
       if (this.initialized || this.isLoading) {

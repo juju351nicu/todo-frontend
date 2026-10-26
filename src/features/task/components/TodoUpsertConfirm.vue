@@ -26,33 +26,15 @@ const handleConfirmSubmit = (): void => {
     <div id="modal">
         <div class="modal">
             <h4> {{ todoForm.todoId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
-            <v-container>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ todoForm.title }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ todoForm.dateFrom }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ todoForm.dateTo }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ todoForm.detail }}</span>
-                    </v-col>
-                </v-row>
-                <v-row>
-                    <v-col cols="12" sm="6">
-                        <span>{{ todoForm.doneFlag }}</span>
-                    </v-col>
-                </v-row>
-            </v-container>
+            <div class="page-container">
+                <div class="-m-3 flex flex-col">
+                    <span class="p-3 sm:w-1/2">{{ todoForm.title }}</span>
+                    <span class="p-3 sm:w-1/2">{{ todoForm.dateFrom }}</span>
+                    <span class="p-3 sm:w-1/2">{{ todoForm.dateTo }}</span>
+                    <span class="p-3 sm:w-1/2">{{ todoForm.detail }}</span>
+                    <span class="p-3 sm:w-1/2">{{ todoForm.doneFlag }}</span>
+                </div>
+            </div>
             <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
             <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ todoForm.todoId > 0 ? '更新' : '登録'
             }}</button>

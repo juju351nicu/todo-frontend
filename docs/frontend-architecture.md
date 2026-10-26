@@ -15,6 +15,7 @@ src/
 ├── app/
 │   ├── layouts/
 │   ├── router/
+│   ├── theme/
 │   └── views/
 ├── features/
 │   ├── auth/
@@ -33,10 +34,20 @@ src/
 └── shared/
     ├── api/
     ├── components/
+    ├── composables/
     ├── constants/
     ├── types/
     └── utils/
 ```
+
+## UI基盤（Nuxt UI）
+
+2026-10にVuetify 3からNuxt UI 4（Vite plugin）とTailwind CSS 4へ移行した。計画と経緯はリポジトリ外の`../nuxt-ui-migration-plan.md`に残している。
+
+- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。移行前のVuetify既定デザインと同じ見た目になるよう、button・badge・card・alert・入力欄・table・modal・tabの寸法と色を上書きする。
+- `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、Vuetify既定色のpalette、elevation影、breakpoint、`page-container`／`app-table`等の共通utility。
+- `src/shared/components`: `StatusAlert`、`AppAlert`、`AppSnackbar`、`AppDataTable`、`SearchField`、`FieldCounter`。
+- `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`）。
 
 ## 各ディレクトリの責務
 
@@ -47,7 +58,7 @@ src/
 - `stores`: 認証利用者など、複数画面や画面遷移をまたいで共有する状態だけを保持する。
 - `api`: 共通HTTPクライアントを利用してBackend APIを呼び、Vueのreactiveな画面状態を保持しない。
 - `types`: 機能固有のRequest / Responseと画面型を置く。
-- `shared`: 複数機能から利用するHTTP、共通エラー、表示部品、定数、純粋関数を置く。
+- `shared`: 複数機能から利用するHTTP、共通エラー、表示部品、画面操作の共通composable、定数、純粋関数を置く。
 
 依存方向は原則として`view -> composable -> store/api -> shared/api`とする。`shared`から個別の`features`へ依存させない。
 
@@ -138,13 +149,22 @@ src/
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
 - `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
-- `src/features/wbs/utils/apiErrors.ts`: WBSが表示契約を持つerror code集合と409回復時に優先するHTTP status
+- `src/features/wbs/utils/apiErrors.ts`: WBSが表示契約を持つerror code集合、409回復時に優先するHTTP status、契約済みcodeだけを表示するmessage解決（`resolveWbsErrorMessages`）
+- `src/features/wbs/utils/taskDependency.ts`: 依存関係のTask表示名・一覧行・追加Formの検証とFinish-to-Start Request変換
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
 - `src/features/wbs/utils/wbsForm.ts`: 実績期間を含む編集Form変換、循環しない親候補、入力検証、更新Request変換
 - `src/features/wbs/utils/wbsTree.ts`: flat listの安全な階層化とnullableな実績期間を含む表示変換
 - `src/features/wbs/utils/wbsGantt.ts`: 階層行から循環を除いたDHTMLX Gantt data・表示期間・予定実績tooltip・読取り専用依存線への変換
 - `src/features/wbs/utils/workingCalendar.ts`: calendar期間・対象変換、例外Form、主要制約検証、登録更新Request、表示名変換
-- `src/features/wbs/composables/useWbsPage.ts`: WBS読込、階層変換、Task・依存関係・日別予定実績・稼働日例外編集、workload、baseline、EVM、Excel帳票、409再取得、認証エラー、Board遷移
+- `src/features/wbs/composables/useWbsPage.ts`: WBS画面の統括。Project・WBS・依存関係・baselineのスナップショット取得、権限判定、401処理、Board遷移と、下記の領域別composableの配線
+- `src/features/wbs/composables/wbsPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、WBS、階層行、権限、画面上部message、Session失効処理）の型
+- `src/features/wbs/composables/useWbsTaskEditor.ts`: Task編集Dialogと409時のWBS再取得
+- `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得
+- `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
+- `src/features/wbs/composables/useWbsWorkingCalendar.ts`: 稼働日calendarの表示対象・編集可否・例外の登録・更新・削除
+- `src/features/wbs/composables/useTaskEffortPlans.ts`／`useTaskWorkLogs.ts`: 通常Taskの日別予定／日別実績Dialog
+- `src/features/wbs/composables/useWbsBaselines.ts`: baselineの一覧・比較・作成・有効化
+- `src/features/wbs/composables/useWbsEarnedValue.ts`／`useWbsReportExport.ts`: EVMの取得／週次・月次Excel帳票のdownload
 - `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
 - `src/features/wbs/components/WbsReportExportCard.vue`: EVMと共有する基準日、週次／月次Excel download、処理中・error表示
 - `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形
@@ -187,6 +207,8 @@ Task移動はpointer操作だけに限定せず、移動ハンドルへフォー
 Project設定とmember管理はTask Boardから開く1つのDialogと`useProjectSettingsDialog`へまとめる。Project名・説明の更新、ACTIVEからARCHIVEDへの変更、member追加・role変更・除外を扱い、操作ごとの小さなcomposableへは分割しない。Project／memberのversionをBackendへ送り、409では古いフォームを確定せず最新Project詳細を再取得する。最後のOWNERの降格・除外は画面でも抑止して理由を表示するが、同時操作を含む最終判定はBackendのtransactionへ委ねる。自己除外は204 Responseを確定結果として扱い、削除後に取得不能となるProject詳細を要求せずProject一覧へ遷移する。archive成功後は親BoardのProject詳細をResponseで差し替え、Task操作を参照専用へ切り替える。
 
 WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。
+
+2026-10-26に、約2,700行へ増えた`useWbsPage`を領域別composableへ分割した。`useWbsPage`は統括として残り、各composableの戻り値を分割前と同じ名前で返すため、`WbsPage.vue`は変更していない（契約は`useWbsPage.spec.js`の戻り値テストで固定）。領域別composableは`WbsPageContext`で画面共通の状態を受け取り、領域をまたぐ処理（日別予定・実績・稼働日例外の変更後のworkload再取得、workloadの401時の日別予定・実績Dialogのclose、baseline変更時のEVM破棄、依存関係の競合時の画面全体再取得）は各composableのoptionsのcallbackで`useWbsPage`から配線する。テストは領域ごとのspecへ分け、共通mock・fixtureは`test/ut/features/wbs/composables/wbsPageTestSupport.js`に置く。
 
 2026-08-22にWBS階層表へTask編集Dialogを追加した。親候補はSummaryだけとし、編集中Task自身と全子孫を除いて明らかな循環をFrontendでも抑止する。予定日、整数分の予定工数、0から100まで小数第2位の進捗率、Milestoneの同日・0分制約を送信前に検証するが、Project状態、親Taskの最新状態、子Task有無、同時更新はBackendを最終判定とする。更新は取得時点のversionを含む`PUT /api/v1/projects/{projectId}/wbs/tasks/{taskId}`を使用し、成功時はResponse全体、409時は再取得した最新WBSで画面を差し替える。Ganttのdrag・resize・progress直接変更は引き続き無効とする。
 

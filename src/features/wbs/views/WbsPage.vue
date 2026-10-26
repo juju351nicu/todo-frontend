@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { defineAsyncComponent, onBeforeMount, ref } from "vue";
+import { defineAsyncComponent, onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
@@ -24,17 +23,17 @@ import {
   getWbsTaskTypeLabel,
   normalizeProgressPercent,
 } from "@/features/wbs/utils/wbsTree";
-import type { WbsViewMode } from "@/features/wbs/types/wbs";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 // Gantt libraryは階層表だけを使う利用者へ配信せず、表示切替時に初めて読み込む。
 const WbsGanttChart = defineAsyncComponent(
   () => import("@/features/wbs/components/WbsGanttChart.vue")
 );
-const activeView = ref<WbsViewMode>("table");
 
 const {
   activateWbsBaseline,
+  activeView,
   activeBaselineDetail,
   activatingBaselineId,
   baselineChangedRows,
@@ -90,6 +89,10 @@ const {
   editorErrorMessages,
   errorMessages,
   exportingReportType,
+  handleDependencyDeleteDialogVisibility,
+  handleEffortPlanDeleteDialogVisibility,
+  handleWorkLogDeleteDialogVisibility,
+  handleWorkingDayDeleteDialogVisibility,
   initialize,
   isDeletingDependency,
   isDeletingEffortPlan,
@@ -166,257 +169,190 @@ const {
   workingDayPendingDelete,
 } = useWbsPage();
 
-/** Vuetifyが削除確認Dialogを閉じる場合だけ未確定の削除対象を破棄する。 */
-const handleDependencyDeleteDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    cancelDependencyDelete();
-  }
-};
-
-/** Vuetifyが日別予定の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
-const handleEffortPlanDeleteDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    cancelEffortPlanDelete();
-  }
-};
-
-/** Vuetifyが日別実績の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
-const handleWorkLogDeleteDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    cancelWorkLogDelete();
-  }
-};
-
-/** Vuetifyが稼働日例外の削除確認Dialogを閉じる場合だけ確認対象を破棄する。 */
-const handleWorkingDayDeleteDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    cancelWorkingDayDelete();
-  }
-};
-
 onBeforeMount(initialize);
+
+const VIEW_OPTIONS = [
+  { value: "table", label: "階層表", icon: "i-mdi-table-tree" },
+  { value: "gantt", label: "Gantt", icon: "i-mdi-chart-gantt" },
+] as const;
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator v-if="isLoading" />
-  <v-container fluid class="pa-6 wbs-page">
-    <div class="d-flex align-center flex-wrap ga-3 mb-4">
-      <v-btn
+  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+      <UButton
         :to="{ name: 'ProjectList' }"
-        icon="mdi-arrow-left"
-        variant="text"
+        icon="i-mdi-arrow-left"
+        variant="ghost"
+        square
+        size="lg"
+        class="size-12 text-inherit hover:bg-white/4"
+        :ui="{ leadingIcon: 'size-6' }"
         aria-label="Project一覧へ戻る"
       />
       <div>
-        <h1 class="text-h5">{{ wbs?.projectName ?? "WBS" }}</h1>
-        <div class="text-body-2 text-medium-emphasis">
-          Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理
-        </div>
+        <h1 class="text-2xl">{{ wbs?.projectName ?? "WBS" }}</h1>
+        <div class="text-sm opacity-70">Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理</div>
       </div>
-      <v-spacer />
-      <v-btn
-        prepend-icon="mdi-view-column-outline"
-        variant="tonal"
-        :disabled="isLoading"
-        @click="openBoard"
-      >
+      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto text-white" :disabled="isLoading" @click="openBoard">
         Boardを開く
-      </v-btn>
-      <v-btn
-        prepend-icon="mdi-refresh"
-        color="primary"
-        variant="tonal"
-        :loading="isLoading"
-        @click="initialize"
-      >
-        再読込
-      </v-btn>
+      </UButton>
+      <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="isLoading" @click="initialize">再読込</UButton>
     </div>
 
-    <v-alert v-if="errorMessages.length" type="error" class="mb-4">
+    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-    </v-alert>
-    <v-alert v-if="successMessage" type="success" class="mb-4">
-      {{ successMessage }}
-    </v-alert>
+    </StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-    <v-card v-if="wbs" max-width="1600" class="mx-auto">
-      <v-card-title class="d-flex align-center flex-wrap ga-2">
-        <v-icon icon="mdi-file-tree-outline" />
-        WBS階層表
-        <v-spacer />
-        <v-chip size="small" variant="outlined">Task {{ taskCount }}</v-chip>
-        <v-chip size="small" variant="outlined">
-          Summary {{ summaryCount }}
-        </v-chip>
-        <v-chip size="small" variant="outlined">
-          Milestone {{ milestoneCount }}
-        </v-chip>
-      </v-card-title>
+    <UCard v-if="wbs" class="mx-auto max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-2">
+          <UIcon name="i-mdi-file-tree-outline" class="size-6" />
+          WBS階層表
+          <UBadge size="sm" variant="outline" class="ms-auto">Task {{ taskCount }}</UBadge>
+          <UBadge size="sm" variant="outline">Summary {{ summaryCount }}</UBadge>
+          <UBadge size="sm" variant="outline">Milestone {{ milestoneCount }}</UBadge>
+        </div>
+      </template>
 
-      <v-card-text v-if="rows.length" class="pb-3">
-        <v-btn-toggle
-          v-model="activeView"
-          color="primary"
-          mandatory
-          divided
-          aria-label="WBS表示形式"
-        >
-          <v-btn value="table" prepend-icon="mdi-table-tree">階層表</v-btn>
-          <v-btn value="gantt" prepend-icon="mdi-chart-gantt">Gantt</v-btn>
-        </v-btn-toggle>
-        <p class="text-caption text-medium-emphasis mt-2 mb-0">
+      <div v-if="rows.length" class="px-4 pt-4 pb-3">
+        <UFieldGroup role="group" aria-label="WBS表示形式">
+          <UButton
+            v-for="option in VIEW_OPTIONS"
+            :key="option.value"
+            :icon="option.icon"
+            size="lg"
+            :color="activeView === option.value ? 'primary' : 'neutral'"
+            :variant="activeView === option.value ? 'soft' : 'ghost'"
+            class="shadow-none"
+            :aria-pressed="activeView === option.value"
+            @click="activeView = option.value"
+          >
+            {{ option.label }}
+          </UButton>
+        </UFieldGroup>
+        <p class="mt-2 mb-0 text-xs text-muted">
           階層表から予定・進捗・実績期間と通常Taskの日別予定・実績を管理できます。Gantt上の直接変更はまだ行いません。
         </p>
-      </v-card-text>
+      </div>
 
-      <v-card-text v-if="rows.length && activeView === 'table'" class="pa-0">
-        <div class="wbs-table-scroll">
-          <v-table class="wbs-table" hover>
-            <thead>
-              <tr>
-                <th scope="col">WBS</th>
-                <th scope="col">Task</th>
-                <th scope="col">種別</th>
-                <th scope="col">Board列</th>
-                <th scope="col">予定期間</th>
-                <th scope="col">実績期間</th>
-                <th scope="col">予定工数</th>
-                <th scope="col">進捗</th>
-                <th scope="col">担当者</th>
-                <th scope="col">優先度</th>
-                <th scope="col">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in rows" :key="row.taskId">
-                <td class="text-no-wrap">{{ row.wbsCode || "—" }}</td>
-                <td
-                  class="wbs-title-cell"
-                  :style="{ paddingInlineStart: `${16 + row.depth * 24}px` }"
-                >
-                  <div class="d-flex align-start ga-2">
-                    <v-icon
-                      :icon="getWbsTaskTypeIcon(row.taskType)"
-                      size="small"
-                      class="mt-1 flex-shrink-0"
-                      :aria-label="getWbsTaskTypeLabel(row.taskType)"
-                    />
-                    <div>
-                      <div
-                        class="font-weight-medium"
-                        :class="{ 'font-weight-bold': row.hasChildren }"
-                      >
-                        {{ row.title }}
-                      </div>
-                      <div class="text-caption text-medium-emphasis task-detail">
-                        {{ row.detail }}
-                      </div>
-                    </div>
+      <div v-if="rows.length && activeView === 'table'" class="overflow-x-auto">
+        <table class="wbs-table app-table app-table-hover min-w-320 [&_td]:h-13 [&_td]:py-2 [&_th]:h-13">
+          <thead>
+            <tr>
+              <th scope="col">WBS</th>
+              <th scope="col">Task</th>
+              <th scope="col">種別</th>
+              <th scope="col">Board列</th>
+              <th scope="col">予定期間</th>
+              <th scope="col">実績期間</th>
+              <th scope="col">予定工数</th>
+              <th scope="col">進捗</th>
+              <th scope="col">担当者</th>
+              <th scope="col">優先度</th>
+              <th scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="row in rows" :key="row.taskId">
+              <td class="whitespace-nowrap">{{ row.wbsCode || "—" }}</td>
+              <!-- 階層の深さを字下げで表す。1階層ごとに24pxずつ右へずらす。 -->
+              <td class="min-w-80" :style="{ paddingInlineStart: `${16 + row.depth * 24}px` }">
+                <div class="flex items-start gap-2">
+                  <UIcon
+                    :name="getWbsTaskTypeIcon(row.taskType)"
+                    class="mt-1 size-5 shrink-0"
+                    :aria-label="getWbsTaskTypeLabel(row.taskType)"
+                  />
+                  <div>
+                    <div :class="row.hasChildren ? 'font-bold' : 'font-medium'">{{ row.title }}</div>
+                    <div class="line-clamp-2 max-w-110 text-xs text-muted">{{ row.detail }}</div>
                   </div>
-                </td>
-                <td>
-                  <v-chip size="x-small" variant="outlined">
-                    {{ getWbsTaskTypeLabel(row.taskType) }}
-                  </v-chip>
-                </td>
-                <td class="text-no-wrap">
-                  <v-chip size="x-small">{{ row.taskStatusName }}</v-chip>
-                </td>
-                <td class="text-no-wrap">
-                  {{ row.plannedStartDate }}<br />
-                  <span class="text-medium-emphasis">
-                    ～ {{ row.plannedEndDate }}
-                  </span>
-                </td>
-                <td class="text-no-wrap">
-                  {{ formatActualPeriod(row.actualStartDate, row.actualEndDate) }}
-                </td>
-                <td class="text-no-wrap">
-                  {{ formatPlannedEffort(row.plannedEffortMinutes) }}
-                </td>
-                <td>
-                  <div class="progress-cell">
-                    <v-progress-linear
-                      :model-value="normalizeProgressPercent(row.progressPercent)"
-                      color="primary"
-                      height="8"
-                      rounded
-                    />
-                    <span class="text-caption text-no-wrap">
-                      {{ formatProgressPercent(row.progressPercent) }}%
-                    </span>
-                  </div>
-                </td>
-                <td class="text-no-wrap">ID: {{ row.assigneeAccountId }}</td>
-                <td>
-                  <v-chip
-                    :color="getWbsPriorityColor(row.priority)"
-                    size="x-small"
-                  >
-                    {{ getWbsPriorityLabel(row.priority) }}
-                  </v-chip>
-                </td>
-                <td>
-                  <div class="d-flex ga-1">
-                    <v-btn
-                      v-if="row.taskType === 'TASK'"
-                      icon="mdi-calendar-clock-outline"
-                      color="secondary"
-                      size="small"
-                      variant="text"
-                      :disabled="isLoadingEffortPlans"
-                      :aria-label="`${row.title}の日別予定工数を開く`"
-                      @click="openEffortPlanDialog(row.taskId)"
-                    />
-                    <v-btn
-                      v-if="row.taskType === 'TASK'"
-                      icon="mdi-timer-edit-outline"
-                      color="primary"
-                      size="small"
-                      variant="text"
-                      :disabled="isLoadingWorkLogs"
-                      :aria-label="`${row.title}の日別実績工数を開く`"
-                      @click="openWorkLogDialog(row.taskId)"
-                    />
-                    <v-btn
-                      v-if="canEditWbs"
-                      icon="mdi-pencil-outline"
-                      size="small"
-                      variant="text"
-                      :disabled="isSaving"
-                      :aria-label="`${row.title}のWBS情報を編集`"
-                      @click="openTaskEditor(row.taskId)"
-                    />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-        </div>
-      </v-card-text>
+                </div>
+              </td>
+              <td>
+                <UBadge size="xs" variant="outline">{{ getWbsTaskTypeLabel(row.taskType) }}</UBadge>
+              </td>
+              <td class="whitespace-nowrap">
+                <UBadge size="xs">{{ row.taskStatusName }}</UBadge>
+              </td>
+              <td class="whitespace-nowrap">
+                {{ row.plannedStartDate }}<br />
+                <span class="text-muted">～ {{ row.plannedEndDate }}</span>
+              </td>
+              <td class="whitespace-nowrap">{{ formatActualPeriod(row.actualStartDate, row.actualEndDate) }}</td>
+              <td class="whitespace-nowrap">{{ formatPlannedEffort(row.plannedEffortMinutes) }}</td>
+              <td>
+                <div class="grid min-w-37.5 grid-cols-[minmax(80px,1fr)_auto] items-center gap-2">
+                  <UProgress
+                    :model-value="normalizeProgressPercent(row.progressPercent)"
+                    :ui="{ base: 'h-2 rounded-full', indicator: 'rounded-full' }"
+                  />
+                  <span class="text-xs whitespace-nowrap">{{ formatProgressPercent(row.progressPercent) }}%</span>
+                </div>
+              </td>
+              <td class="whitespace-nowrap">ID: {{ row.assigneeAccountId }}</td>
+              <td>
+                <UBadge :color="getWbsPriorityColor(row.priority)" size="xs">{{ getWbsPriorityLabel(row.priority) }}</UBadge>
+              </td>
+              <td>
+                <div class="flex gap-1">
+                  <UButton
+                    v-if="row.taskType === 'TASK'"
+                    icon="i-mdi-calendar-clock-outline"
+                    color="secondary"
+                    size="sm"
+                    variant="ghost"
+                    square
+                    :disabled="isLoadingEffortPlans"
+                    :aria-label="`${row.title}の日別予定工数を開く`"
+                    @click="openEffortPlanDialog(row.taskId)"
+                  />
+                  <UButton
+                    v-if="row.taskType === 'TASK'"
+                    icon="i-mdi-timer-edit-outline"
+                    color="primary"
+                    size="sm"
+                    variant="ghost"
+                    square
+                    :disabled="isLoadingWorkLogs"
+                    :aria-label="`${row.title}の日別実績工数を開く`"
+                    @click="openWorkLogDialog(row.taskId)"
+                  />
+                  <UButton
+                    v-if="canEditWbs"
+                    icon="i-mdi-pencil-outline"
+                    size="sm"
+                    variant="ghost"
+                    square
+                    :disabled="isSaving"
+                    :aria-label="`${row.title}のWBS情報を編集`"
+                    @click="openTaskEditor(row.taskId)"
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <v-card-text
-        v-else-if="rows.length && activeView === 'gantt'"
-        class="pa-0 wbs-gantt-scroll"
-      >
+      <div v-else-if="rows.length && activeView === 'gantt'" class="overflow-x-auto">
         <Suspense>
           <WbsGanttChart :rows="rows" :dependencies="dependencies" />
           <template #fallback>
-            <div class="pa-10 text-center">Ganttを読み込んでいます。</div>
+            <div class="p-10 text-center">Ganttを読み込んでいます。</div>
           </template>
         </Suspense>
-      </v-card-text>
+      </div>
 
-      <v-card-text v-else class="pa-10 text-center">
-        <v-icon icon="mdi-file-tree-outline" size="48" class="mb-3" />
-        <h2 class="text-h6 mb-2">WBSへ表示するTaskがありません</h2>
-        <p class="text-body-2 text-medium-emphasis mb-0">
-          TaskをProject Boardへ登録すると、同じTask IDでここに表示されます。
-        </p>
-      </v-card-text>
-    </v-card>
+      <div v-else class="p-10 text-center">
+        <UIcon name="i-mdi-file-tree-outline" class="mb-3 size-12" />
+        <h2 class="mb-2 text-xl font-medium">WBSへ表示するTaskがありません</h2>
+        <p class="mb-0 text-sm text-muted">TaskをProject Boardへ登録すると、同じTask IDでここに表示されます。</p>
+      </div>
+    </UCard>
 
     <WbsBaselineCard
       v-if="wbs"
@@ -476,77 +412,67 @@ onBeforeMount(initialize);
       @load="loadTaskWorkload"
     />
 
-    <v-card v-if="wbs" max-width="1600" class="mx-auto mt-4">
-      <v-card-title class="d-flex align-center flex-wrap ga-2">
-        <v-icon icon="mdi-vector-link" />
-        Task依存関係
-        <v-chip size="small" variant="outlined">
-          {{ dependencyRows.length }}件
-        </v-chip>
-        <v-spacer />
-        <v-btn
-          v-if="canEditWbs"
-          prepend-icon="mdi-link-plus"
-          color="primary"
-          variant="tonal"
-          :disabled="dependencyTaskOptions.length < 2 || isDependencyMutating"
-          @click="openDependencyEditor"
-        >
-          依存関係を追加
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text v-if="dependencyRows.length" class="pa-0">
-        <div class="wbs-dependency-scroll">
-          <v-table class="wbs-dependency-table" hover>
-            <thead>
-              <tr>
-                <th scope="col">先行Task</th>
-                <th scope="col">後続Task</th>
-                <th scope="col">依存種別</th>
-                <th scope="col">待ち時間</th>
-                <th v-if="canEditWbs" scope="col">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="dependency in dependencyRows"
-                :key="dependency.dependencyId"
-              >
-                <td>{{ dependency.predecessorLabel }}</td>
-                <td>
-                  <v-icon icon="mdi-arrow-right" size="small" class="mr-2" />
-                  {{ dependency.successorLabel }}
-                </td>
-                <td>
-                  <v-chip size="x-small" variant="outlined">
-                    Finish-to-Start
-                  </v-chip>
-                </td>
-                <td>{{ dependency.lagMinutes }}分</td>
-                <td v-if="canEditWbs">
-                  <v-btn
-                    icon="mdi-link-variant-remove"
-                    color="error"
-                    size="small"
-                    variant="text"
-                    :disabled="isDependencyMutating"
-                    :aria-label="`${dependency.predecessorLabel}から${dependency.successorLabel}への依存関係を削除`"
-                    @click="requestDependencyDelete(dependency.dependencyId)"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
+    <UCard v-if="wbs" class="mx-auto mt-4 max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
+      <template #header>
+        <div class="flex flex-wrap items-center gap-2">
+          <UIcon name="i-mdi-vector-link" class="size-6" />
+          Task依存関係
+          <UBadge size="sm" variant="outline">{{ dependencyRows.length }}件</UBadge>
+          <UButton
+            v-if="canEditWbs"
+            icon="i-mdi-link-plus"
+            color="primary"
+            variant="soft"
+            class="ms-auto"
+            :disabled="dependencyTaskOptions.length < 2 || isDependencyMutating"
+            @click="openDependencyEditor"
+          >
+            依存関係を追加
+          </UButton>
         </div>
-      </v-card-text>
-      <v-card-text v-else class="pa-8 text-center">
-        <v-icon icon="mdi-vector-link" size="40" class="mb-2" />
-        <p class="text-body-2 text-medium-emphasis mb-0">
-          Task依存関係はまだ登録されていません。
-        </p>
-      </v-card-text>
-    </v-card>
+      </template>
+
+      <div v-if="dependencyRows.length" class="overflow-x-auto">
+        <table class="app-table app-table-hover min-w-205 [&_td]:h-13 [&_th]:h-13">
+          <thead>
+            <tr>
+              <th scope="col">先行Task</th>
+              <th scope="col">後続Task</th>
+              <th scope="col">依存種別</th>
+              <th scope="col">待ち時間</th>
+              <th v-if="canEditWbs" scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="dependency in dependencyRows" :key="dependency.dependencyId">
+              <td>{{ dependency.predecessorLabel }}</td>
+              <td>
+                <UIcon name="i-mdi-arrow-right" class="me-2 size-5 align-middle" />
+                {{ dependency.successorLabel }}
+              </td>
+              <td><UBadge size="xs" variant="outline">Finish-to-Start</UBadge></td>
+              <td>{{ dependency.lagMinutes }}分</td>
+              <td v-if="canEditWbs">
+                <UButton
+                  icon="i-mdi-link-variant-remove"
+                  color="error"
+                  size="sm"
+                  variant="ghost"
+                  square
+                  :disabled="isDependencyMutating"
+                  :aria-label="`${dependency.predecessorLabel}から${dependency.successorLabel}への依存関係を削除`"
+                  @click="requestDependencyDelete(dependency.dependencyId)"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="p-8 text-center">
+        <UIcon name="i-mdi-vector-link" class="mb-2 size-10" />
+        <p class="mb-0 text-sm text-muted">Task依存関係はまだ登録されていません。</p>
+      </div>
+    </UCard>
 
     <WbsTaskEditDialog
       :open="isEditorOpen"
@@ -627,176 +553,83 @@ onBeforeMount(initialize);
       @save="saveWorkingDay"
     />
 
-    <v-dialog
-      :model-value="workingDayPendingDelete !== null"
-      max-width="560"
-      :persistent="isDeletingWorkingDay"
-      @update:model-value="handleWorkingDayDeleteDialogModelValue"
+    <UModal
+      :open="workingDayPendingDelete !== null"
+      :dismissible="!isDeletingWorkingDay"
+      title="稼働日例外を削除"
+      :ui="{ content: 'max-w-140' }"
+      @update:open="handleWorkingDayDeleteDialogVisibility"
     >
-      <v-card>
-        <v-card-title>稼働日例外を削除</v-card-title>
-        <v-card-text>
-          <template v-if="workingDayPendingDelete">
-            {{ workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
-          </template>
-          <template v-else>選択した稼働日例外を削除します。</template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="isDeletingWorkingDay" @click="cancelWorkingDayDelete">
-            キャンセル
-          </v-btn>
-          <v-btn
-            color="error"
-            :loading="isDeletingWorkingDay"
-            @click="confirmWorkingDayDelete"
-          >
-            削除
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template #body>
+        <template v-if="workingDayPendingDelete">
+          {{ workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
+        </template>
+        <template v-else>選択した稼働日例外を削除します。</template>
+      </template>
+      <template #footer>
+        <UButton variant="ghost" :disabled="isDeletingWorkingDay" @click="cancelWorkingDayDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="isDeletingWorkingDay" @click="confirmWorkingDayDelete">削除</UButton>
+      </template>
+    </UModal>
 
-    <v-dialog
-      :model-value="effortPlanPendingDelete !== null"
-      max-width="560"
-      :persistent="isDeletingEffortPlan"
-      @update:model-value="handleEffortPlanDeleteDialogModelValue"
+    <UModal
+      :open="effortPlanPendingDelete !== null"
+      :dismissible="!isDeletingEffortPlan"
+      title="Task日別予定を削除"
+      :ui="{ content: 'max-w-140' }"
+      @update:open="handleEffortPlanDeleteDialogVisibility"
     >
-      <v-card>
-        <v-card-title>Task日別予定を削除</v-card-title>
-        <v-card-text>
-          <template v-if="effortPlanPendingDelete">
-            {{ effortPlanPendingDelete.planDate }}・{{ effortPlanPendingDelete.assigneeDisplayName }}の
-            {{ effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
-          </template>
-          <template v-else>選択したTask日別予定を削除します。</template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="isDeletingEffortPlan" @click="cancelEffortPlanDelete">
-            キャンセル
-          </v-btn>
-          <v-btn
-            color="error"
-            :loading="isDeletingEffortPlan"
-            @click="confirmEffortPlanDelete"
-          >
-            削除
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template #body>
+        <template v-if="effortPlanPendingDelete">
+          {{ effortPlanPendingDelete.planDate }}・{{ effortPlanPendingDelete.assigneeDisplayName }}の
+          {{ effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
+        </template>
+        <template v-else>選択したTask日別予定を削除します。</template>
+      </template>
+      <template #footer>
+        <UButton variant="ghost" :disabled="isDeletingEffortPlan" @click="cancelEffortPlanDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="isDeletingEffortPlan" @click="confirmEffortPlanDelete">削除</UButton>
+      </template>
+    </UModal>
 
-    <v-dialog
-      :model-value="workLogPendingDelete !== null"
-      max-width="560"
-      :persistent="isDeletingWorkLog"
-      @update:model-value="handleWorkLogDeleteDialogModelValue"
+    <UModal
+      :open="workLogPendingDelete !== null"
+      :dismissible="!isDeletingWorkLog"
+      title="Task日別実績を削除"
+      :ui="{ content: 'max-w-140' }"
+      @update:open="handleWorkLogDeleteDialogVisibility"
     >
-      <v-card>
-        <v-card-title>Task日別実績を削除</v-card-title>
-        <v-card-text>
-          <template v-if="workLogPendingDelete">
-            {{ workLogPendingDelete.workDate }}・{{ workLogPendingDelete.workerDisplayName }}の
-            {{ workLogPendingDelete.actualEffortMinutes }}分を削除します。
-          </template>
-          <template v-else>選択したTask日別実績を削除します。</template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="isDeletingWorkLog" @click="cancelWorkLogDelete">
-            キャンセル
-          </v-btn>
-          <v-btn
-            color="error"
-            :loading="isDeletingWorkLog"
-            @click="confirmWorkLogDelete"
-          >
-            削除
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      <template #body>
+        <template v-if="workLogPendingDelete">
+          {{ workLogPendingDelete.workDate }}・{{ workLogPendingDelete.workerDisplayName }}の
+          {{ workLogPendingDelete.actualEffortMinutes }}分を削除します。
+        </template>
+        <template v-else>選択したTask日別実績を削除します。</template>
+      </template>
+      <template #footer>
+        <UButton variant="ghost" :disabled="isDeletingWorkLog" @click="cancelWorkLogDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="isDeletingWorkLog" @click="confirmWorkLogDelete">削除</UButton>
+      </template>
+    </UModal>
 
-    <v-dialog
-      :model-value="dependencyPendingDelete !== null"
-      max-width="560"
-      :persistent="isDeletingDependency"
-      @update:model-value="handleDependencyDeleteDialogModelValue"
+    <UModal
+      :open="dependencyPendingDelete !== null"
+      :dismissible="!isDeletingDependency"
+      title="Task依存関係を削除"
+      :ui="{ content: 'max-w-140' }"
+      @update:open="handleDependencyDeleteDialogVisibility"
     >
-      <v-card>
-        <v-card-title>Task依存関係を削除</v-card-title>
-        <v-card-text>
-          <template v-if="dependencyPendingDeleteRow">
-            「{{ dependencyPendingDeleteRow.predecessorLabel }}」から
-            「{{ dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
-          </template>
-          <template v-else>
-            選択したTask依存関係を削除します。
-          </template>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="isDeletingDependency" @click="cancelDependencyDelete">
-            キャンセル
-          </v-btn>
-          <v-btn
-            color="error"
-            :loading="isDeletingDependency"
-            @click="confirmDependencyDelete"
-          >
-            削除
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+      <template #body>
+        <template v-if="dependencyPendingDeleteRow">
+          「{{ dependencyPendingDeleteRow.predecessorLabel }}」から
+          「{{ dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
+        </template>
+        <template v-else>選択したTask依存関係を削除します。</template>
+      </template>
+      <template #footer>
+        <UButton variant="ghost" :disabled="isDeletingDependency" @click="cancelDependencyDelete">キャンセル</UButton>
+        <UButton color="error" variant="ghost" :loading="isDeletingDependency" @click="confirmDependencyDelete">削除</UButton>
+      </template>
+    </UModal>
+  </div>
 </template>
-
-<style scoped>
-.wbs-page {
-  min-height: calc(100vh - 64px);
-  background: rgb(var(--v-theme-surface-variant));
-}
-
-.wbs-table-scroll {
-  overflow-x: auto;
-}
-
-.wbs-gantt-scroll {
-  overflow-x: auto;
-}
-
-.wbs-dependency-scroll {
-  overflow-x: auto;
-}
-
-.wbs-dependency-table {
-  min-width: 820px;
-}
-
-.wbs-table {
-  min-width: 1280px;
-}
-
-.wbs-title-cell {
-  min-width: 320px;
-}
-
-.task-detail {
-  display: -webkit-box;
-  max-width: 440px;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.progress-cell {
-  display: grid;
-  grid-template-columns: minmax(80px, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 150px;
-}
-</style>

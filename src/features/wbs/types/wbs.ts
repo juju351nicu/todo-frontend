@@ -1,7 +1,7 @@
 /** WBS上でのTask構造種別。BackendのTaskTypeコードと一致する。 */
 export type WbsTaskType = "TASK" | "SUMMARY" | "MILESTONE";
 
-/** WBS Taskの優先度。数字が小さいほど優先度が高い。 */
+/** WBS Taskの優先度。BackendのTaskPriorityと同じく1=低、2=中、3=高。 */
 export type WbsTaskPriority = 1 | 2 | 3;
 
 /**

@@ -463,4 +463,29 @@ describe("useAttendancePage", () => {
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
+
+  it.each([
+    ["BALANCED", "success"],
+    ["OVER_ALLOCATED", "error"],
+    ["UNALLOCATED", "warning"],
+    ["INCOMPLETE", "warning"],
+  ])("照合状態%sをalert種別%sへ対応させる", (allocationStatus, alertType) => {
+    const page = useAttendancePage();
+    page.selectedDay.value = { ...buildDay("2026-10-01", "WORKING"), allocationStatus };
+
+    expect(page.selectedDayAllocationAlertType.value).toBe(alertType);
+  });
+
+  it.each([
+    ["APPROVED", "PENDING", true],
+    ["CLOSED", "PENDING", true],
+    ["SUBMITTED", "PENDING", false],
+    ["APPROVED", "REJECTED", false],
+  ])("月次%sで修正申請%sがある場合の審査待ち案内は%s", (monthStatus, requestStatus, expected) => {
+    const page = useAttendancePage();
+    page.monthSummary.value = buildMonth("2026-10", monthStatus);
+    page.correctionRequests.value = [{ attendanceCorrectionRequestId: 1, statusCode: requestStatus }];
+
+    expect(page.hasPendingCorrectionInReviewedMonth.value).toBe(expected);
+  });
 });

@@ -2,7 +2,8 @@
 import { toRef } from "vue";
 
 import { useProjectComments } from "@/features/task/composables/useProjectComments";
-import type { ProjectTaskComment } from "@/features/task/types/taskComment";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 const props = defineProps<{
   /** コメントを横断取得するProject ID。 */
@@ -14,108 +15,68 @@ const emit = defineEmits<{
   taskSelected: [taskId: number];
 }>();
 
-const projectId = toRef(props, "projectId");
-const {
-  closeComments,
-  comments,
-  errorMessages,
-  isLoading,
-  isOpen,
-  loadComments,
-  openComments,
-} = useProjectComments(projectId);
-
-const formatDateTime = (value: string): string =>
-  new Intl.DateTimeFormat("ja-JP", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
-
-/** archiveされていないTaskだけを既存Task詳細Dialogへ引き渡す。 */
-const selectTask = (comment: ProjectTaskComment): void => {
-  if (comment.taskArchived) {
-    return;
-  }
-  closeComments();
-  emit("taskSelected", comment.taskId);
-};
+const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments, openComments, selectTask } =
+  useProjectComments(toRef(props, "projectId"), (taskId) => emit("taskSelected", taskId));
 </script>
 
 <template>
-  <v-btn
-    prepend-icon="mdi-comment-multiple-outline"
-    variant="tonal"
-    @click="openComments"
-  >
-    コメント一覧
-  </v-btn>
+  <UButton icon="i-mdi-comment-multiple-outline" variant="soft" class="text-white" @click="openComments">コメント一覧</UButton>
 
-  <v-dialog :model-value="isOpen" max-width="760" @update:model-value="closeComments">
-    <v-card>
-      <v-card-title class="d-flex align-center">
+  <UModal
+    :open="isOpen"
+    description="最終更新日時が新しい順に最大100件表示します。"
+    :ui="{ content: 'max-w-190' }"
+    @update:open="closeComments"
+  >
+    <template #title>
+      <span class="flex items-center">
         Projectのコメント
-        <v-spacer />
-        <v-btn
-          icon="mdi-refresh"
-          size="small"
-          variant="text"
+        <UButton
+          icon="i-mdi-refresh"
+          size="sm"
+          variant="ghost"
+          square
+          class="ms-auto"
           :loading="isLoading"
           :disabled="isLoading"
           aria-label="Projectコメントを再読み込み"
           @click="loadComments"
         />
-      </v-card-title>
-      <v-card-subtitle>最終更新日時が新しい順に最大100件表示します。</v-card-subtitle>
-      <v-card-text>
-        <v-alert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-3" />
-        <v-list v-if="comments.length" lines="three" class="project-comment-list">
-          <v-list-item
-            v-for="comment in comments"
-            :key="comment.commentId"
+      </span>
+    </template>
+    <template #body>
+      <StatusAlert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <UProgress v-if="isLoading" size="xs" class="mb-3" />
+      <ul v-if="comments.length" class="max-h-[60vh] overflow-y-auto py-2">
+        <li v-for="comment in comments" :key="comment.commentId">
+          <button
+            type="button"
+            class="flex w-full items-start gap-4 px-4 py-2 text-start enabled:hover:bg-black/4 disabled:opacity-38"
             :disabled="comment.taskArchived"
             @click="selectTask(comment)"
           >
-            <template #prepend>
-              <v-avatar color="primary" size="36">
-                <span class="text-caption">{{ comment.authorDisplayName.slice(0, 1) }}</span>
-              </v-avatar>
-            </template>
-            <v-list-item-title class="d-flex align-center flex-wrap ga-2">
-              <span>{{ comment.taskTitle }}</span>
-              <v-chip v-if="comment.taskArchived" size="x-small">アーカイブ済み</v-chip>
-            </v-list-item-title>
-            <v-list-item-subtitle>
-              {{ comment.authorDisplayName }}・{{ formatDateTime(comment.updatedAt) }}
-              <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
-            </v-list-item-subtitle>
-            <div class="project-comment-body text-body-2 mt-2">{{ comment.body }}</div>
-            <template v-if="!comment.taskArchived" #append>
-              <v-icon icon="mdi-chevron-right" aria-hidden="true" />
-            </template>
-          </v-list-item>
-        </v-list>
-        <div v-else-if="!isLoading" class="text-body-2 text-medium-emphasis py-6 text-center">
-          Project内にコメントはありません。
-        </div>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn @click="closeComments">閉じる</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+            <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="lg" class="bg-primary text-xs text-white" />
+            <span class="min-w-0 flex-1">
+              <span class="flex flex-wrap items-center gap-2 text-base">
+                <span>{{ comment.taskTitle }}</span>
+                <UBadge v-if="comment.taskArchived" size="xs">アーカイブ済み</UBadge>
+              </span>
+              <span class="block text-sm text-muted">
+                {{ comment.authorDisplayName }}・{{ formatShortDateTime(comment.updatedAt) }}
+                <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
+              </span>
+              <span class="mt-2 block text-sm whitespace-pre-wrap">{{ comment.body }}</span>
+            </span>
+            <UIcon v-if="!comment.taskArchived" name="i-mdi-chevron-right" class="size-6 text-muted" aria-hidden="true" />
+          </button>
+        </li>
+      </ul>
+      <div v-else-if="!isLoading" class="py-6 text-center text-sm text-muted">Project内にコメントはありません。</div>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" @click="closeComments">閉じる</UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.project-comment-list {
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.project-comment-body {
-  white-space: pre-wrap;
-}
-</style>

@@ -1,3 +1,6 @@
+import type { WbsApiError } from "@/features/wbs/api/wbsApi";
+import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+
 /**
  * WBS APIでFrontendが表示契約を持つerror code集合。
  * 共通Bean Validation、WBS業務例外、未検出、帳票生成失敗を含む。
@@ -47,3 +50,17 @@ export const WBS_ERROR_CODES: ReadonlySet<string> = new Set([
 export {
   API_RECOVERY_PRIORITY_STATUSES as WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/shared/utils/apiError";
+
+/**
+ * WBS APIのエラーResponseから、`WBS_ERROR_CODES`に含まれるcodeのBackend messageだけを表示用に取り出す。
+ * 未知codeや項目エラーなしの場合は、Backend本文を表示せず固定案内へ閉じる。
+ *
+ * @param error WBS APIが返した非2xx Response
+ * @param fallbackMessage 契約済みmessageがない場合に表示する案内
+ * @returns Backendの項目エラー順のmessage。該当がなければ`fallbackMessage`だけの配列
+ */
+export const resolveWbsErrorMessages = (
+  error: WbsApiError,
+  fallbackMessage: string
+): string[] =>
+  resolveApiErrorMessages(error.errorResponse, WBS_ERROR_CODES, fallbackMessage);

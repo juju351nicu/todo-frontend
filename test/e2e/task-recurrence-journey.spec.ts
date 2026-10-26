@@ -12,7 +12,7 @@ const RETRY_TITLE = "Browser Retry Recovery Task";
 /** Project一覧から採番IDへ依存せず繰り返しTask専用Boardを開く。 */
 const openDedicatedBoard = async (page: Page): Promise<void> => {
   await page.goto("/projects");
-  const projectCard = page.locator(".v-card").filter({
+  const projectCard = page.getByRole("article").filter({
     has: page.getByText(PROJECT_KEY, { exact: true }),
   });
   await projectCard.getByRole("button", { name: "Boardを開く" }).click();
@@ -37,17 +37,13 @@ const openRecurrenceDialog = async (
   return dialog;
 };
 
-/** Vuetify selectを表示ラベルで操作し、内部codeや採番IDへ依存させない。 */
+/** selectを表示ラベルで操作し、内部codeや採番IDへ依存させない。 */
 const selectStatus = async (
   page: Page,
   dialog: Locator,
   label: "有効" | "一時停止"
 ): Promise<void> => {
-  await dialog
-    .locator(".v-input")
-    .filter({ hasText: "状態" })
-    .getByRole("combobox")
-    .click();
+  await dialog.getByRole("combobox", { name: "状態", exact: true }).click();
   await page.getByRole("option", { name: label, exact: true }).click();
 };
 

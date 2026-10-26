@@ -28,6 +28,7 @@ import {
 } from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import type { StatusAlertType } from "@/shared/types/color";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
@@ -63,6 +64,14 @@ export const useAttendancePage = () => {
   const monthDays = ref<AttendanceDayResponse[]>([]);
   const monthSummary = ref<AttendanceMonthResponse | null>(null);
   const selectedDay = ref<AttendanceDayResponse | null>(null);
+  /** 選択日のTask実績照合結果を示すalert種別。一致は成功、過配賦はエラー、未配賦・勤怠未確定は警告。 */
+  const selectedDayAllocationAlertType = computed<StatusAlertType>(() => {
+    const status = selectedDay.value?.allocationStatus;
+    if (status === "BALANCED") {
+      return "success";
+    }
+    return status === "OVER_ALLOCATED" ? "error" : "warning";
+  });
   const selectedMonth = ref(today.slice(0, 7));
   const selectedWorkDate = ref(today);
   const successMessage = ref("");
@@ -518,6 +527,16 @@ export const useAttendancePage = () => {
     );
   };
 
+  /**
+   * 承認済み・締め済みの月で、選択日に審査待ちの修正申請があるか。
+   * Backendは同じ勤務日の審査待ち申請がある間は再申請を受け付けないため、画面で理由を案内する。
+   */
+  const hasPendingCorrectionInReviewedMonth = computed<boolean>(
+    () =>
+      (monthSummary.value?.statusCode === "APPROVED" || monthSummary.value?.statusCode === "CLOSED") &&
+      correctionRequests.value.some((request) => request.statusCode === "PENDING")
+  );
+
   return {
     addCorrectionBreakPeriod,
     addCorrectionWorkPeriod,
@@ -536,6 +555,7 @@ export const useAttendancePage = () => {
     correctionRequests,
     currentUserDisplayName,
     errorMessages,
+    hasPendingCorrectionInReviewedMonth,
     executePunch,
     submitMonth,
     initialize,
@@ -551,6 +571,7 @@ export const useAttendancePage = () => {
     removeCorrectionWorkPeriod,
     selectWorkDate,
     selectedDay,
+    selectedDayAllocationAlertType,
     selectedDaySummary,
     selectedMonth,
     selectedWorkDate,

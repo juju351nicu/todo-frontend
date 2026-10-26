@@ -315,4 +315,40 @@ describe("useTaskChecklist", () => {
     expect(page.items.value).toEqual([]);
     expect(page.errorMessages.value).toEqual([]);
   });
+
+  it("完了済み項目の割合を整数の百分率で返し、項目がなければ0にする", async () => {
+    const page = createPage();
+    await waitForInitialLoad();
+
+    page.items.value = [];
+    expect(page.progressPercent.value).toBe(0);
+    page.items.value = [
+      { ...firstItem, completed: true },
+      { ...secondItem, completed: false },
+      { ...secondItem, checklistItemId: 44, completed: false },
+    ];
+    expect(page.progressPercent.value).toBe(33);
+  });
+
+  it.each([
+    ["", false],
+    ["a".repeat(255), true],
+    ["a".repeat(256), false],
+  ])("編集本文%#の保存可否はtrim後の長さで判定する", async (content, expected) => {
+    const page = createPage();
+    await waitForInitialLoad();
+
+    page.editContent.value = content;
+
+    expect(page.canSaveEdit.value).toBe(expected);
+  });
+
+  it("50件登録済みでは追加できない", async () => {
+    const page = createPage();
+    await waitForInitialLoad();
+    page.newContent.value = "追加項目";
+    page.items.value = Array.from({ length: 50 }, (_, index) => ({ ...firstItem, checklistItemId: index + 1 }));
+
+    expect(page.canAdd.value).toBe(false);
+  });
 });

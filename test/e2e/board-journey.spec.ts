@@ -26,7 +26,7 @@ const getTaskCard = (column: Locator, title: string): Locator =>
 /** Project一覧から専用Projectを選択し、採番IDへ依存せずBoardを開く。 */
 const openDedicatedBoard = async (page: Page): Promise<void> => {
   await page.goto("/projects");
-  const projectCard = page.locator(".v-card").filter({
+  const projectCard = page.getByRole("article").filter({
     has: page.getByText(PROJECT_KEY, { exact: true }),
   });
   await projectCard.getByRole("button", { name: "Boardを開く" }).click();

@@ -6,6 +6,7 @@ import type {
   WbsBaselineTask,
   WbsTask,
 } from "@/features/wbs/types/wbs";
+import type { SemanticColor } from "@/shared/types/color";
 
 /** baseline作成Formをtrimし、Backend DTOのnullable説明へ変換する。 */
 export const buildWbsBaselineCreateRequest = (
@@ -95,3 +96,37 @@ export const buildWbsBaselineComparisonRows = (
     .map((task) => buildComparisonRow(task.sourceTaskId, undefined, task));
   return currentRows.concat(baselineOnlyRows);
 };
+
+const BASELINE_CREATED_AT_FORMATTER = new Intl.DateTimeFormat("ja-JP", { dateStyle: "medium", timeStyle: "short" });
+
+/** baseline作成日時（ISO）を日本語の短い日時へ変換する。解釈できない値は元の文字列を返す。 */
+export const formatBaselineCreatedAt = (createdAt: string): string => {
+  const date = new Date(createdAt);
+  return Number.isNaN(date.getTime()) ? createdAt : BASELINE_CREATED_AT_FORMATTER.format(date);
+};
+
+const COMPARISON_STATUS_LABELS: Readonly<Record<WbsBaselineComparisonStatus, string>> = {
+  UNCHANGED: "変更なし",
+  CHANGED: "予定変更",
+  CURRENT_ONLY: "baseline後に追加",
+  BASELINE_ONLY: "現在計画から除外",
+};
+
+const COMPARISON_STATUS_COLORS: Readonly<Record<WbsBaselineComparisonStatus, SemanticColor>> = {
+  UNCHANGED: "success",
+  CHANGED: "warning",
+  CURRENT_ONLY: "primary",
+  BASELINE_ONLY: "error",
+};
+
+/** baseline比較状態を、計画変更の種類として判断できる日本語へ変換する。 */
+export const getBaselineComparisonStatusLabel = (status: WbsBaselineComparisonStatus): string =>
+  COMPARISON_STATUS_LABELS[status];
+
+/** baseline比較状態を表示色へ変換する。 */
+export const getBaselineComparisonStatusColor = (status: WbsBaselineComparisonStatus): SemanticColor =>
+  COMPARISON_STATUS_COLORS[status];
+
+/** 開始日・終了日のどちらかが比較対象にない場合は`—`、それ以外は`開始 ～ 終了`で表す。 */
+export const formatBaselinePeriod = (dateFrom: string | null, dateTo: string | null): string =>
+  dateFrom === null || dateTo === null ? "—" : `${dateFrom} ～ ${dateTo}`;

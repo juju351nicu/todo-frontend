@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from "vue";
+import { toRef } from "vue";
 
-import type {
-  ProjectMember,
-  TaskPriority,
-  TaskStatus,
-} from "@/features/project/types/project";
-import { useTaskRecurrences } from "@/features/task/composables/useTaskRecurrences";
-import type {
-  TaskRecurrenceFrequency,
-  TaskRecurrenceGenerationStatus,
-  TaskRecurrenceStatus,
-  TaskRecurrenceWeekday,
-} from "@/features/task/types/taskRecurrence";
+import type { ProjectMember, TaskStatus } from "@/features/project/types/project";
+import { useTaskRecurrenceDialog } from "@/features/task/composables/useTaskRecurrenceDialog";
+import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
+import {
+  formatRecurrenceDateTime,
+  formatRecurrenceErrorCode,
+  formatRecurrenceSchedule,
+  getGenerationStatusColor,
+  getGenerationStatusLabel,
+  getRecurrenceStatusColor,
+  getRecurrenceStatusLabel,
+  RECURRENCE_FREQUENCY_OPTIONS,
+  RECURRENCE_LIFECYCLE_OPTIONS,
+  RECURRENCE_WEEKDAY_OPTIONS,
+} from "@/features/task/utils/taskRecurrenceDisplay";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -23,21 +28,22 @@ const props = withDefaults(
     canUpdate?: boolean;
     projectActive?: boolean;
   }>(),
-  { canCreate: false, canUpdate: false, projectActive: false }
+  { canCreate: false, canUpdate: false, projectActive: false },
 );
 
-const isOpen = ref(false);
-const isArchiveConfirmOpen = ref(false);
 const {
-  archiveRule,
-  beginCreating,
   beginEditing,
+  canArchiveSelected,
+  canEditSelected,
   cancelForm,
+  changeCreationMode,
+  confirmArchive,
   createRule,
   creationMode,
   errorMessage,
   form,
   generations,
+  isArchiveConfirmOpen,
   isArchiving,
   isCreating,
   isEditing,
@@ -45,600 +51,475 @@ const {
   isLoadingGenerations,
   isLoadingTemplates,
   isMutating,
+  isOpen,
   isSaving,
   loadGenerations,
-  loadRules,
-  loadTemplates,
+  memberOptions,
+  open,
   retryGeneration,
   retryingGenerationId,
   rules,
   saveRule,
   selectRule,
   selectedRule,
+  startCreating,
+  statusOptions,
   successMessage,
   templates,
-} = useTaskRecurrences(toRef(props, "projectId"));
+  toggleWeekday,
+} = useTaskRecurrenceDialog({
+  projectId: toRef(props, "projectId"),
+  members: () => props.members,
+  statuses: () => props.statuses,
+  canUpdate: () => props.canUpdate,
+  projectActive: () => props.projectActive,
+});
 
-const memberOptions = computed(() =>
-  props.members.map((member) => ({
-    title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-    value: member.accountId,
-  }))
-);
-const statusOptions = computed(() =>
-  props.statuses
-    .filter((status) => !status.completed)
-    .map((status) => ({ title: status.name, value: status.taskStatusId }))
-);
-const canEditSelected = computed(
-  () =>
-    props.canUpdate &&
-    props.projectActive &&
-    selectedRule.value !== null &&
-    ["ACTIVE", "PAUSED", "BLOCKED"].includes(selectedRule.value.status)
-);
-const canArchiveSelected = computed(
-  () =>
-    props.canUpdate &&
-    props.projectActive &&
-    selectedRule.value !== null &&
-    selectedRule.value.status !== "ARCHIVED"
-);
-
-const priorityOptions: Array<{ title: string; value: TaskPriority }> = [
-  { title: "低", value: 1 },
-  { title: "中", value: 2 },
-  { title: "高", value: 3 },
-];
-const frequencyOptions: Array<{
-  title: string;
-  value: TaskRecurrenceFrequency;
-}> = [
-  { title: "日次", value: "DAILY" },
-  { title: "週次", value: "WEEKLY" },
-  { title: "月次", value: "MONTHLY" },
-];
-const weekdayOptions: Array<{
-  title: string;
-  value: TaskRecurrenceWeekday;
-}> = [
-  { title: "月", value: "MONDAY" },
-  { title: "火", value: "TUESDAY" },
-  { title: "水", value: "WEDNESDAY" },
-  { title: "木", value: "THURSDAY" },
-  { title: "金", value: "FRIDAY" },
-  { title: "土", value: "SATURDAY" },
-  { title: "日", value: "SUNDAY" },
-];
-const lifecycleOptions = [
-  { title: "有効", value: "ACTIVE" },
-  { title: "一時停止", value: "PAUSED" },
+const CREATION_MODE_OPTIONS = [
+  { value: "DIRECT", label: "直接入力" },
+  { value: "TEMPLATE", label: "Task Template" },
 ] as const;
-
-const statusLabels: Record<TaskRecurrenceStatus, string> = {
-  ACTIVE: "有効",
-  PAUSED: "一時停止",
-  BLOCKED: "要修正",
-  ENDED: "終了",
-  ARCHIVED: "アーカイブ済み",
-};
-const statusColors: Record<TaskRecurrenceStatus, string> = {
-  ACTIVE: "success",
-  PAUSED: "warning",
-  BLOCKED: "error",
-  ENDED: "default",
-  ARCHIVED: "default",
-};
-const generationStatusLabels: Record<TaskRecurrenceGenerationStatus, string> = {
-  PENDING: "待機中",
-  PROCESSING: "処理中",
-  RETRY_WAIT: "再試行待ち",
-  SUCCEEDED: "成功",
-  FAILED: "失敗",
-  SKIPPED: "スキップ",
-};
-const generationStatusColors: Record<
-  TaskRecurrenceGenerationStatus,
-  string
-> = {
-  PENDING: "info",
-  PROCESSING: "info",
-  RETRY_WAIT: "warning",
-  SUCCEEDED: "success",
-  FAILED: "error",
-  SKIPPED: "default",
-};
-const blockedReasonLabels: Record<string, string> = {
-  PROJECT_ARCHIVED: "Projectがアーカイブされています。",
-  RULE_OWNER_INACTIVE: "規則の所有者が無効です。",
-  RULE_OWNER_NOT_PROJECT_MEMBER: "規則の所有者がProjectに参加していません。",
-  ASSIGNEE_NOT_PROJECT_MEMBER: "担当者がProjectに参加していません。",
-  ASSIGNEE_ID_OUT_OF_RANGE: "担当者IDをTaskへ保存できません。",
-  TASK_STATUS_UNAVAILABLE: "指定したBoard列を利用できません。",
-  FEATURE_NOT_ENTITLED: "規則の所有者に繰り返しTaskの機能資格がありません。",
-  TASK_POSITION_CONFLICT: "Taskの配置位置が競合しました。",
-  RETRY_EXHAUSTED: "自動再試行の上限へ到達しました。",
-};
-
-/** Dialogを開くたびにarchive済みを含む最新規則一覧を取得する。 */
-const open = async (): Promise<void> => {
-  isOpen.value = true;
-  await loadRules();
-};
-
-/** Projectの先頭memberと先頭未完了列を既定値にして作成を始める。 */
-const startCreating = (): void => {
-  beginCreating(
-    memberOptions.value[0]?.value ?? null,
-    statusOptions.value[0]?.value ?? null
-  );
-};
-
-/** 作成元切替時に不要な上書き値を除き、Template一覧を必要時だけ取得する。 */
-const changeCreationMode = async (
-  value: "DIRECT" | "TEMPLATE" | null
-): Promise<void> => {
-  if (value === null) return;
-  creationMode.value = value;
-  if (value === "TEMPLATE") {
-    form.value.assigneeAccountId = null;
-    form.value.taskStatusId = null;
-    if (templates.value.length === 0) await loadTemplates();
-    return;
-  }
-  form.value.assigneeAccountId ??= memberOptions.value[0]?.value ?? null;
-  form.value.taskStatusId ??= statusOptions.value[0]?.value ?? null;
-};
-
-/** 選択規則をarchiveし、成功・競合後の最新状態を表示する。 */
-const confirmArchive = async (): Promise<void> => {
-  await archiveRule();
-  isArchiveConfirmOpen.value = false;
-};
-
-/** 頻度と間隔を一覧・詳細向けの短い日本語へ変換する。 */
-const formatSchedule = (
-  frequency: TaskRecurrenceFrequency,
-  intervalCount: number,
-  weekdays: TaskRecurrenceWeekday[],
-  monthlyDay: number | null
-): string => {
-  if (frequency === "DAILY") return `${intervalCount}日ごと`;
-  if (frequency === "MONTHLY") {
-    return `${intervalCount}か月ごと・${monthlyDay ?? "-"}日`;
-  }
-  const labels = weekdays
-    .map((weekday) => weekdayOptions.find((item) => item.value === weekday)?.title)
-    .filter((label): label is string => label !== undefined)
-    .join("・");
-  return `${intervalCount}週ごと・${labels}`;
-};
-
-/** ISO時刻を利用者のlocaleで読める日時へ変換する。 */
-const formatDateTime = (value: string | null): string =>
-  value ? new Date(value).toLocaleString() : "-";
-
-/** 安定error codeを運用者向け説明へ変換し、未知codeも隠さず表示する。 */
-const formatErrorCode = (value: string | null): string =>
-  value ? blockedReasonLabels[value] ?? value : "-";
 </script>
 
 <template>
-  <v-btn prepend-icon="mdi-calendar-sync-outline" variant="tonal" @click="open">
-    繰り返しTask
-  </v-btn>
+  <UButton icon="i-mdi-calendar-sync-outline" variant="soft" class="text-white" @click="open">繰り返しTask</UButton>
 
-  <v-dialog v-model="isOpen" max-width="1280" :persistent="isMutating">
-    <v-card>
-      <v-card-title class="d-flex align-center">
+  <UModal v-model:open="isOpen" :dismissible="!isMutating" :ui="{ content: 'max-w-320' }">
+    <template #title>
+      <span class="flex items-center">
         繰り返しTask
-        <v-spacer />
-        <v-btn
-          icon="mdi-close"
-          variant="text"
+        <UButton
+          icon="i-mdi-close"
+          variant="ghost"
+          square
+          class="ms-auto"
           :disabled="isMutating"
           aria-label="繰り返しTaskを閉じる"
           @click="isOpen = false"
         />
-      </v-card-title>
-      <v-card-text>
-        <v-alert v-if="errorMessage" type="error" density="compact" class="mb-3">
-          {{ errorMessage }}
-        </v-alert>
-        <v-alert
-          v-if="successMessage"
-          type="success"
-          density="compact"
-          closable
-          class="mb-3"
-        >
-          {{ successMessage }}
-        </v-alert>
-        <v-alert v-if="!projectActive" type="info" density="compact" class="mb-3">
-          アーカイブ済みProjectでは規則と生成履歴を参照できますが、変更はできません。
-        </v-alert>
-        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-3" />
+      </span>
+    </template>
+    <template #body>
+      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+        {{ successMessage }}
+      </StatusAlert>
+      <StatusAlert v-if="!projectActive" type="info" density="compact" class="mb-3">
+        アーカイブ済みProjectでは規則と生成履歴を参照できますが、変更はできません。
+      </StatusAlert>
+      <UProgress v-if="isLoading" size="xs" class="mb-3" />
 
-        <v-row>
-          <v-col cols="12" md="4">
-            <div class="d-flex align-center mb-2">
-              <div class="text-subtitle-1 font-weight-bold">規則一覧</div>
-              <v-spacer />
-              <v-btn
-                v-if="canCreate && projectActive"
-                size="small"
-                color="primary"
-                prepend-icon="mdi-plus"
-                :disabled="isMutating"
-                @click="startCreating"
-              >
-                新規作成
-              </v-btn>
-            </div>
-            <v-list v-if="rules.length" density="compact" border rounded>
-              <v-list-item
-                v-for="rule in rules"
-                :key="rule.taskRecurrenceRuleId"
-                :active="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId"
-                :title="rule.title"
-                :subtitle="formatSchedule(rule.frequency, rule.intervalCount, rule.weekdays, rule.monthlyDay)"
+      <div class="-m-3 flex flex-wrap">
+        <div class="w-full p-3 md:w-1/3">
+          <div class="mb-2 flex items-center">
+            <div class="text-base font-bold">規則一覧</div>
+            <UButton
+              v-if="canCreate && projectActive"
+              size="sm"
+              color="primary"
+              icon="i-mdi-plus"
+              class="ms-auto"
+              :disabled="isMutating"
+              @click="startCreating"
+            >
+              新規作成
+            </UButton>
+          </div>
+          <ul v-if="rules.length" class="rounded-sm border border-default py-2">
+            <li v-for="rule in rules" :key="rule.taskRecurrenceRuleId">
+              <button
+                type="button"
+                class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
+                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-black/4'"
                 @click="selectRule(rule)"
               >
-                <template #append>
-                  <v-chip :color="statusColors[rule.status]" size="x-small">
-                    {{ statusLabels[rule.status] }}
-                  </v-chip>
-                </template>
-              </v-list-item>
-            </v-list>
-            <div v-else-if="!isLoading" class="text-body-2 text-medium-emphasis pa-3">
-              繰り返しTask規則はありません。
+                <span class="min-w-0 flex-1">
+                  <span class="block text-base">{{ rule.title }}</span>
+                  <span class="block text-sm opacity-60">
+                    {{ formatRecurrenceSchedule(rule.frequency, rule.intervalCount, rule.weekdays, rule.monthlyDay) }}
+                  </span>
+                </span>
+                <UBadge :color="getRecurrenceStatusColor(rule.status)" size="xs">{{ getRecurrenceStatusLabel(rule.status) }}</UBadge>
+              </button>
+            </li>
+          </ul>
+          <div v-else-if="!isLoading" class="p-3 text-sm text-muted">繰り返しTask規則はありません。</div>
+        </div>
+
+        <div class="w-full p-3 md:w-2/3">
+          <form v-if="isCreating || isEditing" @submit.prevent="isCreating ? createRule() : saveRule()">
+            <div class="mb-3 flex items-center">
+              <h2 class="text-xl font-medium">{{ isCreating ? "規則を作成" : "規則を編集" }}</h2>
+              <UBadge v-if="isEditing && selectedRule" size="sm" class="ms-auto">version {{ selectedRule.version }}</UBadge>
             </div>
-          </v-col>
 
-          <v-col cols="12" md="8">
-            <v-form v-if="isCreating || isEditing" @submit.prevent="isCreating ? createRule() : saveRule()">
-              <div class="d-flex align-center mb-3">
-                <h2 class="text-h6">
-                  {{ isCreating ? "規則を作成" : "規則を編集" }}
-                </h2>
-                <v-spacer />
-                <v-chip v-if="isEditing && selectedRule" size="small">
-                  version {{ selectedRule.version }}
-                </v-chip>
-              </div>
-
-              <v-btn-toggle
-                v-if="isCreating"
-                :model-value="creationMode"
-                mandatory
-                color="primary"
-                class="mb-4"
-                @update:model-value="changeCreationMode"
+            <UFieldGroup v-if="isCreating" class="mb-4" role="group" aria-label="作成元">
+              <UButton
+                v-for="option in CREATION_MODE_OPTIONS"
+                :key="option.value"
+                variant="outline"
+                :color="creationMode === option.value ? 'primary' : 'neutral'"
+                :class="creationMode === option.value ? 'bg-primary/12' : ''"
+                :aria-pressed="creationMode === option.value"
+                @click="changeCreationMode(option.value)"
               >
-                <v-btn value="DIRECT">直接入力</v-btn>
-                <v-btn value="TEMPLATE">Task Template</v-btn>
-              </v-btn-toggle>
+                {{ option.label }}
+              </UButton>
+            </UFieldGroup>
 
-              <template v-if="!isCreating || creationMode === 'DIRECT'">
-                <v-text-field
-                  v-model="form.title"
-                  label="Taskタイトル"
-                  maxlength="45"
-                  counter
-                  :disabled="isMutating"
-                />
-                <v-textarea
-                  v-model="form.detail"
-                  label="Task詳細"
-                  maxlength="1000"
-                  counter
-                  rows="3"
-                  :disabled="isMutating"
-                />
-                <v-row>
-                  <v-col cols="12" sm="4">
-                    <v-select v-model="form.priority" label="優先度" :items="priorityOptions" :disabled="isMutating" />
-                  </v-col>
-                  <v-col cols="12" sm="4">
-                    <v-text-field
-                      v-model.number="form.plannedEffortMinutes"
-                      label="予定工数（分）"
-                      type="number"
-                      min="0"
+            <template v-if="!isCreating || creationMode === 'DIRECT'">
+              <div class="relative">
+                <UFormField label="Taskタイトル">
+                  <UInput v-model="form.title" :maxlength="45" :disabled="isMutating" class="w-full" />
+                </UFormField>
+                <FieldCounter :value="form.title" :max="45" />
+              </div>
+              <div class="relative">
+                <UFormField label="Task詳細">
+                  <UTextarea v-model="form.detail" :maxlength="1000" :rows="3" :disabled="isMutating" class="w-full" />
+                </UFormField>
+                <FieldCounter :value="form.detail" :max="1000" />
+              </div>
+              <div class="-m-3 flex flex-wrap">
+                <div class="w-full p-3 sm:w-1/3">
+                  <UFormField label="優先度">
+                    <USelect
+                      v-model="form.priority"
+                      :items="[...TASK_PRIORITY_OPTIONS]"
+                      label-key="title"
+                      value-key="value"
                       :disabled="isMutating"
+                      class="w-full"
                     />
-                  </v-col>
-                  <v-col cols="12" sm="4">
-                    <v-text-field
-                      v-model.number="form.dueOffsetDays"
-                      label="期限オフセット（日）"
-                      type="number"
-                      min="0"
-                      max="365"
-                      :disabled="isMutating"
-                    />
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-select v-model="form.assigneeAccountId" label="担当者" :items="memberOptions" :disabled="isMutating" />
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-select v-model="form.taskStatusId" label="未完了Board列" :items="statusOptions" :disabled="isMutating" />
-                  </v-col>
-                </v-row>
-                <v-combobox
-                  v-model="form.checklistContents"
-                  label="チェック項目"
-                  hint="入力後にEnterで項目を追加します（最大50件）"
-                  persistent-hint
-                  multiple
-                  chips
-                  closable-chips
-                  :disabled="isMutating"
-                  class="mb-3"
-                />
-              </template>
-
-              <template v-else>
-                <v-progress-linear v-if="isLoadingTemplates" indeterminate class="mb-3" />
-                <v-select
-                  v-model="form.taskTemplateId"
-                  label="本人所有Task Template"
-                  :items="templates"
-                  item-title="name"
-                  item-value="taskTemplateId"
-                  :disabled="isMutating || isLoadingTemplates"
-                  no-data-text="利用できるTask Templateがありません"
-                />
-                <v-row>
-                  <v-col cols="12" sm="6">
-                    <v-select
-                      v-model="form.assigneeAccountId"
-                      label="担当者上書き"
+                  </UFormField>
+                </div>
+                <div class="w-full p-3 sm:w-1/3">
+                  <UFormField label="予定工数（分）">
+                    <UInput v-model.number="form.plannedEffortMinutes" type="number" min="0" :disabled="isMutating" class="w-full" />
+                  </UFormField>
+                </div>
+                <div class="w-full p-3 sm:w-1/3">
+                  <UFormField label="期限オフセット（日）">
+                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" max="365" :disabled="isMutating" class="w-full" />
+                  </UFormField>
+                </div>
+                <div class="w-full p-3 sm:w-1/2">
+                  <UFormField label="担当者">
+                    <USelect
+                      :model-value="form.assigneeAccountId ?? undefined"
                       :items="memberOptions"
-                      clearable
-                      persistent-hint
-                      hint="未指定時はTemplate既定値、さらに未指定なら作成者"
+                      label-key="title"
+                      value-key="value"
                       :disabled="isMutating"
+                      class="w-full"
+                      @update:model-value="form.assigneeAccountId = $event"
                     />
-                  </v-col>
-                  <v-col cols="12" sm="6">
-                    <v-select
-                      v-model="form.taskStatusId"
-                      label="Board列上書き"
+                  </UFormField>
+                </div>
+                <div class="w-full p-3 sm:w-1/2">
+                  <UFormField label="未完了Board列">
+                    <USelect
+                      :model-value="form.taskStatusId ?? undefined"
                       :items="statusOptions"
-                      clearable
-                      persistent-hint
-                      hint="未指定時はTemplate既定列"
+                      label-key="title"
+                      value-key="value"
                       :disabled="isMutating"
+                      class="w-full"
+                      @update:model-value="form.taskStatusId = $event"
                     />
-                  </v-col>
-                </v-row>
-              </template>
+                  </UFormField>
+                </div>
+              </div>
+              <UFormField label="チェック項目" help="入力後にEnterで項目を追加します（最大50件）" class="mb-3">
+                <UInputTags v-model="form.checklistContents" :max="50" :disabled="isMutating" class="w-full" />
+              </UFormField>
+            </template>
 
-              <v-divider class="my-4" />
-              <div class="text-subtitle-1 font-weight-bold mb-3">Schedule</div>
-              <v-row>
-                <v-col cols="12" sm="4">
-                  <v-select v-model="form.frequency" label="頻度" :items="frequencyOptions" :disabled="isMutating" />
-                </v-col>
-                <v-col cols="12" sm="4">
-                  <v-text-field
+            <template v-else>
+              <UProgress v-if="isLoadingTemplates" size="xs" class="mb-3" />
+              <UFormField label="本人所有Task Template">
+                <USelectMenu
+                  :model-value="form.taskTemplateId ?? undefined"
+                  :items="templates"
+                  label-key="name"
+                  value-key="taskTemplateId"
+                  :search-input="false"
+                  :disabled="isMutating || isLoadingTemplates"
+                  class="w-full"
+                  @update:model-value="form.taskTemplateId = $event ?? null"
+                >
+                  <template #empty>利用できるTask Templateがありません</template>
+                </USelectMenu>
+              </UFormField>
+              <div class="-m-3 flex flex-wrap">
+                <div class="w-full p-3 sm:w-1/2">
+                  <UFormField label="担当者上書き" help="未指定時はTemplate既定値、さらに未指定なら作成者">
+                    <USelectMenu
+                      :model-value="form.assigneeAccountId ?? undefined"
+                      :items="memberOptions"
+                      label-key="title"
+                      value-key="value"
+                      :search-input="false"
+                      clear
+                      :disabled="isMutating"
+                      class="w-full"
+                      @update:model-value="form.assigneeAccountId = $event ?? null"
+                      @clear="form.assigneeAccountId = null"
+                    />
+                  </UFormField>
+                </div>
+                <div class="w-full p-3 sm:w-1/2">
+                  <UFormField label="Board列上書き" help="未指定時はTemplate既定列">
+                    <USelectMenu
+                      :model-value="form.taskStatusId ?? undefined"
+                      :items="statusOptions"
+                      label-key="title"
+                      value-key="value"
+                      :search-input="false"
+                      clear
+                      :disabled="isMutating"
+                      class="w-full"
+                      @update:model-value="form.taskStatusId = $event ?? null"
+                      @clear="form.taskStatusId = null"
+                    />
+                  </UFormField>
+                </div>
+              </div>
+            </template>
+
+            <USeparator class="my-4" />
+            <div class="mb-3 text-base font-bold">Schedule</div>
+            <div class="-m-3 flex flex-wrap">
+              <div class="w-full p-3 sm:w-1/3">
+                <UFormField label="頻度">
+                  <USelect
+                    v-model="form.frequency"
+                    :items="[...RECURRENCE_FREQUENCY_OPTIONS]"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 sm:w-1/3">
+                <UFormField label="繰り返し間隔">
+                  <UInput
                     v-model.number="form.intervalCount"
-                    label="繰り返し間隔"
                     type="number"
                     min="1"
                     :max="form.frequency === 'DAILY' ? 365 : form.frequency === 'WEEKLY' ? 52 : 24"
                     :disabled="isMutating"
+                    class="w-full"
                   />
-                </v-col>
-                <v-col v-if="form.frequency === 'MONTHLY'" cols="12" sm="4">
-                  <v-text-field
-                    v-model.number="form.monthlyDay"
-                    label="毎月の日付"
+                </UFormField>
+              </div>
+              <div v-if="form.frequency === 'MONTHLY'" class="w-full p-3 sm:w-1/3">
+                <UFormField label="毎月の日付" help="存在しない日は月末に丸めます">
+                  <UInput
+                    :model-value="form.monthlyDay ?? undefined"
                     type="number"
                     min="1"
                     max="31"
-                    hint="存在しない日は月末に丸めます"
-                    persistent-hint
                     :disabled="isMutating"
+                    class="w-full"
+                    @update:model-value="form.monthlyDay = $event ? Number($event) : null"
                   />
-                </v-col>
-                <v-col cols="12" sm="4">
-                  <v-text-field
-                    v-model="form.firstOccurrenceDate"
-                    label="最初の発生日"
-                    type="date"
-                    :readonly="isEditing"
+                </UFormField>
+              </div>
+              <div class="w-full p-3 sm:w-1/3">
+                <UFormField label="最初の発生日" :help="isEditing ? '作成時のanchorは変更できません' : undefined">
+                  <UInput v-model="form.firstOccurrenceDate" type="date" :readonly="isEditing" :disabled="isMutating" class="w-full" />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 sm:w-1/3">
+                <UFormField label="終了日（任意）">
+                  <UInput v-model="form.endDate" type="date" :disabled="isMutating" class="w-full" />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 sm:w-1/3">
+                <UFormField label="生成先行日数" help="発生日の何日前にTaskを作るか">
+                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" max="90" :disabled="isMutating" class="w-full" />
+                </UFormField>
+              </div>
+              <div v-if="isEditing" class="w-full p-3 sm:w-1/3">
+                <UFormField label="状態">
+                  <USelect
+                    v-model="form.status"
+                    :items="[...RECURRENCE_LIFECYCLE_OPTIONS]"
+                    label-key="title"
+                    value-key="value"
                     :disabled="isMutating"
-                    :hint="isEditing ? '作成時のanchorは変更できません' : undefined"
-                    :persistent-hint="isEditing"
+                    class="w-full"
                   />
-                </v-col>
-                <v-col cols="12" sm="4">
-                  <v-text-field v-model="form.endDate" label="終了日（任意）" type="date" clearable :disabled="isMutating" />
-                </v-col>
-                <v-col cols="12" sm="4">
-                  <v-text-field
-                    v-model.number="form.generationLeadDays"
-                    label="生成先行日数"
-                    type="number"
-                    min="0"
-                    max="90"
-                    hint="発生日の何日前にTaskを作るか"
-                    persistent-hint
-                    :disabled="isMutating"
-                  />
-                </v-col>
-                <v-col v-if="isEditing" cols="12" sm="4">
-                  <v-select v-model="form.status" label="状態" :items="lifecycleOptions" :disabled="isMutating" />
-                </v-col>
-              </v-row>
-              <div v-if="form.frequency === 'WEEKLY'" class="mb-4">
-                <div class="text-body-2 mb-1">発生曜日</div>
-                <v-chip-group v-model="form.weekdays" multiple selected-class="text-primary" :disabled="isMutating">
-                  <v-chip v-for="weekday in weekdayOptions" :key="weekday.value" :value="weekday.value" filter>
-                    {{ weekday.title }}
-                  </v-chip>
-                </v-chip-group>
-              </div>
-
-              <div class="d-flex justify-end ga-2 mt-4">
-                <v-btn :disabled="isMutating" @click="cancelForm">キャンセル</v-btn>
-                <v-btn type="submit" color="primary" :loading="isSaving">
-                  {{ isCreating ? "作成" : "更新" }}
-                </v-btn>
-              </div>
-            </v-form>
-
-            <div v-else-if="selectedRule">
-              <div class="d-flex align-center flex-wrap ga-2 mb-3">
-                <h2 class="text-h6">{{ selectedRule.title }}</h2>
-                <v-chip :color="statusColors[selectedRule.status]" size="small">
-                  {{ statusLabels[selectedRule.status] }}
-                </v-chip>
-                <v-chip size="small">version {{ selectedRule.version }}</v-chip>
-                <v-spacer />
-                <v-btn
-                  v-if="canEditSelected"
-                  size="small"
-                  variant="text"
-                  prepend-icon="mdi-pencil-outline"
-                  :disabled="isMutating"
-                  @click="beginEditing"
-                >
-                  編集・停止
-                </v-btn>
-                <v-btn
-                  v-if="canArchiveSelected"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  prepend-icon="mdi-archive-outline"
-                  :disabled="isMutating"
-                  @click="isArchiveConfirmOpen = true"
-                >
-                  アーカイブ
-                </v-btn>
-              </div>
-              <v-alert v-if="selectedRule.status === 'BLOCKED'" type="error" density="compact" class="mb-3">
-                {{ formatErrorCode(selectedRule.blockedReason) }} 入力や参照先を修正して「有効」で更新してください。
-              </v-alert>
-              <p class="text-body-2 recurrence-detail mb-3">{{ selectedRule.detail }}</p>
-              <v-row dense class="mb-2">
-                <v-col cols="12" sm="6"><strong>Schedule:</strong> {{ formatSchedule(selectedRule.frequency, selectedRule.intervalCount, selectedRule.weekdays, selectedRule.monthlyDay) }}</v-col>
-                <v-col cols="12" sm="6"><strong>次回発生日:</strong> {{ selectedRule.nextOccurrenceDate ?? "-" }}</v-col>
-                <v-col cols="12" sm="6"><strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～ {{ selectedRule.endDate ?? "終了日なし" }}</v-col>
-                <v-col cols="12" sm="6"><strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前</v-col>
-                <v-col cols="12" sm="6"><strong>担当者:</strong> アカウントID {{ selectedRule.assigneeAccountId }}</v-col>
-                <v-col cols="12" sm="6"><strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日</v-col>
-                <v-col cols="12" sm="6"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</v-col>
-                <v-col cols="12" sm="6"><strong>作成元:</strong> {{ selectedRule.sourceTaskTemplateId === null ? "直接入力" : `Task Template #${selectedRule.sourceTaskTemplateId}` }}</v-col>
-              </v-row>
-              <v-list v-if="selectedRule.checklistItems.length" density="compact" border rounded class="mb-4">
-                <v-list-item
-                  v-for="item in selectedRule.checklistItems"
-                  :key="item.position"
-                  prepend-icon="mdi-checkbox-blank-outline"
-                  :title="item.content"
-                />
-              </v-list>
-
-              <v-divider class="my-4" />
-              <div class="d-flex align-center mb-2">
-                <div class="text-subtitle-1 font-weight-bold">生成履歴（直近100件）</div>
-                <v-spacer />
-                <v-btn
-                  size="small"
-                  variant="text"
-                  prepend-icon="mdi-refresh"
-                  :loading="isLoadingGenerations"
-                  :disabled="isMutating"
-                  @click="loadGenerations"
-                >
-                  再読込
-                </v-btn>
-              </div>
-              <v-progress-linear v-if="isLoadingGenerations" indeterminate class="mb-2" />
-              <div class="generation-table">
-                <v-table v-if="generations.length" density="compact">
-                  <thead>
-                    <tr>
-                      <th>発生日</th>
-                      <th>状態</th>
-                      <th>生成Task</th>
-                      <th>試行</th>
-                      <th>次回／エラー</th>
-                      <th aria-label="操作"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="generation in generations" :key="generation.taskRecurrenceGenerationId">
-                      <td>{{ generation.occurrenceDate }}</td>
-                      <td>
-                        <v-chip :color="generationStatusColors[generation.status]" size="x-small">
-                          {{ generationStatusLabels[generation.status] }}
-                        </v-chip>
-                      </td>
-                      <td>{{ generation.generatedTaskId === null ? "-" : `#${generation.generatedTaskId}` }}</td>
-                      <td>{{ generation.attemptCount }}</td>
-                      <td>
-                        <span v-if="generation.lastErrorCode">{{ formatErrorCode(generation.lastErrorCode) }}</span>
-                        <span v-else>{{ formatDateTime(generation.nextRetryAt) }}</span>
-                      </td>
-                      <td class="text-right">
-                        <v-btn
-                          v-if="generation.status === 'FAILED' && canUpdate && projectActive"
-                          size="x-small"
-                          color="warning"
-                          variant="tonal"
-                          :loading="retryingGenerationId === generation.taskRecurrenceGenerationId"
-                          :disabled="isMutating"
-                          @click="retryGeneration(generation)"
-                        >
-                          再試行
-                        </v-btn>
-                      </td>
-                    </tr>
-                  </tbody>
-                </v-table>
-              </div>
-              <div v-if="!isLoadingGenerations && generations.length === 0" class="text-body-2 text-medium-emphasis pa-3">
-                生成履歴はありません。
+                </UFormField>
               </div>
             </div>
-
-            <div v-else class="text-body-2 text-medium-emphasis pa-4">
-              左の一覧から規則を選択するか、新しい規則を作成してください。
+            <div v-if="form.frequency === 'WEEKLY'" class="mb-4">
+              <div class="mb-1 text-sm">発生曜日</div>
+              <div class="flex flex-wrap gap-2" role="group" aria-label="発生曜日">
+                <UButton
+                  v-for="weekday in RECURRENCE_WEEKDAY_OPTIONS"
+                  :key="weekday.value"
+                  size="md"
+                  variant="soft"
+                  class="rounded-full normal-case tracking-normal"
+                  :class="form.weekdays.includes(weekday.value) ? 'text-primary' : ''"
+                  :icon="form.weekdays.includes(weekday.value) ? 'i-mdi-check' : undefined"
+                  :aria-pressed="form.weekdays.includes(weekday.value)"
+                  :disabled="isMutating"
+                  @click="toggleWeekday(weekday.value)"
+                >
+                  {{ weekday.title }}
+                </UButton>
+              </div>
             </div>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-  </v-dialog>
+            <div class="mt-4 flex justify-end gap-2">
+              <UButton :disabled="isMutating" @click="cancelForm">キャンセル</UButton>
+              <UButton type="submit" color="primary" :loading="isSaving">{{ isCreating ? "作成" : "更新" }}</UButton>
+            </div>
+          </form>
 
-  <v-dialog v-model="isArchiveConfirmOpen" max-width="480" :persistent="isArchiving">
-    <v-card>
-      <v-card-title>繰り返しTask規則をアーカイブしますか？</v-card-title>
-      <v-card-text>
-        {{ selectedRule?.title }}<br />
-        生成履歴は保持されますが、将来のTask生成は停止します。
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isArchiving" @click="isArchiveConfirmOpen = false">キャンセル</v-btn>
-        <v-btn color="error" :loading="isArchiving" @click="confirmArchive">アーカイブ</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+          <div v-else-if="selectedRule">
+            <div class="mb-3 flex flex-wrap items-center gap-2">
+              <h2 class="text-xl font-medium">{{ selectedRule.title }}</h2>
+              <UBadge :color="getRecurrenceStatusColor(selectedRule.status)" size="sm">
+                {{ getRecurrenceStatusLabel(selectedRule.status) }}
+              </UBadge>
+              <UBadge size="sm">version {{ selectedRule.version }}</UBadge>
+              <UButton
+                v-if="canEditSelected"
+                size="sm"
+                variant="ghost"
+                icon="i-mdi-pencil-outline"
+                class="ms-auto"
+                :disabled="isMutating"
+                @click="beginEditing"
+              >
+                編集・停止
+              </UButton>
+              <UButton
+                v-if="canArchiveSelected"
+                size="sm"
+                variant="ghost"
+                color="error"
+                icon="i-mdi-archive-outline"
+                :disabled="isMutating"
+                @click="isArchiveConfirmOpen = true"
+              >
+                アーカイブ
+              </UButton>
+            </div>
+            <StatusAlert v-if="selectedRule.status === 'BLOCKED'" type="error" density="compact" class="mb-3">
+              {{ formatRecurrenceErrorCode(selectedRule.blockedReason) }} 入力や参照先を修正して「有効」で更新してください。
+            </StatusAlert>
+            <p class="mb-3 text-sm whitespace-pre-wrap">{{ selectedRule.detail }}</p>
+            <div class="-m-1 mb-2 flex flex-wrap">
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>Schedule:</strong>
+                {{ formatRecurrenceSchedule(selectedRule.frequency, selectedRule.intervalCount, selectedRule.weekdays, selectedRule.monthlyDay) }}
+              </div>
+              <div class="w-full p-1 sm:w-1/2"><strong>次回発生日:</strong> {{ selectedRule.nextOccurrenceDate ?? "-" }}</div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～ {{ selectedRule.endDate ?? "終了日なし" }}
+              </div>
+              <div class="w-full p-1 sm:w-1/2"><strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前</div>
+              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> アカウントID {{ selectedRule.assigneeAccountId }}</div>
+              <div class="w-full p-1 sm:w-1/2"><strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日</div>
+              <div class="w-full p-1 sm:w-1/2"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>作成元:</strong>
+                {{ selectedRule.sourceTaskTemplateId === null ? "直接入力" : `Task Template #${selectedRule.sourceTaskTemplateId}` }}
+              </div>
+            </div>
+            <ul v-if="selectedRule.checklistItems.length" class="mb-4 rounded-sm border border-default py-2">
+              <li v-for="item in selectedRule.checklistItems" :key="item.position" class="flex items-center gap-8 px-4 py-1.5">
+                <UIcon name="i-mdi-checkbox-blank-outline" class="size-6 opacity-60" />
+                <span class="text-base">{{ item.content }}</span>
+              </li>
+            </ul>
+
+            <USeparator class="my-4" />
+            <div class="mb-2 flex items-center">
+              <div class="text-base font-bold">生成履歴（直近100件）</div>
+              <UButton
+                size="sm"
+                variant="ghost"
+                icon="i-mdi-refresh"
+                class="ms-auto"
+                :loading="isLoadingGenerations"
+                :disabled="isMutating"
+                @click="loadGenerations"
+              >
+                再読込
+              </UButton>
+            </div>
+            <UProgress v-if="isLoadingGenerations" size="xs" class="mb-2" />
+            <div class="overflow-x-auto">
+              <table v-if="generations.length" class="app-table">
+                <thead>
+                  <tr>
+                    <th>発生日</th>
+                    <th>状態</th>
+                    <th>生成Task</th>
+                    <th>試行</th>
+                    <th>次回／エラー</th>
+                    <th aria-label="操作"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="generation in generations" :key="generation.taskRecurrenceGenerationId">
+                    <td>{{ generation.occurrenceDate }}</td>
+                    <td>
+                      <UBadge :color="getGenerationStatusColor(generation.status)" size="xs">
+                        {{ getGenerationStatusLabel(generation.status) }}
+                      </UBadge>
+                    </td>
+                    <td>{{ generation.generatedTaskId === null ? "-" : `#${generation.generatedTaskId}` }}</td>
+                    <td>{{ generation.attemptCount }}</td>
+                    <td>
+                      <span v-if="generation.lastErrorCode">{{ formatRecurrenceErrorCode(generation.lastErrorCode) }}</span>
+                      <span v-else>{{ formatRecurrenceDateTime(generation.nextRetryAt) }}</span>
+                    </td>
+                    <td class="text-end">
+                      <UButton
+                        v-if="generation.status === 'FAILED' && canUpdate && projectActive"
+                        size="xs"
+                        color="warning"
+                        variant="soft"
+                        :loading="retryingGenerationId === generation.taskRecurrenceGenerationId"
+                        :disabled="isMutating"
+                        @click="retryGeneration(generation)"
+                      >
+                        再試行
+                      </UButton>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-if="!isLoadingGenerations && generations.length === 0" class="p-3 text-sm text-muted">生成履歴はありません。</div>
+          </div>
+
+          <div v-else class="p-4 text-sm text-muted">左の一覧から規則を選択するか、新しい規則を作成してください。</div>
+        </div>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="isArchiveConfirmOpen"
+    :dismissible="!isArchiving"
+    title="繰り返しTask規則をアーカイブしますか？"
+    :ui="{ content: 'max-w-120' }"
+  >
+    <template #body>
+      {{ selectedRule?.title }}<br />
+      生成履歴は保持されますが、将来のTask生成は停止します。
+    </template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="isArchiving" @click="isArchiveConfirmOpen = false">キャンセル</UButton>
+      <UButton color="error" variant="ghost" :loading="isArchiving" @click="confirmArchive">アーカイブ</UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.recurrence-detail {
-  white-space: pre-wrap;
-}
-
-.generation-table {
-  overflow-x: auto;
-}
-</style>

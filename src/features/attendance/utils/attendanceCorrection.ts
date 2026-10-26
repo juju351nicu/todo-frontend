@@ -4,6 +4,7 @@ import type {
   AttendanceCorrectionStatus,
   AttendanceDayResponse,
 } from "@/features/attendance/types/attendance";
+import type { SemanticColor } from "@/shared/types/color";
 
 const TOKYO_OFFSET = "+09:00";
 const MAX_PERIOD_COUNT = 20;
@@ -20,16 +21,16 @@ export const getAttendanceCorrectionStatusLabel = (
     CANCELLED: "取消済み",
   })[status];
 
-/** 勤怠修正申請状態に対応するVuetify colorを返す。 */
+/** 勤怠修正申請状態に対応する表示色を返す。 */
 export const getAttendanceCorrectionStatusColor = (
   status: AttendanceCorrectionStatus
-): string =>
+): SemanticColor =>
   ({
     PENDING: "warning",
     APPROVED: "success",
     REJECTED: "error",
-    CANCELLED: "default",
-  })[status];
+    CANCELLED: "neutral",
+  } satisfies Record<string, SemanticColor>)[status];
 
 /** APIのInstantを東京時刻のdatetime-local入力値へ変換する。 */
 export const toTokyoDateTimeInput = (instant: string): string => {

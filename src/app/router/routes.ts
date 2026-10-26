@@ -16,6 +16,7 @@ export const routes: RouteRecordRaw[] = [
     path: "/",
     name: "Login",
     component: () => import("@/features/auth/views/LoginPage.vue"),
+    meta: { layout: "blank" },
   },
   {
     path: "/dashboard",
@@ -201,7 +202,7 @@ export const routes: RouteRecordRaw[] = [
     path: "/forbidden",
     name: "AccessDenied",
     component: () => import("@/app/views/AccessDeniedPage.vue"),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, layout: "blank" },
   },
   {
     path: "/inquiry",
@@ -212,5 +213,6 @@ export const routes: RouteRecordRaw[] = [
     path: "/:pathMatch(.*)*",
     name: "NotFound",
     component: () => import("@/app/views/NotFoundPage.vue"),
+    meta: { layout: "blank" },
   },
 ];

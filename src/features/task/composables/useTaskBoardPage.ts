@@ -23,6 +23,12 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import {
+  buildProjectMemberOptions,
+  buildTaskStatusIdOptions,
+  TASK_PRIORITY_OPTIONS,
+  type TaskSelectOption,
+} from "@/features/task/utils/taskFormOptions";
 
 interface TaskForm {
   taskId: number | null;
@@ -34,11 +40,6 @@ interface TaskForm {
   assigneeAccountId: number | null;
   priority: TaskPriority;
   version: number | null;
-}
-
-interface SelectOption<TValue> {
-  title: string;
-  value: TValue;
 }
 
 interface TaskDragChangeDetail {
@@ -197,34 +198,24 @@ export const useTaskBoardPage = () => {
       (isEditing.value ? canUpdateTask.value : canCreateTask.value)
   );
 
-  const statusOptions = computed<SelectOption<number>[]>(() =>
-    (project.value?.taskStatuses ?? []).map((status) => ({
-      title: status.name,
-      value: status.taskStatusId,
-    }))
+  const statusOptions = computed<TaskSelectOption<number>[]>(() =>
+    buildTaskStatusIdOptions(project.value?.taskStatuses ?? [])
   );
 
-  const memberOptions = computed<SelectOption<number>[]>(() => {
+  const memberOptions = computed<TaskSelectOption<number>[]>(() => {
     const canAssignAnyMember =
       isReadonly.value ||
       userStore.hasRole("SYSTEM_ADMIN") ||
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER";
-    return (project.value?.members ?? [])
-      .filter(
+    return buildProjectMemberOptions(
+      (project.value?.members ?? []).filter(
         (member) => canAssignAnyMember || member.accountId === userStore.memberId
       )
-      .map((member) => ({
-        title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-        value: member.accountId,
-      }));
+    );
   });
 
-  const priorityOptions: SelectOption<TaskPriority>[] = [
-    { title: "低", value: 1 },
-    { title: "中", value: 2 },
-    { title: "高", value: 3 },
-  ];
+  const priorityOptions = TASK_PRIORITY_OPTIONS;
 
   /** Project管理APIの確定ResponseをBoard見出し・認可・担当者候補へ反映する。 */
   const applyProjectDetail = (updatedProject: ProjectDetail): void => {

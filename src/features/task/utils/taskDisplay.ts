@@ -1,3 +1,6 @@
+import type { TaskPriority } from "@/features/project/types/project";
+import type { SemanticColor } from "@/shared/types/color";
+
 const TODO_PRIORITY_LABELS: Readonly<Record<number, string>> = {
   1: "低",
   2: "中",
@@ -37,3 +40,27 @@ export const formatMyTaskRemainingDays = (value: number): string => {
 
 /** Todo詳細を一覧用の最大3文字へ省略する。 */
 export const truncateTodoDetail = (value: string): string => value.slice(0, 3);
+
+const MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  timeZone: "Asia/Tokyo",
+  month: "long",
+  day: "numeric",
+});
+
+/**
+ * Todo検索cardに表示する東京の月日（例: `11月8日`）を作る。
+ *
+ * @param date 表示する日時。省略時は現在時刻
+ */
+export const formatTodoSearchDate = (date: Date = new Date()): string => MONTH_DAY_FORMATTER.format(date);
+
+const TASK_PRIORITY_LABELS: Readonly<Record<TaskPriority, string>> = { 1: "低", 2: "中", 3: "高" };
+
+// Backendの`TaskPriority`はLOW=1、MEDIUM=2、HIGH=3。高いほど注意を引く色にする。
+const TASK_PRIORITY_COLORS: Readonly<Record<TaskPriority, SemanticColor>> = { 1: "info", 2: "warning", 3: "error" };
+
+/** Project TaskとWBS Taskの優先度コード（1:低、2:中、3:高）を表示名へ変換する。 */
+export const getTaskPriorityLabel = (priority: TaskPriority): string => TASK_PRIORITY_LABELS[priority];
+
+/** Project TaskとWBS Taskの優先度コードを表示色へ変換する。高=error、中=warning、低=info。 */
+export const getTaskPriorityColor = (priority: TaskPriority): SemanticColor => TASK_PRIORITY_COLORS[priority];

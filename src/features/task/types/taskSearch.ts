@@ -1,3 +1,5 @@
+import type { TaskPriority } from "@/features/project/types/project";
+
 /** Task検索結果の期限グループ。 */
 export type TaskSearchDueGroup = "OVERDUE" | "TODAY" | "UPCOMING";
 
@@ -9,7 +11,8 @@ export interface TaskSearchFilters {
   statusCode: string | null;
   dueFrom: string | null;
   dueTo: string | null;
-  priority: number | null;
+  /** 優先度（1=低、2=中、3=高）。nullは全優先度。 */
+  priority: TaskPriority | null;
 }
 
 /** Saved View取得時の検索条件。Backendで未指定のkeywordはnullとなる。 */

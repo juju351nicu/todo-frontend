@@ -14,16 +14,11 @@ import {
   DATA_TABLE_PAGE_OPTIONS,
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
+import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { toNumberList } from "@/shared/utils/number";
 
-interface TodoTableHeader {
-  title: string;
-  align: "start" | "center" | "end";
-  key: string;
-}
-
-const TODO_TABLE_HEADERS: TodoTableHeader[] = [
+const TODO_TABLE_HEADERS: DataTableHeader[] = [
   { title: "重要度", align: "start", key: "priority" },
   { title: "着手日", align: "start", key: "start" },
   { title: "期限日", align: "start", key: "end" },
@@ -31,7 +26,7 @@ const TODO_TABLE_HEADERS: TodoTableHeader[] = [
   { title: "タイトル", align: "start", key: "title" },
   { title: "詳細情報", align: "start", key: "detail" },
   { title: "完了フラグ", align: "start", key: "doneFlag" },
-  { title: "操作", align: "start", key: "actions" },
+  { title: "操作", align: "start", sortable: false, key: "actions" },
 ];
 
 /**
@@ -47,7 +42,7 @@ export const useTodoListPage = () => {
   const headers = TODO_TABLE_HEADERS;
   const isLoading = ref(false);
   const itemsPerPage = ref<number>(DEFAULT_ITEMS_PER_PAGE);
-  const pages = DATA_TABLE_PAGE_OPTIONS;
+  const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const searchTitle = ref("");
   const selectedDoneFlag = ref<string[]>(["0", "1"]);
   const todoList = ref<TodoListItem[]>([]);
@@ -236,7 +231,7 @@ export const useTodoListPage = () => {
     initialize,
     isLoading,
     itemsPerPage,
-    pages,
+    itemsPerPageOptions,
     search,
     searchTitle,
     selectedDoneFlag,

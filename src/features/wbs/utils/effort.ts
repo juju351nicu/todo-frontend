@@ -44,3 +44,7 @@ export const formatSignedEffortMinutes = (minutes: number): string => {
   const sign = minutes > 0 ? "+" : "-";
   return `${sign}${formatEffortMinutes(Math.abs(minutes))}`;
 };
+
+/** 比較対象がない（null）工数は`—`、それ以外は`formatEffortMinutes`と同じ表記にする。 */
+export const formatOptionalEffortMinutes = (minutes: number | null): string =>
+  minutes === null ? "—" : formatEffortMinutes(minutes);

@@ -1,0 +1,256 @@
+/*
+ * アプリ全体のCSS入口。Tailwind CSSとNuxt UIを読み込み、移行前のVuetify既定デザインに合わせたtokenを定義する。
+ * Component単位の見た目の調整は`src/app/theme/nuxtUiTheme.ts`に集約する。
+ */
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/*
+ * nuxtUiTheme.tsはsemantic colorごとのclassを配列から生成するため、Tailwindのsource scanでは検出できない。
+ * 生成するclassをここで明示する。
+ */
+@source inline("{hover:,active:,}bg-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}/{4,12,16,20,88,92}");
+@source inline("ring-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}");
+/* 状態色をcomposableから受け取りアイコン色にする画面（My Tasks等）のため、文字色classも生成する。 */
+@source inline("text-{primary,secondary,success,info,warning,error,teal,indigo,amber-darken-3,deep-purple}");
+
+/* Vuetify 3.4の既定light themeの色。500を元の色とし、他の濃淡はcolor-mixで作る。 */
+@theme static {
+  --font-sans: "Roboto", sans-serif;
+
+  /* Vuetifyのgrid breakpointと同じ境界にし、v-colの`sm`／`md`等をTailwindの同名prefixへそのまま置き換えられるようにする。 */
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 960px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1920px;
+  --breakpoint-2xl: 2560px;
+
+  /* Vuetifyのelevation 1／2／3／4／8／24と同じ影。 */
+  --shadow-elevation-1: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-2: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-3: 0 3px 3px -2px rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 1px 8px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-4: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-8: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-24: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+
+  --color-vuetify-primary-50: color-mix(in oklab, #1867C0 8%, white);
+  --color-vuetify-primary-100: color-mix(in oklab, #1867C0 16%, white);
+  --color-vuetify-primary-200: color-mix(in oklab, #1867C0 32%, white);
+  --color-vuetify-primary-300: color-mix(in oklab, #1867C0 52%, white);
+  --color-vuetify-primary-400: color-mix(in oklab, #1867C0 76%, white);
+  --color-vuetify-primary-500: #1867C0;
+  --color-vuetify-primary-600: color-mix(in oklab, #1867C0 86%, black);
+  --color-vuetify-primary-700: color-mix(in oklab, #1867C0 72%, black);
+  --color-vuetify-primary-800: color-mix(in oklab, #1867C0 58%, black);
+  --color-vuetify-primary-900: color-mix(in oklab, #1867C0 44%, black);
+  --color-vuetify-primary-950: color-mix(in oklab, #1867C0 30%, black);
+
+  --color-vuetify-secondary-50: color-mix(in oklab, #48A9A6 8%, white);
+  --color-vuetify-secondary-100: color-mix(in oklab, #48A9A6 16%, white);
+  --color-vuetify-secondary-200: color-mix(in oklab, #48A9A6 32%, white);
+  --color-vuetify-secondary-300: color-mix(in oklab, #48A9A6 52%, white);
+  --color-vuetify-secondary-400: color-mix(in oklab, #48A9A6 76%, white);
+  --color-vuetify-secondary-500: #48A9A6;
+  --color-vuetify-secondary-600: color-mix(in oklab, #48A9A6 86%, black);
+  --color-vuetify-secondary-700: color-mix(in oklab, #48A9A6 72%, black);
+  --color-vuetify-secondary-800: color-mix(in oklab, #48A9A6 58%, black);
+  --color-vuetify-secondary-900: color-mix(in oklab, #48A9A6 44%, black);
+  --color-vuetify-secondary-950: color-mix(in oklab, #48A9A6 30%, black);
+
+  --color-vuetify-success-50: color-mix(in oklab, #4CAF50 8%, white);
+  --color-vuetify-success-100: color-mix(in oklab, #4CAF50 16%, white);
+  --color-vuetify-success-200: color-mix(in oklab, #4CAF50 32%, white);
+  --color-vuetify-success-300: color-mix(in oklab, #4CAF50 52%, white);
+  --color-vuetify-success-400: color-mix(in oklab, #4CAF50 76%, white);
+  --color-vuetify-success-500: #4CAF50;
+  --color-vuetify-success-600: color-mix(in oklab, #4CAF50 86%, black);
+  --color-vuetify-success-700: color-mix(in oklab, #4CAF50 72%, black);
+  --color-vuetify-success-800: color-mix(in oklab, #4CAF50 58%, black);
+  --color-vuetify-success-900: color-mix(in oklab, #4CAF50 44%, black);
+  --color-vuetify-success-950: color-mix(in oklab, #4CAF50 30%, black);
+
+  --color-vuetify-info-50: color-mix(in oklab, #2196F3 8%, white);
+  --color-vuetify-info-100: color-mix(in oklab, #2196F3 16%, white);
+  --color-vuetify-info-200: color-mix(in oklab, #2196F3 32%, white);
+  --color-vuetify-info-300: color-mix(in oklab, #2196F3 52%, white);
+  --color-vuetify-info-400: color-mix(in oklab, #2196F3 76%, white);
+  --color-vuetify-info-500: #2196F3;
+  --color-vuetify-info-600: color-mix(in oklab, #2196F3 86%, black);
+  --color-vuetify-info-700: color-mix(in oklab, #2196F3 72%, black);
+  --color-vuetify-info-800: color-mix(in oklab, #2196F3 58%, black);
+  --color-vuetify-info-900: color-mix(in oklab, #2196F3 44%, black);
+  --color-vuetify-info-950: color-mix(in oklab, #2196F3 30%, black);
+
+  --color-vuetify-warning-50: color-mix(in oklab, #FB8C00 8%, white);
+  --color-vuetify-warning-100: color-mix(in oklab, #FB8C00 16%, white);
+  --color-vuetify-warning-200: color-mix(in oklab, #FB8C00 32%, white);
+  --color-vuetify-warning-300: color-mix(in oklab, #FB8C00 52%, white);
+  --color-vuetify-warning-400: color-mix(in oklab, #FB8C00 76%, white);
+  --color-vuetify-warning-500: #FB8C00;
+  --color-vuetify-warning-600: color-mix(in oklab, #FB8C00 86%, black);
+  --color-vuetify-warning-700: color-mix(in oklab, #FB8C00 72%, black);
+  --color-vuetify-warning-800: color-mix(in oklab, #FB8C00 58%, black);
+  --color-vuetify-warning-900: color-mix(in oklab, #FB8C00 44%, black);
+  --color-vuetify-warning-950: color-mix(in oklab, #FB8C00 30%, black);
+
+  --color-vuetify-error-50: color-mix(in oklab, #B00020 8%, white);
+  --color-vuetify-error-100: color-mix(in oklab, #B00020 16%, white);
+  --color-vuetify-error-200: color-mix(in oklab, #B00020 32%, white);
+  --color-vuetify-error-300: color-mix(in oklab, #B00020 52%, white);
+  --color-vuetify-error-400: color-mix(in oklab, #B00020 76%, white);
+  --color-vuetify-error-500: #B00020;
+  --color-vuetify-error-600: color-mix(in oklab, #B00020 86%, black);
+  --color-vuetify-error-700: color-mix(in oklab, #B00020 72%, black);
+  --color-vuetify-error-800: color-mix(in oklab, #B00020 58%, black);
+  --color-vuetify-error-900: color-mix(in oklab, #B00020 44%, black);
+  --color-vuetify-error-950: color-mix(in oklab, #B00020 30%, black);
+
+  --color-material-deep-purple-50: color-mix(in oklab, #673AB7 8%, white);
+  --color-material-deep-purple-100: color-mix(in oklab, #673AB7 16%, white);
+  --color-material-deep-purple-200: color-mix(in oklab, #673AB7 32%, white);
+  --color-material-deep-purple-300: color-mix(in oklab, #673AB7 52%, white);
+  --color-material-deep-purple-400: color-mix(in oklab, #673AB7 76%, white);
+  --color-material-deep-purple-500: #673AB7;
+  --color-material-deep-purple-600: color-mix(in oklab, #673AB7 86%, black);
+  --color-material-deep-purple-700: color-mix(in oklab, #673AB7 72%, black);
+  --color-material-deep-purple-800: color-mix(in oklab, #673AB7 58%, black);
+  --color-material-deep-purple-900: color-mix(in oklab, #673AB7 44%, black);
+  --color-material-deep-purple-950: color-mix(in oklab, #673AB7 30%, black);
+
+  --color-material-teal-50: color-mix(in oklab, #009688 8%, white);
+  --color-material-teal-100: color-mix(in oklab, #009688 16%, white);
+  --color-material-teal-200: color-mix(in oklab, #009688 32%, white);
+  --color-material-teal-300: color-mix(in oklab, #009688 52%, white);
+  --color-material-teal-400: color-mix(in oklab, #009688 76%, white);
+  --color-material-teal-500: #009688;
+  --color-material-teal-600: color-mix(in oklab, #009688 86%, black);
+  --color-material-teal-700: color-mix(in oklab, #009688 72%, black);
+  --color-material-teal-800: color-mix(in oklab, #009688 58%, black);
+  --color-material-teal-900: color-mix(in oklab, #009688 44%, black);
+  --color-material-teal-950: color-mix(in oklab, #009688 30%, black);
+
+  --color-material-indigo-50: color-mix(in oklab, #3F51B5 8%, white);
+  --color-material-indigo-100: color-mix(in oklab, #3F51B5 16%, white);
+  --color-material-indigo-200: color-mix(in oklab, #3F51B5 32%, white);
+  --color-material-indigo-300: color-mix(in oklab, #3F51B5 52%, white);
+  --color-material-indigo-400: color-mix(in oklab, #3F51B5 76%, white);
+  --color-material-indigo-500: #3F51B5;
+  --color-material-indigo-600: color-mix(in oklab, #3F51B5 86%, black);
+  --color-material-indigo-700: color-mix(in oklab, #3F51B5 72%, black);
+  --color-material-indigo-800: color-mix(in oklab, #3F51B5 58%, black);
+  --color-material-indigo-900: color-mix(in oklab, #3F51B5 44%, black);
+  --color-material-indigo-950: color-mix(in oklab, #3F51B5 30%, black);
+
+  --color-material-amber-50: color-mix(in oklab, #FF8F00 8%, white);
+  --color-material-amber-100: color-mix(in oklab, #FF8F00 16%, white);
+  --color-material-amber-200: color-mix(in oklab, #FF8F00 32%, white);
+  --color-material-amber-300: color-mix(in oklab, #FF8F00 52%, white);
+  --color-material-amber-400: color-mix(in oklab, #FF8F00 76%, white);
+  --color-material-amber-500: #FF8F00;
+  --color-material-amber-600: color-mix(in oklab, #FF8F00 86%, black);
+  --color-material-amber-700: color-mix(in oklab, #FF8F00 72%, black);
+  --color-material-amber-800: color-mix(in oklab, #FF8F00 58%, black);
+  --color-material-amber-900: color-mix(in oklab, #FF8F00 44%, black);
+  --color-material-amber-950: color-mix(in oklab, #FF8F00 30%, black);
+
+  --color-material-purple-50: color-mix(in oklab, #7B1FA2 8%, white);
+  --color-material-purple-100: color-mix(in oklab, #7B1FA2 16%, white);
+  --color-material-purple-200: color-mix(in oklab, #7B1FA2 32%, white);
+  --color-material-purple-300: color-mix(in oklab, #7B1FA2 52%, white);
+  --color-material-purple-400: color-mix(in oklab, #7B1FA2 76%, white);
+  --color-material-purple-500: #7B1FA2;
+  --color-material-purple-600: color-mix(in oklab, #7B1FA2 86%, black);
+  --color-material-purple-700: color-mix(in oklab, #7B1FA2 72%, black);
+  --color-material-purple-800: color-mix(in oklab, #7B1FA2 58%, black);
+  --color-material-purple-900: color-mix(in oklab, #7B1FA2 44%, black);
+  --color-material-purple-950: color-mix(in oklab, #7B1FA2 30%, black);
+
+
+}
+
+/* Vuetifyの文字色（high／medium／disabled emphasis）と区切り線の透明度に合わせる。 */
+:root {
+  --ui-radius: 0.25rem;
+  --ui-text: rgba(0, 0, 0, 0.87);
+  --ui-text-highlighted: rgba(0, 0, 0, 0.87);
+  --ui-text-toned: rgba(0, 0, 0, 0.6);
+  --ui-text-muted: rgba(0, 0, 0, 0.6);
+  --ui-text-dimmed: rgba(0, 0, 0, 0.38);
+  --ui-border: rgba(0, 0, 0, 0.12);
+  --ui-border-muted: rgba(0, 0, 0, 0.08);
+  --ui-border-accented: rgba(0, 0, 0, 0.38);
+}
+
+@layer base {
+  /* 移行前のVuetifyと同じく、内容が短い画面でもscrollbar領域を確保し、画面遷移でレイアウト幅が揺れないようにする。 */
+  html {
+    overflow-y: scroll;
+  }
+
+  body {
+    color: var(--ui-text);
+    background-color: var(--ui-bg);
+  }
+
+  /* Tailwind v4 Preflightはbuttonのcursorをdefaultにするため、Vuetifyと同じpointerへ戻す。 */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/*
+ * 画面本文の中央寄せcontainer。移行前のVuetify v-containerと同じ余白・最大幅（breakpointの93.75%）にする。
+ */
+@utility page-container {
+  width: 100%;
+  margin-inline: auto;
+  padding: 1rem;
+  @variant md {
+    max-width: 900px;
+  }
+  @variant lg {
+    max-width: 1200px;
+  }
+  @variant xl {
+    max-width: 1800px;
+  }
+  @variant 2xl {
+    max-width: 2400px;
+  }
+}
+
+/*
+ * 素のtableをVuetify v-table（density compact）と同じ行高40px・余白・区切り線で表示する。
+ * 並べ替えやページングが必要な一覧は`AppDataTable`を使う。
+ */
+@utility app-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+
+  & th,
+  & td {
+    height: 40px;
+    padding-inline: 16px;
+    border-bottom: thin solid var(--ui-border);
+  }
+
+  & th {
+    font-weight: 500;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  & tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+/* `app-table`と併用し、Vuetify v-tableの`hover`と同じく行へカーソルを重ねたときに背景を薄く塗る。 */
+@utility app-table-hover {
+  & tbody tr:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+}

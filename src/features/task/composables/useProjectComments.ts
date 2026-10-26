@@ -15,10 +15,12 @@ import { resolveApiErrorMessages } from "@/shared/utils/apiError";
  * Dialogを開くたびに最新100件を取得し、定期pollingやFrontend側の横断集計は行わない。
  *
  * @param projectId 参照対象Project ID
- * @returns Dialog状態、Task情報付きコメント一覧、再読込操作
+ * @param onTaskSelected コメント行からTaskを選んだときの通知先。archive済みTaskでは呼ばない
+ * @returns Dialog状態、Task情報付きコメント一覧、再読込・Task選択操作
  */
 export const useProjectComments = (
-  projectId: Readonly<Ref<number | null>>
+  projectId: Readonly<Ref<number | null>>,
+  onTaskSelected: (taskId: number) => void = () => undefined
 ) => {
   const router = useRouter();
   const userStore = useUserStore();
@@ -95,6 +97,15 @@ export const useProjectComments = (
     isOpen.value = false;
   });
 
+  /** archiveされていないTaskだけを、Dialogを閉じてから既存Task詳細Dialogへ引き渡す。 */
+  const selectTask = (comment: ProjectTaskComment): void => {
+    if (comment.taskArchived) {
+      return;
+    }
+    closeComments();
+    onTaskSelected(comment.taskId);
+  };
+
   return {
     closeComments,
     comments,
@@ -103,5 +114,6 @@ export const useProjectComments = (
     isOpen,
     loadComments,
     openComments,
+    selectTask,
   };
 };

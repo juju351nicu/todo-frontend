@@ -11,6 +11,19 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 - BackendのRequest／Responseとの変換を境界へ集約し、画面内にsnake_case変換や既定値処理を散らさない。
 - 旧タスク管理製品から移植したコード・文言に含まれていた名称はFrontendへ再混入させず、比較調査はリポジトリ外の資料フォルダで行う。
 
+## UI（Nuxt UI）
+
+- UIはNuxt UI（`@nuxt/ui`、Vite plugin経由）とTailwind CSSで実装する。Vuetifyは削除済みのため再導入しない。Component APIは`https://ui.nuxt.com/llms.txt`または公式MCP（`https://ui.nuxt.com/mcp`）で確認する。
+- 見た目は移行前のVuetify既定デザインに合わせている。色・寸法・variantの既定は`src/app/theme/nuxtUiTheme.ts`、色tokenとbreakpoint・共通utilityは`src/app/theme/main.css`に集約し、画面側の`class`で個別に上書きしない。Nuxt UI本来のデザインへ寄せる場合もこの2ファイルから変更する。
+- variantの対応: Vuetifyのtonal→`soft`、text→`ghost`、outlined→`outline`、elevated／flat→`solid`。sizeはx-small→`xs`、small→`sm`、default→`md`、large→`lg`。
+- 共通部品を優先する: 状態alertは`StatusAlert`、自動で消える通知は`AppAlert`、toast相当は`AppSnackbar`、並べ替え・ページング付き一覧は`AppDataTable`、素のtableは`app-table`utility、検索欄は`SearchField`、文字数表示は`FieldCounter`、本文幅は`page-container`utility。
+- 入力Dialogのform同期・close・送信は`useDialogForm`、親が確定した検索条件の下書きは`useSyncedDraft`を使う。
+- 選択UI（Reka UI）は空文字とnullの選択肢を扱えない。「すべて」「最上位」等は専用値にし、composableまたはDialogの境界で変換する。
+- Tailwindのbreakpointは`main.css`でVuetifyと同じ値（sm 600px、md 960px、lg 1280px、xl 1920px）にしている。
+- `h()`等の描画関数でNuxt UI Componentを直接importしない（rolldownのchunk分割で初期化順が崩れた実績がある）。UTable等はslotでテンプレートに書く。
+- アイコンは`i-mdi-*`（`@iconify-json/mdi`）を使い、buildへ同梱する。
+- E2EのselectorはUIライブラリ内部のclassに依存させず、role・label・意味を持つ独自class（`task-card`等）を使う。
+
 ## JSDocとコメント
 
 - exportedなfunction、composable、API関数、Store action、共通utility、業務上の型には、責務と契約が分かるJSDocを書く。
@@ -24,7 +37,7 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 
 ## 検証
 
-Node.js 24で`npm run typecheck`、`npm run test`、`npm run build`を実行する。
+Node.js 24で`npm run build`、`npm run typecheck`、`npm run test`を実行する。Nuxt UIのVite pluginはbuild時にComponent型宣言（`components.d.ts`等）を生成するため、clone直後はbuildを先に実行してから型検査する。
 
 - 新規・変更したAPI、composable、Store、業務utilityにはVitestを同じ変更で追加または更新する。
 - 正常系だけでなく、入力境界、null・空、401、403、404、409、通信失敗、二重送信、再読込・rollback等、対象処理に実在する異常系を優先して検証する。

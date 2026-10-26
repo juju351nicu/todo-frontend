@@ -7,15 +7,9 @@ import {
   DATA_TABLE_PAGE_OPTIONS,
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
+import type { DataTableHeader } from "@/shared/types/dataTable";
 
-interface MemberTableHeader {
-  title: string;
-  align: "start" | "center" | "end";
-  sortable?: boolean;
-  key: string;
-}
-
-const MEMBER_TABLE_HEADERS: MemberTableHeader[] = [
+const MEMBER_TABLE_HEADERS: DataTableHeader[] = [
   {
     title: "ID",
     align: "start",
@@ -28,7 +22,7 @@ const MEMBER_TABLE_HEADERS: MemberTableHeader[] = [
   { title: "登録日", align: "start", key: "registeredDate" },
   { title: "更新日", align: "start", key: "updatedDate" },
   { title: "最終ログインした時刻", align: "start", key: "lastLogin" },
-  { title: "編集", align: "start", key: "actions" },
+  { title: "編集", align: "start", sortable: false, key: "actions" },
 ];
 
 /** 会員一覧画面の状態と操作を提供する。 */
@@ -42,7 +36,7 @@ export const useMemberListPage = () => {
   const memberList = computed<MemberListItem[]>(
     () => memberStore.memberListInfo
   );
-  const pages = DATA_TABLE_PAGE_OPTIONS;
+  const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const selectedIds = ref<number[]>([]);
 
   /** 会員一覧をBackendから取得する。 */
@@ -73,8 +67,8 @@ export const useMemberListPage = () => {
     initialize,
     isLoading,
     itemsPerPage,
+    itemsPerPageOptions,
     memberList,
-    pages,
     selectedIds,
     showMemberDetail,
   };

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 
 import type {
   TaskEffortPlan,
@@ -10,6 +10,14 @@ import type {
 } from "@/features/wbs/types/wbs";
 import { formatEffortMinutes } from "@/features/wbs/utils/effort";
 import { buildTaskEffortPlanForm } from "@/features/wbs/utils/taskEffortPlan";
+import {
+  canMutateOwnedEntry,
+  formatWbsTaskDialogTitle,
+  getEffortAllocationStatus,
+  resolveDefaultAccountId,
+} from "@/features/wbs/utils/wbsDialog";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { useDialogForm } from "@/shared/composables/useDialogForm";
 
 /** Task日別予定Dialogへ親画面から渡す確定状態。 */
 interface Props {
@@ -37,257 +45,167 @@ const emit = defineEmits<{
   requestDelete: [effortPlanId: number];
 }>();
 
-const form = ref<TaskEffortPlanForm>(buildTaskEffortPlanForm(null));
-const isMutating = computed(() => props.isSaving || props.isDeleting);
-const dialogTitle = computed(() =>
-  props.task === null
-    ? "Task日別予定工数"
-    : `Task日別予定工数: ${props.task.wbsCode ? `${props.task.wbsCode} ` : ""}${props.task.title}`
-);
-const defaultAssigneeAccountId = computed(() => {
-  const taskAssigneeId = props.task?.assigneeAccountId ?? null;
-  return props.assigneeOptions.some((option) => option.value === taskAssigneeId)
-    ? taskAssigneeId
-    : props.assigneeOptions[0]?.value ?? null;
+const isMutating = computed<boolean>(() => props.isSaving || props.isDeleting);
+const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task日別予定工数", props.task));
+const allocationStatus = computed(() => getEffortAllocationStatus(props.effortPlanList?.unallocatedEffortMinutes ?? 0));
+
+// Dialogを開く、編集対象を変える、保存結果を受け取るたびに確定値からFormを作り直す。閉じている間は入力を保持する。
+const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
+  initialForm: buildTaskEffortPlanForm(null),
+  syncSources: [() => props.open, () => props.editingEffortPlan, () => props.effortPlanList],
+  buildForm: () =>
+    props.open
+      ? buildTaskEffortPlanForm(resolveDefaultAccountId(props.task, props.assigneeOptions), props.editingEffortPlan)
+      : undefined,
+  isBusy: isMutating,
+  canSubmit: () => props.canEdit,
+  onClose: () => emit("close"),
+  onSave: (value) => emit("save", value),
 });
-const allocationStatusColor = computed(() => {
-  const unallocated = props.effortPlanList?.unallocatedEffortMinutes ?? 0;
-  if (unallocated < 0) {
-    return "error";
-  }
-  return unallocated === 0 ? "success" : "warning";
-});
-const allocationStatusLabel = computed(() => {
-  const unallocated = props.effortPlanList?.unallocatedEffortMinutes ?? 0;
-  return unallocated < 0
-    ? `過配賦 ${formatEffortMinutes(Math.abs(unallocated))}`
-    : `未配賦 ${formatEffortMinutes(unallocated)}`;
-});
-
-/** Dialogを開く、編集対象を変える、保存結果を受け取るたびに確定値からFormを作り直す。 */
-const synchronizeForm = (): void => {
-  if (!props.open) {
-    return;
-  }
-  form.value = buildTaskEffortPlanForm(
-    defaultAssigneeAccountId.value,
-    props.editingEffortPlan
-  );
-};
-
-watch(
-  () => [props.open, props.editingEffortPlan, props.effortPlanList] as const,
-  synchronizeForm,
-  { immediate: true }
-);
-
-/** 現在の利用者が対象日別予定を画面上で更新・削除できるか判定する。Backendを最終認可とする。 */
-const canMutateEffortPlan = (effortPlan: TaskEffortPlan): boolean =>
-  props.canEdit &&
-  (props.canManageAnyEffortPlan ||
-    effortPlan.assigneeAccountId === props.currentAccountId);
-
-/** 保存・削除中でなければ未確定入力を破棄するよう親composableへ通知する。 */
-const closeDialog = (): void => {
-  if (!isMutating.value) {
-    emit("close");
-  }
-};
-
-/** Vuetifyが外側クリック等で閉じようとした場合だけ通常のclose処理へ渡す。 */
-const handleDialogModelValue = (value: boolean): void => {
-  if (!value) {
-    closeDialog();
-  }
-};
-
-/** 現在の入力値を複製し、検証とAPI送信を担当する親composableへ渡す。 */
-const submitForm = (): void => {
-  if (props.canEdit && !isMutating.value) {
-    emit("save", { ...form.value });
-  }
-};
 </script>
 
 <template>
-  <v-dialog
-    :model-value="open"
-    max-width="1020"
-    :persistent="isMutating"
-    @update:model-value="handleDialogModelValue"
+  <UModal
+    :open="open"
+    :dismissible="!isMutating"
+    :title="dialogTitle"
+    :ui="{ content: 'max-w-255' }"
+    @update:open="handleDialogVisibility"
   >
-    <v-card>
-      <v-card-title>{{ dialogTitle }}</v-card-title>
-      <v-card-text>
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">
-            {{ message }}
-          </div>
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-4">
-          {{ successMessage }}
-        </v-alert>
+    <template #body>
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-        <v-skeleton-loader v-if="isLoading" type="article, table" />
-        <template v-else-if="task">
-          <v-card v-if="canEdit" variant="outlined" class="mb-5">
-            <v-card-title class="text-subtitle-1">
-              {{ editingEffortPlan ? "日別予定を編集" : "日別予定を登録" }}
-            </v-card-title>
-            <v-card-text>
-              <v-form @submit.prevent="submitForm">
-                <v-row>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model="form.planDate"
-                      label="予定日"
-                      type="date"
+      <div v-if="isLoading" class="flex flex-col gap-3">
+        <USkeleton class="h-6 w-1/3" />
+        <USkeleton class="h-4 w-full" />
+        <USkeleton v-for="row in 4" :key="row" class="h-10 w-full" />
+      </div>
+      <template v-else-if="task">
+        <UCard v-if="canEdit" variant="outline" class="mb-5">
+          <template #header>
+            <div class="text-base font-normal">{{ editingEffortPlan ? "日別予定を編集" : "日別予定を登録" }}</div>
+          </template>
+          <form @submit.prevent="submitForm">
+            <div class="-m-3 flex flex-wrap">
+              <div class="w-full p-3 md:w-1/3">
+                <UFormField label="予定日">
+                  <UInput v-model="form.planDate" type="date" :disabled="isMutating" class="w-full" />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 md:w-1/3">
+                <UFormField label="予定工数（分）" help="1日・1予定担当者につき1分以上1440分以下です。">
+                  <UInput
+                    v-model.nullable="form.plannedEffortMinutes"
+                    type="number"
+                    min="1"
+                    max="1440"
+                    step="1"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 md:w-1/3">
+                <UFormField label="予定担当者">
+                  <USelect
+                    :model-value="form.assigneeAccountId ?? undefined"
+                    :items="assigneeOptions"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isMutating"
+                    class="w-full"
+                    @update:model-value="form.assigneeAccountId = $event"
+                  />
+                </UFormField>
+              </div>
+            </div>
+          </form>
+          <template #footer>
+            <UButton v-if="editingEffortPlan" variant="ghost" :disabled="isMutating" @click="emit('cancelEdit')">新規登録へ戻る</UButton>
+            <UButton
+              color="primary"
+              variant="ghost"
+              class="ms-auto"
+              :loading="isSaving"
+              :disabled="isDeleting || assigneeOptions.length === 0"
+              @click="submitForm"
+            >
+              {{ editingEffortPlan ? "更新" : "登録" }}
+            </UButton>
+          </template>
+        </UCard>
+
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          <h2 class="text-base">登録済み日別予定</h2>
+          <UBadge>Task全体 {{ formatEffortMinutes(effortPlanList?.taskPlannedEffortMinutes ?? 0) }}</UBadge>
+          <UBadge color="primary">日別合計 {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}</UBadge>
+          <UBadge :color="allocationStatus.color">{{ allocationStatus.label }}</UBadge>
+          <UBadge size="sm" variant="outline">{{ effortPlanList?.effortPlans.length ?? 0 }}件</UBadge>
+        </div>
+
+        <StatusAlert v-if="(effortPlanList?.unallocatedEffortMinutes ?? 0) < 0" type="warning" variant="soft" class="mb-3">
+          日別予定合計がTask全体予定を超えています。必要に応じて配賦を調整してください。
+        </StatusAlert>
+
+        <div v-if="effortPlanList?.effortPlans.length" class="overflow-x-auto">
+          <table class="app-table app-table-hover min-w-195 [&_td]:h-13 [&_th]:h-13">
+            <thead>
+              <tr>
+                <th scope="col">予定日</th>
+                <th scope="col">予定担当者</th>
+                <th scope="col">予定工数</th>
+                <th scope="col">version</th>
+                <th v-if="canEdit" scope="col">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="effortPlan in effortPlanList.effortPlans" :key="effortPlan.effortPlanId">
+                <td class="whitespace-nowrap">{{ effortPlan.planDate }}</td>
+                <td>
+                  {{ effortPlan.assigneeDisplayName }}
+                  <div class="text-xs text-muted">アカウントID: {{ effortPlan.assigneeAccountId }}</div>
+                </td>
+                <td class="whitespace-nowrap">{{ formatEffortMinutes(effortPlan.plannedEffortMinutes) }}</td>
+                <td>{{ effortPlan.version }}</td>
+                <td v-if="canEdit">
+                  <div
+                    v-if="canMutateOwnedEntry(canEdit, canManageAnyEffortPlan, effortPlan.assigneeAccountId, currentAccountId)"
+                    class="flex gap-1"
+                  >
+                    <UButton
+                      icon="i-mdi-pencil-outline"
+                      size="sm"
+                      variant="ghost"
+                      square
                       :disabled="isMutating"
+                      :aria-label="`${effortPlan.planDate}の予定工数を編集`"
+                      @click="emit('edit', effortPlan.effortPlanId)"
                     />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-text-field
-                      v-model.number="form.plannedEffortMinutes"
-                      label="予定工数（分）"
-                      type="number"
-                      min="1"
-                      max="1440"
-                      step="1"
+                    <UButton
+                      icon="i-mdi-delete-outline"
+                      color="error"
+                      size="sm"
+                      variant="ghost"
+                      square
                       :disabled="isMutating"
-                      hint="1日・1予定担当者につき1分以上1440分以下です。"
-                      persistent-hint
+                      :aria-label="`${effortPlan.planDate}の予定工数を削除`"
+                      @click="emit('requestDelete', effortPlan.effortPlanId)"
                     />
-                  </v-col>
-                  <v-col cols="12" md="4">
-                    <v-select
-                      v-model="form.assigneeAccountId"
-                      label="予定担当者"
-                      :items="assigneeOptions"
-                      :disabled="isMutating"
-                    />
-                  </v-col>
-                </v-row>
-              </v-form>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn
-                v-if="editingEffortPlan"
-                :disabled="isMutating"
-                @click="emit('cancelEdit')"
-              >
-                新規登録へ戻る
-              </v-btn>
-              <v-spacer />
-              <v-btn
-                color="primary"
-                :loading="isSaving"
-                :disabled="isDeleting || assigneeOptions.length === 0"
-                @click="submitForm"
-              >
-                {{ editingEffortPlan ? "更新" : "登録" }}
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
-          <div class="d-flex align-center flex-wrap ga-2 mb-3">
-            <h2 class="text-subtitle-1">登録済み日別予定</h2>
-            <v-chip variant="tonal">
-              Task全体 {{ formatEffortMinutes(effortPlanList?.taskPlannedEffortMinutes ?? 0) }}
-            </v-chip>
-            <v-chip color="primary" variant="tonal">
-              日別合計 {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}
-            </v-chip>
-            <v-chip :color="allocationStatusColor" variant="tonal">
-              {{ allocationStatusLabel }}
-            </v-chip>
-            <v-chip size="small" variant="outlined">
-              {{ effortPlanList?.effortPlans.length ?? 0 }}件
-            </v-chip>
-          </div>
-
-          <v-alert
-            v-if="(effortPlanList?.unallocatedEffortMinutes ?? 0) < 0"
-            type="warning"
-            variant="tonal"
-            class="mb-3"
-          >
-            日別予定合計がTask全体予定を超えています。必要に応じて配賦を調整してください。
-          </v-alert>
-
-          <div v-if="effortPlanList?.effortPlans.length" class="effort-plan-table-scroll">
-            <v-table hover class="effort-plan-table">
-              <thead>
-                <tr>
-                  <th scope="col">予定日</th>
-                  <th scope="col">予定担当者</th>
-                  <th scope="col">予定工数</th>
-                  <th scope="col">version</th>
-                  <th v-if="canEdit" scope="col">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr
-                  v-for="effortPlan in effortPlanList.effortPlans"
-                  :key="effortPlan.effortPlanId"
-                >
-                  <td class="text-no-wrap">{{ effortPlan.planDate }}</td>
-                  <td>
-                    {{ effortPlan.assigneeDisplayName }}
-                    <div class="text-caption text-medium-emphasis">
-                      アカウントID: {{ effortPlan.assigneeAccountId }}
-                    </div>
-                  </td>
-                  <td class="text-no-wrap">
-                    {{ formatEffortMinutes(effortPlan.plannedEffortMinutes) }}
-                  </td>
-                  <td>{{ effortPlan.version }}</td>
-                  <td v-if="canEdit">
-                    <div v-if="canMutateEffortPlan(effortPlan)" class="d-flex ga-1">
-                      <v-btn
-                        icon="mdi-pencil-outline"
-                        size="small"
-                        variant="text"
-                        :disabled="isMutating"
-                        :aria-label="`${effortPlan.planDate}の予定工数を編集`"
-                        @click="emit('edit', effortPlan.effortPlanId)"
-                      />
-                      <v-btn
-                        icon="mdi-delete-outline"
-                        color="error"
-                        size="small"
-                        variant="text"
-                        :disabled="isMutating"
-                        :aria-label="`${effortPlan.planDate}の予定工数を削除`"
-                        @click="emit('requestDelete', effortPlan.effortPlanId)"
-                      />
-                    </div>
-                    <span v-else class="text-caption text-medium-emphasis">
-                      参照のみ
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
-          </div>
-          <v-alert v-else type="info" variant="tonal">
-            このTaskの日別予定工数はまだ登録されていません。
-          </v-alert>
-        </template>
-      </v-card-text>
-      <v-card-actions>
-        <v-spacer />
-        <v-btn :disabled="isMutating" @click="closeDialog">閉じる</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+                  </div>
+                  <span v-else class="text-xs text-muted">参照のみ</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <StatusAlert v-else type="info" variant="soft">このTaskの日別予定工数はまだ登録されていません。</StatusAlert>
+      </template>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" :disabled="isMutating" @click="closeDialog">閉じる</UButton>
+    </template>
+  </UModal>
 </template>
-
-<style scoped>
-.effort-plan-table-scroll {
-  overflow-x: auto;
-}
-
-.effort-plan-table {
-  min-width: 780px;
-}
-</style>

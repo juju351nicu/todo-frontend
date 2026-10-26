@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -17,6 +17,9 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 
+/** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
+export const TEMPLATE_NAME_MAX_LENGTH = 100;
+
 /** Project全体を本人所有TemplateへcaptureするDialog状態を管理する。 */
 export const useProjectTemplateCapture = (
   projectId: Readonly<Ref<number>>,
@@ -30,6 +33,17 @@ export const useProjectTemplateCapture = (
   const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isSaving = ref(false);
+  /** Template名（trim後1～100文字）と基準日が入力済みで、参照専用・保存中でない場合だけ保存できる。Backendも再検査する。 */
+  const canCapture = computed<boolean>(() => {
+    const trimmedName = name.value.trim();
+    return (
+      !disabled.value &&
+      !isSaving.value &&
+      trimmedName.length > 0 &&
+      trimmedName.length <= TEMPLATE_NAME_MAX_LENGTH &&
+      baseDate.value.length > 0
+    );
+  });
 
   /** capture Dialogを空の名称と今日の基準日で開く。 */
   const open = (): void => {
@@ -116,6 +130,7 @@ export const useProjectTemplateCapture = (
 
   return {
     baseDate,
+    canCapture,
     capture,
     close,
     errorMessages,

@@ -166,4 +166,26 @@ describe("useProjectComments", () => {
     expect(mocks.taskCommentApi.findProjectComments).not.toHaveBeenCalled();
     expect(page.isOpen.value).toBe(false);
   });
+
+  it("archiveされていないTaskを選ぶとDialogを閉じてTask IDを通知する", () => {
+    const onTaskSelected = vi.fn();
+    const page = useProjectComments(ref(5), onTaskSelected);
+    page.isOpen.value = true;
+
+    page.selectTask({ commentId: 1, taskId: 31, taskArchived: false });
+
+    expect(page.isOpen.value).toBe(false);
+    expect(onTaskSelected).toHaveBeenCalledWith(31);
+  });
+
+  it("archive済みTaskは選択しても通知しない", () => {
+    const onTaskSelected = vi.fn();
+    const page = useProjectComments(ref(5), onTaskSelected);
+    page.isOpen.value = true;
+
+    page.selectTask({ commentId: 1, taskId: 31, taskArchived: true });
+
+    expect(page.isOpen.value).toBe(true);
+    expect(onTaskSelected).not.toHaveBeenCalled();
+  });
 });

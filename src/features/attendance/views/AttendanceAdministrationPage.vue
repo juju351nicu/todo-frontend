@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import AppHeader from "@/app/layouts/AppHeader.vue";
 import AttendanceCorrectionAdministration from "@/features/attendance/components/AttendanceCorrectionAdministration.vue";
 import { useAttendanceAdministrationPage } from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import {
@@ -12,7 +11,9 @@ import {
   getAttendanceMonthStatusLabel,
   getAttendancePunchStateLabel,
 } from "@/features/attendance/utils/attendance";
+import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   approve,
@@ -57,226 +58,209 @@ onBeforeMount(initialize);
 </script>
 
 <template>
-  <AppHeader />
   <LoadingIndicator v-if="isLoading" />
-  <v-container fluid class="attendance-administration-page pa-4 pa-md-6">
-    <v-card class="mx-auto" max-width="1500">
-      <v-card-title class="d-flex align-center flex-wrap ga-3">
-        <v-icon icon="mdi-calendar-account-outline" />
-        勤怠月次確認
-      </v-card-title>
-      <v-card-text>
-        <v-row align="center" dense class="mb-3">
-          <v-col cols="12" sm="4" md="3">
-            <v-text-field v-model="selectedMonth" type="month" label="対象月" hide-details />
-          </v-col>
-          <v-col cols="12" sm="4" md="3">
-            <v-select
-              v-model="selectedStatus"
-              :items="statusOptions"
-              label="状態"
-              hide-details
-            />
-          </v-col>
-          <v-col cols="12" sm="4" md="3">
-            <v-btn color="primary" prepend-icon="mdi-magnify" :disabled="isLoading" @click="search">
-              検索
-            </v-btn>
-          </v-col>
-          <v-col v-if="canExport" cols="12" sm="4" md="3">
-            <v-btn
-              color="success"
-              prepend-icon="mdi-file-delimited-outline"
-              variant="tonal"
-              :disabled="isLoading"
-              :loading="isExportingMonthlyCsv"
-              @click="downloadMonthlyCsv"
-            >
-              月次CSV
-            </v-btn>
-          </v-col>
-        </v-row>
+  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 md:p-6">
+    <UCard class="mx-auto max-w-375">
+      <template #header>
+        <h2 class="flex flex-wrap items-center gap-3">
+          <UIcon name="i-mdi-calendar-account-outline" class="size-6" />
+          勤怠月次確認
+        </h2>
+      </template>
 
-        <p v-if="canExport" class="text-caption text-medium-emphasis mb-4">
-          選択月の全アカウント・月内全日を出力します。Task実績への配賦状況を含み、メールアドレスや認証情報は含みません。
-        </p>
+      <div class="-m-1 mb-2 flex flex-wrap items-center">
+        <div class="w-full p-1 sm:w-1/3 md:w-1/4">
+          <UFormField label="対象月" class="pb-0">
+            <UInput v-model="selectedMonth" type="month" class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-1 sm:w-1/3 md:w-1/4">
+          <UFormField label="状態" class="pb-0">
+            <USelect v-model="selectedStatus" :items="[...statusOptions]" label-key="title" value-key="value" class="w-full" />
+          </UFormField>
+        </div>
+        <div class="w-full p-1 sm:w-1/3 md:w-1/4">
+          <UButton color="primary" icon="i-mdi-magnify" :disabled="isLoading" @click="search">検索</UButton>
+        </div>
+        <div v-if="canExport" class="w-full p-1 sm:w-1/3 md:w-1/4">
+          <UButton
+            color="success"
+            icon="i-mdi-file-delimited-outline"
+            variant="soft"
+            :disabled="isLoading"
+            :loading="isExportingMonthlyCsv"
+            @click="downloadMonthlyCsv"
+          >
+            月次CSV
+          </UButton>
+        </div>
+      </div>
 
-        <v-alert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </v-alert>
-        <v-alert v-if="successMessage" type="success" class="mb-4">
-          {{ successMessage }}
-        </v-alert>
+      <p v-if="canExport" class="mb-4 text-xs text-muted">
+        選択月の全アカウント・月内全日を出力します。Task実績への配賦状況を含み、メールアドレスや認証情報は含みません。
+      </p>
 
-        <AttendanceCorrectionAdministration
-          v-if="canReview"
-          :correction-requests="correctionRequests"
-          :current-day="selectedCorrectionCurrentDay"
-          :processing-action="processingAction"
-          :reject-reason="correctionRejectReason"
-          :review-comment="correctionReviewComment"
-          :selected-correction="selectedCorrection"
-          :selected-status="selectedCorrectionStatus"
-          :status-options="correctionStatusOptions"
-          @approve="approveCorrectionRequest"
-          @reject="rejectCorrectionRequest"
-          @search="searchCorrectionRequests"
-          @select="selectCorrectionRequest"
-          @update-reject-reason="correctionRejectReason = $event"
-          @update-review-comment="correctionReviewComment = $event"
-          @update-status="selectedCorrectionStatus = $event"
-        />
+      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4">
+        {{ successMessage }}
+      </StatusAlert>
 
-        <v-row>
-          <v-col cols="12" lg="6">
-            <v-card variant="outlined">
-              <v-card-title class="text-subtitle-1">確認対象（{{ months.length }}件）</v-card-title>
-              <v-card-subtitle>提出履歴があり、月次rowが作成済みのaccountだけを表示します。</v-card-subtitle>
-              <v-card-text class="px-0">
-                <div class="attendance-administration-table-scroll">
-                  <v-table density="compact" hover>
-                    <thead>
-                      <tr>
-                        <th scope="col">利用者</th>
-                        <th scope="col">状態</th>
-                        <th scope="col">提出日時</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr
-                        v-for="month in months"
-                        :key="month.attendanceMonthId"
-                        :class="{ 'selected-month-row': month.accountId === selectedAccountId }"
-                        role="button"
-                        tabindex="0"
-                        :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
-                        @click="selectMonth(month)"
-                        @keydown.enter="selectMonth(month)"
-                        @keydown.space.prevent="selectMonth(month)"
-                      >
-                        <td>
-                          <strong>{{ month.displayName }}</strong>
-                          <div class="text-caption text-medium-emphasis">
-                            {{ month.loginId || "OAuth account" }} / ID: {{ month.accountId }}
-                          </div>
-                        </td>
-                        <td>
-                          <v-chip :color="getAttendanceMonthStatusColor(month.statusCode)" size="small">
-                            {{ getAttendanceMonthStatusLabel(month.statusCode) }}
-                          </v-chip>
-                        </td>
-                        <td>{{ formatAttendanceInstant(month.submittedAt) }}</td>
-                      </tr>
-                      <tr v-if="months.length === 0">
-                        <td colspan="3" class="text-center text-medium-emphasis py-6">
-                          条件に一致する勤怠月はありません。
-                        </td>
-                      </tr>
-                    </tbody>
-                  </v-table>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
+      <AttendanceCorrectionAdministration
+        v-if="canReview"
+        :correction-requests="correctionRequests"
+        :current-day="selectedCorrectionCurrentDay"
+        :processing-action="processingAction"
+        :reject-reason="correctionRejectReason"
+        :review-comment="correctionReviewComment"
+        :selected-correction="selectedCorrection"
+        :selected-status="selectedCorrectionStatus"
+        :status-options="correctionStatusOptions"
+        @approve="approveCorrectionRequest"
+        @reject="rejectCorrectionRequest"
+        @search="searchCorrectionRequests"
+        @select="selectCorrectionRequest"
+        @update-reject-reason="correctionRejectReason = $event"
+        @update-review-comment="correctionReviewComment = $event"
+        @update-status="selectedCorrectionStatus = $event"
+      />
 
-          <v-col cols="12" lg="6">
-            <v-card variant="outlined" class="attendance-administration-detail">
-              <template v-if="selectedDetail">
-                <v-card-title class="d-flex align-center flex-wrap ga-2">
-                  {{ selectedListItem?.displayName || `Account ID: ${selectedDetail.accountId}` }}
-                  <v-chip :color="getAttendanceMonthStatusColor(selectedDetail.statusCode)" size="small">
-                    {{ getAttendanceMonthStatusLabel(selectedDetail.statusCode) }}
-                  </v-chip>
-                </v-card-title>
-                <v-card-subtitle>{{ selectedDetail.yearMonth }} / version {{ selectedDetail.version }}</v-card-subtitle>
-                <v-card-text>
-                  <v-row dense class="mb-3">
-                    <v-col cols="4"><span class="text-caption">総勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.grossWorkMinutes) }}</strong></v-col>
-                    <v-col cols="4"><span class="text-caption">休憩</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.breakMinutes) }}</strong></v-col>
-                    <v-col cols="4"><span class="text-caption">差引勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.netWorkMinutes) }}</strong></v-col>
-                  </v-row>
-                  <v-alert v-if="selectedDetail.hasIncompletePeriod" type="warning" density="compact" class="mb-3">
-                    未終了の勤務・休憩区間があります。
-                  </v-alert>
-                  <v-alert v-if="selectedDetail.reviewComment" type="info" density="compact" class="mb-3">
-                    審査コメント: {{ selectedDetail.reviewComment }}
-                  </v-alert>
-
-                  <template v-if="canApproveOrReject">
-                    <v-textarea v-model="reviewComment" label="承認コメント（任意）" maxlength="1000" rows="2" counter />
-                    <v-btn color="success" class="mb-4" :loading="processingAction === 'approve'" @click="approve">
-                      承認
-                    </v-btn>
-                    <v-textarea v-model="rejectReason" label="差戻し理由（必須）" maxlength="1000" rows="2" counter />
-                    <v-btn color="warning" :loading="processingAction === 'reject'" @click="reject">
-                      差戻し
-                    </v-btn>
-                  </template>
-                  <v-btn
-                    v-if="canCloseMonth"
-                    color="secondary"
-                    prepend-icon="mdi-lock-outline"
-                    :loading="processingAction === 'close'"
-                    @click="close"
+      <div class="-m-3 flex flex-wrap">
+        <div class="w-full p-3 lg:w-1/2">
+          <UCard variant="outline" :ui="{ body: 'px-0 sm:px-0' }">
+            <template #header>
+              <div class="text-base font-normal">確認対象（{{ months.length }}件）</div>
+              <div class="text-sm font-normal tracking-normal text-muted">
+                提出履歴があり、月次rowが作成済みのaccountだけを表示します。
+              </div>
+            </template>
+            <div class="max-h-170 overflow-auto">
+              <table class="app-table app-table-hover">
+                <thead>
+                  <tr>
+                    <th scope="col">利用者</th>
+                    <th scope="col">状態</th>
+                    <th scope="col">提出日時</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="month in months"
+                    :key="month.attendanceMonthId"
+                    class="cursor-pointer"
+                    :class="{ 'bg-primary/12': month.accountId === selectedAccountId }"
+                    role="button"
+                    tabindex="0"
+                    :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
+                    @click="selectMonth(month)"
+                    @keydown.enter="selectMonth(month)"
+                    @keydown.space.prevent="selectMonth(month)"
                   >
-                    月次を締める
-                  </v-btn>
+                    <td>
+                      <strong>{{ month.displayName }}</strong>
+                      <div class="text-xs text-muted">{{ month.loginId || "OAuth account" }} / ID: {{ month.accountId }}</div>
+                    </td>
+                    <td>
+                      <UBadge :color="getAttendanceMonthStatusColor(month.statusCode)" size="sm">
+                        {{ getAttendanceMonthStatusLabel(month.statusCode) }}
+                      </UBadge>
+                    </td>
+                    <td>{{ formatAttendanceInstant(month.submittedAt) }}</td>
+                  </tr>
+                  <tr v-if="months.length === 0">
+                    <td colspan="3" class="py-6 text-center text-muted">条件に一致する勤怠月はありません。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </UCard>
+        </div>
 
-                  <v-divider class="my-4" />
-                  <div class="text-subtitle-2 mb-2">登録済み日別明細</div>
-                  <v-table density="compact">
-                    <thead><tr><th>勤務日</th><th>状態</th><th>勤務区間数</th></tr></thead>
-                    <tbody>
-                      <tr v-for="day in selectedDetail.days" :key="day.workDate">
-                        <td>{{ formatAttendanceDate(day.workDate) }}</td>
-                        <td>{{ getAttendancePunchStateLabel(day.punchState) }}</td>
-                        <td>{{ day.workPeriods.length }}</td>
-                      </tr>
-                      <tr v-if="selectedDetail.days.length === 0">
-                        <td colspan="3" class="text-center text-medium-emphasis">登録済み勤怠日はありません。</td>
-                      </tr>
-                    </tbody>
-                  </v-table>
-                </v-card-text>
+        <div class="w-full p-3 lg:w-1/2">
+          <UCard variant="outline" class="attendance-administration-detail static lg:sticky lg:top-20">
+            <template v-if="selectedDetail" #header>
+              <div class="flex flex-wrap items-center gap-2">
+                {{ selectedListItem?.displayName || `Account ID: ${selectedDetail.accountId}` }}
+                <UBadge :color="getAttendanceMonthStatusColor(selectedDetail.statusCode)" size="sm">
+                  {{ getAttendanceMonthStatusLabel(selectedDetail.statusCode) }}
+                </UBadge>
+              </div>
+              <div class="text-sm font-normal tracking-normal text-muted">
+                {{ selectedDetail.yearMonth }} / version {{ selectedDetail.version }}
+              </div>
+            </template>
+            <template v-if="selectedDetail">
+              <div class="-m-1 mb-2 flex">
+                <div class="w-1/3 p-1">
+                  <span class="text-xs">総勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.grossWorkMinutes) }}</strong>
+                </div>
+                <div class="w-1/3 p-1">
+                  <span class="text-xs">休憩</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.breakMinutes) }}</strong>
+                </div>
+                <div class="w-1/3 p-1">
+                  <span class="text-xs">差引勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.netWorkMinutes) }}</strong>
+                </div>
+              </div>
+              <StatusAlert v-if="selectedDetail.hasIncompletePeriod" type="warning" density="compact" class="mb-3">
+                未終了の勤務・休憩区間があります。
+              </StatusAlert>
+              <StatusAlert v-if="selectedDetail.reviewComment" type="info" density="compact" class="mb-3">
+                審査コメント: {{ selectedDetail.reviewComment }}
+              </StatusAlert>
+
+              <template v-if="canApproveOrReject">
+                <div class="relative">
+                  <UFormField label="承認コメント（任意）">
+                    <UTextarea v-model="reviewComment" :maxlength="1000" :rows="2" class="w-full" />
+                  </UFormField>
+                  <FieldCounter :value="reviewComment" :max="1000" />
+                </div>
+                <UButton color="success" class="mb-4" :loading="processingAction === 'approve'" @click="approve">承認</UButton>
+                <div class="relative">
+                  <UFormField label="差戻し理由（必須）">
+                    <UTextarea v-model="rejectReason" :maxlength="1000" :rows="2" class="w-full" />
+                  </UFormField>
+                  <FieldCounter :value="rejectReason" :max="1000" />
+                </div>
+                <UButton color="warning" :loading="processingAction === 'reject'" @click="reject">差戻し</UButton>
               </template>
-              <v-card-text v-else class="text-center text-medium-emphasis py-12">
-                左の一覧から確認する利用者を選択してください。
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-  </v-container>
+              <UButton
+                v-if="canCloseMonth"
+                color="secondary"
+                icon="i-mdi-lock-outline"
+                :loading="processingAction === 'close'"
+                @click="close"
+              >
+                月次を締める
+              </UButton>
+
+              <USeparator class="my-4" />
+              <div class="mb-2 text-sm font-medium">登録済み日別明細</div>
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th>勤務日</th>
+                    <th>状態</th>
+                    <th>勤務区間数</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="day in selectedDetail.days" :key="day.workDate">
+                    <td>{{ formatAttendanceDate(day.workDate) }}</td>
+                    <td>{{ getAttendancePunchStateLabel(day.punchState) }}</td>
+                    <td>{{ day.workPeriods.length }}</td>
+                  </tr>
+                  <tr v-if="selectedDetail.days.length === 0">
+                    <td colspan="3" class="text-center text-muted">登録済み勤怠日はありません。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </template>
+            <div v-else class="py-8 text-center text-muted">左の一覧から確認する利用者を選択してください。</div>
+          </UCard>
+        </div>
+      </div>
+    </UCard>
+  </div>
 </template>
-
-<style scoped>
-.attendance-administration-page {
-  background: rgb(var(--v-theme-surface-variant));
-  min-height: calc(100vh - 64px);
-}
-
-.attendance-administration-table-scroll {
-  max-height: 680px;
-  overflow: auto;
-}
-
-.attendance-administration-table-scroll tbody tr {
-  cursor: pointer;
-}
-
-.selected-month-row {
-  background: rgba(var(--v-theme-primary), 0.12);
-}
-
-.attendance-administration-detail {
-  position: sticky;
-  top: 80px;
-}
-
-@media (max-width: 1279px) {
-  .attendance-administration-detail {
-    position: static;
-  }
-}
-</style>

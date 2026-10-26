@@ -12,7 +12,7 @@ const CONFIGURED_MEMBER_ACCOUNT_ID =
 /** Project一覧から採番IDへ依存せず専用Source ProjectのBoardを開く。 */
 const openSourceBoard = async (page: Page): Promise<void> => {
   await page.goto("/projects");
-  const projectCard = page.locator(".v-card").filter({
+  const projectCard = page.getByRole("article").filter({
     has: page.getByText(SOURCE_PROJECT_KEY, { exact: true }),
   });
   await projectCard.getByRole("button", { name: "Boardを開く" }).click();
