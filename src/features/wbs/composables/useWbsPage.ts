@@ -6,11 +6,12 @@ import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
+import { useWbsEarnedValue } from "@/features/wbs/composables/useWbsEarnedValue";
+import { useWbsReportExport } from "@/features/wbs/composables/useWbsReportExport";
 import { useWbsWorkload } from "@/features/wbs/composables/useWbsWorkload";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type {
-  EarnedValueResponse,
   TaskDependency,
   TaskDependencyCreateForm,
   TaskDependencyCreateRequest,
@@ -36,8 +37,6 @@ import type {
   WbsBaselineDetailResponse,
   WbsBaselineListResponse,
   WbsBaselineSummary,
-  WbsReportDownload,
-  WbsReportType,
   WbsResponse,
   WbsTask,
   WbsTaskEditForm,
@@ -47,8 +46,6 @@ import {
   resolveWbsErrorMessages,
   WBS_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/wbs/utils/apiErrors";
-import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
-import { getToday } from "@/features/wbs/utils/effort";
 import {
   buildTaskEffortPlanCreateRequest,
   buildTaskEffortPlanUpdateRequest,
@@ -94,18 +91,12 @@ export const useWbsPage = () => {
   /** WBSの表示形式。Gantt libraryは表示切替時に初めて読み込むため、既定は階層表。 */
   const activeView = ref<WbsViewMode>("table");
   const dependencyEditorErrorMessages = ref<string[]>([]);
-  const earnedValue = ref<EarnedValueResponse | null>(null);
-  const earnedValueErrorMessages = ref<string[]>([]);
-  const earnedValueStatusDate = ref(getToday());
   const activeBaselineDetail = ref<WbsBaselineDetailResponse | null>(null);
   const activatingBaselineId = ref<number | null>(null);
   const baselineEditorErrorMessages = ref<string[]>([]);
   const baselineErrorMessages = ref<string[]>([]);
   const baselineList = ref<WbsBaselineListResponse | null>(null);
   const baselineSuccessMessage = ref("");
-  const exportingReportType = ref<WbsReportType | null>(null);
-  const reportExportErrorMessages = ref<string[]>([]);
-  const reportExportSuccessMessage = ref("");
   const dependencyList = ref<TaskDependencyListResponse | null>(null);
   const dependencyPendingDelete = ref<TaskDependency | null>(null);
   const editingEffortPlan = ref<TaskEffortPlan | null>(null);
@@ -113,7 +104,6 @@ export const useWbsPage = () => {
   const editorErrorMessages = ref<string[]>([]);
   const errorMessages = ref<string[]>([]);
   const isDeletingDependency = ref(false);
-  const isLoadingEarnedValue = ref(false);
   const isDeletingEffortPlan = ref(false);
   const isDependencyEditorOpen = ref(false);
   const isEditorOpen = ref(false);
@@ -252,6 +242,21 @@ export const useWbsPage = () => {
       closeWorkLogDialogAfterOperation();
     },
   });
+  const {
+    clearEarnedValue,
+    earnedValue,
+    earnedValueErrorMessages,
+    earnedValueStatusDate,
+    isLoadingEarnedValue,
+    loadEarnedValueMetrics,
+  } = useWbsEarnedValue(context);
+  const {
+    clearReportExportMessages,
+    downloadWbsReport,
+    exportingReportType,
+    reportExportErrorMessages,
+    reportExportSuccessMessage,
+  } = useWbsReportExport(context, earnedValueStatusDate);
 
   const canManageBaselines = computed(
     () =>
@@ -455,8 +460,7 @@ export const useWbsPage = () => {
       return;
     }
     errorMessages.value = [];
-    earnedValue.value = null;
-    earnedValueErrorMessages.value = [];
+    clearEarnedValue();
     successMessage.value = "";
     workloadErrorMessages.value = [];
     workingCalendarErrorMessages.value = [];
@@ -464,8 +468,7 @@ export const useWbsPage = () => {
     baselineEditorErrorMessages.value = [];
     baselineErrorMessages.value = [];
     baselineSuccessMessage.value = "";
-    reportExportErrorMessages.value = [];
-    reportExportSuccessMessage.value = "";
+    clearReportExportMessages();
     if (projectId.value === null) {
       project.value = null;
       wbs.value = null;
@@ -505,160 +508,6 @@ export const useWbsPage = () => {
     } finally {
       isLoading.value = false;
     }
-  };
-
-  /**
-   * 基準日を検証してactive baseline基準のEVMを取得する。
-   * 計算式と丸めはBackendへ委ね、FrontendではResponseをそのまま確定値として保持する。
-   *
-   * @param statusDate 集計対象に含めるyyyy-MM-dd形式の業務日
-   */
-  const loadEarnedValueMetrics = async (statusDate: string): Promise<void> => {
-    if (projectId.value === null || isLoadingEarnedValue.value) {
-      return;
-    }
-    const validationMessages = validateEarnedValueStatusDate(statusDate);
-    if (validationMessages.length > 0) {
-      earnedValueErrorMessages.value = validationMessages;
-      return;
-    }
-
-    isLoadingEarnedValue.value = true;
-    earnedValueErrorMessages.value = [];
-    earnedValueStatusDate.value = statusDate;
-    try {
-      earnedValue.value = await WbsApi.getEarnedValueMetrics(
-        projectId.value,
-        statusDate
-      );
-    } catch (error: unknown) {
-      earnedValue.value = null;
-      await handleEarnedValueReadError(error);
-    } finally {
-      isLoadingEarnedValue.value = false;
-    }
-  };
-
-  /** EVM参照APIのstatusを検索欄の案内またはSession動作へ変換する。 */
-  const handleEarnedValueReadError = async (error: unknown): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.earnedValue.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      earnedValueErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    if (error.status === 409) {
-      earnedValueErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.earnedValue.activeBaselineRequired
-      );
-      return;
-    }
-    earnedValueErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.earnedValue.loadFailed
-    );
-  };
-
-  /**
-   * Backendから受け取ったExcel Blobをbrowserの一時URLで保存し、使用後に必ず解放する。
-   * 一時URLやbinaryをStore・localStorageへ残さず、実行中のdownloadだけに閉じ込める。
-   */
-  const saveWbsReportDownload = (file: WbsReportDownload): void => {
-    const objectUrl = URL.createObjectURL(file.content);
-    const anchor = document.createElement("a");
-    try {
-      anchor.href = objectUrl;
-      anchor.download = file.fileName;
-      anchor.hidden = true;
-      document.body.appendChild(anchor);
-      anchor.click();
-    } finally {
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
-    }
-  };
-
-  /**
-   * 共通基準日を検証し、週次または月次WBS Excel帳票を1回だけdownloadする。
-   *
-   * @param reportType 週次または月次の帳票期間
-   * @param statusDate EVMと帳票期間に使用するyyyy-MM-dd形式の基準日
-   */
-  const downloadWbsReport = async (
-    reportType: WbsReportType,
-    statusDate: string
-  ): Promise<void> => {
-    if (projectId.value === null || exportingReportType.value !== null) {
-      return;
-    }
-    if (validateEarnedValueStatusDate(statusDate).length > 0) {
-      reportExportErrorMessages.value = [
-        "Excel帳票の基準日を入力してください。",
-      ];
-      return;
-    }
-
-    exportingReportType.value = reportType;
-    earnedValueStatusDate.value = statusDate;
-    reportExportErrorMessages.value = [];
-    reportExportSuccessMessage.value = "";
-    try {
-      const file = await WbsApi.downloadWbsReport(
-        projectId.value,
-        reportType,
-        statusDate
-      );
-      saveWbsReportDownload(file);
-      reportExportSuccessMessage.value = `${reportType === "weekly" ? "週次" : "月次"}Excel帳票をダウンロードしました。`;
-    } catch (error: unknown) {
-      await handleWbsReportDownloadError(error);
-    } finally {
-      exportingReportType.value = null;
-    }
-  };
-
-  /** Excel download APIのstatusを帳票cardの案内またはSession動作へ変換する。 */
-  const handleWbsReportDownloadError = async (
-    error: unknown
-  ): Promise<void> => {
-    if (!(error instanceof WbsApiError)) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
-      return;
-    }
-    if (error.status === 401) {
-      await handleUnauthorized();
-      return;
-    }
-    if (error.status === 403) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.report.forbidden];
-      return;
-    }
-    if (error.status === 404) {
-      reportExportErrorMessages.value = [DISPLAY_MESSAGES.wbs.projectNotFound];
-      return;
-    }
-    if (error.status === 409) {
-      reportExportErrorMessages.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.report.activeBaselineRequired
-      );
-      return;
-    }
-    reportExportErrorMessages.value = resolveWbsErrorMessages(
-      error,
-      DISPLAY_MESSAGES.wbs.report.downloadFailed
-    );
   };
 
   /** WBS APIのstatusを、認証状態を含む参照画面の案内へ変換する。 */
@@ -2412,8 +2261,7 @@ export const useWbsPage = () => {
         `baseline「${created.baseline.name}」を作成しました` +
         `（Task ${created.taskCount}件、依存関係 ${created.dependencyCount}件、日別予定 ${created.effortPlanCount}件）。`;
       // EVMはactive baselineへ紐づくため、作成前の集計結果を新しい基準計画として表示し続けない。
-      earnedValue.value = null;
-      earnedValueErrorMessages.value = [];
+      clearEarnedValue();
       // baseline作成自体は確定済みのため、再取得失敗を作成失敗として誤表示しない。
       await reloadWbsBaselines();
     } catch (error: unknown) {
@@ -2456,8 +2304,7 @@ export const useWbsPage = () => {
       );
       baselineSuccessMessage.value = `baseline「${activated.name}」を有効化しました。`;
       // 切替前baselineの指標は意味が変わるため、利用者が新しい基準日で再集計するまで破棄する。
-      earnedValue.value = null;
-      earnedValueErrorMessages.value = [];
+      clearEarnedValue();
       // active切替成功後の一覧取得失敗は、切替失敗ではなく再読込案内として扱う。
       await reloadWbsBaselines();
     } catch (error: unknown) {
