@@ -11,14 +11,17 @@ import StatusAlert from "@/shared/components/StatusAlert.vue";
 const {
   alerts,
   badgeCount,
+  canExpandNotification,
   errorMessage,
   events,
   handleMenuVisibility,
   hasItems,
   isLoading,
   isMenuOpen,
+  isNotificationExpanded,
   loadNotificationCenter,
   navigateToNotification,
+  openNotificationEvent,
   unresolvedAlertCount,
 } = useNotificationCenter();
 </script>
@@ -96,24 +99,37 @@ const {
           <div class="px-4 pt-2.5 pb-1.5 text-[0.78rem] font-bold tracking-[0.04em] text-muted">お知らせ・更新</div>
           <ul>
             <li v-for="eventItem in events" :key="eventItem.notificationEventId">
+              <!-- 遷移先のないお知らせは、押すと本文の全文を開閉する（2行では読み切れないため）。 -->
               <button
                 type="button"
                 class="flex w-full gap-8 border-t border-default px-4 py-2 text-start hover:bg-elevated"
                 :class="{ 'bg-primary/6': !eventItem.read }"
-                @click="navigateToNotification(eventItem.navigationPath)"
+                :aria-expanded="canExpandNotification(eventItem) ? isNotificationExpanded(eventItem.notificationEventId) : undefined"
+                @click="openNotificationEvent(eventItem)"
               >
                 <UIcon
                   :name="getNotificationEventIcon(eventItem.eventType)"
                   class="mt-0.5 size-6 shrink-0 text-secondary"
                 />
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                   <span class="flex items-center gap-2 text-base">
                     <span>{{ eventItem.title }}</span>
                     <span v-if="!eventItem.read" class="size-2 shrink-0 rounded-full bg-primary" aria-label="未読" />
                   </span>
-                  <span class="line-clamp-2 text-sm text-muted">{{ eventItem.message }}</span>
-                  <span class="mt-1 block text-[0.72rem] text-muted">
+                  <span
+                    class="text-sm whitespace-pre-line text-muted"
+                    :class="isNotificationExpanded(eventItem.notificationEventId) ? 'block' : 'line-clamp-2'"
+                    >{{ eventItem.message }}</span
+                  >
+                  <span class="mt-1 flex items-center gap-1 text-[0.72rem] text-muted">
                     {{ eventItem.publisherDisplayName }}・{{ formatNotificationOccurredAt(eventItem.occurredAt) }}
+                    <span v-if="canExpandNotification(eventItem)" class="ms-auto inline-flex items-center">
+                      {{ isNotificationExpanded(eventItem.notificationEventId) ? "閉じる" : "全文を表示" }}
+                      <UIcon
+                        :name="isNotificationExpanded(eventItem.notificationEventId) ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                        class="size-4"
+                      />
+                    </span>
                   </span>
                 </span>
               </button>

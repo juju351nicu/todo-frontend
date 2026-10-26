@@ -9,6 +9,7 @@ import type {
   NotificationAlert,
   NotificationEvent,
 } from "@/features/notification/types/notification";
+import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
 
 /** 別画面で通知発生操作を完了したとき、ベルの明示的再読込を依頼するbrowser event名。 */
@@ -93,6 +94,18 @@ export const useNotificationCenter = () => {
     await router.push(path);
   };
 
+  const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
+    useExpandableNotificationMessages();
+
+  /**
+   * イベント通知を押したときの処理。遷移先があれば遷移し、管理者お知らせのように遷移先がなければ本文の全文表示を切り替える。
+   *
+   * @param eventItem 押されたイベント通知
+   */
+  const openNotificationEvent = async (eventItem: NotificationEvent): Promise<void> => {
+    await openOrToggleNotification(eventItem, navigateToNotification);
+  };
+
   /** Windowへfocusが戻った時点で、別タブの操作結果を通知へ反映する。 */
   const handleWindowFocus = (): void => {
     void loadNotificationCenter();
@@ -139,14 +152,17 @@ export const useNotificationCenter = () => {
   return {
     alerts,
     badgeCount,
+    canExpandNotification,
     errorMessage,
     events,
     handleMenuVisibility,
     hasItems,
     isLoading,
     isMenuOpen,
+    isNotificationExpanded,
     loadNotificationCenter,
     navigateToNotification,
+    openNotificationEvent,
     unreadEventCount,
     unresolvedAlertCount,
   };

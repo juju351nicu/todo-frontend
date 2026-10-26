@@ -13,7 +13,7 @@ import type {
   DashboardTask,
 } from "@/features/dashboard/types/dashboard";
 import { useUserStore } from "@/features/auth/stores/user";
-import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
+import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
@@ -35,6 +35,8 @@ const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
  */
 export const useDashboardPage = () => {
   const router = useRouter();
+  const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
+    useExpandableNotificationMessages();
   const userStore = useUserStore();
 
   const dashboard = ref<BasicDashboardResponse | null>(null);
@@ -201,17 +203,18 @@ export const useDashboardPage = () => {
     await router.push({ name: "InquiryForm" });
   };
 
-  /** Backend通知の安全なFrontend内pathだけへ遷移する。 */
+  /**
+   * 通知を押したときの処理。Backend通知の安全なFrontend内pathがあればそこへ遷移し、
+   * 管理者お知らせのように遷移先がなければ本文の全文表示を切り替える（一覧は2行に切り詰めるため）。
+   *
+   * @param event 押された通知
+   */
   const openNotificationEvent = async (
     event: DashboardNotificationEvent
   ): Promise<void> => {
-    const navigationPath = normalizeNotificationNavigationPath(
-      event.navigationPath
-    );
-    if (navigationPath === null) {
-      return;
-    }
-    await router.push(navigationPath);
+    await openOrToggleNotification(event, async (navigationPath) => {
+      await router.push(navigationPath);
+    });
   };
 
   /** My Tasksの全件画面へ遷移する。 */
@@ -233,6 +236,7 @@ export const useDashboardPage = () => {
     advancedDashboard,
     advancedErrorMessages,
     advancedStatusDate,
+    canExpandNotification,
     dashboard,
     displayName,
     errorMessages,
@@ -240,6 +244,7 @@ export const useDashboardPage = () => {
     isAdvancedNotEntitled,
     isInitialLoading,
     isLoading,
+    isNotificationExpanded,
     loadAdvancedDashboard,
     loadDashboard,
     openAdvancedAccessInquiry,

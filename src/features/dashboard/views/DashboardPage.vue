@@ -16,7 +16,6 @@ import {
 import {
   formatNotificationOccurredAt,
   getNotificationEventIcon,
-  normalizeNotificationNavigationPath,
 } from "@/features/notification/utils/notification";
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
 import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
@@ -35,6 +34,7 @@ const {
   advancedDashboard,
   advancedErrorMessages,
   advancedStatusDate,
+  canExpandNotification,
   dashboard,
   displayName,
   errorMessages,
@@ -42,6 +42,7 @@ const {
   isAdvancedNotEntitled,
   isInitialLoading,
   isLoading,
+  isNotificationExpanded,
   loadAdvancedDashboard,
   loadDashboard,
   openAdvancedAccessInquiry,
@@ -186,18 +187,30 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               :key="event.notificationEventId"
               class="border-b border-default last:border-b-0"
             >
+              <!-- 遷移先のないお知らせは、押すと本文の全文を開閉する（2行では読み切れないため）。 -->
               <button
                 type="button"
-                class="flex w-full items-start px-4 py-2 text-start"
-                :class="normalizeNotificationNavigationPath(event.navigationPath) !== null ? 'hover:bg-elevated' : 'cursor-default'"
+                class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
+                :aria-expanded="canExpandNotification(event) ? isNotificationExpanded(event.notificationEventId) : undefined"
                 @click="openNotificationEvent(event)"
               >
                 <UIcon :name="getNotificationEventIcon(event.eventType)" class="me-3 size-6 shrink-0" />
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                   <span class="block text-base" :class="{ 'font-bold': !event.read }">{{ event.title }}</span>
-                  <span class="line-clamp-2 text-sm text-muted">
-                    {{ event.message }}<br />
+                  <span
+                    class="text-sm whitespace-pre-line text-muted"
+                    :class="isNotificationExpanded(event.notificationEventId) ? 'block' : 'line-clamp-2'"
+                    >{{ event.message }}</span
+                  >
+                  <span class="flex items-center gap-1 text-sm text-muted">
                     {{ formatNotificationOccurredAt(event.occurredAt) }}
+                    <span v-if="canExpandNotification(event)" class="ms-auto inline-flex items-center text-xs">
+                      {{ isNotificationExpanded(event.notificationEventId) ? "閉じる" : "全文を表示" }}
+                      <UIcon
+                        :name="isNotificationExpanded(event.notificationEventId) ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                        class="size-4"
+                      />
+                    </span>
                   </span>
                 </span>
               </button>

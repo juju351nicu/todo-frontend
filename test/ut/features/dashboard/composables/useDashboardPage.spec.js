@@ -483,6 +483,19 @@ describe("useDashboardPage", () => {
     );
   });
 
+  it("遷移先のないお知らせは遷移せず、押すたびに本文の全文表示を切り替える", async () => {
+    const page = useDashboardPage();
+    const announcement = { ...event, notificationEventId: 11, navigationPath: null };
+
+    expect(page.canExpandNotification(announcement)).toBe(true);
+    expect(page.canExpandNotification(event)).toBe(false);
+    await page.openNotificationEvent(announcement);
+    expect(page.isNotificationExpanded(11)).toBe(true);
+    await page.openNotificationEvent(announcement);
+    expect(page.isNotificationExpanded(11)).toBe(false);
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
   it("各summaryから既存の一覧画面へ遷移する", async () => {
     const page = useDashboardPage();
 
