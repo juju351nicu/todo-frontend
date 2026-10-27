@@ -245,6 +245,11 @@ export const DISPLAY_MESSAGES = {
         "最新のSaved View一覧を取得できませんでした。再読込してください。",
       savedRefreshFailed:
         "Saved Viewの変更は完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+      /** version競合の409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のSaved Viewを再取得しました。内容を確認してから、もう一度操作してください。",
+      /** キーワードがBackendの上限を超えたとき。Backendの既定の文言は項目名を含まないため画面で先に止める。 */
+      keywordTooLong: "キーワードは100文字以内で入力してください。",
     },
     template: {
       readForbidden: "Task Templateを参照するpermissionがありません。",

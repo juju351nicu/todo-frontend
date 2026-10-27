@@ -25,8 +25,28 @@ import {
   TASK_SEARCH_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
+
+/** キーワードの最大文字数。Backendの入力制約（`TaskSearchFilterRequest#keyword`の`@Size(max = 100)`）と同じ値。 */
+export const TASK_SEARCH_KEYWORD_MAX_LENGTH = 100;
+
+/**
+ * Saved Viewの部品に付ける`data-task-search-control`属性の値。
+ * 更新の409・削除の後は、押したボタンが一時的または以後disabledになりフォーカスがbodyへ外れるため、ここへ戻す
+ * （動作確認/15_Task検索 G-7・G-8）。
+ */
+export const TASK_SEARCH_CONTROL = {
+  /** 「保存した条件」の選択。削除の後に戻す。 */
+  savedViewSelect: "saved-view-select",
+  /** 「Saved View名」の入力欄。更新の409の後に戻す。 */
+  savedViewName: "saved-view-name",
+} as const;
+
+/** `data-task-search-control`属性の値から、その要素を探すselectorを作る。 */
+const taskSearchControlSelector = (key: string): string =>
+  `[data-task-search-control="${key}"]`;
 
 interface TaskSearchColumnOption {
   code: TaskSearchColumn;
@@ -181,6 +201,10 @@ export const useTaskSearchPage = () => {
   /** 検索結果をBackendの確定Responseで置き換える。二重検索中は新しいRequestを送らない。 */
   const executeSearch = async (): Promise<void> => {
     if (isSearching.value) return;
+    if (filters.keyword.trim().length > TASK_SEARCH_KEYWORD_MAX_LENGTH) {
+      setErrors([DISPLAY_MESSAGES.task.search.keywordTooLong]);
+      return;
+    }
     if (filters.dueFrom && filters.dueTo && filters.dueTo < filters.dueFrom) {
       setErrors(["期限の終了日は開始日以降にしてください。"]);
       return;
@@ -365,7 +389,11 @@ export const useTaskSearchPage = () => {
     }
   };
 
-  /** 404／409後に古いversionを破棄し、最新Saved View一覧へ安全に回復する。 */
+  /**
+   * 404／409後に古いversionを破棄し、最新Saved View一覧へ安全に回復する。
+   * version競合のBackendの文言は「最新状態を再取得してください。」だが、ここで取り直すため、
+   * 取り直せたときは取り直し済みであることを添える（動作確認/15_Task検索 G-7。07・08・12・13の対応と同じ）。
+   */
   const recoverSavedViews = async (
     error: TaskSearchApiError,
     preferredId: number,
@@ -379,7 +407,9 @@ export const useTaskSearchPage = () => {
     clearSavedViewState();
     try {
       await reloadSavedViews(preferredId);
-      errorMessages.value = mutationMessages;
+      errorMessages.value = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
+        ? [...mutationMessages, DISPLAY_MESSAGES.task.search.conflictReloaded]
+        : mutationMessages;
     } catch (reloadError: unknown) {
       if (await handleUnauthorized(reloadError)) return;
       if (
@@ -474,6 +504,8 @@ export const useTaskSearchPage = () => {
           current.savedViewId,
           DISPLAY_MESSAGES.task.search.updateFailed
         );
+        // 取り直しの間「更新」はdisabledになりフォーカスが外れるため、名前の入力欄へ戻す。
+        await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
         return;
       }
       if (!(await handleUnauthorized(error))) {
@@ -504,6 +536,8 @@ export const useTaskSearchPage = () => {
         null,
         "Saved Viewを削除しました。"
       );
+      // 削除の後は選択がなくなり「削除」がdisabledになるため、「保存した条件」へ戻す。
+      await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
     } catch (error: unknown) {
       if (
         error instanceof TaskSearchApiError &&

@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskSearchApiError } from "@/features/task/api/taskSearchApi";
-import { useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
+import {
+  TASK_SEARCH_CONTROL,
+  useTaskSearchPage,
+} from "@/features/task/composables/useTaskSearchPage";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
@@ -176,7 +179,10 @@ describe("useTaskSearchPage", () => {
     expect(page.filters.keyword).toBe("");
     expect(page.filters.statusCode).toBe("TODO");
     expect(page.visibleColumns.value).toEqual(["STATUS", "ASSIGNEE"]);
-    expect(page.errorMessages.value).toEqual(["他の画面で更新されています。"]);
+    expect(page.errorMessages.value).toEqual([
+      "他の画面で更新されています。",
+      "最新のSaved Viewを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
   });
 
   it("検索条件の契約済み複数errorをBackend順で表示する", async () => {
@@ -428,6 +434,54 @@ describe("useTaskSearchPage", () => {
       name: "TaskBoard",
       params: { projectId: 7 },
       query: { taskId: "31" },
+    });
+  });
+
+  it("キーワードが100文字を超えるときは検索APIを呼ばず、項目名の入った文言を出す", async () => {
+    const page = useTaskSearchPage();
+    await page.initialize();
+    mocks.api.searchTasks.mockClear();
+    page.filters.keyword = "あ".repeat(101);
+
+    await page.executeSearch();
+
+    expect(mocks.api.searchTasks).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual(["キーワードは100文字以内で入力してください。"]);
+  });
+
+  describe("Saved Viewの操作の後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => ({
+          focus: () => focused.push(selector.match(/data-task-search-control="([^"]+)"/)?.[1]),
+          matches: () => false,
+        }),
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("更新の409の後はSaved View名へ、削除の後は「保存した条件」へ戻す", async () => {
+      mocks.api.getTaskSavedViews.mockResolvedValue([savedView]);
+      mocks.api.updateTaskSavedView.mockRejectedValue(
+        new TaskSearchApiError(409, {
+          fieldErrors: [{ errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT", field: "version", message: "他の画面で更新されています。" }],
+        })
+      );
+      const page = useTaskSearchPage();
+      await page.initialize();
+      await page.applySavedView(5);
+      const focused = stubDocument();
+
+      await page.updateSavedView();
+      await page.deleteSavedView();
+
+      expect(focused).toEqual([TASK_SEARCH_CONTROL.savedViewName, TASK_SEARCH_CONTROL.savedViewSelect]);
     });
   });
 });
