@@ -126,6 +126,9 @@ export const DISPLAY_MESSAGES = {
       applyFailed: "Project TemplateからProjectを作成できませんでした。",
       reloadFailed:
         "最新のProject Templateを再取得できませんでした。再読込してください。",
+      /** version競合の409の後に画面側でTemplateを取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のProject Templateを再取得しました。内容を確認してから、もう一度操作してください。",
     },
   },
   task: {

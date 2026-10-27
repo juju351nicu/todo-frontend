@@ -35,6 +35,14 @@ const projects = [
     projectRole: "MEMBER",
     version: 1,
   },
+  {
+    projectId: 3,
+    projectKey: "OLD",
+    name: "終了Project",
+    status: "ARCHIVED",
+    projectRole: "OWNER",
+    version: 2,
+  },
 ];
 
 describe("useProjectListPage", () => {
@@ -60,6 +68,17 @@ describe("useProjectListPage", () => {
     page.searchText.value = "member";
 
     expect(page.filteredProjects.value).toEqual([projects[1]]);
+  });
+
+  it("カードに出ている状態の表示名（アーカイブ・利用中）でも検索できる", async () => {
+    const page = useProjectListPage();
+    await page.initialize();
+
+    page.searchText.value = "アーカイブ";
+    expect(page.filteredProjects.value).toEqual([projects[2]]);
+
+    page.searchText.value = "利用中";
+    expect(page.filteredProjects.value).toEqual([projects[0], projects[1]]);
   });
 
   it("選択ProjectのBoardへProject ID付きで遷移する", async () => {

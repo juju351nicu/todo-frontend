@@ -2,6 +2,7 @@
 import { toRef } from "vue";
 
 import {
+  CAPTURE_NAME_CONTROL,
   TEMPLATE_NAME_MAX_LENGTH,
   useProjectTemplateCapture,
 } from "@/features/project/composables/useProjectTemplateCapture";
@@ -49,7 +50,14 @@ const { baseDate, canCapture, capture, close, errorMessages, isOpen, isSaving, n
       </StatusAlert>
       <div class="relative">
         <UFormField label="Template名">
-          <UInput v-model="name" :maxlength="TEMPLATE_NAME_MAX_LENGTH" autofocus :disabled="isSaving" class="w-full" />
+          <UInput
+            v-model="name"
+            :maxlength="TEMPLATE_NAME_MAX_LENGTH"
+            autofocus
+            :disabled="isSaving"
+            class="w-full"
+            :data-project-template-capture="CAPTURE_NAME_CONTROL"
+          />
         </UFormField>
         <FieldCounter :value="name" :max="TEMPLATE_NAME_MAX_LENGTH" />
       </div>

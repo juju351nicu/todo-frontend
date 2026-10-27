@@ -24,6 +24,7 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template header編集フォーム。 */
 export interface ProjectTemplateEditForm {
@@ -39,6 +40,68 @@ export interface ProjectTemplateApplyForm {
   projectStartDate: string;
   memberMappings: Record<string, number | string | null>;
 }
+
+/**
+ * 画面の部品に付ける`data-project-template-control`属性の値。
+ * `ProjectTemplatePage.vue`はこの値で属性を付け、`useProjectTemplatePage`は操作の後に同じ値で部品を探してフォーカスを戻す。
+ * 更新中は部品をdisabledにし、編集の開始・終了では部品自体が入れ替わるため、そのままではフォーカスがbodyへ外れる
+ * （動作確認/13_Project一覧_Template G-7・G-10・G-12）。
+ */
+export const PROJECT_TEMPLATE_CONTROL = {
+  /** 詳細の「編集」ボタン。 */
+  editButton: "edit",
+  /** 編集フォームの「Template名」入力欄。 */
+  editName: "edit-name",
+  /** 「Projectを作成してBoardを開く」ボタン。 */
+  applyButton: "apply",
+} as const;
+
+/**
+ * 一覧のTemplateごとのボタンに付ける`data-project-template-control`属性の値を組み立てる。
+ *
+ * @param projectTemplateId Project Template ID
+ * @returns `"template:{projectTemplateId}"`形式の属性値
+ */
+export const templateItemControlKey = (projectTemplateId: number): string =>
+  `template:${projectTemplateId}`;
+
+/** `data-project-template-control`属性の値から、その要素を探すselectorを作る。 */
+const templateControlSelector = (key: string): string =>
+  `[data-project-template-control="${key}"]`;
+
+/**
+ * Templateからの作成で、入力内容の誤りを表す409のerror code。Template自体は古くなっていないので、
+ * 一覧・詳細を取り直さず、入力（Projectキー・Project名・slotの割当）を残したまま直してもらう。
+ * 取り直すと入力がすべて消えていた（動作確認/13_Project一覧_Template G-10）。
+ */
+const APPLY_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
+  "PROJECT_KEY_CONFLICT",
+  "PROJECT_TEMPLATE_MEMBER_MAPPING_INVALID",
+  "PROJECT_TEMPLATE_STRUCTURE_INVALID",
+]);
+
+/** 409のResponseのerror codeが、すべて指定の集合に含まれるか（error codeがない場合はfalse）。 */
+const hasOnlyErrorCodes = (
+  error: ProjectTemplateApiError,
+  codes: ReadonlySet<string>
+): boolean => {
+  const fieldErrors = error.errorResponse?.fieldErrors;
+  return (
+    Array.isArray(fieldErrors) &&
+    fieldErrors.length > 0 &&
+    fieldErrors.every(
+      (fieldError) =>
+        typeof fieldError?.errorCode === "string" && codes.has(fieldError.errorCode)
+    )
+  );
+};
+
+/** version競合（Backendの文言が「再読み込みしてください。」で終わる）を含む409か。 */
+const isVersionConflict = (error: ProjectTemplateApiError): boolean =>
+  hasApiFieldError(error.errorResponse, "PROJECT_TEMPLATE_VERSION_CONFLICT");
+
+/** 結果のmessageを出す場所。`apply`は「TemplateからProjectを作成」のボタンの上、`page`は画面の上部。 */
+type FeedbackTarget = "page" | "apply";
 
 /** Project Template未選択時にも共有参照を持たない空編集フォームを作る。 */
 const createEmptyEditForm = (): ProjectTemplateEditForm => ({
@@ -77,6 +140,7 @@ const toSummary = (template: ProjectTemplate): ProjectTemplateSummary => ({
 /**
  * 本人所有Project Templateの一覧・詳細・更新・archive・Project適用を1画面で管理する。
  * 401ではSessionを破棄し、404／409では古いsnapshotとversionを破棄してBackendから再取得する。
+ * ただし作成の409のうち入力の誤り（`APPLY_INPUT_ERROR_CODES`）は、再取得せず入力を残す。
  */
 export const useProjectTemplatePage = () => {
   const router = useRouter();
@@ -96,6 +160,7 @@ export const useProjectTemplatePage = () => {
   const isLoadingDetail = ref(false);
   const isLoadingList = ref(false);
   const isSaving = ref(false);
+  const feedbackTarget = ref<FeedbackTarget>("page");
 
   const canEditTemplate = computed(() =>
     userStore.hasPermission("PROJECT_UPDATE")
@@ -106,6 +171,23 @@ export const useProjectTemplatePage = () => {
   const isMutating = computed(
     () => isApplying.value || isArchiving.value || isSaving.value
   );
+  /**
+   * 結果のmessageを「TemplateからProjectを作成」のボタンの上に出すか。
+   * 作成フォームは画面の中ほどにあり、上部のmessageは作成ボタンを押した位置から見えないことがあるため
+   * （幅390pxでは画面の外へ出た。動作確認/13_Project一覧_Template G-8）。Templateが消えて作成フォームがないときは上部に出す。
+   */
+  const isApplyFeedback = computed(
+    () => feedbackTarget.value === "apply" && selectedTemplate.value !== null
+  );
+
+  /**
+   * 操作の後に、候補の部品へフォーカスを戻す（候補は優先順。すべて消えた・disabledのときは動かさない）。
+   * isSaving等をfalseへ戻した後に呼ぶ。
+   *
+   * @param candidates `PROJECT_TEMPLATE_CONTROL`または`templateItemControlKey`の値
+   */
+  const restoreControlFocus = (candidates: readonly string[]): Promise<void> =>
+    focusFirstEnabledElement(candidates.map(templateControlSelector));
 
   /** 機能資格不足をpermission不足のbodyなし403と区別する。 */
   const isFeatureNotEntitled = (error: ProjectTemplateApiError): boolean =>
@@ -246,6 +328,7 @@ export const useProjectTemplatePage = () => {
     selectedTemplate.value = null;
     isEditing.value = false;
     successMessage.value = "";
+    feedbackTarget.value = "page";
     await loadSelectedTemplate();
   };
 
@@ -258,12 +341,16 @@ export const useProjectTemplatePage = () => {
     isEditing.value = true;
     errorMessages.value = [];
     successMessage.value = "";
+    feedbackTarget.value = "page";
+    // 「編集」ボタンは編集フォームに入れ替わって消えるため、フォームの先頭へ移す。
+    void restoreControlFocus([PROJECT_TEMPLATE_CONTROL.editName]);
   };
 
-  /** 未送信のheader編集を破棄する。 */
+  /** 未送信のheader編集を破棄し、「編集」ボタンへフォーカスを戻す。 */
   const cancelEditing = (): void => {
     isEditing.value = false;
     synchronizeForms(selectedTemplate.value);
+    void restoreControlFocus([PROJECT_TEMPLATE_CONTROL.editButton]);
   };
 
   /** header編集フォームをBackendの文字数契約に合わせて検証する。 */
@@ -294,6 +381,7 @@ export const useProjectTemplatePage = () => {
     isSaving.value = true;
     errorMessages.value = [];
     successMessage.value = "";
+    feedbackTarget.value = "page";
     try {
       const updated = await ProjectTemplateApi.update(
         template.projectTemplateId,
@@ -316,6 +404,11 @@ export const useProjectTemplatePage = () => {
     } finally {
       isSaving.value = false;
     }
+    // 保存できた・409で編集を閉じた場合は「編集」ボタンへ、編集フォームが残る失敗ではTemplate名へ戻す。
+    await restoreControlFocus([
+      PROJECT_TEMPLATE_CONTROL.editName,
+      PROJECT_TEMPLATE_CONTROL.editButton,
+    ]);
   };
 
   /** 選択Templateのarchive確認を開く。 */
@@ -325,6 +418,7 @@ export const useProjectTemplatePage = () => {
     }
     errorMessages.value = [];
     successMessage.value = "";
+    feedbackTarget.value = "page";
     isArchiveConfirmOpen.value = true;
   };
 
@@ -366,6 +460,13 @@ export const useProjectTemplatePage = () => {
     } finally {
       isArchiving.value = false;
     }
+    // archiveしたTemplateの部品は消えるため、次に表示したTemplateの「編集」か、一覧の先頭へ戻す。
+    await restoreControlFocus([
+      PROJECT_TEMPLATE_CONTROL.editButton,
+      ...templates.value.slice(0, 1).map((candidate) =>
+        templateItemControlKey(candidate.projectTemplateId)
+      ),
+    ]);
   };
 
   /** slot mappingを検証し、Backend Requestの配列へ変換する。 */
@@ -415,10 +516,15 @@ export const useProjectTemplatePage = () => {
     return mappings;
   };
 
-  /** 適用フォームを検証し、生成ProjectのBoardへ遷移できるRequestを組み立てる。 */
+  /**
+   * 適用フォームを検証し、作ったProjectのBoardへ遷移する。
+   * 入力チェック・APIのエラーは、作成ボタンの上に出す（`isApplyFeedback`）。
+   */
   const applyTemplate = async (): Promise<void> => {
     const template = selectedTemplate.value;
     if (!template || !canApplyTemplate.value || isMutating.value) return;
+    feedbackTarget.value = "apply";
+    successMessage.value = "";
     const projectKey = applyForm.value.projectKey.trim().toUpperCase();
     const name = applyForm.value.name.trim();
     if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(projectKey) || projectKey.length > 30) {
@@ -455,14 +561,28 @@ export const useProjectTemplatePage = () => {
         name: "TaskBoard",
         params: { projectId: created.projectId },
       });
+      return;
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.project.template.applyFailed
-      );
+      if (
+        error instanceof ProjectTemplateApiError &&
+        error.status === 409 &&
+        hasOnlyErrorCodes(error, APPLY_INPUT_ERROR_CODES)
+      ) {
+        errorMessages.value = resolveApiErrorMessages(
+          error.errorResponse,
+          PROJECT_TEMPLATE_ERROR_CODES,
+          DISPLAY_MESSAGES.project.template.applyFailed
+        );
+      } else {
+        await handleMutationError(
+          error,
+          DISPLAY_MESSAGES.project.template.applyFailed
+        );
+      }
     } finally {
       isApplying.value = false;
     }
+    await restoreControlFocus([PROJECT_TEMPLATE_CONTROL.applyButton]);
   };
 
   /** 参照APIのstatusをSession、permission、公開範囲、業務エラーへ変換する。 */
@@ -492,9 +612,15 @@ export const useProjectTemplatePage = () => {
     );
   }
 
-  /** 404／409後に一覧と選択snapshotを再取得し、回復時点の認証・認可を優先する。 */
+  /**
+   * 404／409後に一覧と選択snapshotを再取得し、回復時点の認証・認可を優先する。
+   *
+   * @param messagesBeforeReload 操作APIのエラーから作ったmessage
+   * @param reloadedMessages 取り直せたときだけ後ろへ添えるmessage（取り直しに失敗したときは添えない）
+   */
   async function reloadTemplateAfterConflict(
-    messagesBeforeReload: string[]
+    messagesBeforeReload: string[],
+    reloadedMessages: readonly string[] = []
   ): Promise<void> {
     const currentId = selectedTemplateId.value;
     isLoadingList.value = true;
@@ -507,7 +633,7 @@ export const useProjectTemplatePage = () => {
         )
       ) {
         clearSelection();
-        errorMessages.value = messagesBeforeReload;
+        errorMessages.value = [...messagesBeforeReload, ...reloadedMessages];
         return;
       }
 
@@ -516,7 +642,7 @@ export const useProjectTemplatePage = () => {
       selectedTemplateId.value = currentId;
       selectedTemplate.value = detail;
       synchronizeForms(detail);
-      errorMessages.value = messagesBeforeReload;
+      errorMessages.value = [...messagesBeforeReload, ...reloadedMessages];
     } catch (error: unknown) {
       if (
         error instanceof ProjectTemplateApiError &&
@@ -576,11 +702,17 @@ export const useProjectTemplatePage = () => {
               PROJECT_TEMPLATE_ERROR_CODES,
               fallback
             );
+      // version競合のBackendの文言は「再読み込みしてください。」だが、画面はこの後で取り直す。
+      // 取り直せたときは、取り直し済みであることを添える（動作確認/13_Project一覧_Template G-9。07・08・12の対応と同じ）。
+      const reloadedMessages =
+        error.status === 409 && isVersionConflict(error)
+          ? [DISPLAY_MESSAGES.project.template.conflictReloaded]
+          : [];
       isEditing.value = false;
       isArchiveConfirmOpen.value = false;
       selectedTemplate.value = null;
       synchronizeForms(null);
-      await reloadTemplateAfterConflict(messages);
+      await reloadTemplateAfterConflict(messages, reloadedMessages);
       return;
     }
     errorMessages.value = resolveApiErrorMessages(
@@ -605,6 +737,7 @@ export const useProjectTemplatePage = () => {
     isApplying,
     isArchiveConfirmOpen,
     isArchiving,
+    isApplyFeedback,
     isEditing,
     isLoadingDetail,
     isLoadingList,

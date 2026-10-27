@@ -8,6 +8,7 @@ import {
 } from "@/features/project/composables/useProjectSettingsDialog";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
+import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
@@ -82,8 +83,8 @@ const SECTION_TABS = [
       <span class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-folder-cog-outline" class="size-6" />
         Project設定
-        <UBadge :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm" class="ms-auto">
-          {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
+        <UBadge :color="getProjectStatusColor(project.status)" size="sm" class="ms-auto">
+          {{ getProjectStatusLabel(project.status) }}
         </UBadge>
       </span>
     </template>

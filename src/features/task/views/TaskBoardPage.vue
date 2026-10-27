@@ -4,6 +4,7 @@ import Draggable from "vuedraggable";
 
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
+import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
@@ -94,8 +95,8 @@ onBeforeMount(initialize);
           <span v-if="project.description">・{{ project.description }}</span>
         </div>
       </div>
-      <UBadge v-if="project" :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm" class="ms-auto">
-        {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
+      <UBadge v-if="project" :color="getProjectStatusColor(project.status)" size="sm" class="ms-auto">
+        {{ getProjectStatusLabel(project.status) }}
       </UBadge>
       <UButton
         v-if="board"

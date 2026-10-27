@@ -1,7 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectTemplateApiError } from "@/features/project/api/projectTemplateApi";
-import { useProjectTemplatePage } from "@/features/project/composables/useProjectTemplatePage";
+import {
+  PROJECT_TEMPLATE_CONTROL,
+  templateItemControlKey,
+  useProjectTemplatePage,
+} from "@/features/project/composables/useProjectTemplatePage";
 
 const mocks = vi.hoisted(() => ({
   permissions: new Set(),
@@ -262,7 +266,157 @@ describe("useProjectTemplatePage", () => {
     expect(mocks.projectTemplateApi.getOwnTemplate).toHaveBeenCalledTimes(2);
     expect(page.selectedTemplate.value.name).toBe("別tab更新");
     expect(page.isEditing.value).toBe(false);
-    expect(page.errorMessages.value).toEqual(["別の操作で更新されました。"]);
+    expect(page.errorMessages.value).toEqual([
+      "別の操作で更新されました。",
+      "最新のProject Templateを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
+  });
+
+  it.each([
+    ["PROJECT_KEY_CONFLICT", "projectKey", "同じProjectキーが既に使用されています。"],
+    [
+      "PROJECT_TEMPLATE_MEMBER_MAPPING_INVALID",
+      "memberMappings",
+      "Project Templateのmember割当を適用できません。割当内容を確認してください。",
+    ],
+  ])(
+    "作成の409（%s）は入力の誤りなので、取り直さず入力を残して作成ボタンの上に出す",
+    async (errorCode, field, message) => {
+      mocks.projectTemplateApi.apply.mockRejectedValue(
+        new ProjectTemplateApiError(409, { fieldErrors: [{ field, errorCode, message }] })
+      );
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      page.applyForm.value.projectKey = "DEMO";
+      page.applyForm.value.name = "入力したProject名";
+      page.applyForm.value.memberMappings.MEMBER_1 = 8;
+
+      await page.applyTemplate();
+
+      expect(page.errorMessages.value).toEqual([message]);
+      expect(page.isApplyFeedback.value).toBe(true);
+      expect(mocks.projectTemplateApi.findOwnTemplates).toHaveBeenCalledOnce();
+      expect(page.applyForm.value).toMatchObject({
+        projectKey: "DEMO",
+        name: "入力したProject名",
+        memberMappings: { OWNER_1: 7, MEMBER_1: 8 },
+      });
+    }
+  );
+
+  it("作成の入力チェックのエラーは作成ボタンの上に、その後の編集のエラーは画面の上部に出す", async () => {
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.applyForm.value.projectKey = "";
+
+    await page.applyTemplate();
+    expect(page.isApplyFeedback.value).toBe(true);
+
+    page.beginEditing();
+    page.editForm.value.name = " ";
+    await page.saveTemplate();
+    expect(page.errorMessages.value).toEqual(["Template名を1〜100文字で入力してください。"]);
+    expect(page.isApplyFeedback.value).toBe(false);
+  });
+
+  it("archive済みで作成できない409は、作成フォームがなくなるので画面の上部に出す", async () => {
+    mocks.projectTemplateApi.apply.mockRejectedValue(
+      new ProjectTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "projectTemplateId",
+            errorCode: "PROJECT_TEMPLATE_ARCHIVED",
+            message: "archive済みProject Templateは変更または適用できません。",
+          },
+        ],
+      })
+    );
+    mocks.projectTemplateApi.findOwnTemplates
+      .mockResolvedValueOnce([structuredClone(summary)])
+      .mockResolvedValueOnce([]);
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.applyForm.value.projectKey = "DEMO";
+    page.applyForm.value.memberMappings.MEMBER_1 = 8;
+
+    await page.applyTemplate();
+
+    expect(page.selectedTemplate.value).toBeNull();
+    expect(page.isApplyFeedback.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "archive済みProject Templateは変更または適用できません。",
+    ]);
+  });
+
+  describe("操作後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // absentに入れた部品は画面にない（消えた）ものとして扱う。
+    const stubDocument = (absent = []) => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => {
+          const key = selector.match(/data-project-template-control="([^"]+)"/)?.[1];
+          return absent.includes(key)
+            ? null
+            : { focus: () => focused.push(key), matches: () => false };
+        },
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("編集を始めるとTemplate名へ、キャンセルすると「編集」へ移す", async () => {
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      const focused = stubDocument();
+
+      page.beginEditing();
+      await Promise.resolve();
+      page.cancelEditing();
+      await vi.waitFor(() => expect(focused).toHaveLength(2));
+
+      expect(focused).toEqual([PROJECT_TEMPLATE_CONTROL.editName, PROJECT_TEMPLATE_CONTROL.editButton]);
+    });
+
+    it("保存できた後は、編集フォームが閉じるので「編集」へ戻す", async () => {
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      page.beginEditing();
+      const focused = stubDocument([PROJECT_TEMPLATE_CONTROL.editName]);
+
+      await page.saveTemplate();
+
+      expect(focused).toContain(PROJECT_TEMPLATE_CONTROL.editButton);
+    });
+
+    it("作成に失敗したら作成ボタンへ戻す", async () => {
+      mocks.projectTemplateApi.apply.mockRejectedValue(new TypeError("Failed to fetch"));
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      page.applyForm.value.projectKey = "DEMO";
+      page.applyForm.value.memberMappings.MEMBER_1 = 8;
+      const focused = stubDocument();
+
+      await page.applyTemplate();
+
+      expect(focused).toEqual([PROJECT_TEMPLATE_CONTROL.applyButton]);
+    });
+
+    it("archiveの後は、次に表示したTemplateの「編集」か一覧の先頭へ戻す", async () => {
+      const next = { ...summary, projectTemplateId: 82, name: "次のTemplate" };
+      mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([structuredClone(summary), next]);
+      const page = useProjectTemplatePage();
+      await page.initialize();
+      page.openArchiveConfirm();
+      const focused = stubDocument([PROJECT_TEMPLATE_CONTROL.editButton]);
+
+      await page.archiveTemplate();
+
+      expect(focused).toEqual([templateItemControlKey(82)]);
+    });
   });
 
   it("一覧の本文なし403はSessionを維持して参照permission不足を表示する", async () => {

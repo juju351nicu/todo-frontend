@@ -2,6 +2,7 @@
 import { onBeforeMount } from "vue";
 
 import { useProjectListPage } from "@/features/project/composables/useProjectListPage";
+import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -36,8 +37,8 @@ onBeforeMount(initialize);
               <div class="text-sm font-normal tracking-normal text-muted">{{ project.projectKey }}</div>
             </template>
             <div class="flex flex-wrap gap-2">
-              <UBadge :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm">
-                {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
+              <UBadge :color="getProjectStatusColor(project.status)" size="sm">
+                {{ getProjectStatusLabel(project.status) }}
               </UBadge>
               <UBadge v-if="project.projectRole" size="sm" variant="outline">{{ project.projectRole }}</UBadge>
             </div>

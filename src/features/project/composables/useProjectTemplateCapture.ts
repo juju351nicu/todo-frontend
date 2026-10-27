@@ -16,9 +16,17 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
 export const TEMPLATE_NAME_MAX_LENGTH = 100;
+
+/**
+ * 保存Dialogの「Template名」入力欄に付ける`data-project-template-capture`属性の値。
+ * 保存に失敗したとき（保存中はdisabledになりフォーカスが外れる）に、名前を直せるようここへ戻す
+ * （動作確認/13_Project一覧_Template G-5）。
+ */
+export const CAPTURE_NAME_CONTROL = "name";
 
 /** Project全体を本人所有TemplateへcaptureするDialog状態を管理する。 */
 export const useProjectTemplateCapture = (
@@ -60,8 +68,20 @@ export const useProjectTemplateCapture = (
     if (!isSaving.value) isOpen.value = false;
   };
 
-  /** ACTIVE Projectのmember・Board・WBS snapshotを本人所有Templateへ保存する。 */
+  /**
+   * ACTIVE Projectのmember・Board・WBS snapshotを本人所有Templateへ保存する。
+   * 失敗してDialogが開いたままのときは、「Template名」へフォーカスを戻す。
+   */
   const capture = async (): Promise<ProjectTemplate | null> => {
+    const created = await submitCapture();
+    if (created === null && isOpen.value) {
+      await focusFirstEnabledElement([`[data-project-template-capture="${CAPTURE_NAME_CONTROL}"]`]);
+    }
+    return created;
+  };
+
+  /** 入力を検証して保存APIを呼び、結果をmessageへ反映する。保存できなかった場合はnullを返す。 */
+  const submitCapture = async (): Promise<ProjectTemplate | null> => {
     const normalizedName = name.value.trim();
     if (disabled.value || isSaving.value) return null;
     if (!normalizedName || normalizedName.length > 100) {
