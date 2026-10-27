@@ -9,6 +9,7 @@ import {
 } from "@/features/task/composables/useTaskComments";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 /**
@@ -71,7 +72,18 @@ const {
       <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="md" class="bg-primary text-xs text-white" />
       <div class="min-w-0 flex-1">
         <div class="flex justify-between gap-2 text-base">
-          <span>{{ comment.authorDisplayName }}</span>
+          <span>
+            {{ comment.authorDisplayName }}
+            <UBadge
+              v-if="comment.authorAccountStatus !== 'ACTIVE'"
+              size="xs"
+              variant="outline"
+              :color="getAccountStatusColor(comment.authorAccountStatus)"
+              class="ms-1"
+            >
+              {{ getAccountStatusLabel(comment.authorAccountStatus) }}
+            </UBadge>
+          </span>
           <span class="text-xs opacity-70">
             {{ formatShortDateTime(comment.updatedAt) }}
             <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>

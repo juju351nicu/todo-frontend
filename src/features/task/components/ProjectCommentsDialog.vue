@@ -3,6 +3,7 @@ import { toRef } from "vue";
 
 import { useProjectComments } from "@/features/task/composables/useProjectComments";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 const props = defineProps<{
@@ -64,7 +65,16 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
                 <UBadge v-if="comment.taskArchived" size="xs">アーカイブ済み</UBadge>
               </span>
               <span class="block text-sm text-muted">
-                {{ comment.authorDisplayName }}・{{ formatShortDateTime(comment.updatedAt) }}
+                {{ comment.authorDisplayName }}
+                <UBadge
+                  v-if="comment.authorAccountStatus !== 'ACTIVE'"
+                  size="xs"
+                  variant="outline"
+                  :color="getAccountStatusColor(comment.authorAccountStatus)"
+                  class="me-1"
+                >
+                  {{ getAccountStatusLabel(comment.authorAccountStatus) }}
+                </UBadge>・{{ formatShortDateTime(comment.updatedAt) }}
                 <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
               </span>
               <span class="mt-2 block text-sm whitespace-pre-wrap">{{ comment.body }}</span>

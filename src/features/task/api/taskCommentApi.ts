@@ -39,6 +39,21 @@ const ensureSuccess = (response: Response): Promise<void> =>
   );
 
 /**
+ * コメントResponseに投稿者の状態（`authorAccountStatus`）がない場合、ACTIVEで補う。
+ *
+ * この項目はBackendの「無効化された投稿者のコメントも一覧に残す」変更で追加された。
+ * Frontendだけ先に反映された環境でも、すべての投稿者を従来どおり有効として表示できるようにする。
+ * Backendが常に返すようになれば、この補完は値を変えない。
+ *
+ * @param comment BackendのコメントResponse
+ * @returns 投稿者の状態を必ず持つコメント
+ */
+const normalizeComment = <T extends TaskComment>(comment: T): T => ({
+  ...comment,
+  authorAccountStatus: comment.authorAccountStatus ?? "ACTIVE",
+});
+
+/**
  * Taskのコメント一覧を投稿時刻順で取得する。
  *
  * @param projectId 所属Project ID
@@ -52,7 +67,7 @@ const findComments = async (
 ): Promise<TaskComment[]> => {
   const response = await HttpClient.getRequest(createPath(projectId, taskId));
   await ensureSuccess(response);
-  return (await response.json()) as TaskComment[];
+  return ((await response.json()) as TaskComment[]).map(normalizeComment);
 };
 
 /**
@@ -67,7 +82,7 @@ const findProjectComments = async (
 ): Promise<ProjectTaskComment[]> => {
   const response = await HttpClient.getRequest(createProjectPath(projectId));
   await ensureSuccess(response);
-  return (await response.json()) as ProjectTaskComment[];
+  return ((await response.json()) as ProjectTaskComment[]).map(normalizeComment);
 };
 
 /**
@@ -89,7 +104,7 @@ const createComment = async (
     payload
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskComment;
+  return normalizeComment((await response.json()) as TaskComment);
 };
 
 /**
@@ -113,7 +128,7 @@ const updateComment = async (
     payload
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskComment;
+  return normalizeComment((await response.json()) as TaskComment);
 };
 
 /**

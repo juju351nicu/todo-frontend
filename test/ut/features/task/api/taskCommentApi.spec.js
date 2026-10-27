@@ -19,6 +19,7 @@ const comment = {
   taskId: 31,
   authorAccountId: 7,
   authorDisplayName: "投稿者",
+  authorAccountStatus: "ACTIVE",
   body: "確認をお願いします。",
   createdAt: "2026-09-20T01:00:00Z",
   updatedAt: "2026-09-20T01:00:00Z",
@@ -42,6 +43,24 @@ describe("TaskコメントAPI", () => {
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/tasks/31/comments"
     );
+  });
+
+  it("投稿者の状態はBackendの値を保ち、項目がない古い版ではACTIVEで補う", async () => {
+    const { authorAccountStatus: _omitted, ...legacyComment } = comment;
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue([
+        { ...comment, commentId: 42, authorAccountStatus: "DISABLED" },
+        legacyComment,
+      ]),
+    });
+
+    const comments = await TaskCommentApi.findComments(5, 31);
+
+    expect(comments.map((item) => item.authorAccountStatus)).toEqual([
+      "DISABLED",
+      "ACTIVE",
+    ]);
   });
 
   it("Project内のTask横断コメント一覧を取得する", async () => {

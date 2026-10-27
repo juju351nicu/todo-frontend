@@ -1,9 +1,16 @@
+import type { AccountStatus } from "@/shared/types/accountStatus";
+
 /** BackendのTaskコメント一覧・投稿・編集Response。 */
 export interface TaskComment {
   commentId: number;
   taskId: number;
   authorAccountId: number;
   authorDisplayName: string;
+  /**
+   * 投稿者の現在のアカウント状態（`account.status`）。無効化された投稿者のコメントも会話の履歴として一覧に残るため、
+   * 画面はACTIVE以外のときに状態の印を添える。Backendが返さない古い版では`taskCommentApi`がACTIVEで補う。
+   */
+  authorAccountStatus: AccountStatus;
   body: string;
   createdAt: string;
   updatedAt: string;

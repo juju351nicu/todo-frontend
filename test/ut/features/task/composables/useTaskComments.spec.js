@@ -39,6 +39,7 @@ const ownComment = {
   taskId: 31,
   authorAccountId: 7,
   authorDisplayName: "投稿者",
+  authorAccountStatus: "ACTIVE",
   body: "変更前",
   createdAt: "2026-09-20T01:00:00Z",
   updatedAt: "2026-09-20T01:00:00Z",
