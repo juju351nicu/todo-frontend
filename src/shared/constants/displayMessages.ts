@@ -105,6 +105,9 @@ export const DISPLAY_MESSAGES = {
         "Project memberのroleを更新できませんでした。",
       memberRemoveFailed: "Project memberを除外できませんでした。",
       reloadFailed: "最新のProject情報を再取得できませんでした。",
+      /** 409の後に画面側でProject詳細を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のProject情報を再取得しました。内容を確認してから、もう一度操作してください。",
       memberRemovedRefreshFailed:
         "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
     },
