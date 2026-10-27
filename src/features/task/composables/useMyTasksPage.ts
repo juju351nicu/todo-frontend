@@ -12,6 +12,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { SemanticColor } from "@/shared/types/color";
 
 interface MyTaskGroup {
@@ -24,12 +25,30 @@ interface MyTaskGroup {
 
 type MyTaskFilter = "ALL" | "THIS_WEEK";
 
+/** 画面右上の再読み込みボタンに付ける`data-my-task-control`属性の値。完了の後に戻す先がないときに使う。 */
+export const MY_TASKS_RELOAD_CONTROL = "reload";
+
+/**
+ * Taskごとの「完了」ボタンに付ける`data-my-task-control`属性の値を組み立てる。
+ * `MyTasksPage.vue`はこの値で属性を付け、`useMyTasksPage`は完了の後に同じ値で探してフォーカスを戻す。
+ *
+ * @param taskId Task ID
+ * @returns `"complete:{taskId}"`形式の属性値
+ */
+export const myTaskCompleteControlKey = (taskId: number): string =>
+  `complete:${taskId}`;
+
+/** `data-my-task-control`属性の値から、その要素を探すselectorを作る。 */
+const myTaskControlSelector = (key: string): string =>
+  `[data-my-task-control="${key}"]`;
+
 /** 本人担当Taskを日付グループへ分けるMy Tasks画面の状態と操作を提供する。 */
 export const useMyTasksPage = () => {
   const router = useRouter();
   const todoStore = useTodoStore();
   const userStore = useUserStore();
   const errorMessages = ref<string[]>([]);
+  const successMessage = ref("");
   const isLoading = ref(false);
   const myTasks = ref<MyTaskItem[]>([]);
   const businessDate = ref("");
@@ -86,8 +105,10 @@ export const useMyTasksPage = () => {
     ];
   });
 
+  /** エラーを表示する。完了の直後に再取得で失敗した場合などに、成功の案内と並んで出ないよう成功を消す。 */
   const setErrors = (messages: string[]): void => {
     errorMessages.value = messages;
+    successMessage.value = "";
   };
 
   /** 認証・認可状態が変化した場合にServer由来のMy Tasksを破棄する。 */
@@ -144,6 +165,7 @@ export const useMyTasksPage = () => {
   const loadTasks = async (): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];
+    successMessage.value = "";
     try {
       await replaceTasks();
     } catch (error: unknown) {
@@ -175,16 +197,55 @@ export const useMyTasksPage = () => {
     });
   };
 
+  /**
+   * 画面に並んでいる順（期限超過・今日・今後の順、各グループ内は一覧の順）のTask。
+   * 完了の後に、完了したTaskと同じ位置へ来たTaskを探すために使う。
+   */
+  const displayedTasks = (): MyTaskItem[] => groups.value.flatMap((group) => group.items);
+
+  /**
+   * 完了の後（失敗した場合も含む）に、フォーカスを戻す。
+   * 完了したTaskの「完了」ボタンは一覧から消え、そのままではbodyへ外れるため（動作確認/14_MyTasks G-4）、
+   * 同じ位置に来たTask、なければ1つ前のTaskの「完了」、それもなければ再読み込みボタンへ戻す。
+   * 完了に失敗してTaskが残っている場合は、そのTaskの「完了」へ戻る。
+   *
+   * @param taskId 完了しようとしたTask ID
+   * @param index 完了前に画面に並んでいた位置
+   */
+  const restoreFocusAfterComplete = (taskId: number, index: number): Promise<void> => {
+    const tasksNow = displayedTasks();
+    const candidates = [
+      taskId,
+      tasksNow[index]?.taskId,
+      tasksNow[Math.min(index, tasksNow.length) - 1]?.taskId,
+    ].filter((candidate): candidate is number => candidate !== undefined);
+    return focusFirstEnabledElement([
+      ...candidates.map((candidate) => myTaskControlSelector(myTaskCompleteControlKey(candidate))),
+      myTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
+    ]);
+  };
+
+  /** Taskを完了し、結果を出してからフォーカスを戻す（`restoreFocusAfterComplete`）。 */
   const completeTask = async (task: MyTaskItem): Promise<void> => {
     if (!canCompleteTasks.value) {
       setErrors([DISPLAY_MESSAGES.task.myTasks.operationForbidden]);
       return;
     }
+    const index = displayedTasks().findIndex((item) => item.taskId === task.taskId);
+    await submitComplete(task);
+    // 401でLoginへ移った後は、部品が見つからないので何もしない。
+    await restoreFocusAfterComplete(task.taskId, Math.max(index, 0));
+  };
+
+  /** 完了APIを呼び、一覧を取り直して結果をmessageへ反映する。 */
+  const submitComplete = async (task: MyTaskItem): Promise<void> => {
     isLoading.value = true;
     errorMessages.value = [];
+    successMessage.value = "";
     try {
       await todoStore.completeTodo(task.taskId);
       myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
+      successMessage.value = DISPLAY_MESSAGES.task.myTasks.completed(task.title);
       try {
         await replaceTasks();
       } catch (reloadError: unknown) {
@@ -259,6 +320,7 @@ export const useMyTasksPage = () => {
     myTasks,
     selectedFilter,
     showTask,
+    successMessage,
     visibleTasks,
   };
 };

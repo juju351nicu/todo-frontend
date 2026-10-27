@@ -142,6 +142,8 @@ export const DISPLAY_MESSAGES = {
         "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
       reloadFailed:
         "最新のMy Tasksを取得できませんでした。再読込してください。",
+      /** 完了したTaskは一覧から消えるため、何が完了したかを示す。 */
+      completed: (title: string): string => `「${title}」を完了しました。`,
     },
     todo: {
       readForbidden: "Todoを参照するpermissionがありません。",
