@@ -44,7 +44,7 @@ src/
 
 2026-10にVuetify 3からNuxt UI 4（Vite plugin）とTailwind CSS 4へ移行した。計画と経緯はリポジトリ外の`../nuxt-ui-migration-plan.md`に残している。
 
-- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。semantic colorとpaletteの対応（primary＝brand、secondary＝plum、neutral＝stone等）と、移行前のVuetify既定に合わせたbutton・badge・card・alert・入力欄・table・modal・tabの寸法を定義する。寸法は参考デザインへ段階的に寄せる。
+- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。semantic colorとpaletteの対応（primary＝brand、secondary＝plum、neutral＝stone等）と、button・card・入力欄・modal・tabs・badgeの寸法（参考デザインへ移行済み。buttonとtabは大文字表記・字間・固定の高さなし、cardは影の代わりに枠線、入力欄はラベルを欄の上に出す白背景・枠線表示、badgeは高さを余白で決める）と、移行前のまま残しているalert・tableの寸法を定義する。寸法は参考デザインへ段階的に寄せる。
 - `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、独自palette（brand・plum）とヘッダー色、白文字とのコントラストを保つsemantic colorの濃さ、elevation影、breakpoint、`page-surface`／`page-container`／`app-table`等の共通utility。
 - `src/shared/components`: `StatusAlert`、`AppAlert`、`AppSnackbar`、`AppDataTable`、`SearchField`、`FieldCounter`。
 - `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`、`AppDataTable`の並べ替え・ページ・選択状態を持つ`useDataTable`）。

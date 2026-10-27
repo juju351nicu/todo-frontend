@@ -48,7 +48,7 @@ const {
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
 
-      <div class="-m-3 mb-0 flex flex-wrap items-center">
+      <div class="-m-3 mb-0 flex flex-wrap items-end">
         <div class="w-full p-3 sm:w-5/12">
           <UFormField label="開始日" class="pb-0">
             <UInput v-model="dateFrom" type="date" :disabled="isLoading" class="w-full" />

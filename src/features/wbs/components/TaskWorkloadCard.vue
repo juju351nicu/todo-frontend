@@ -54,7 +54,7 @@ const submit = (): void => {
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
     <form @submit.prevent="submit">
-      <div class="-m-3 flex flex-wrap items-center">
+      <div class="-m-3 flex flex-wrap items-end">
         <div class="w-full p-3 sm:w-5/12 md:w-1/4">
           <UFormField label="集計開始日" class="pb-0">
             <UInput v-model="form.dateFrom" type="date" :disabled="isLoading" class="w-full" />
@@ -85,7 +85,7 @@ const submit = (): void => {
     </div>
     <template v-else-if="workload">
       <div class="mt-5 mb-3 flex flex-wrap gap-2">
-        <UBadge color="primary">予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge>
+        <UBadge color="info">予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge>
         <UBadge color="secondary">実績 {{ formatEffortMinutes(workload.totalActualEffortMinutes) }}</UBadge>
         <UBadge :color="getWorkloadVarianceColor(workload.totalVarianceEffortMinutes)">
           差分 {{ formatSignedEffortMinutes(workload.totalVarianceEffortMinutes) }}

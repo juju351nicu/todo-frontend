@@ -121,7 +121,7 @@ const emit = defineEmits<{
           <UBadge variant="outline">Task {{ activeBaselineDetail.tasks.length }}件</UBadge>
           <UBadge variant="outline">依存関係 {{ activeBaselineDetail.dependencies.length }}件</UBadge>
           <UBadge variant="outline">日別予定 {{ activeBaselineDetail.effortPlans.length }}件</UBadge>
-          <UBadge color="primary">予定 {{ formatEffortMinutes(activeBaselineDetail.plannedEffortMinutes) }}</UBadge>
+          <UBadge color="info">予定 {{ formatEffortMinutes(activeBaselineDetail.plannedEffortMinutes) }}</UBadge>
           <UBadge color="secondary">配賦済み {{ formatEffortMinutes(activeBaselineDetail.allocatedEffortMinutes) }}</UBadge>
           <UBadge :color="activeBaselineDetail.unallocatedEffortMinutes === 0 ? 'success' : 'warning'">
             未配賦 {{ formatSignedEffortMinutes(activeBaselineDetail.unallocatedEffortMinutes) }}

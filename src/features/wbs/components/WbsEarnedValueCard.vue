@@ -55,7 +55,7 @@ const submit = (): void => {
     </StatusAlert>
 
     <form @submit.prevent="submit">
-      <div class="-m-3 flex flex-wrap items-center">
+      <div class="-m-3 flex flex-wrap items-end">
         <div class="w-full p-3 sm:w-5/12 md:w-1/4">
           <UFormField label="EVM基準日" class="pb-0">
             <UInput v-model="formStatusDate" type="date" :disabled="isLoading" class="w-full" />
@@ -83,7 +83,7 @@ const submit = (): void => {
     </div>
     <template v-else-if="metrics">
       <div class="mt-5 mb-3 flex flex-wrap items-center gap-2">
-        <UBadge color="primary">baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge>
+        <UBadge color="neutral">baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge>
         <UBadge variant="outline">作成日 {{ metrics.baselineDate }}</UBadge>
         <UBadge variant="outline">timezone {{ metrics.businessZoneId }}</UBadge>
       </div>

@@ -31,7 +31,7 @@ onBeforeMount(initialize);
     item-value="memberId"
     :items-per-page-options="itemsPerPageOptions"
     selectable
-    class="shadow-elevation-1"
+    class="rounded-sm ring ring-default"
   >
     <template #actions-cell="{ item }">
       <button type="button" class="me-2 align-middle" aria-label="会員を編集" @click="showMemberDetail(item)">

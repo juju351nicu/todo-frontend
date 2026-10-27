@@ -54,7 +54,7 @@ defineEmits<{
         申請snapshotと現在勤怠を比較し、審査待ち申請を承認または却下します。
       </div>
     </template>
-    <div class="-m-1 mb-2 flex flex-wrap items-center">
+    <div class="-m-1 mb-2 flex flex-wrap items-end">
       <div class="w-full p-1 sm:w-5/12 md:w-1/4">
         <UFormField label="申請状態" class="pb-0">
           <USelect

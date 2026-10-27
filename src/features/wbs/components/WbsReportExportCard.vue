@@ -45,7 +45,7 @@ const requestDownload = (reportType: WbsReportType): void => {
     </StatusAlert>
     <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-    <div class="-m-3 flex flex-wrap items-center">
+    <div class="-m-3 flex flex-wrap items-end">
       <div class="w-full p-3 sm:w-5/12 md:w-1/4">
         <UFormField label="帳票基準日" class="pb-0">
           <UInput v-model="formStatusDate" type="date" :disabled="exportingReportType !== null" class="w-full" />

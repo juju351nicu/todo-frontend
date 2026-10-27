@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 一覧の絞り込みに使う検索欄。移行前のVuetify v-text-field（compact・虫眼鏡アイコン・clearable・hide-details）と同じ表示で、
+ * 一覧の絞り込みに使う検索欄。ラベルを欄の上に出す小さめ（`sm`）の入力欄に虫眼鏡アイコンを付け、補足・エラーの余白を取らない表示で、
  * 入力がある場合だけ右端にクリアbuttonを出す。クリアすると空文字にする（nullにはしない）。
  */
 withDefaults(
