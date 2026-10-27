@@ -12,6 +12,10 @@ import {
   getBaselineComparisonStatusColor,
   getBaselineComparisonStatusLabel,
 } from "@/features/wbs/utils/wbsBaseline";
+import {
+  baselineActivateControlKey,
+  WBS_BASELINE_CONTROL,
+} from "@/features/wbs/composables/useWbsBaselines";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 /** WBS baseline cardへ親画面から渡す一覧・比較結果・操作状態。 */
@@ -47,6 +51,7 @@ const emit = defineEmits<{
           variant="soft"
           icon="i-mdi-camera-plus-outline"
           :disabled="isLoading || isMutating"
+          :data-wbs-baseline-control="WBS_BASELINE_CONTROL.create"
           @click="emit('create')"
         >
           現在計画を保存
@@ -99,6 +104,7 @@ const emit = defineEmits<{
                   icon="i-mdi-check-circle-outline"
                   :loading="activatingBaselineId === baseline.baselineId"
                   :disabled="isMutating"
+                  :data-wbs-baseline-control="baselineActivateControlKey(baseline.baselineId)"
                   @click="emit('activate', baseline)"
                 >
                   比較対象にする

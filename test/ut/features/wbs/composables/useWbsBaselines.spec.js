@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { computed, ref } from "vue";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
-import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
+import {
+  baselineActivateControlKey,
+  useWbsBaselines,
+} from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
@@ -136,9 +139,49 @@ describe("useWbsBaselines", () => {
 
     await page.activateWbsBaseline(inactiveBaselineSummary);
 
-    expect(page.baselineErrorMessages.value).toEqual(["更新されています。"]);
+    // 一覧は取り直し済みなので、Backendの「最新状態を取得してください」の後ろに取り直し済みの案内を添える。
+    expect(page.baselineErrorMessages.value).toEqual([
+      "更新されています。",
+      DISPLAY_MESSAGES.wbs.baseline.conflictReloaded,
+    ]);
     expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
     expect(page.activatingBaselineId.value).toBeNull();
+  });
+
+  it("archive済みProjectの409では、取り直しても操作できないので取り直し済みの案内を添えない", async () => {
+    mocks.userStore.memberId = 1;
+    mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_ARCHIVED",
+            field: "projectId",
+            message: "archive済みProjectのWBS baselineは変更できません。",
+          },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.activateWbsBaseline(inactiveBaselineSummary);
+
+    expect(page.baselineErrorMessages.value).toEqual([
+      "archive済みProjectのWBS baselineは変更できません。",
+    ]);
+  });
+
+  it("有効化の後は、押したボタンが残っていればそこへ、なければ直前のactive baselineのボタンへフォーカスを戻す", async () => {
+    mocks.userStore.memberId = 1;
+    const page = useWbsPage();
+    await page.initialize();
+
+    await page.activateWbsBaseline(inactiveBaselineSummary);
+
+    // 単体テストのdocumentは常に要素を返すため、候補の先頭（押したボタン）へ戻したことだけを確かめる。
+    expect(mocks.focusedControls).toEqual([
+      baselineActivateControlKey(inactiveBaselineSummary.baselineId),
+    ]);
   });
 
   it("baseline更新409後の再取得で401になった場合は競合案内を残さない", async () => {

@@ -243,7 +243,7 @@ const VIEW_OPTIONS = [
       :metrics="page.earnedValue"
       :is-loading="page.isLoadingEarnedValue"
       :error-messages="page.earnedValueErrorMessages"
-      @load="page.loadEarnedValueMetrics"
+      @load="page.submitEarnedValueMetrics"
     />
 
     <WbsReportExportCard

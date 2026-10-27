@@ -423,6 +423,9 @@ export const DISPLAY_MESSAGES = {
         "baselineが他の操作で更新されました。最新情報を確認してください。",
       reloadFailed:
         "最新のbaselineを再取得できませんでした。画面を再読込してください。",
+      /** 409（version競合・作成競合）の後に、画面側でbaselineを取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のbaselineを再取得しました。内容を確認してから、もう一度操作してください。",
     },
   },
 } as const;
