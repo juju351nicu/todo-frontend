@@ -16,9 +16,30 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const TASK_COMMENT_MAX_LENGTH = 2000;
+
+/**
+ * 投稿欄（`TaskCommentsPanel.vue`の「コメントを追加」）に付ける`data-comment-control`属性の値。
+ * 投稿の後にフォーカスを戻す先として使う。
+ */
+export const COMMENT_COMPOSER_CONTROL = "composer";
+
+/**
+ * コメントごとの編集ボタンに付ける`data-comment-control`属性の値を組み立てる。
+ * `TaskCommentsPanel.vue`はこの値で属性を付け、`useTaskComments`は同じ値で編集ボタンを探してフォーカスを戻す。
+ *
+ * @param commentId コメントID
+ * @returns `"{commentId}:edit"`形式の属性値
+ */
+export const commentEditControlKey = (commentId: number): string =>
+  `${commentId}:edit`;
+
+/** `data-comment-control`属性の値から、その要素を探すselectorを作る。 */
+const commentControlSelector = (key: string): string =>
+  `[data-comment-control="${key}"]`;
 
 /** trim後1文字以上、最大文字数以下のコメント本文か。 */
 const isValidCommentBody = (body: string): boolean => {
@@ -188,6 +209,8 @@ export const useTaskComments = (
     } finally {
       isSubmitting.value = false;
     }
+    // 送信中は投稿欄と投稿ボタンをdisabledにするためフォーカスが外れる。続けて書けるよう投稿欄へ戻す。
+    await focusFirstEnabledElement([commentControlSelector(COMMENT_COMPOSER_CONTROL)]);
   };
 
   /** 投稿者本人のコメント本文を編集状態へ切り替える。 */
@@ -206,6 +229,18 @@ export const useTaskComments = (
   const cancelEditing = (): void => {
     editingCommentId.value = null;
     editBody.value = "";
+  };
+
+  /**
+   * 利用者の操作（「キャンセル」・Escキー）で編集をやめ、そのコメントの編集ボタンへフォーカスを戻す。
+   * 編集欄は閉じると消えるため、戻さないとフォーカスがDialogの先頭へ外れる。
+   */
+  const discardEditing = async (): Promise<void> => {
+    const commentId = editingCommentId.value;
+    cancelEditing();
+    if (commentId !== null) {
+      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(commentId))]);
+    }
   };
 
   /**
@@ -328,6 +363,10 @@ export const useTaskComments = (
     } finally {
       isUpdating.value = false;
     }
+    // 更新に成功して編集欄が閉じたときだけ編集ボタンへ戻す。失敗して編集欄が残る場合は編集欄のフォーカスを奪わない。
+    if (editingCommentId.value === null) {
+      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(comment.commentId))]);
+    }
   };
 
   /** 投稿者本人のコメントを削除確認対象にする。 */
@@ -425,6 +464,7 @@ export const useTaskComments = (
     comments,
     confirmDelete,
     deletingComment,
+    discardEditing,
     editBody,
     editingCommentId,
     errorMessages,

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import { TASK_COMMENT_MAX_LENGTH, useTaskComments } from "@/features/task/composables/useTaskComments";
+import {
+  COMMENT_COMPOSER_CONTROL,
+  TASK_COMMENT_MAX_LENGTH,
+  commentEditControlKey,
+  useTaskComments,
+} from "@/features/task/composables/useTaskComments";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
@@ -17,7 +22,6 @@ const props = withDefaults(
 
 const {
   cancelDelete,
-  cancelEditing,
   canModifyComment,
   canSaveEdit,
   canSubmit,
@@ -25,6 +29,7 @@ const {
   commentBody,
   confirmDelete,
   deletingComment,
+  discardEditing,
   editBody,
   editingCommentId,
   errorMessages,
@@ -65,6 +70,7 @@ const {
         <div v-if="editingCommentId === comment.commentId" class="mt-2">
           <div class="relative">
             <UFormField label="コメントを編集">
+              <!-- Escは編集の取消だけにする。preventDefaultしないとTask Dialog（UModal）もEscで閉じ、編集中の本文ごと失われるため。 -->
               <UTextarea
                 v-model="editBody"
                 :maxlength="TASK_COMMENT_MAX_LENGTH"
@@ -72,12 +78,13 @@ const {
                 autofocus
                 :disabled="isUpdating"
                 class="w-full"
+                @keydown.esc.prevent="discardEditing"
               />
             </UFormField>
             <FieldCounter :value="editBody" :max="TASK_COMMENT_MAX_LENGTH" />
           </div>
           <div class="flex justify-end gap-2">
-            <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="cancelEditing">
+            <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="discardEditing">
               キャンセル
             </UButton>
             <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="submitEdit">更新</UButton>
@@ -93,7 +100,8 @@ const {
           square
           class="text-inherit"
           :disabled="isMutating"
-          :aria-label="`${comment.authorDisplayName}のコメントを編集`"
+          :aria-label="`${comment.authorDisplayName}のコメント（${formatShortDateTime(comment.createdAt)}投稿）を編集`"
+          :data-comment-control="commentEditControlKey(comment.commentId)"
           @click="startEditing(comment)"
         />
         <UButton
@@ -103,7 +111,7 @@ const {
           variant="ghost"
           square
           :disabled="isMutating"
-          :aria-label="`${comment.authorDisplayName}のコメントを削除`"
+          :aria-label="`${comment.authorDisplayName}のコメント（${formatShortDateTime(comment.createdAt)}投稿）を削除`"
           @click="openDeleteConfirm(comment)"
         />
       </div>
@@ -121,6 +129,7 @@ const {
         :readonly="disabled"
         :disabled="disabled || isMutating"
         class="w-full"
+        :data-comment-control="COMMENT_COMPOSER_CONTROL"
       />
     </UFormField>
     <FieldCounter :value="commentBody" :max="TASK_COMMENT_MAX_LENGTH" />

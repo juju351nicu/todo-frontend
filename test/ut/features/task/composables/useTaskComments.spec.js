@@ -1,8 +1,12 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
-import { useTaskComments } from "@/features/task/composables/useTaskComments";
+import {
+  COMMENT_COMPOSER_CONTROL,
+  commentEditControlKey,
+  useTaskComments,
+} from "@/features/task/composables/useTaskComments";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
@@ -410,5 +414,90 @@ describe("useTaskComments", () => {
     expect(page.deletingComment.value).not.toBeNull();
     page.handleDeleteDialogVisibility(false);
     expect(page.deletingComment.value).toBeNull();
+  });
+
+  describe("操作後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // 送信中は投稿欄・各ボタンがdisabledになりフォーカスが外れるため、操作後に探し直して戻すことを確かめる。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => {
+          const key = selector.match(/data-comment-control="([^"]+)"/)?.[1];
+          return { focus: () => focused.push(key), matches: () => false };
+        },
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("投稿した後、続けて書けるよう投稿欄へフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.commentBody.value = "続けて書く";
+
+      await page.submitComment();
+
+      expect(focused).toEqual([COMMENT_COMPOSER_CONTROL]);
+    });
+
+    it("投稿に失敗した場合も投稿欄へフォーカスを戻す", async () => {
+      mocks.taskCommentApi.createComment.mockRejectedValue(new TypeError("Failed to fetch"));
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.commentBody.value = "送れない本文";
+
+      await page.submitComment();
+
+      expect(page.commentBody.value).toBe("送れない本文");
+      expect(focused).toEqual([COMMENT_COMPOSER_CONTROL]);
+    });
+
+    it("更新した後、そのコメントの編集ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.comments.value[0]);
+      page.editBody.value = "変更後";
+
+      await page.submitEdit();
+
+      expect(page.editingCommentId.value).toBeNull();
+      expect(focused).toEqual([commentEditControlKey(41)]);
+    });
+
+    it("更新に失敗して編集欄が残る場合は、フォーカスを動かさない", async () => {
+      mocks.taskCommentApi.updateComment.mockRejectedValue(new TypeError("Failed to fetch"));
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.comments.value[0]);
+      page.editBody.value = "変更後";
+
+      await page.submitEdit();
+
+      expect(page.editingCommentId.value).toBe(41);
+      expect(focused).toEqual([]);
+    });
+
+    it("キャンセル・Escで編集をやめると、本文を捨てて編集ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.comments.value[0]);
+      page.editBody.value = "保存しない本文";
+
+      await page.discardEditing();
+
+      expect(page.editingCommentId.value).toBeNull();
+      expect(page.editBody.value).toBe("");
+      expect(mocks.taskCommentApi.updateComment).not.toHaveBeenCalled();
+      expect(focused).toEqual([commentEditControlKey(41)]);
+    });
   });
 });
