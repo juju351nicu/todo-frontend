@@ -212,6 +212,8 @@ describe("useTaskBoardPage", () => {
       expect(page.isEditorOpen.value).toBe(true);
       expect(page.canRecordTaskWork.value).toBe(false);
       expect(page.canStartTaskTimer.value).toBe(false);
+      // Task Templateへの保存も通常Taskだけ（Backendが400で拒否する）。
+      expect(page.canCaptureTaskTemplate.value).toBe(false);
     }
   );
 
@@ -224,6 +226,18 @@ describe("useTaskBoardPage", () => {
 
     expect(page.canRecordTaskWork.value).toBe(true);
     expect(page.canStartTaskTimer.value).toBe(true);
+    expect(page.canCaptureTaskTemplate.value).toBe(true);
+  });
+
+  it("Task Template適用の担当者は、MEMBERなら本人だけに限定し、OWNERなら限定しない", async () => {
+    const memberPage = useTaskBoardPage();
+    await memberPage.initialize();
+    expect(memberPage.taskTemplateAssigneeAccountId.value).toBe(mocks.userStore.memberId);
+
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const ownerPage = useTaskBoardPage();
+    await ownerPage.initialize();
+    expect(ownerPage.taskTemplateAssigneeAccountId.value).toBeNull();
   });
 
   it("Task詳細から同じTaskの日別実績入力をWBSで開く", async () => {

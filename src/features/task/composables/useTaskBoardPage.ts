@@ -222,11 +222,24 @@ export const useTaskBoardPage = () => {
     () => isEditing.value && !canUpdateEditingTask.value
   );
   /**
-   * 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。実績工数は通常Task（`TASK`）だけが対象で、
-   * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない（`todo-backend`の`docs/time-tracking-design.md` §4.3）。
+   * 開いているTaskが通常Task（`TASK`）か。実績工数（Timer・日別実績）とTask Templateへの保存は通常Taskだけが対象で、
+   * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない
+   * （`todo-backend`の`docs/time-tracking-design.md` §4.3、`TaskTemplateLogic#calculateDueOffsetDays`）。
    */
-  const canRecordTaskWork = computed(
+  const isEditingRegularTask = computed(
     () => isEditing.value && editingTaskType.value === "TASK"
+  );
+  /** 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。 */
+  const canRecordTaskWork = computed(() => isEditingRegularTask.value);
+  /** 開いているTaskを「Templateとして保存」できるか。保存自体は`TASK_READ`で許可される（Backendの`TaskTemplateController`）。 */
+  const canCaptureTaskTemplate = computed(() => isEditingRegularTask.value);
+  /**
+   * Task Templateを適用するときに担当者を限定するaccount ID。限定しない場合はnull。
+   * MEMBERは自分を担当者にするTaskだけを作成できる（Backendの`TaskResourceAuthorizationLogic#checkCanCreate`）ため、
+   * 既定担当が他人のTemplateをそのまま適用すると403になる。MEMBERには自分だけを候補にし、初期値も自分にする。
+   */
+  const taskTemplateAssigneeAccountId = computed<number | null>(() =>
+    canManageProjectTasks.value ? null : userStore.memberId
   );
   const canStartTaskTimer = computed(
     () =>
@@ -954,12 +967,14 @@ export const useTaskBoardPage = () => {
     canMoveTask,
     canSave,
     canStartTaskTimer,
+    canCaptureTaskTemplate,
     canPostTaskComment,
     canRecordTaskWork,
     canUpdateTask,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,
+    taskTemplateAssigneeAccountId,
     editorErrorMessages,
     errorMessages,
     form,

@@ -29,12 +29,14 @@ const {
   canMoveTask,
   canSave,
   canStartTaskTimer,
+  canCaptureTaskTemplate,
   canPostTaskComment,
   canRecordTaskWork,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
   closeTaskEditor,
+  taskTemplateAssigneeAccountId,
   editorErrorMessages,
   errorMessages,
   finishTaskDrag,
@@ -117,6 +119,7 @@ onBeforeMount(initialize);
         :can-apply="canCreateTask"
         :can-edit="canUpdateTask"
         :project-active="project.status === 'ACTIVE'"
+        :restricted-assignee-account-id="taskTemplateAssigneeAccountId"
         @task-created="handleTemplateTaskCreated"
       />
       <TaskRecurrenceDialog
@@ -317,7 +320,7 @@ onBeforeMount(initialize);
             <TaskWorkLogAuditDialog :project-id="board.projectId" :task-id="form.taskId" />
           </div>
           <TaskTemplateCaptureButton
-            v-if="form.taskId !== null && project !== null"
+            v-if="form.taskId !== null && project !== null && canCaptureTaskTemplate"
             :project-id="project.projectId"
             :task-id="form.taskId"
             :disabled="project.status === 'ARCHIVED'"

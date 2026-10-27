@@ -15,8 +15,13 @@ const props = withDefaults(
     canApply?: boolean;
     canEdit?: boolean;
     projectActive?: boolean;
+    /**
+     * 適用時の担当者をこのaccountだけに限定する場合のID（MEMBERの本人）。nullなら全参加者から選べる。
+     * 限定するときは担当者の初期値もこのaccountにする（`useTaskTemplateDialog`）。
+     */
+    restrictedAssigneeAccountId?: number | null;
   }>(),
-  { canApply: false, canEdit: false, projectActive: false },
+  { canApply: false, canEdit: false, projectActive: false, restrictedAssigneeAccountId: null },
 );
 const emit = defineEmits<{
   taskCreated: [task: TaskDetail];
@@ -24,6 +29,7 @@ const emit = defineEmits<{
 
 const {
   applyAssigneeAccountId,
+  applyAssigneeOptions,
   applyDateFrom,
   applySelectedTemplate,
   applyTaskStatusId,
@@ -45,14 +51,15 @@ const {
   saveTemplate,
   selectTemplate,
   selectedTemplate,
+  applyStatusOptions,
   statusCodeOptions,
-  statusIdOptions,
   successMessage,
   templates,
 } = useTaskTemplateDialog({
   projectId: toRef(props, "projectId"),
   members: () => props.members,
   statuses: () => props.statuses,
+  restrictedAssigneeAccountId: () => props.restrictedAssigneeAccountId,
   onTaskCreated: (task) => emit("taskCreated", task),
 });
 </script>
@@ -156,10 +163,13 @@ const {
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
-                <UFormField label="担当者上書き" help="未指定時はTemplate既定値">
+                <UFormField
+                  label="担当者上書き"
+                  :help="restrictedAssigneeAccountId === null ? '未指定時はTemplate既定値' : 'MEMBERは自分だけを担当者にできます'"
+                >
                   <USelectMenu
                     :model-value="applyAssigneeAccountId ?? undefined"
-                    :items="memberOptions"
+                    :items="applyAssigneeOptions"
                     label-key="title"
                     value-key="value"
                     :search-input="false"
@@ -175,7 +185,7 @@ const {
                 <UFormField label="Board列上書き" help="未指定時はTemplate既定列">
                   <USelectMenu
                     :model-value="applyTaskStatusId ?? undefined"
-                    :items="statusIdOptions"
+                    :items="applyStatusOptions"
                     label-key="title"
                     value-key="value"
                     :search-input="false"
