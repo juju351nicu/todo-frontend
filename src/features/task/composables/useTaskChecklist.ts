@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from "vue";
+import { computed, nextTick, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -18,6 +18,25 @@ export const CHECKLIST_ITEM_MAX_LENGTH = 255;
 
 /** 1 Taskに登録できるチェック項目の最大件数。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_COUNT = 50;
+
+/**
+ * 操作後にフォーカスを戻すチェック項目の部品。
+ * `toggle`は完了状態のcheckbox、`move-up`・`move-down`は上下移動のボタン、`edit`は編集ボタン。
+ */
+export type ChecklistControl = "toggle" | "move-up" | "move-down" | "edit";
+
+/**
+ * 部品に付ける`data-checklist-control`属性の値を組み立てる。
+ * `TaskChecklistPanel.vue`はこの値で属性を付け、`useTaskChecklist`は同じ値で部品を探してフォーカスを戻す。
+ *
+ * @param itemId checklist item ID
+ * @param control 部品の種類
+ * @returns `"{itemId}:{control}"`形式の属性値
+ */
+export const checklistControlKey = (
+  itemId: number,
+  control: ChecklistControl
+): string => `${itemId}:${control}`;
 
 /** trim後1文字以上、最大文字数以下のチェック項目本文か。 */
 const isValidChecklistContent = (content: string): boolean => {
@@ -266,6 +285,18 @@ export const useTaskChecklist = (
     editContent.value = "";
   };
 
+  /**
+   * 利用者の操作（「取消」・Escキー）で本文編集をやめ、その項目の編集ボタンへフォーカスを戻す。
+   * 編集欄は閉じると消えるため、戻さないとフォーカスがDialogの先頭へ外れる。
+   */
+  const discardEditing = async (): Promise<void> => {
+    const itemId = editingItemId.value;
+    cancelEditing();
+    if (itemId !== null) {
+      await restoreControlFocus(itemId, ["edit"]);
+    }
+  };
+
   /** Backend確定Responseで対象itemを置き換える。 */
   const replaceItem = (updated: TaskChecklistItem): void => {
     items.value = items.value.map((item) =>
@@ -314,6 +345,10 @@ export const useTaskChecklist = (
     } finally {
       isUpdating.value = false;
     }
+    // 保存に失敗して編集欄が残っている場合は、編集欄のフォーカスを奪わない。
+    if (editingItemId.value === null) {
+      await restoreControlFocus(item.checklistItemId, ["edit"]);
+    }
   };
 
   /** 取得時点versionを使用して完了状態を反転する。 */
@@ -349,6 +384,37 @@ export const useTaskChecklist = (
       );
     } finally {
       isUpdating.value = false;
+    }
+    await restoreControlFocus(item.checklistItemId, ["toggle"]);
+  };
+
+  /**
+   * 完了状態の切替・上下移動の後（失敗した場合も含む）、操作した項目の部品へフォーカスを戻す。
+   * 更新中は全項目の部品をdisabledにするためフォーカスが外れ、キーボードだけでは続けて操作できなくなるため。
+   * 更新後は一覧の再描画で別の要素になるので、`data-checklist-control`属性で探し直す。
+   * disabledの部品は飛ばし、候補の先頭から順に最初に操作できる部品へ戻す。
+   *
+   * @param itemId 操作したchecklist item ID
+   * @param candidates フォーカスを戻す部品の候補（優先順）
+   */
+  const restoreControlFocus = async (
+    itemId: number,
+    candidates: readonly ChecklistControl[]
+  ): Promise<void> => {
+    // isUpdating等をfalseへ戻した後のdisabled解除をDOMへ反映してから探す。
+    await nextTick();
+    // DOMのない実行環境（単体テスト）では何もしない。
+    if (typeof document === "undefined") {
+      return;
+    }
+    for (const control of candidates) {
+      const element = document.querySelector<HTMLElement>(
+        `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
+      );
+      if (element && !element.matches(":disabled")) {
+        element.focus();
+        return;
+      }
     }
   };
 
@@ -399,6 +465,11 @@ export const useTaskChecklist = (
     } finally {
       isReordering.value = false;
     }
+    // 先頭・末尾へ動かすと同じ向きのボタンはdisabledになるため、そのときは逆向きのボタンへ戻す。
+    await restoreControlFocus(
+      item.checklistItemId,
+      direction === -1 ? ["move-up", "move-down"] : ["move-down", "move-up"]
+    );
   };
 
   /** 削除確認対象を保持する。 */
@@ -497,6 +568,7 @@ export const useTaskChecklist = (
     completedCount,
     confirmDelete,
     deletingItem,
+    discardEditing,
     editContent,
     editingItemId,
     errorMessages,

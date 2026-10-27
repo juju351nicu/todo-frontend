@@ -4,6 +4,7 @@ import { toRef } from "vue";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
+  checklistControlKey,
   useTaskChecklist,
 } from "@/features/task/composables/useTaskChecklist";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
@@ -23,10 +24,10 @@ const {
   canAdd,
   canSaveEdit,
   cancelDelete,
-  cancelEditing,
   completedCount,
   confirmDelete,
   deletingItem,
+  discardEditing,
   editContent,
   editingItemId,
   errorMessages,
@@ -74,11 +75,13 @@ const {
         :model-value="item.completed"
         :disabled="disabled || isMutating"
         :aria-label="`${item.content}の完了状態を変更`"
+        :data-checklist-control="checklistControlKey(item.checklistItemId, 'toggle')"
         @update:model-value="toggleItem(item)"
       />
       <div v-if="editingItemId === item.checklistItemId" class="flex flex-1 items-center gap-2 py-1">
         <div class="relative flex-1">
           <UFormField label="チェック項目" class="pb-0">
+            <!-- Escは編集の取消だけにする。preventDefaultしないとTask Dialog（UModal）もEscで閉じ、編集中の本文ごと失われるため。 -->
             <UInput
               v-model="editContent"
               :maxlength="CHECKLIST_ITEM_MAX_LENGTH"
@@ -87,10 +90,11 @@ const {
               :disabled="isUpdating"
               class="w-full"
               @keydown.enter.prevent="saveEdit"
+              @keydown.esc.prevent="discardEditing"
             />
           </UFormField>
         </div>
-        <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="cancelEditing">取消</UButton>
+        <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="discardEditing">取消</UButton>
         <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="saveEdit">保存</UButton>
       </div>
       <template v-else>
@@ -104,6 +108,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === 0"
             :aria-label="`${item.content}を上へ移動`"
+            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-up')"
             @click="moveItem(item, -1)"
           />
           <UButton
@@ -114,6 +119,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === items.length - 1"
             :aria-label="`${item.content}を下へ移動`"
+            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-down')"
             @click="moveItem(item, 1)"
           />
           <UButton
@@ -124,6 +130,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating"
             :aria-label="`${item.content}を編集`"
+            :data-checklist-control="checklistControlKey(item.checklistItemId, 'edit')"
             @click="startEditing(item)"
           />
           <UButton

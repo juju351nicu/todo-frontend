@@ -1,8 +1,11 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskChecklistApiError } from "@/features/task/api/taskChecklistApi";
-import { useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
+import {
+  checklistControlKey,
+  useTaskChecklist,
+} from "@/features/task/composables/useTaskChecklist";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
@@ -372,5 +375,111 @@ describe("useTaskChecklist", () => {
     page.items.value = Array.from({ length: 50 }, (_, index) => ({ ...firstItem, checklistItemId: index + 1 }));
 
     expect(page.canAdd.value).toBe(false);
+  });
+
+  describe("操作後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // 更新中は全部品がdisabledになりフォーカスが外れるため、操作後に探し直して戻すことを確かめる。
+    // disabledKeys に含めた属性値の部品は disabled として扱う。
+    const stubDocument = (disabledKeys = []) => {
+      const focused = [];
+      const querySelector = vi.fn((selector) => {
+        const key = selector.match(/data-checklist-control="([^"]+)"/)?.[1];
+        return {
+          focus: () => focused.push(key),
+          matches: () => disabledKeys.includes(key),
+        };
+      });
+      vi.stubGlobal("document", { querySelector });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("完了状態を切り替えた後、その項目のcheckboxへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+
+      await page.toggleItem(page.items.value[0]);
+
+      expect(focused).toEqual([checklistControlKey(41, "toggle")]);
+    });
+
+    it("完了状態の切替に失敗した場合もcheckboxへフォーカスを戻す", async () => {
+      mocks.taskChecklistApi.updateItem.mockRejectedValue(new TypeError("Failed to fetch"));
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+
+      await page.toggleItem(page.items.value[0]);
+
+      expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.common.connectionFailed]);
+      expect(focused).toEqual([checklistControlKey(41, "toggle")]);
+    });
+
+    it("下へ移動した後、同じ項目の下へ移動ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+
+      await page.moveItem(page.items.value[0], 1);
+
+      expect(focused).toEqual([checklistControlKey(41, "move-down")]);
+    });
+
+    it("末尾へ移動して下へ移動ボタンがdisabledなら、上へ移動ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument([checklistControlKey(41, "move-down")]);
+      const page = createPage();
+      await waitForInitialLoad();
+
+      await page.moveItem(page.items.value[0], 1);
+
+      expect(focused).toEqual([checklistControlKey(41, "move-up")]);
+    });
+
+    it("本文を保存した後、その項目の編集ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.items.value[0]);
+      page.editContent.value = "仕様を読む";
+
+      await page.saveEdit();
+
+      expect(page.editingItemId.value).toBeNull();
+      expect(focused).toEqual([checklistControlKey(41, "edit")]);
+    });
+
+    it("保存に失敗して編集欄が残る場合は、フォーカスを動かさない", async () => {
+      mocks.taskChecklistApi.updateItem.mockRejectedValue(new TypeError("Failed to fetch"));
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.items.value[0]);
+      page.editContent.value = "仕様を読む";
+
+      await page.saveEdit();
+
+      expect(page.editingItemId.value).toBe(41);
+      expect(focused).toEqual([]);
+    });
+
+    it("取消・Escで編集をやめると、本文を捨てて編集ボタンへフォーカスを戻す", async () => {
+      const focused = stubDocument();
+      const page = createPage();
+      await waitForInitialLoad();
+      page.startEditing(page.items.value[1]);
+      page.editContent.value = "保存しない本文";
+
+      await page.discardEditing();
+
+      expect(page.editingItemId.value).toBeNull();
+      expect(page.editContent.value).toBe("");
+      expect(mocks.taskChecklistApi.updateItem).not.toHaveBeenCalled();
+      expect(focused).toEqual([checklistControlKey(42, "edit")]);
+    });
   });
 });
