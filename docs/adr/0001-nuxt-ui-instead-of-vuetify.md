@@ -1,6 +1,6 @@
 # 0001. UI 基盤を Vuetify 3 から Nuxt UI 4（Vite plugin）と Tailwind CSS 4 へ移す
 
-- 状態: 採用（見た目は段階的に移行中。§影響）
+- 状態: 採用（見た目の移行も 2026-10-28 に完了。PR #5・#6）
 - 記録日: 2026-10-28（移行は 2026-10。todo-frontend PR #2）
 
 ## 背景
@@ -17,7 +17,7 @@
 - 見た目の既定は `src/app/theme/nuxtUiTheme.ts`（コンポーネントの寸法・variant）と `src/app/theme/main.css`（色・breakpoint・共通 utility）の2ファイルに集める。画面側の `class` で個別に上書きしない。
 - アイコンは `i-mdi-*`（`@iconify-json/mdi`）を使い、移行前と同じ図柄にする。
 - 移行は Vuetify と一時的に共存させながら画面ごとに進め、すべてのコミットで build・typecheck・test が通る状態を保った。Vuetify は削除済みで、再び入れない。
-- 移行の時点では、見た目を Vuetify の既定に合わせた。その後、参考デザインへ段階的に寄せている（配色は完了）。
+- 移行の時点では、見た目を Vuetify の既定に合わせた。その後、参考デザインへ段階的に寄せ、2026-10-28 に完了した（配色、button、card、入力欄、modal・tabs・badge）。
 
 ## 理由
 
@@ -38,11 +38,12 @@
 
 - 良くなること：AI が画面を書きやすく、見た目の既定が2ファイルにまとまった。E2E のセレクターが role・label になった。
 - 気をつけること：
-  - 移行前の Vuetify に合わせた寸法（button の大文字表記・字間・影・高さ、card の影、入力欄の欄内ラベル、table・modal・tabs・badge の寸法）が、まだ `nuxtUiTheme.ts`・`main.css` に残っている。参考デザインへ寄せるときは、この2ファイルを減らす。
+  - 表の行の高さ（40px）など、移行前の Vuetify に合わせた寸法が一部 `nuxtUiTheme.ts`・`main.css` に残っている。変えるときはこの2ファイルを直す。
+  - 入力欄はラベルを欄の上に出すため、入力欄と button を横に並べる行は `items-end` で下端をそろえる（`AGENTS.md`）。
   - FullCalendar・dhtmlx-gantt・vuedraggable は移行の対象外（周りの UI だけ移した）。
   - Vite 8（rolldown）で遅延読み込みの route が白画面になるため、`vite.config.js` で UI 基盤を `vendor-ui` chunk にまとめている。外すと再発する。
   - Nuxt UI の型宣言は build のときに生成されるため、CI は build → typecheck → test の順に実行する。
-- あとで決めること：デザイン移行の残りの段階（badge と警告の色の見分け、button、card、入力欄、table・modal・tabs・badge の寸法）。
+- あとで決めること：Todo の重要度 badge（低・中・高）の固定の色（`getTodoPriorityColor`）を semantic color に揃えるか。
 
 ## 関連資料
 
