@@ -816,7 +816,7 @@ describe("useTaskBoardPage", () => {
     // 単体テストの実行環境にはDOMがないため、Board画面の移動アイコンを探すdocumentを差し替える。
     // 移動中はアイコンがdisabledになりフォーカスが外れるため、移動後に探し直して戻すことを確かめる。
     const focus = vi.fn();
-    const querySelector = vi.fn(() => ({ focus }));
+    const querySelector = vi.fn(() => ({ focus, matches: () => false }));
     vi.stubGlobal("document", { querySelector });
     try {
       const page = useTaskBoardPage();

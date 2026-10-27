@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, type Ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -23,6 +23,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import {
   buildProjectMemberOptions,
   resolveProjectMemberDisplayName,
@@ -777,16 +778,8 @@ export const useTaskBoardPage = () => {
    *
    * @param taskId 移動したTask ID
    */
-  const restoreMoveHandleFocus = async (taskId: number): Promise<void> => {
-    await nextTick();
-    // DOMのない実行環境（単体テスト）では何もしない。
-    if (typeof document === "undefined") {
-      return;
-    }
-    document
-      .querySelector<HTMLElement>(`[data-task-move-handle="${taskId}"]`)
-      ?.focus();
-  };
+  const restoreMoveHandleFocus = (taskId: number): Promise<void> =>
+    focusFirstEnabledElement([`[data-task-move-handle="${taskId}"]`]);
 
   /**
    * 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。

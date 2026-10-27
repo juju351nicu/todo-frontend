@@ -1,4 +1,4 @@
-import { computed, nextTick, ref, watch, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -12,6 +12,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_LENGTH = 255;
@@ -327,32 +328,22 @@ export const useTaskChecklist = (
   /**
    * 完了状態の切替・上下移動・編集の後（失敗した場合も含む）、操作した項目の部品へフォーカスを戻す。
    * 更新中は全項目の部品をdisabledにするためフォーカスが外れ、キーボードだけでは続けて操作できなくなるため。
-   * 更新後は一覧の再描画で別の要素になるので、`data-checklist-control`属性で探し直す。
-   * disabledの部品は飛ばし、候補の先頭から順に最初に操作できる部品へ戻す。
+   * 一覧の再描画で別の要素になるので`data-checklist-control`属性で探し直し、disabledの部品は飛ばす
+   * （`focusFirstEnabledElement`）。isUpdating等をfalseへ戻した後に呼ぶ。
    *
    * @param itemId 操作したchecklist item ID
    * @param candidates フォーカスを戻す部品の候補（優先順）
    */
-  const restoreControlFocus = async (
+  const restoreControlFocus = (
     itemId: number,
     candidates: readonly ChecklistControl[]
-  ): Promise<void> => {
-    // isUpdating等をfalseへ戻した後のdisabled解除をDOMへ反映してから探す。
-    await nextTick();
-    // DOMのない実行環境（単体テスト）では何もしない。
-    if (typeof document === "undefined") {
-      return;
-    }
-    for (const control of candidates) {
-      const element = document.querySelector<HTMLElement>(
-        `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
-      );
-      if (element && !element.matches(":disabled")) {
-        element.focus();
-        return;
-      }
-    }
-  };
+  ): Promise<void> =>
+    focusFirstEnabledElement(
+      candidates.map(
+        (control) =>
+          `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
+      )
+    );
 
   /** Backend確定Responseで対象itemを置き換える。 */
   const replaceItem = (updated: TaskChecklistItem): void => {
