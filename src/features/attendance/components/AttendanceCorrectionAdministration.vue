@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import {
+  ATTENDANCE_ADMIN_CONTROL,
+  attendanceCorrectionRowControlKey,
+} from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import type {
   AttendanceCorrectionResponse,
   AttendanceCorrectionStatus,
@@ -22,6 +26,8 @@ defineProps<{
   currentDay: AttendanceDayResponse | null;
   processingAction: string | null;
   rejectReason: string;
+  /** 却下理由が空のまま押されたときの、入力欄の下へ出す案内。なければ空文字。 */
+  rejectReasonError: string;
   reviewComment: string;
   selectedCorrection: AttendanceCorrectionResponse | null;
   selectedStatus: AttendanceCorrectionStatus;
@@ -62,7 +68,14 @@ defineEmits<{
         </UFormField>
       </div>
       <div class="w-full p-1 sm:w-1/3 md:w-1/4">
-        <UButton color="primary" icon="i-mdi-magnify" @click="$emit('search')">申請を検索</UButton>
+        <UButton
+          color="primary"
+          icon="i-mdi-magnify"
+          :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.correctionSearch"
+          @click="$emit('search')"
+        >
+          申請を検索
+        </UButton>
       </div>
     </div>
 
@@ -88,6 +101,7 @@ defineEmits<{
               tabindex="0"
               :aria-label="`${request.displayName || 'Account ' + request.accountId}の${formatAttendanceDate(request.workDate)}修正申請を表示`"
               aria-keyshortcuts="Enter Space"
+              :data-attendance-admin-control="attendanceCorrectionRowControlKey(request.attendanceCorrectionRequestId)"
               @click="$emit('select', request)"
               @keydown.enter="$emit('select', request)"
               @keydown.space.prevent="$emit('select', request)"
@@ -179,17 +193,19 @@ defineEmits<{
               class="mb-3"
               :loading="processingAction === 'approve-correction'"
               :disabled="processingAction !== null"
+              data-attendance-admin-control="approve-correction"
               @click="$emit('approve')"
             >
               修正を承認
             </UButton>
             <div class="relative">
-              <UFormField label="却下理由（必須）">
+              <UFormField label="却下理由（必須）" :error="rejectReasonError || undefined">
                 <UTextarea
                   :model-value="rejectReason"
                   :maxlength="1000"
                   :rows="2"
                   class="w-full"
+                  :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.correctionRejectReason"
                   @update:model-value="$emit('updateRejectReason', String($event ?? ''))"
                 />
               </UFormField>
@@ -199,6 +215,7 @@ defineEmits<{
               color="warning"
               :loading="processingAction === 'reject-correction'"
               :disabled="processingAction !== null"
+              data-attendance-admin-control="reject-correction"
               @click="$emit('reject')"
             >
               修正を却下

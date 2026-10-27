@@ -26,6 +26,7 @@ import {
 import {
   ATTENDANCE_ERROR_CODES,
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+  needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -220,7 +221,7 @@ export const useAttendancePage = () => {
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 競合後のボタン状態を推測せず、Backendの最新状態へ戻す。
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       isPunching.value = false;
@@ -252,7 +253,7 @@ export const useAttendancePage = () => {
         DISPLAY_MESSAGES.attendance.self.submitMonthFailed
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       isSubmittingMonth.value = false;
@@ -394,7 +395,7 @@ export const useAttendancePage = () => {
         correctionErrorMessages
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error, correctionErrorMessages);
       }
     } finally {
       isSubmittingCorrection.value = false;
@@ -432,7 +433,7 @@ export const useAttendancePage = () => {
         DISPLAY_MESSAGES.attendance.self.correctionCancelFailed
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       cancellingCorrectionId.value = null;
@@ -529,8 +530,15 @@ export const useAttendancePage = () => {
   /**
    * 409後に月一覧と選択日を再取得し、次に可能な打刻操作を確定する。
    * 認証・認可・公開範囲の変化は優先し、それ以外の再取得失敗では最初の競合理由を維持する。
+   * version競合等（`needsAttendanceReloadGuidance`）で取り直せたときは、取り直し済みの案内を添える。
+   *
+   * @param conflict 操作APIが返した409
+   * @param messageTarget 競合理由を出した先。修正申請Dialogからの409は`correctionErrorMessages`
    */
-  const reloadAfterConflict = async (): Promise<void> => {
+  const reloadAfterConflict = async (
+    conflict: AttendanceApiError,
+    messageTarget: Ref<string[]> = errorMessages
+  ): Promise<void> => {
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
       const [listResponse, dayResponse, monthResponse, correctionResponse] =
@@ -544,6 +552,12 @@ export const useAttendancePage = () => {
       selectedDay.value = dayResponse;
       monthSummary.value = monthResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
+      if (needsAttendanceReloadGuidance(conflict.errorResponse)) {
+        messageTarget.value = [
+          ...messageTarget.value,
+          DISPLAY_MESSAGES.attendance.conflictReloaded,
+        ];
+      }
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof AttendanceApiError &&

@@ -65,6 +65,9 @@ export const DISPLAY_MESSAGES = {
     advancedLoadFailed: "高度Dashboardを取得できませんでした。",
   },
   attendance: {
+    /** version競合等（409）の後に、画面側で勤怠を取り直せたときにBackendの文言の後ろへ添える案内。 */
+    conflictReloaded:
+      "最新の勤怠を再取得しました。内容を確認してから、もう一度操作してください。",
     self: {
       forbidden: "本人勤怠を操作するpermissionがありません。",
       accountNotFound: "勤怠対象のアカウントが見つかりません。",

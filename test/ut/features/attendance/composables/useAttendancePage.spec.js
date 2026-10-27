@@ -5,6 +5,7 @@ import {
   ATTENDANCE_CONTROL,
   useAttendancePage,
 } from "@/features/attendance/composables/useAttendancePage";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   attendanceApi: {
@@ -391,6 +392,29 @@ describe("useAttendancePage", () => {
     expect(mocks.attendanceApi.getDay).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getMonth).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getOwnCorrectionRequests).toHaveBeenCalledTimes(2);
+  });
+
+  it("打刻の競合（409）で取り直せたときは、Backendの「読み直してください」の後ろに取り直し済みの案内を添える", async () => {
+    const page = useAttendancePage();
+    await page.initialize();
+    mocks.attendanceApi.punch.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_PUNCH_CONFLICT",
+            field: "punchState",
+            message: "勤怠打刻が競合しました。最新状態を読み直してください。",
+          },
+        ],
+      })
+    );
+
+    await page.executePunch("clock-in");
+
+    expect(page.errorMessages.value).toEqual([
+      "勤怠打刻が競合しました。最新状態を読み直してください。",
+      DISPLAY_MESSAGES.attendance.conflictReloaded,
+    ]);
   });
 
   it("契約済み400の複数messageをBackend順で表示する", async () => {

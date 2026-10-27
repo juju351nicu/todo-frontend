@@ -2,7 +2,11 @@
 import { onBeforeMount } from "vue";
 
 import AttendanceCorrectionAdministration from "@/features/attendance/components/AttendanceCorrectionAdministration.vue";
-import { useAttendanceAdministrationPage } from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import {
+  ATTENDANCE_ADMIN_CONTROL,
+  attendanceMonthRowControlKey,
+  useAttendanceAdministrationPage,
+} from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import {
   formatAttendanceDate,
   formatAttendanceInstant,
@@ -24,6 +28,7 @@ const {
   canReview,
   close,
   correctionRejectReason,
+  correctionRejectReasonError,
   correctionRequests,
   correctionReviewComment,
   correctionStatusOptions,
@@ -32,6 +37,7 @@ const {
   initialize,
   isExportingMonthlyCsv,
   isLoading,
+  monthRejectReasonError,
   months,
   processingAction,
   reject,
@@ -80,7 +86,15 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="w-full p-1 sm:w-1/3 md:w-1/4">
-          <UButton color="primary" icon="i-mdi-magnify" :disabled="isLoading" @click="search">検索</UButton>
+          <UButton
+            color="primary"
+            icon="i-mdi-magnify"
+            :disabled="isLoading"
+            :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.search"
+            @click="search"
+          >
+            検索
+          </UButton>
         </div>
         <div v-if="canExport" class="w-full p-1 sm:w-1/3 md:w-1/4">
           <UButton
@@ -89,6 +103,7 @@ onBeforeMount(initialize);
             variant="soft"
             :disabled="isLoading"
             :loading="isExportingMonthlyCsv"
+            :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.export"
             @click="downloadMonthlyCsv"
           >
             月次CSV
@@ -113,6 +128,7 @@ onBeforeMount(initialize);
         :current-day="selectedCorrectionCurrentDay"
         :processing-action="processingAction"
         :reject-reason="correctionRejectReason"
+        :reject-reason-error="correctionRejectReasonError"
         :review-comment="correctionReviewComment"
         :selected-correction="selectedCorrection"
         :selected-status="selectedCorrectionStatus"
@@ -153,6 +169,7 @@ onBeforeMount(initialize);
                     role="button"
                     tabindex="0"
                     :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
+                    :data-attendance-admin-control="attendanceMonthRowControlKey(month.accountId)"
                     @click="selectMonth(month)"
                     @keydown.enter="selectMonth(month)"
                     @keydown.space.prevent="selectMonth(month)"
@@ -216,20 +233,37 @@ onBeforeMount(initialize);
                   </UFormField>
                   <FieldCounter :value="reviewComment" :max="1000" />
                 </div>
-                <UButton color="success" class="mb-4" :loading="processingAction === 'approve'" @click="approve">承認</UButton>
+                <UButton
+                  color="success"
+                  class="mb-4"
+                  :loading="processingAction === 'approve'"
+                  data-attendance-admin-control="approve"
+                  @click="approve"
+                >
+                  承認
+                </UButton>
                 <div class="relative">
-                  <UFormField label="差戻し理由（必須）">
-                    <UTextarea v-model="rejectReason" :maxlength="1000" :rows="2" class="w-full" />
+                  <UFormField label="差戻し理由（必須）" :error="monthRejectReasonError || undefined">
+                    <UTextarea
+                      v-model="rejectReason"
+                      :maxlength="1000"
+                      :rows="2"
+                      class="w-full"
+                      :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.rejectReason"
+                    />
                   </UFormField>
                   <FieldCounter :value="rejectReason" :max="1000" />
                 </div>
-                <UButton color="warning" :loading="processingAction === 'reject'" @click="reject">差戻し</UButton>
+                <UButton color="warning" :loading="processingAction === 'reject'" data-attendance-admin-control="reject" @click="reject">
+                  差戻し
+                </UButton>
               </template>
               <UButton
                 v-if="canCloseMonth"
                 color="secondary"
                 icon="i-mdi-lock-outline"
                 :loading="processingAction === 'close'"
+                data-attendance-admin-control="close"
                 @click="close"
               >
                 月次を締める

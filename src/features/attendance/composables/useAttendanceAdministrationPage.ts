@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import AttendanceApi, {
@@ -20,10 +20,52 @@ import {
 import {
   ATTENDANCE_ERROR_CODES,
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+  needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * 勤怠管理画面の部品に付ける`data-attendance-admin-control`属性の値。
+ * 承認・差戻し・締め・修正の審査の後は押したボタンが消えてフォーカスがbodyへ外れるため、
+ * 一覧の同じ行（なければ「検索」）へ戻す。理由が空のときは理由の入力欄へ移す（動作確認/22_勤怠管理 G-2〜G-5）。
+ */
+export const ATTENDANCE_ADMIN_CONTROL = {
+  /** 月次一覧の「検索」ボタン。 */
+  search: "search",
+  /** 修正申請一覧の「申請を検索」ボタン。 */
+  correctionSearch: "correction-search",
+  /** 「月次CSV」ボタン。出力中はdisabledになるため、出力の後はここへ戻す。 */
+  export: "export",
+  /** 月の「差戻し理由（必須）」入力欄。 */
+  rejectReason: "reject-reason",
+  /** 修正申請の「却下理由（必須）」入力欄。 */
+  correctionRejectReason: "correction-reject-reason",
+} as const;
+
+/**
+ * 月次一覧の行に付ける`data-attendance-admin-control`属性の値を作る。
+ *
+ * @param accountId 行のaccount ID
+ * @returns 属性の値
+ */
+export const attendanceMonthRowControlKey = (accountId: number): string =>
+  `month:${accountId}`;
+
+/**
+ * 修正申請一覧の行に付ける`data-attendance-admin-control`属性の値を作る。
+ *
+ * @param requestId 行の修正申請ID
+ * @returns 属性の値
+ */
+export const attendanceCorrectionRowControlKey = (requestId: number): string =>
+  `correction:${requestId}`;
+
+/** `data-attendance-admin-control`属性の値から、その部品を探すselectorを作る。 */
+const adminControlSelector = (key: string): string =>
+  `[data-attendance-admin-control="${key}"]`;
 
 /**
  * 管理一覧で全状態を対象にする選択値。選択UI（Reka UI）は空文字の選択肢を扱えないため専用値にし、
@@ -72,11 +114,25 @@ export const useAttendanceAdministrationPage = () => {
   const correctionRequests = ref<AttendanceCorrectionResponse[]>([]);
   const correctionReviewComment = ref("");
   const correctionRejectReason = ref("");
+  /** 修正申請の却下理由が空のまま押されたときの、入力欄の下へ出す案内。空白以外を入力すると消す。 */
+  const correctionRejectReasonError = ref("");
+  watch(correctionRejectReason, (value) => {
+    if (value.trim()) {
+      correctionRejectReasonError.value = "";
+    }
+  });
   const selectedCorrection = ref<AttendanceCorrectionResponse | null>(null);
   const selectedCorrectionCurrentDay = ref<AttendanceDayResponse | null>(null);
   const selectedCorrectionStatus = ref<AttendanceCorrectionStatus>("PENDING");
   const reviewComment = ref("");
   const rejectReason = ref("");
+  /** 月の差戻し理由が空のまま押されたときの、入力欄の下へ出す案内。空白以外を入力すると消す。 */
+  const monthRejectReasonError = ref("");
+  watch(rejectReason, (value) => {
+    if (value.trim()) {
+      monthRejectReasonError.value = "";
+    }
+  });
   const selectedAccountId = ref<number | null>(null);
   const selectedDetail = ref<AttendanceMonthResponse | null>(null);
   const selectedMonth = ref(getTodayInTokyo().slice(0, 7));
@@ -171,6 +227,7 @@ export const useAttendanceAdministrationPage = () => {
     } finally {
       isExportingMonthlyCsv.value = false;
     }
+    await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.export)]);
   };
 
   /**
@@ -259,7 +316,10 @@ export const useAttendanceAdministrationPage = () => {
       return;
     }
     if (!reason) {
-      errorMessages.value = ["却下理由を入力してください。"];
+      correctionRejectReasonError.value = "却下理由を入力してください。";
+      await focusFirstEnabledElement([
+        adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionRejectReason),
+      ]);
       return;
     }
     await executeCorrectionAction(
@@ -317,7 +377,9 @@ export const useAttendanceAdministrationPage = () => {
       return;
     }
     if (!reason) {
-      errorMessages.value = ["差戻し理由を入力してください。"];
+      // 画面上部では押した位置から見えないため、入力欄の下に出して入力欄へ移す。
+      monthRejectReasonError.value = "差戻し理由を入力してください。";
+      await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
@@ -442,11 +504,19 @@ export const useAttendanceAdministrationPage = () => {
       if (error instanceof AttendanceApiError && error.status === 409) {
         // version競合後は古い画面値で再実行させず、最新詳細と一覧へ戻す。
         const conflictMessages = [...errorMessages.value];
-        await reloadMonthAfterConflict(conflictMessages);
+        await reloadMonthAfterConflict(conflictMessages, error);
       }
     } finally {
       processingAction.value = null;
     }
+    // 状態が変わると押したボタンは消えるため、一覧の同じ行（絞り込みで消えたら「検索」）へ戻す。
+    await focusFirstEnabledElement([
+      adminControlSelector(action),
+      ...(selectedAccountId.value === null
+        ? []
+        : [adminControlSelector(attendanceMonthRowControlKey(selectedAccountId.value))]),
+      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
+    ]);
   };
 
   /** 修正申請の審査を直列化し、結果と現在勤怠をBackend確定値へ同期する。 */
@@ -461,6 +531,7 @@ export const useAttendanceAdministrationPage = () => {
     processingAction.value = action;
     errorMessages.value = [];
     successMessage.value = "";
+    const requestId = selectedCorrection.value?.attendanceCorrectionRequestId ?? null;
     try {
       selectedCorrection.value = await request();
       correctionReviewComment.value = "";
@@ -485,11 +556,19 @@ export const useAttendanceAdministrationPage = () => {
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 同時審査後は古いversionを再送せず、対象状態の一覧から選択し直させる。
         const conflictMessages = [...errorMessages.value];
-        await reloadCorrectionsAfterConflict(conflictMessages);
+        await reloadCorrectionsAfterConflict(conflictMessages, error);
       }
     } finally {
       processingAction.value = null;
     }
+    // 審査すると押したボタンは消え、審査待ちで絞った一覧からは行も消えるため、残っている部品へ戻す。
+    await focusFirstEnabledElement([
+      adminControlSelector(action),
+      ...(requestId === null
+        ? []
+        : [adminControlSelector(attendanceCorrectionRowControlKey(requestId))]),
+      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
+    ]);
   };
 
   /** API失敗をSession状態と利用者向けメッセージへ変換する。 */
@@ -551,9 +630,16 @@ export const useAttendanceAdministrationPage = () => {
     );
   };
 
-  /** 409後に選択月詳細と現在の一覧条件を再取得し、古いversionを破棄する。 */
+  /**
+   * 409後に選択月詳細と現在の一覧条件を再取得し、古いversionを破棄する。
+   * version競合等で取り直せたときは、取り直し済みの案内を添える。
+   *
+   * @param conflictMessages 409で表示した競合理由
+   * @param conflict 操作APIが返した409
+   */
   const reloadMonthAfterConflict = async (
-    conflictMessages: string[]
+    conflictMessages: string[],
+    conflict: AttendanceApiError
   ): Promise<void> => {
     const accountId = selectedAccountId.value;
     if (accountId === null) {
@@ -570,7 +656,7 @@ export const useAttendanceAdministrationPage = () => {
       ]);
       selectedDetail.value = detail;
       months.value = listResponse.months;
-      errorMessages.value = conflictMessages;
+      errorMessages.value = withReloadGuidance(conflictMessages, conflict);
     } catch (refreshError: unknown) {
       await handleConflictRefreshError(
         refreshError,
@@ -580,9 +666,16 @@ export const useAttendanceAdministrationPage = () => {
     }
   };
 
-  /** 409後に修正申請一覧を再取得し、同時審査前の選択状態を破棄する。 */
+  /**
+   * 409後に修正申請一覧を再取得し、同時審査前の選択状態を破棄する。
+   * version競合等で取り直せたときは、取り直し済みの案内を添える。
+   *
+   * @param conflictMessages 409で表示した競合理由
+   * @param conflict 審査APIが返した409
+   */
   const reloadCorrectionsAfterConflict = async (
-    conflictMessages: string[]
+    conflictMessages: string[],
+    conflict: AttendanceApiError
   ): Promise<void> => {
     selectedCorrection.value = null;
     selectedCorrectionCurrentDay.value = null;
@@ -591,7 +684,7 @@ export const useAttendanceAdministrationPage = () => {
         selectedCorrectionStatus.value
       );
       correctionRequests.value = response.correctionRequests;
-      errorMessages.value = conflictMessages;
+      errorMessages.value = withReloadGuidance(conflictMessages, conflict);
     } catch (refreshError: unknown) {
       await handleConflictRefreshError(
         refreshError,
@@ -600,6 +693,21 @@ export const useAttendanceAdministrationPage = () => {
       );
     }
   };
+
+  /**
+   * 取り直しに成功した409の競合理由へ、必要なら取り直し済みの案内を添える。
+   *
+   * @param conflictMessages 409で表示した競合理由
+   * @param conflict 操作APIが返した409
+   * @returns 画面上部へ出すmessage
+   */
+  const withReloadGuidance = (
+    conflictMessages: string[],
+    conflict: AttendanceApiError
+  ): string[] =>
+    needsAttendanceReloadGuidance(conflict.errorResponse)
+      ? [...conflictMessages, DISPLAY_MESSAGES.attendance.conflictReloaded]
+      : conflictMessages;
 
   /** 409回復時の認証・認可・公開範囲変化だけを古い競合案内より優先する。 */
   const handleConflictRefreshError = async (
@@ -618,6 +726,8 @@ export const useAttendanceAdministrationPage = () => {
   };
 
   return {
+    correctionRejectReasonError,
+    monthRejectReasonError,
     approve,
     approveCorrectionRequest,
     canApproveOrReject,
