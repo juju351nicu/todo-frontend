@@ -1,9 +1,10 @@
 /**
  * Nuxt UIの全体テーマ。`vite.config.js`の`@nuxt/ui/vite`プラグインへ`ui`として渡す。
  *
- * 移行前のVuetify 3既定デザイン（Material Design）から、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
- * プラムのアクセント）へ段階的に寄せている。色とbutton（大文字表記・字間・影・固定の高さをやめた）は参考デザインへ
- * 移行済みで、cardは影をやめて枠線に、入力欄はラベルを欄の上に出す枠線表示にした。table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
+ * 移行前のVuetify 3既定デザイン（Material Design）を、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
+ * プラムのアクセント）へ段階的に寄せた（2026-10）。buttonとtabは大文字表記・字間・固定の高さをやめ、cardは影の代わりに枠線、
+ * 入力欄はラベルを欄の上に出す枠線表示、badgeは高さを余白で決める。表の行の高さ（40px）は移行前のまま残している。
+ * 画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
  * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../nuxt-ui-migration-plan.md`を参照。
  *
  * Vuetifyとの対応:
@@ -243,24 +244,25 @@ export const nuxtUiTheme = {
     },
     compoundVariants: [],
   },
-  // Vuetify v-dialog内のv-cardと同じ余白・影・scrim。Vuetifyのdialogには右上の閉じるbuttonがないため非表示にする。
+  // Dialogは画面から浮かせるため影を残し、cardと同じ枠線を付ける。本文は入力欄と同じ文字の大きさにする。
+  // 閉じる操作はfooterのbuttonとEscで行い、右上の閉じるbuttonは出さない（各Dialogのfooterに「閉じる」等がある）。
   modal: {
     slots: {
       overlay: "bg-black/32",
-      content: "rounded-sm shadow-elevation-24 ring-0 divide-y-0 text-default",
+      content: "rounded-sm shadow-elevation-24 ring ring-default divide-y-0 text-default",
       header: "min-h-0 px-6 pt-4 pb-2.5 sm:px-6",
-      title: "text-xl font-medium text-default",
+      title: "text-lg font-medium text-default",
       description: "text-sm text-muted",
-      body: "px-6 pt-4 pb-6 sm:px-6 sm:pt-4 sm:pb-6 text-base",
+      body: "px-6 pt-4 pb-6 sm:px-6 sm:pt-4 sm:pb-6 text-sm",
       footer: "justify-end gap-2 px-4 py-2 sm:px-4",
       close: "hidden",
     },
   },
-  // Vuetify v-tabsと同じく、区切り線なし・高さ48px・大文字表記で、選択中のtabだけprimary色と2pxの下線を付ける。
+  // 区切り線なしで、選択中のtabだけprimary色と2pxの下線を付ける。buttonと同じく大文字表記・字間は付けず、高さは余白で決める。
   tabs: {
     slots: {
       list: "p-0",
-      trigger: "h-12 rounded-none px-4 uppercase tracking-[.0892857143em] data-[state=inactive]:text-black/60",
+      trigger: "rounded-none px-4 py-3 data-[state=inactive]:text-muted",
       content: "pt-4",
     },
     compoundVariants: [
@@ -289,10 +291,11 @@ export const nuxtUiTheme = {
     },
     variants: {
       size: {
-        xs: { base: "h-5 px-2 text-[0.625rem] gap-1 rounded-full" },
-        sm: { base: "h-6.5 px-2.5 text-xs gap-1 rounded-full" },
-        md: { base: "h-8 px-3 text-sm gap-1.5 rounded-full" },
-        lg: { base: "h-9.5 px-3.5 text-base gap-1.5 rounded-full" },
+        // 高さは固定せず、上下の余白で決める（表の行の中でも詰まって見えない大きさにする）。
+        xs: { base: "px-2 py-0.5 text-[0.625rem] gap-1 rounded-full" },
+        sm: { base: "px-2.5 py-1 text-xs gap-1 rounded-full" },
+        md: { base: "px-3 py-1 text-sm gap-1.5 rounded-full" },
+        lg: { base: "px-3.5 py-1.5 text-base gap-1.5 rounded-full" },
       },
     },
     compoundVariants: [
@@ -301,7 +304,7 @@ export const nuxtUiTheme = {
       { color: "neutral" as const, variant: "soft" as const, class: "bg-inverted/12 text-default" },
       { color: "neutral" as const, variant: "outline" as const, class: "ring-current text-default" },
     ],
-    // Vuetifyのv-chipは色指定なしで前景色12%のtonal表示になる。
+    // 色指定なしのbadgeは、前景色12%の薄い背景（soft）で表示する。
     defaultVariants: {
       color: "neutral" as const,
       variant: "soft" as const,
