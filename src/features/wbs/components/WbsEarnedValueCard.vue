@@ -83,7 +83,7 @@ const submit = (): void => {
     </div>
     <template v-else-if="metrics">
       <div class="mt-5 mb-3 flex flex-wrap items-center gap-2">
-        <UBadge color="primary">baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge>
+        <UBadge color="neutral">baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge>
         <UBadge variant="outline">作成日 {{ metrics.baselineDate }}</UBadge>
         <UBadge variant="outline">timezone {{ metrics.businessZoneId }}</UBadge>
       </div>

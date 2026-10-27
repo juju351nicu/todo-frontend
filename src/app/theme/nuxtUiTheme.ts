@@ -118,7 +118,8 @@ export const nuxtUiTheme = {
     secondary: "plum",
     success: "green",
     info: "sky",
-    warning: "orange",
+    // orangeはprimary（ピンク）・error（赤）と同じ赤系に見えるため、黄系のyellowで「注意」を見分けやすくする。
+    warning: "yellow",
     error: "red",
     teal: "teal",
     indigo: "indigo",

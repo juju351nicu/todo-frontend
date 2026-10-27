@@ -85,7 +85,7 @@ const submit = (): void => {
     </div>
     <template v-else-if="workload">
       <div class="mt-5 mb-3 flex flex-wrap gap-2">
-        <UBadge color="primary">予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge>
+        <UBadge color="info">予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge>
         <UBadge color="secondary">実績 {{ formatEffortMinutes(workload.totalActualEffortMinutes) }}</UBadge>
         <UBadge :color="getWorkloadVarianceColor(workload.totalVarianceEffortMinutes)">
           差分 {{ formatSignedEffortMinutes(workload.totalVarianceEffortMinutes) }}

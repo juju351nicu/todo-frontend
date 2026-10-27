@@ -15,6 +15,7 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 
 - UIはNuxt UI（`@nuxt/ui`、Vite plugin経由）とTailwind CSSで実装する。Vuetifyは削除済みのため再導入しない。Component APIは`https://ui.nuxt.com/llms.txt`または公式MCP（`https://ui.nuxt.com/mcp`）で確認する。
 - 見た目は参考デザイン（濃い紫のヘッダー・サイドメニュー、ピンクのprimary、プラムのsecondary、温かみのある灰色のneutral）へ段階的に寄せている。色は移行済みで、寸法・大文字表記・影はまだ移行前のVuetify既定に合わせている。semantic colorは白文字とのコントラスト比4.5以上の濃さを`main.css`の`:root`で指定している。cardを並べる画面の背景は`page-surface`utilityを使い、`#424242`等の固定色を画面へ書かない。色・寸法・variantの既定は`src/app/theme/nuxtUiTheme.ts`、色tokenとbreakpoint・共通utilityは`src/app/theme/main.css`に集約し、画面側の`class`で個別に上書きしない。Nuxt UI本来のデザインへ寄せる場合もこの2ファイルから変更する。
+- badge・alertの色は意味で選ぶ。primary（ピンク）は主要な操作と「自分」等の強調だけに使い、合計・件数・予定等の情報はinfo、ラベルはneutral、注意はwarning（黄系）、失敗・超過はerror（赤）にする。primaryとerrorはどちらも赤系に見えるため、情報の表示にprimaryを使わない。
 - variantの対応: Vuetifyのtonal→`soft`、text→`ghost`、outlined→`outline`、elevated／flat→`solid`。sizeはx-small→`xs`、small→`sm`、default→`md`、large→`lg`。
 - 共通部品を優先する: 状態alertは`StatusAlert`、自動で消える通知は`AppAlert`、toast相当は`AppSnackbar`、並べ替え・ページング付き一覧は`AppDataTable`、素のtableは`app-table`utility、検索欄は`SearchField`、文字数表示は`FieldCounter`、本文幅は`page-container`utility。
 - 入力Dialogのform同期・close・送信は`useDialogForm`、親が確定した検索条件の下書きは`useSyncedDraft`を使う。

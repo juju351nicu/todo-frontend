@@ -141,7 +141,7 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <h2 class="text-base">登録済み日別予定</h2>
           <UBadge>Task全体 {{ formatEffortMinutes(effortPlanList?.taskPlannedEffortMinutes ?? 0) }}</UBadge>
-          <UBadge color="primary">日別合計 {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}</UBadge>
+          <UBadge color="info">日別合計 {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}</UBadge>
           <UBadge :color="allocationStatus.color">{{ allocationStatus.label }}</UBadge>
           <UBadge size="sm" variant="outline">{{ effortPlanList?.effortPlans.length ?? 0 }}件</UBadge>
         </div>
