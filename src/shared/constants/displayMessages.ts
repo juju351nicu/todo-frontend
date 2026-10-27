@@ -194,6 +194,11 @@ export const DISPLAY_MESSAGES = {
       resourceNotFound:
         "対象のProject、Taskまたはchecklist itemが見つかりません。",
       loadFailed: "チェックリストを取得できませんでした。",
+      created: "チェック項目を追加しました。",
+      updated: "チェック項目を更新しました。",
+      deleted: "チェック項目を削除しました。",
+      /** Enterキーで保存したときに本文が空・長すぎる場合の文言。上限はCHECKLIST_ITEM_MAX_LENGTHと同じ。 */
+      contentInvalid: "チェック項目を1〜255文字で入力してください。",
       createFailed: "チェック項目を追加できませんでした。",
       updateFailed: "チェック項目を更新できませんでした。",
       toggleFailed: "完了状態を更新できませんでした。",

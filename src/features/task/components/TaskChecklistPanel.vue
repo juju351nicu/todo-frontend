@@ -10,10 +10,20 @@ import {
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
+/**
+ * Task Dialog内のチェックリスト。取得・更新・競合回復・フォーカス戻しは`useTaskChecklist`が担当し、
+ * このComponentは一覧・入力欄・削除確認Dialogの表示だけを行う。
+ */
 const props = withDefaults(
   defineProps<{
+    /** 対象TaskのProject ID。 */
     projectId: number;
+    /** 対象Task ID。変わると一覧を取り直し、編集中・削除確認中の状態を捨てる。 */
     taskId: number;
+    /**
+     * 参照のみで開くときtrue（担当外のMEMBER、TASK_UPDATEのないaccount、archive済みProject等）。
+     * trueの間は全ての操作部品をdisabledにし、更新系APIを呼ばない。
+     */
     disabled?: boolean;
   }>(),
   { disabled: false },

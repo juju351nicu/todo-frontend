@@ -368,6 +368,28 @@ describe("useTaskChecklist", () => {
     expect(page.canSaveEdit.value).toBe(expected);
   });
 
+  it("更新中に続けて操作しても2件目の更新APIは呼ばない", async () => {
+    let resolveUpdate;
+    mocks.taskChecklistApi.updateItem.mockImplementation(
+      (_projectId, _taskId, _itemId, request) =>
+        new Promise((resolve) => {
+          resolveUpdate = () => resolve({ ...firstItem, ...request, version: 1 });
+        })
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+
+    const first = page.toggleItem(page.items.value[0]);
+    await page.toggleItem(page.items.value[1]);
+    await page.moveItem(page.items.value[0], 1);
+    resolveUpdate();
+    await first;
+
+    expect(mocks.taskChecklistApi.updateItem).toHaveBeenCalledOnce();
+    expect(mocks.taskChecklistApi.reorderItems).not.toHaveBeenCalled();
+    expect(page.isMutating.value).toBe(false);
+  });
+
   it("50件登録済みでは追加できない", async () => {
     const page = createPage();
     await waitForInitialLoad();
