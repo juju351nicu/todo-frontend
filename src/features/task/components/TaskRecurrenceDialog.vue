@@ -47,6 +47,7 @@ const {
   isArchiving,
   isCreating,
   isEditing,
+  isFormOpen,
   isLoading,
   isLoadingGenerations,
   isLoadingTemplates,
@@ -101,7 +102,9 @@ const CREATION_MODE_OPTIONS = [
       </span>
     </template>
     <template #body>
-      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <!-- 作成・編集フォームを開いている間は、エラーを「作成」「更新」ボタンのすぐ上に出す（下のform内）。
+           フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
+      <StatusAlert v-if="errorMessage && !isFormOpen" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
       <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
         {{ successMessage }}
       </StatusAlert>
@@ -148,7 +151,7 @@ const CREATION_MODE_OPTIONS = [
         </div>
 
         <div class="w-full p-3 md:w-2/3">
-          <form v-if="isCreating || isEditing" @submit.prevent="isCreating ? createRule() : saveRule()">
+          <form v-if="isFormOpen" @submit.prevent="isCreating ? createRule() : saveRule()">
             <div class="mb-3 flex items-center">
               <h2 class="text-xl font-medium">{{ isCreating ? "規則を作成" : "規則を編集" }}</h2>
               <UBadge v-if="isEditing && selectedRule" size="sm" class="ms-auto">version {{ selectedRule.version }}</UBadge>
@@ -375,6 +378,7 @@ const CREATION_MODE_OPTIONS = [
                 </UButton>
               </div>
             </div>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isMutating" @click="cancelForm">キャンセル</UButton>
               <UButton type="submit" color="primary" :loading="isSaving">{{ isCreating ? "作成" : "更新" }}</UButton>

@@ -83,7 +83,9 @@ const {
       </span>
     </template>
     <template #body>
-      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <!-- Templateの編集フォームを開いている間は、エラーを「更新」ボタンのすぐ上に出す（下のform内）。
+           フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
+      <StatusAlert v-if="errorMessage && !isEditing" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
       <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
         {{ successMessage }}
       </StatusAlert>
@@ -277,6 +279,7 @@ const {
             <UFormField label="チェック項目" help="入力後にEnterで項目を追加します（最大50件）">
               <UInputTags v-model="editForm.checklistContents" :max="50" class="w-full" />
             </UFormField>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isSaving" @click="cancelEditing">キャンセル</UButton>
               <UButton type="submit" color="primary" :loading="isSaving">更新</UButton>

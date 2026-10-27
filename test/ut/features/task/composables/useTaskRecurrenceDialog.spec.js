@@ -37,6 +37,8 @@ describe("useTaskRecurrenceDialog", () => {
       beginCreating: vi.fn(),
       creationMode: ref("DIRECT"),
       form: ref({ assigneeAccountId: 7, taskStatusId: 2 }),
+      isCreating: ref(false),
+      isEditing: ref(false),
       loadRules: vi.fn().mockResolvedValue(undefined),
       loadTemplates: vi.fn().mockResolvedValue(undefined),
       selectedRule: ref(null),
@@ -107,6 +109,18 @@ describe("useTaskRecurrenceDialog", () => {
 
     expect(mocks.recurrences.archiveRule).toHaveBeenCalledTimes(1);
     expect(dialog.isArchiveConfirmOpen.value).toBe(false);
+  });
+
+  it("作成・編集フォームを開いている間だけisFormOpenがtrueになる（エラーをボタンの近くに出す切り替え）", () => {
+    const dialog = createDialog();
+    expect(dialog.isFormOpen.value).toBe(false);
+
+    mocks.recurrences.isCreating.value = true;
+    expect(dialog.isFormOpen.value).toBe(true);
+
+    mocks.recurrences.isCreating.value = false;
+    mocks.recurrences.isEditing.value = true;
+    expect(dialog.isFormOpen.value).toBe(true);
   });
 
   it("発生曜日の選択を追加・解除で切り替える", () => {

@@ -30,7 +30,18 @@ const EDITABLE_RULE_STATUSES = ["ACTIVE", "PAUSED", "BLOCKED"] as const;
  */
 export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
   const recurrences = useTaskRecurrences(source.projectId);
-  const { archiveRule, beginCreating, creationMode, form, loadRules, loadTemplates, selectedRule, templates } = recurrences;
+  const {
+    archiveRule,
+    beginCreating,
+    creationMode,
+    form,
+    isCreating,
+    isEditing,
+    loadRules,
+    loadTemplates,
+    selectedRule,
+    templates,
+  } = recurrences;
 
   /** 規則一覧Dialogを開いている場合はtrue。 */
   const isOpen = ref<boolean>(false);
@@ -50,6 +61,11 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
       selectedRule.value !== null &&
       (EDITABLE_RULE_STATUSES as readonly string[]).includes(selectedRule.value.status),
   );
+  /**
+   * 規則の作成・編集フォームを開いている場合はtrue。
+   * 開いている間はエラーを「作成」「更新」ボタンのすぐ上に出す（フォームが長く、Dialog上端のエラーが見えないため）。
+   */
+  const isFormOpen = computed<boolean>(() => isCreating.value || isEditing.value);
   /** 選択規則をarchiveできる場合はtrue。 */
   const canArchiveSelected = computed<boolean>(
     () => canChangeRules.value && selectedRule.value !== null && selectedRule.value.status !== "ARCHIVED",
@@ -115,6 +131,7 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
     changeCreationMode,
     confirmArchive,
     isArchiveConfirmOpen,
+    isFormOpen,
     isOpen,
     memberOptions,
     open,
