@@ -100,7 +100,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-format-list-checks" class="size-6 text-primary" />
               My Tasks
-              <UBadge v-if="dashboard.myTasks.available" color="primary" size="sm" class="ms-auto">
+              <UBadge v-if="dashboard.myTasks.available" color="info" size="sm" class="ms-auto">
                 未完了 {{ dashboard.myTasks.totalCount }}件
               </UBadge>
             </div>

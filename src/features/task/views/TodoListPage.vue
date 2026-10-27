@@ -43,7 +43,7 @@ onBeforeMount(initialize);
     :items="todoList"
     item-value="todoId"
     :items-per-page-options="itemsPerPageOptions"
-    class="shadow-elevation-1"
+    class="rounded-sm ring ring-default"
   >
     <template #priority-cell="{ item }">
       <TodoPriorityBadge :priority="item.priority" size="md" />

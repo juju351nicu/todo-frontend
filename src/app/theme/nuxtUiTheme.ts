@@ -3,7 +3,7 @@
  *
  * 移行前のVuetify 3既定デザイン（Material Design）から、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
  * プラムのアクセント）へ段階的に寄せている。色とbutton（大文字表記・字間・影・固定の高さをやめた）は参考デザインへ
- * 移行済みで、card・入力欄・table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
+ * 移行済みで、cardは影をやめて枠線にした。入力欄・table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
  * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../nuxt-ui-migration-plan.md`を参照。
  *
  * Vuetifyとの対応:
@@ -316,9 +316,9 @@ export const nuxtUiTheme = {
     },
     variants: {
       variant: {
-        // Vuetifyのv-card既定（elevated）。
+        // 影は付けず、枠線でcardの境界を示す（参考デザインのoutline）。
         solid: {
-          root: "bg-default text-default shadow-elevation-1",
+          root: "bg-default text-default ring ring-default",
           title: "text-default",
           description: "text-muted",
         },
