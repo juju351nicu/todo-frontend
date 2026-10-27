@@ -3,7 +3,7 @@
  *
  * 移行前のVuetify 3既定デザイン（Material Design）から、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
  * プラムのアクセント）へ段階的に寄せている。色とbutton（大文字表記・字間・影・固定の高さをやめた）は参考デザインへ
- * 移行済みで、cardは影をやめて枠線にした。入力欄・table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
+ * 移行済みで、cardは影をやめて枠線に、入力欄はラベルを欄の上に出す枠線表示にした。table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
  * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../nuxt-ui-migration-plan.md`を参照。
  *
  * Vuetifyとの対応:
@@ -73,18 +73,19 @@ const badgeOutlineVariants = semanticColors.map((color) => ({
   class: `ring-${color}`,
 }));
 
-// Vuetify v-text-field既定のfilled表示（薄い背景・下線・上角だけ丸める）。Vuetifyのoutlinedは`outline`variantで表す。
+// 薄い背景・下線・上角だけ丸めるfilled表示（移行前のVuetify v-text-field既定）。`variant="soft"`を明示した場合だけ使う。
 const filledFieldClass =
   "text-default bg-black/4 hover:bg-black/8 focus:bg-black/12 focus-visible:bg-black/12 data-[state=open]:bg-black/12 " +
   "rounded-t-sm rounded-b-none border-b border-black/42 focus:border-primary focus-visible:border-primary " +
   "focus:shadow-[inset_0_-1px_0_0_var(--ui-primary)] focus-visible:shadow-[inset_0_-1px_0_0_var(--ui-primary)] focus-visible:outline-0";
+// 入力欄の既定。白背景に枠線を付け、フォーカス中は主色の2pxの枠線にする（参考デザインのoutline）。
 const outlinedFieldClass =
   "text-default bg-default rounded-sm ring ring-inset ring-black/38 hover:ring-black/87 focus:ring-2 focus:ring-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-0";
 
-/** Vuetifyのdensity default（56px）とcompact（40px）をNuxt UIの`md`／`sm`へ対応させる。 */
+/** ラベルを入力欄の外（上）に出すため、入力欄の中にラベルの高さを確保しない。`md`は40px、`sm`は36px。 */
 const fieldSizeVariants = {
-  sm: { base: "min-h-10 px-3 text-base gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-6", trailingIcon: "size-6" },
-  md: { base: "min-h-14 px-4 text-base gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-6", trailingIcon: "size-6" },
+  sm: { base: "min-h-9 px-3 text-sm gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-5", trailingIcon: "size-5" },
+  md: { base: "min-h-10 px-3 text-sm gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-5", trailingIcon: "size-5" },
 };
 
 const fieldTheme = {
@@ -100,13 +101,13 @@ const fieldTheme = {
     },
   },
   compoundVariants: [
-    { leading: true, size: "sm" as const, class: "ps-11" },
-    { leading: true, size: "md" as const, class: "ps-12" },
-    { trailing: true, size: "sm" as const, class: "pe-11" },
-    { trailing: true, size: "md" as const, class: "pe-12" },
+    { leading: true, size: "sm" as const, class: "ps-10" },
+    { leading: true, size: "md" as const, class: "ps-10" },
+    { trailing: true, size: "sm" as const, class: "pe-10" },
+    { trailing: true, size: "md" as const, class: "pe-10" },
   ],
   defaultVariants: {
-    variant: "soft" as const,
+    variant: "outline" as const,
   },
 };
 
@@ -210,20 +211,20 @@ export const nuxtUiTheme = {
     },
     compoundVariants: [...alertSoftVariants],
   },
-  // Vuetifyのv-text-fieldと同じく、ラベルを入力欄内の上部へ置き、下に補足・エラー用の22pxを確保する。
-  // 補足・エラーは入力欄の下へ通常の流れで置き、狭い画面で折り返しても入力欄や次の項目へ重ならないようにする。
-  // Vuetifyの`hide-details`に相当する箇所では、UFormFieldへ`class="pb-0"`を指定する。
+  // ラベルは入力欄の上に置く（入力欄に重ねない。アイコンや入力値と重ならず、狭い画面でも読める）。
+  // 下に補足・エラー用の22pxを確保し、補足・エラーは入力欄の下へ通常の流れで置く。
+  // 補足・エラーを出さない検索欄等では、UFormFieldへ`class="pb-0"`を指定する。
   formField: {
     slots: {
-      root: "relative pb-5.5 has-[[data-slot=help]]:pb-0 has-[[data-slot=error]]:pb-0 [&:has([data-slot=label])_[data-slot=base]]:pt-5",
-      label: "absolute start-4 top-1.5 z-10 pointer-events-none text-xs leading-4 font-normal text-muted",
-      error: "mt-0 min-h-5.5 ps-4 pt-0.5 text-xs leading-4",
-      help: "mt-0 min-h-5.5 ps-4 pt-0.5 text-xs leading-4",
+      root: "relative pb-5.5 has-[[data-slot=help]]:pb-0 has-[[data-slot=error]]:pb-0",
+      label: "block text-sm leading-5 font-medium text-default",
+      error: "mt-0 min-h-5.5 pt-0.5 text-xs leading-4",
+      help: "mt-0 min-h-5.5 pt-0.5 text-xs leading-4",
       hint: "text-xs",
     },
     variants: {
       orientation: {
-        vertical: { container: "mt-0" },
+        vertical: { container: "mt-1" },
       },
     },
   },
@@ -236,8 +237,8 @@ export const nuxtUiTheme = {
     variants: {
       ...fieldTheme.variants,
       size: {
-        sm: { base: "px-3 pt-2 pb-2 text-base" },
-        md: { base: "px-4 pt-4 pb-2 text-base" },
+        sm: { base: "px-3 py-2 text-sm" },
+        md: { base: "px-3 py-2 text-sm" },
       },
     },
     compoundVariants: [],

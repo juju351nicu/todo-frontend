@@ -55,7 +55,7 @@ const submit = (): void => {
     </StatusAlert>
 
     <form @submit.prevent="submit">
-      <div class="-m-3 flex flex-wrap items-center">
+      <div class="-m-3 flex flex-wrap items-end">
         <div class="w-full p-3 sm:w-5/12 md:w-1/4">
           <UFormField label="EVM基準日" class="pb-0">
             <UInput v-model="formStatusDate" type="date" :disabled="isLoading" class="w-full" />

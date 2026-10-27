@@ -71,7 +71,8 @@ onBeforeMount(initialize);
       </template>
       <div class="-m-3 flex flex-wrap items-center">
         <div class="w-full p-3 md:w-1/3">
-          <UFormField label="保存した条件" class="pb-0">
+          <!-- 右の「Saved View名」は文字数表示のために下の余白を持つため、余白をそろえて入力欄の高さを合わせる。 -->
+          <UFormField label="保存した条件">
             <USelectMenu
               :model-value="selectedSavedViewId ?? undefined"
               :items="savedViews"

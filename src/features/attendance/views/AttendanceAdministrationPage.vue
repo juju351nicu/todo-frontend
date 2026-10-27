@@ -74,7 +74,7 @@ onBeforeMount(initialize);
         </h2>
       </template>
 
-      <div class="-m-1 mb-2 flex flex-wrap items-center">
+      <div class="-m-1 mb-2 flex flex-wrap items-end">
         <div class="w-full p-1 sm:w-1/3 md:w-1/4">
           <UFormField label="対象月" class="pb-0">
             <UInput v-model="selectedMonth" type="month" class="w-full" />
