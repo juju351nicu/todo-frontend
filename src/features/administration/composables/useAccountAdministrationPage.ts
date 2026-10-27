@@ -20,6 +20,18 @@ import {
 } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * アカウント一覧の行の「ロールを編集」ボタンに付ける`data-account-admin-control`属性の値を作る。
+ * 409の後は一覧を取り直して行を作り直すため、Dialogを開いたボタンが消えてフォーカスがbodyへ外れる。
+ * 取り直した後に同じaccountの行のボタンへ戻す（動作確認/23_アカウント管理 G-3）。
+ *
+ * @param accountId 行のaccount ID
+ * @returns 属性の値
+ */
+export const accountRoleEditControlKey = (accountId: number): string =>
+  `edit:${accountId}`;
 
 const ACCOUNT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "ID", align: "end", key: "accountId" },
@@ -247,7 +259,10 @@ export const useAccountAdministrationPage = () => {
       ) {
         closeRoleEditorAfterSaving();
         accounts.value = [];
-        await reloadAccountsAfterConflict(operationMessages);
+        await reloadAccountsAfterConflict(operationMessages, account);
+        await focusFirstEnabledElement([
+          `[data-account-admin-control="${accountRoleEditControlKey(account.accountId)}"]`,
+        ]);
       }
     } finally {
       isSaving.value = false;
@@ -261,12 +276,33 @@ export const useAccountAdministrationPage = () => {
     selectedRoleCodes.value = [];
   };
 
-  /** 404／409後に最新versionを再取得し、古い対象と編集draftを画面へ残さない。 */
+  /**
+   * 404／409後に最新versionを再取得し、古い対象と編集draftを画面へ残さない。
+   * 取り直した対象のversionが送ったversionと違う（別の操作で更新されていた）ときだけ、Backendの「再読み込みしてください。」の後ろに
+   * 取り直し済みの案内を添える（動作確認/23_アカウント管理 G-3。12・18〜22の対応と同じ）。
+   * Backendは最後の管理者の保護も同じ409（`AUTHORIZATION_CONFLICT`）で返すため、error codeではなくversionで見分ける。
+   *
+   * @param operationMessages 更新APIの失敗として表示した理由
+   * @param attemptedAccount 保存しようとしたaccount（取得時点のversionを持つ）
+   */
   const reloadAccountsAfterConflict = async (
-    operationMessages: string[]
+    operationMessages: string[],
+    attemptedAccount: AccountAuthorization
   ): Promise<void> => {
     try {
       accounts.value = await AdministrationApi.getAccounts();
+      const reloadedAccount = accounts.value.find(
+        (value) => value.accountId === attemptedAccount.accountId
+      );
+      if (
+        reloadedAccount !== undefined &&
+        reloadedAccount.version !== attemptedAccount.version
+      ) {
+        errorMessages.value = [
+          ...operationMessages,
+          DISPLAY_MESSAGES.administration.account.conflictReloaded,
+        ];
+      }
     } catch (error: unknown) {
       if (
         error instanceof AdministrationApiError &&

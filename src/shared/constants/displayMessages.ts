@@ -43,6 +43,9 @@ export const DISPLAY_MESSAGES = {
       updateFailed: "アカウントのロールを更新できませんでした。",
       reloadFailed:
         "最新のアカウント情報を再取得できませんでした。再読込してください。",
+      /** version競合（409）の後に、画面側で一覧を取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のアカウント情報を再取得しました。内容を確認してから、もう一度変更してください。",
     },
     audit: {
       readForbidden: "監査ログを参照するpermissionがありません。",
