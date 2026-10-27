@@ -1,8 +1,12 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
-import { useProjectSettingsDialog } from "@/features/project/composables/useProjectSettingsDialog";
+import {
+  memberRoleControlKey,
+  PROJECT_SETTINGS_CONTROL,
+  useProjectSettingsDialog,
+} from "@/features/project/composables/useProjectSettingsDialog";
 
 const mocks = vi.hoisted(() => ({
   permissions: new Set(),
@@ -149,6 +153,7 @@ describe("useProjectSettingsDialog", () => {
 
     expect(dialog.errorMessages.value).toEqual([
       "Projectが先に更新されています。",
+      "最新のProject情報を再取得しました。内容を確認してから、もう一度操作してください。",
     ]);
     expect(mocks.projectApi.getProject).toHaveBeenCalledWith(5);
     expect(dialog.projectForm.value).toEqual({
@@ -156,6 +161,52 @@ describe("useProjectSettingsDialog", () => {
       description: "設定テスト",
       version: 8,
     });
+  });
+
+  it("再取得しても状況が変わらない409（無効なアカウント）には取り直し済みの案内を添えない", async () => {
+    mocks.projectApi.addProjectMember.mockRejectedValue(
+      new ProjectApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_MEMBER_ACCOUNT_UNAVAILABLE",
+            field: "accountId",
+            message: "有効なアカウントを指定してください。",
+          },
+        ],
+      })
+    );
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.addMemberAccountId.value = 9;
+
+    await dialog.addMember();
+
+    expect(mocks.projectApi.getProject).toHaveBeenCalledWith(5);
+    expect(dialog.errorMessages.value).toEqual([
+      "有効なアカウントを指定してください。",
+    ]);
+  });
+
+  it("member versionの409で再取得できたときは取り直し済みの案内を添える", async () => {
+    mocks.projectApi.updateProjectMember.mockRejectedValue(
+      new ProjectApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_MEMBER_VERSION_CONFLICT",
+            field: "version",
+            message: "Project memberが別の操作で変更されています。最新状態を取得してください。",
+          },
+        ],
+      })
+    );
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.memberRoleDrafts.value[4] = "MANAGER";
+
+    await dialog.saveMemberRole(project.members[2]);
+
+    expect(dialog.errorMessages.value).toEqual([
+      "Project memberが別の操作で変更されています。最新状態を取得してください。",
+      "最新のProject情報を再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
   });
 
   it("Projectを現在の確定値とversionでarchiveする", async () => {
@@ -475,5 +526,99 @@ describe("useProjectSettingsDialog", () => {
     expect(dialog.isDialogOpen.value).toBe(false);
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  describe("操作後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // 更新中はDialog内の部品がすべてdisabledになりフォーカスが外れるため、操作後に探し直して戻すことを確かめる。
+    // absentに入れた部品は画面にない（消えた）ものとして扱う。
+    const stubDocument = (absent = []) => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => {
+          const key = selector.match(/data-project-settings-control="([^"]+)"/)?.[1];
+          return absent.includes(key)
+            ? null
+            : { focus: () => focused.push(key), matches: () => false };
+        },
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("基本情報を保存した後、Project名の入力欄へ戻す", async () => {
+      const focused = stubDocument();
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.projectForm.value.name = "更新Project";
+
+      await dialog.saveProject();
+
+      expect(focused).toEqual([PROJECT_SETTINGS_CONTROL.projectName]);
+    });
+
+    it("archiveした後は「Projectをアーカイブ」が消えるため「閉じる」へ戻す", async () => {
+      mocks.projectApi.updateProject.mockResolvedValue({
+        ...structuredClone(project),
+        status: "ARCHIVED",
+        version: 4,
+      });
+      const focused = stubDocument([PROJECT_SETTINGS_CONTROL.archive]);
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.openArchiveConfirm();
+
+      await dialog.archiveProject();
+
+      expect(focused).toEqual([PROJECT_SETTINGS_CONTROL.close]);
+    });
+
+    it("メンバーの追加に失敗した場合もアカウントIDの入力欄へ戻す", async () => {
+      mocks.projectApi.addProjectMember.mockRejectedValue(new TypeError("Failed to fetch"));
+      const focused = stubDocument();
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.addMemberAccountId.value = 9;
+
+      await dialog.addMember();
+
+      expect(focused).toEqual([PROJECT_SETTINGS_CONTROL.addAccountId]);
+    });
+
+    it("roleを保存した後、同じ行のrole選択へ戻す", async () => {
+      const focused = stubDocument();
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.memberRoleDrafts.value[4] = "MANAGER";
+
+      await dialog.saveMemberRole(project.members[2]);
+
+      expect(focused).toEqual([memberRoleControlKey(4)]);
+    });
+
+    it("他memberを除外した後は、行が消えるためアカウントIDの入力欄へ戻す", async () => {
+      const focused = stubDocument();
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.openRemoveConfirm(project.members[2]);
+
+      await dialog.removeMember();
+
+      expect(focused).toEqual([PROJECT_SETTINGS_CONTROL.addAccountId]);
+    });
+
+    it("自分を除外してProject一覧へ戻るときは、フォーカスを動かさない", async () => {
+      const focused = stubDocument();
+      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+      dialog.openDialog();
+      dialog.openRemoveConfirm(project.members[0]);
+
+      await dialog.removeMember();
+
+      expect(focused).toEqual([]);
+    });
   });
 });

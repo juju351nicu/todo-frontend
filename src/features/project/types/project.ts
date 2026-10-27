@@ -1,3 +1,5 @@
+import type { AccountStatus } from "@/shared/types/accountStatus";
+
 /** Projectの利用状態。 */
 export type ProjectStatus = "ACTIVE" | "ARCHIVED";
 
@@ -26,6 +28,10 @@ export interface ProjectMember {
   joinedAt: string;
   assignedBy: number;
   version: number;
+  /** 画面へ表示する参加者名。Backendが「姓 名」→メールアドレス→「Account {ID}」の順で必ず空でない値にする。 */
+  displayName: string;
+  /** 参加アカウントの状態。ACTIVE以外は日別予定・日別実績・繰り返しTask等の担当者に指定できない。 */
+  accountStatus: AccountStatus;
 }
 
 /** Boardの列として使用するTask status。 */
@@ -73,6 +79,12 @@ export interface ProjectMemberUpdateRequest {
   version: number;
 }
 
+/**
+ * WBS上のTask構造種別（Backendの`TaskType`コード）。
+ * 実績工数とTimerは`TASK`だけが対象で、`SUMMARY`・`MILESTONE`ではBackendが400で拒否する。
+ */
+export type TaskType = "TASK" | "SUMMARY" | "MILESTONE";
+
 /** Project内Taskの優先度。1=低、2=中、3=高。 */
 export type TaskPriority = 1 | 2 | 3;
 
@@ -85,6 +97,10 @@ export interface TaskCard {
   dateTo: string;
   assigneeAccountId: number;
   priority: TaskPriority;
+  /**
+   * WBS上のTask種別。Backendが返さない古い版では、API境界（`projectApi`・`projectTaskApi`）で`TASK`を補う。
+   */
+  taskType: TaskType;
   position: number;
   createdBy: number;
   createdAt: string;

@@ -27,7 +27,7 @@ describe("Project Task API", () => {
       taskStatusId: 11,
       priority: 1,
     };
-    const created = { taskId: 31, ...request, version: 1 };
+    const created = { taskId: 31, ...request, taskType: "TASK", version: 1 };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(created),
@@ -41,7 +41,7 @@ describe("Project Task API", () => {
   });
 
   it("Task編集前に詳細を取得する", async () => {
-    const task = { taskId: 31, version: 4 };
+    const task = { taskId: 31, taskType: "SUMMARY", version: 4 };
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(task),
@@ -51,6 +51,19 @@ describe("Project Task API", () => {
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/tasks/31"
     );
+  });
+
+  it("Task種別がない古いBackendの詳細はTASKとして扱う", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ taskId: 31, version: 4 }),
+    });
+
+    await expect(ProjectTaskApi.getTask(5, 31)).resolves.toEqual({
+      taskId: 31,
+      taskType: "TASK",
+      version: 4,
+    });
   });
 
   it("Task詳細取得時点のversionをqueryへ指定してarchiveする", async () => {

@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import type { Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import AttendanceApi, {
@@ -25,9 +26,11 @@ import {
 import {
   ATTENDANCE_ERROR_CODES,
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
+  needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { StatusAlertType } from "@/shared/types/color";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
@@ -39,6 +42,42 @@ const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
 };
 
 /**
+ * 打刻ボタンに付ける`data-attendance-punch`属性の値（打刻操作名と同じ）を、画面の並び順で並べたもの。
+ * 打刻すると押したボタンがdisabledになりフォーカスがbodyへ外れるため、打刻の後は次に押せるボタンへ移す
+ * （動作確認/21_勤怠本人 G-2）。
+ */
+const PUNCH_FOCUS_ORDER: readonly AttendancePunchAction[] = [
+  "clock-in",
+  "clock-out",
+  "break-start",
+  "break-end",
+];
+
+/**
+ * 本人勤怠画面の部品に付ける`data-attendance-control`属性の値。
+ * 押したボタンが消える操作（提出・修正申請・申請取消）の後に、フォーカスがbodyへ外れないよう次の部品へ移す
+ * （動作確認/21_勤怠本人 G-6〜G-8）。
+ */
+export const ATTENDANCE_CONTROL = {
+  /** 画面見出しの「表示月」入力欄。提出の後、「提出」が消えたときの戻り先。 */
+  month: "month",
+  /** 月次申請の「提出」「再提出」ボタン。 */
+  submitMonth: "submit-month",
+  /** 選択日の「修正申請」ボタン。審査待ちの申請がある間は出ないため、申請取消の後の戻り先。 */
+  requestCorrection: "request-correction",
+  /** 審査待ちの修正申請の「申請取消」ボタン（1勤務日に審査待ちは1件だけ）。修正申請の後の戻り先。 */
+  cancelCorrection: "cancel-correction",
+} as const;
+
+/** `data-attendance-control`属性の値から、その部品を探すselectorを作る。 */
+const attendanceControlSelector = (key: string): string =>
+  `[data-attendance-control="${key}"]`;
+
+/** `data-attendance-punch`属性の値から、その打刻ボタンを探すselectorを作る。 */
+const punchButtonSelector = (action: AttendancePunchAction): string =>
+  `[data-attendance-punch="${action}"]`;
+
+/**
  * 本人勤怠画面の月一覧、選択日詳細、server timestamp打刻、競合回復を管理する。
  * 月一覧は1回の期間APIで取得し、日ごとのN+1 Requestを発生させない。
  */
@@ -48,6 +87,8 @@ export const useAttendancePage = () => {
   const today = getTodayInTokyo();
 
   const errorMessages = ref<string[]>([]);
+  /** 修正申請Dialogの入力チェック・申請APIの失敗。Dialogを開いている間は画面上部が隠れるため、Dialogの中へ出す。 */
+  const correctionErrorMessages = ref<string[]>([]);
   const isLoadingDay = ref(false);
   const isLoadingMonth = ref(false);
   const isPunching = ref(false);
@@ -180,11 +221,15 @@ export const useAttendancePage = () => {
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 競合後のボタン状態を推測せず、Backendの最新状態へ戻す。
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       isPunching.value = false;
     }
+    // 押したボタンが押せるまま（失敗等）ならそこへ、押せなくなったら画面の並び順で最初に押せるボタンへ戻す。
+    await focusFirstEnabledElement(
+      [action, ...PUNCH_FOCUS_ORDER].map(punchButtonSelector)
+    );
   };
 
   /** 表示月を最新versionで提出または再提出し、Backend確定状態へ同期する。 */
@@ -208,11 +253,15 @@ export const useAttendancePage = () => {
         DISPLAY_MESSAGES.attendance.self.submitMonthFailed
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       isSubmittingMonth.value = false;
     }
+    await focusFirstEnabledElement([
+      attendanceControlSelector(ATTENDANCE_CONTROL.submitMonth),
+      attendanceControlSelector(ATTENDANCE_CONTROL.month),
+    ]);
   };
 
   /** 選択日の現在値を全置換フォームへ複製して修正申請dialogを開く。 */
@@ -223,6 +272,7 @@ export const useAttendancePage = () => {
     correctionForm.value = buildAttendanceCorrectionForm(selectedDay.value);
     isCorrectionDialogOpen.value = true;
     errorMessages.value = [];
+    correctionErrorMessages.value = [];
     successMessage.value = "";
   };
 
@@ -230,6 +280,7 @@ export const useAttendancePage = () => {
   const closeCorrectionDialog = (): void => {
     if (!isSubmittingCorrection.value) {
       isCorrectionDialogOpen.value = false;
+      correctionErrorMessages.value = [];
     }
   };
 
@@ -313,11 +364,12 @@ export const useAttendancePage = () => {
       correctionForm.value
     );
     if (validationMessages.length > 0) {
-      errorMessages.value = validationMessages;
+      correctionErrorMessages.value = validationMessages;
       return;
     }
     isSubmittingCorrection.value = true;
     errorMessages.value = [];
+    correctionErrorMessages.value = [];
     successMessage.value = "";
     try {
       await AttendanceApi.createCorrectionRequest(
@@ -330,13 +382,20 @@ export const useAttendancePage = () => {
       await loadCorrectionRequests();
       isCorrectionDialogOpen.value = false;
       successMessage.value = "勤怠修正を申請しました。";
+      // 審査待ちの間は「修正申請」が消えるため、Dialogを開いたボタンの代わりに新しい申請の「申請取消」へ移す。
+      await focusFirstEnabledElement([
+        attendanceControlSelector(ATTENDANCE_CONTROL.cancelCorrection),
+        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+      ]);
     } catch (error: unknown) {
+      // Dialogは開いたままなので、理由は画面の後ろでなくDialogの中へ出す。
       await handleApiError(
         error,
-        DISPLAY_MESSAGES.attendance.self.correctionRequestFailed
+        DISPLAY_MESSAGES.attendance.self.correctionRequestFailed,
+        correctionErrorMessages
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error, correctionErrorMessages);
       }
     } finally {
       isSubmittingCorrection.value = false;
@@ -363,13 +422,18 @@ export const useAttendancePage = () => {
       );
       await loadCorrectionRequests();
       successMessage.value = "勤怠修正申請を取り消しました。";
+      // 押した「申請取消」は消えるため、再び出る「修正申請」（承認済み・締め済みの月だけ）へ移す。
+      await focusFirstEnabledElement([
+        attendanceControlSelector(ATTENDANCE_CONTROL.requestCorrection),
+        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+      ]);
     } catch (error: unknown) {
       await handleApiError(
         error,
         DISPLAY_MESSAGES.attendance.self.correctionCancelFailed
       );
       if (error instanceof AttendanceApiError && error.status === 409) {
-        await reloadAfterConflict();
+        await reloadAfterConflict(error);
       }
     } finally {
       cancellingCorrectionId.value = null;
@@ -466,8 +530,15 @@ export const useAttendancePage = () => {
   /**
    * 409後に月一覧と選択日を再取得し、次に可能な打刻操作を確定する。
    * 認証・認可・公開範囲の変化は優先し、それ以外の再取得失敗では最初の競合理由を維持する。
+   * version競合等（`needsAttendanceReloadGuidance`）で取り直せたときは、取り直し済みの案内を添える。
+   *
+   * @param conflict 操作APIが返した409
+   * @param messageTarget 競合理由を出した先。修正申請Dialogからの409は`correctionErrorMessages`
    */
-  const reloadAfterConflict = async (): Promise<void> => {
+  const reloadAfterConflict = async (
+    conflict: AttendanceApiError,
+    messageTarget: Ref<string[]> = errorMessages
+  ): Promise<void> => {
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
       const [listResponse, dayResponse, monthResponse, correctionResponse] =
@@ -481,6 +552,12 @@ export const useAttendancePage = () => {
       selectedDay.value = dayResponse;
       monthSummary.value = monthResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
+      if (needsAttendanceReloadGuidance(conflict.errorResponse)) {
+        messageTarget.value = [
+          ...messageTarget.value,
+          DISPLAY_MESSAGES.attendance.conflictReloaded,
+        ];
+      }
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof AttendanceApiError &&
@@ -495,32 +572,41 @@ export const useAttendancePage = () => {
     }
   };
 
-  /** 本人勤怠API失敗を認証状態と利用者向け画面メッセージへ変換する。 */
+  /**
+   * 本人勤怠API失敗を認証状態と利用者向け画面メッセージへ変換する。
+   *
+   * @param error API呼出しで発生した例外
+   * @param fallbackMessage 契約済みmessageがない失敗で表示する案内
+   * @param messageTarget 案内の表示先。既定は画面上部、修正申請Dialogからの失敗は`correctionErrorMessages`
+   */
   const handleApiError = async (
     error: unknown,
-    fallbackMessage: string
+    fallbackMessage: string,
+    messageTarget: Ref<string[]> = errorMessages
   ): Promise<void> => {
     if (!(error instanceof AttendanceApiError)) {
-      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      messageTarget.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
       errorMessages.value = [];
+      correctionErrorMessages.value = [];
+      isCorrectionDialogOpen.value = false;
       userStore.clearSession();
       await router.push({ name: "Login" });
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [DISPLAY_MESSAGES.attendance.self.forbidden];
+      messageTarget.value = [DISPLAY_MESSAGES.attendance.self.forbidden];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [
+      messageTarget.value = [
         DISPLAY_MESSAGES.attendance.self.accountNotFound,
       ];
       return;
     }
-    errorMessages.value = resolveApiErrorMessages(
+    messageTarget.value = resolveApiErrorMessages(
       error.errorResponse,
       ATTENDANCE_ERROR_CODES,
       fallbackMessage
@@ -551,6 +637,7 @@ export const useAttendancePage = () => {
     canWriteAttendance,
     changeMonth,
     closeCorrectionDialog,
+    correctionErrorMessages,
     correctionForm,
     correctionRequests,
     currentUserDisplayName,

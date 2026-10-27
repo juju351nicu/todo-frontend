@@ -1,109 +1,58 @@
 <script setup lang="ts">
-import type { TodoDetailForm } from "@/features/task/utils/taskForm";
+import { computed } from "vue";
+
+import { buildTodoConfirmItems, type TodoDetailForm } from "@/features/task/utils/taskForm";
 
 /** 登録・更新前に表示するTodoフォーム。 */
-defineProps<{
-    todoForm: TodoDetailForm;
+const props = defineProps<{
+  todoForm: TodoDetailForm;
 }>();
 
 /** 保存せず戻る操作と、確認済みフォームの保存要求を親画面へ通知する。 */
 const emit = defineEmits<{
-    "close-modal": [];
-    "confirm-submit": [];
+  "close-modal": [];
+  "confirm-submit": [];
 }>();
 
-/** 確認内容を保存せずモーダル画面を閉じる。 */
-const handleCloseModal = (): void => {
-    emit("close-modal");
-};
+const isUpdate = computed(() => props.todoForm.todoId > 0);
+const confirmItems = computed(() => buildTodoConfirmItems(props.todoForm));
 
-/** 確認したTodo情報の登録・更新を親画面へ依頼する。 */
-const handleConfirmSubmit = (): void => {
-    emit("confirm-submit");
+/**
+ * Dialogを閉じる操作（戻る・Esc・背景のクリック）を親画面へ伝える。
+ * 表示の有無は親画面の`v-if`が決めるため、ここでは開閉状態を持たない。
+ *
+ * @param open UModalが通知する開閉状態
+ */
+const handleOpenChange = (open: boolean): void => {
+  if (!open) {
+    emit("close-modal");
+  }
 };
 </script>
+
 <template>
-    <div id="modal">
-        <div class="modal">
-            <h4> {{ todoForm.todoId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
-            <div class="page-container">
-                <div class="-m-3 flex flex-col">
-                    <span class="p-3 sm:w-1/2">{{ todoForm.title }}</span>
-                    <span class="p-3 sm:w-1/2">{{ todoForm.dateFrom }}</span>
-                    <span class="p-3 sm:w-1/2">{{ todoForm.dateTo }}</span>
-                    <span class="p-3 sm:w-1/2">{{ todoForm.detail }}</span>
-                    <span class="p-3 sm:w-1/2">{{ todoForm.doneFlag }}</span>
-                </div>
-            </div>
-            <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
-            <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ todoForm.todoId > 0 ? '更新' : '登録'
-            }}</button>
-        </div>
-        <div class="modal-overlay"></div>
-    </div>
+  <!--
+    旧画面は固定幅600pxの独自のoverlayで、幅390pxでは左右が切れ、Escで閉じず、Dialogとして読み上げられなかった
+    （動作確認/16_Todo G-8）。ほかの画面と同じUModalにする。
+  -->
+  <UModal
+    :open="true"
+    :title="isUpdate ? '更新内容の確認' : '登録内容の確認'"
+    description="この内容で保存します。"
+    :ui="{ content: 'max-w-140' }"
+    @update:open="handleOpenChange"
+  >
+    <template #body>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+        <template v-for="item in confirmItems" :key="item.label">
+          <dt class="text-sm text-muted">{{ item.label }}</dt>
+          <dd class="break-words whitespace-pre-wrap">{{ item.value }}</dd>
+        </template>
+      </dl>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" @click="emit('close-modal')">戻る</UButton>
+      <UButton color="primary" @click="emit('confirm-submit')">{{ isUpdate ? "更新" : "登録" }}</UButton>
+    </template>
+  </UModal>
 </template>
-<style scoped>
-.modal {
-    padding: 10px 20px;
-    border: 2px solid #a5272a;
-    background: #faebd7;
-    z-index: 2;
-    display: block;
-    text-align: center;
-    position: fixed;
-    width: 600px;
-    height: 600px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 10px;
-    user-select: none;
-}
-
-.modal__message {
-    margin-top: 10px;
-}
-
-.modal__cancel {
-    margin-right: 30px;
-}
-
-.modal__cancel:hover {
-    cursor: pointer;
-    color: rgb(14, 48, 240);
-    font-weight: bold;
-}
-
-.modal__btn {
-    display: inline-block;
-    margin: 30px auto;
-    text-decoration: none;
-    width: 80px;
-    height: 30px;
-    text-decoration: none;
-    color: #000000;
-    border: solid 2px #a5272a;
-    border-radius: 3px;
-    transition: 0.4s;
-    text-align: center;
-    vertical-align: middle;
-    background-color: #faebd7;
-}
-
-.modal__btn:hover {
-    background: #a5272a;
-    color: white;
-    cursor: pointer;
-}
-
-.modal-overlay {
-    z-index: 1;
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 120%;
-    background-color: rgba(0, 0, 0, 0.75);
-}
-</style>

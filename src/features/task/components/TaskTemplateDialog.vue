@@ -15,8 +15,13 @@ const props = withDefaults(
     canApply?: boolean;
     canEdit?: boolean;
     projectActive?: boolean;
+    /**
+     * 適用時の担当者をこのaccountだけに限定する場合のID（MEMBERの本人）。nullなら全参加者から選べる。
+     * 限定するときは担当者の初期値もこのaccountにする（`useTaskTemplateDialog`）。
+     */
+    restrictedAssigneeAccountId?: number | null;
   }>(),
-  { canApply: false, canEdit: false, projectActive: false },
+  { canApply: false, canEdit: false, projectActive: false, restrictedAssigneeAccountId: null },
 );
 const emit = defineEmits<{
   taskCreated: [task: TaskDetail];
@@ -24,6 +29,7 @@ const emit = defineEmits<{
 
 const {
   applyAssigneeAccountId,
+  applyAssigneeOptions,
   applyDateFrom,
   applySelectedTemplate,
   applyTaskStatusId,
@@ -45,20 +51,21 @@ const {
   saveTemplate,
   selectTemplate,
   selectedTemplate,
+  applyStatusOptions,
   statusCodeOptions,
-  statusIdOptions,
   successMessage,
   templates,
 } = useTaskTemplateDialog({
   projectId: toRef(props, "projectId"),
   members: () => props.members,
   statuses: () => props.statuses,
+  restrictedAssigneeAccountId: () => props.restrictedAssigneeAccountId,
   onTaskCreated: (task) => emit("taskCreated", task),
 });
 </script>
 
 <template>
-  <UButton icon="i-mdi-file-multiple-outline" variant="soft" class="text-white" @click="open">Task Template</UButton>
+  <UButton icon="i-mdi-file-multiple-outline" variant="soft" @click="open">Task Template</UButton>
 
   <UModal v-model:open="isOpen" :dismissible="!isMutating" :ui="{ content: 'max-w-260' }">
     <template #title>
@@ -76,7 +83,9 @@ const {
       </span>
     </template>
     <template #body>
-      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <!-- Templateの編集フォームを開いている間は、エラーを「更新」ボタンのすぐ上に出す（下のform内）。
+           フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
+      <StatusAlert v-if="errorMessage && !isEditing" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
       <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
         {{ successMessage }}
       </StatusAlert>
@@ -90,7 +99,7 @@ const {
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedTemplate?.taskTemplateId === template.taskTemplateId ? 'bg-primary/12 text-primary' : 'hover:bg-black/4'"
+                :class="selectedTemplate?.taskTemplateId === template.taskTemplateId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
                 @click="selectTemplate(template)"
               >
                 <span class="min-w-0 flex-1">
@@ -156,10 +165,13 @@ const {
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
-                <UFormField label="担当者上書き" help="未指定時はTemplate既定値">
+                <UFormField
+                  label="担当者上書き"
+                  :help="restrictedAssigneeAccountId === null ? '未指定時はTemplate既定値' : 'MEMBERは自分だけを担当者にできます'"
+                >
                   <USelectMenu
                     :model-value="applyAssigneeAccountId ?? undefined"
-                    :items="memberOptions"
+                    :items="applyAssigneeOptions"
                     label-key="title"
                     value-key="value"
                     :search-input="false"
@@ -175,7 +187,7 @@ const {
                 <UFormField label="Board列上書き" help="未指定時はTemplate既定列">
                   <USelectMenu
                     :model-value="applyTaskStatusId ?? undefined"
-                    :items="statusIdOptions"
+                    :items="applyStatusOptions"
                     label-key="title"
                     value-key="value"
                     :search-input="false"
@@ -267,6 +279,7 @@ const {
             <UFormField label="チェック項目" help="入力後にEnterで項目を追加します（最大50件）">
               <UInputTags v-model="editForm.checklistContents" :max="50" class="w-full" />
             </UFormField>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isSaving" @click="cancelEditing">キャンセル</UButton>
               <UButton type="submit" color="primary" :loading="isSaving">更新</UButton>

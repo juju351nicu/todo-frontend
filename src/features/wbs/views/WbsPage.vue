@@ -8,6 +8,7 @@ import WorkingCalendarCard from "@/features/wbs/components/WorkingCalendarCard.v
 import WorkingDayEditDialog from "@/features/wbs/components/WorkingDayEditDialog.vue";
 import WbsBaselineCard from "@/features/wbs/components/WbsBaselineCard.vue";
 import WbsBaselineCreateDialog from "@/features/wbs/components/WbsBaselineCreateDialog.vue";
+import WbsDependencyCard from "@/features/wbs/components/WbsDependencyCard.vue";
 import WbsDependencyCreateDialog from "@/features/wbs/components/WbsDependencyCreateDialog.vue";
 import WbsEarnedValueCard from "@/features/wbs/components/WbsEarnedValueCard.vue";
 import WbsEstimateAccuracyCard from "@/features/wbs/components/WbsEstimateAccuracyCard.vue";
@@ -46,15 +47,15 @@ const VIEW_OPTIONS = [
 
 <template>
   <LoadingIndicator v-if="page.isLoading" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
-    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+  <div class="page-surface p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
         :to="{ name: 'ProjectList' }"
         icon="i-mdi-arrow-left"
         variant="ghost"
         square
         size="lg"
-        class="size-12 text-inherit hover:bg-white/4"
+        class="size-12 text-inherit"
         :ui="{ leadingIcon: 'size-6' }"
         aria-label="Project一覧へ戻る"
       />
@@ -62,7 +63,7 @@ const VIEW_OPTIONS = [
         <h1 class="text-2xl">{{ page.wbs?.projectName ?? "WBS" }}</h1>
         <div class="text-sm opacity-70">Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理</div>
       </div>
-      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto text-white" :disabled="page.isLoading" @click="page.openBoard">
+      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto" :disabled="page.isLoading" @click="page.openBoard">
         Boardを開く
       </UButton>
       <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="page.isLoading" @click="page.initialize">再読込</UButton>
@@ -160,7 +161,7 @@ const VIEW_OPTIONS = [
                   <span class="text-xs whitespace-nowrap">{{ formatProgressPercent(row.progressPercent) }}%</span>
                 </div>
               </td>
-              <td class="whitespace-nowrap">ID: {{ row.assigneeAccountId }}</td>
+              <td class="whitespace-nowrap">{{ page.resolveAssigneeDisplayName(row.assigneeAccountId) }}</td>
               <td>
                 <UBadge :color="getWbsPriorityColor(row.priority)" size="xs">{{ getWbsPriorityLabel(row.priority) }}</UBadge>
               </td>
@@ -242,7 +243,7 @@ const VIEW_OPTIONS = [
       :metrics="page.earnedValue"
       :is-loading="page.isLoadingEarnedValue"
       :error-messages="page.earnedValueErrorMessages"
-      @load="page.loadEarnedValueMetrics"
+      @load="page.submitEarnedValueMetrics"
     />
 
     <WbsReportExportCard
@@ -261,11 +262,12 @@ const VIEW_OPTIONS = [
       :target-options="page.workingCalendarTargetOptions"
       :selected-target-key="page.workingCalendarSelectedTargetKey"
       :can-edit-selected-target="page.canEditSelectedWorkingCalendarTarget"
+      :read-only-message="page.workingCalendarReadOnlyMessage"
       :is-loading="page.isLoadingWorkingCalendar"
       :is-mutating="page.isWorkingCalendarMutating"
       :error-messages="page.workingCalendarErrorMessages"
       :success-message="page.workingCalendarSuccessMessage"
-      @load="page.loadWorkingCalendar"
+      @load="page.submitWorkingCalendar"
       @edit="page.openWorkingDayEditor"
       @request-delete="page.requestWorkingDayDelete"
     />
@@ -276,7 +278,7 @@ const VIEW_OPTIONS = [
       :workload="page.workload"
       :is-loading="page.isLoadingWorkload"
       :error-messages="page.workloadErrorMessages"
-      @load="page.loadTaskWorkload"
+      @load="page.submitTaskWorkload"
     />
 
     <WbsEstimateAccuracyCard
@@ -287,67 +289,17 @@ const VIEW_OPTIONS = [
       @load="page.loadEstimateAccuracy"
     />
 
-    <UCard v-if="page.wbs" class="mx-auto mt-4 max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
-      <template #header>
-        <div class="flex flex-wrap items-center gap-2">
-          <UIcon name="i-mdi-vector-link" class="size-6" />
-          Task依存関係
-          <UBadge size="sm" variant="outline">{{ page.dependencyRows.length }}件</UBadge>
-          <UButton
-            v-if="page.canEditWbs"
-            icon="i-mdi-link-plus"
-            color="primary"
-            variant="soft"
-            class="ms-auto"
-            :disabled="page.dependencyTaskOptions.length < 2 || page.isDependencyMutating"
-            @click="page.openDependencyEditor"
-          >
-            依存関係を追加
-          </UButton>
-        </div>
-      </template>
-
-      <div v-if="page.dependencyRows.length" class="overflow-x-auto">
-        <table class="app-table app-table-hover min-w-205 [&_td]:h-13 [&_th]:h-13">
-          <thead>
-            <tr>
-              <th scope="col">先行Task</th>
-              <th scope="col">後続Task</th>
-              <th scope="col">依存種別</th>
-              <th scope="col">待ち時間</th>
-              <th v-if="page.canEditWbs" scope="col">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="dependency in page.dependencyRows" :key="dependency.dependencyId">
-              <td>{{ dependency.predecessorLabel }}</td>
-              <td>
-                <UIcon name="i-mdi-arrow-right" class="me-2 size-5 align-middle" />
-                {{ dependency.successorLabel }}
-              </td>
-              <td><UBadge size="xs" variant="outline">Finish-to-Start</UBadge></td>
-              <td>{{ dependency.lagMinutes }}分</td>
-              <td v-if="page.canEditWbs">
-                <UButton
-                  icon="i-mdi-link-variant-remove"
-                  color="error"
-                  size="sm"
-                  variant="ghost"
-                  square
-                  :disabled="page.isDependencyMutating"
-                  :aria-label="`${dependency.predecessorLabel}から${dependency.successorLabel}への依存関係を削除`"
-                  @click="page.requestDependencyDelete(dependency.dependencyId)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else class="p-8 text-center">
-        <UIcon name="i-mdi-vector-link" class="mb-2 size-10" />
-        <p class="mb-0 text-sm text-muted">Task依存関係はまだ登録されていません。</p>
-      </div>
-    </UCard>
+    <WbsDependencyCard
+      v-if="page.wbs"
+      :dependency-rows="page.dependencyRows"
+      :can-edit="page.canEditWbs"
+      :can-add="page.dependencyTaskOptions.length >= 2"
+      :is-mutating="page.isDependencyMutating"
+      :error-messages="page.dependencyErrorMessages"
+      :success-message="page.dependencySuccessMessage"
+      @add="page.openDependencyEditor"
+      @request-delete="page.requestDependencyDelete"
+    />
 
     <WbsTaskEditDialog
       :open="page.isEditorOpen"
@@ -422,6 +374,7 @@ const VIEW_OPTIONS = [
       :open="page.isWorkingDayEditorOpen"
       :day="page.workingDayEditingDay"
       :target="page.selectedWorkingCalendarTarget"
+      :target-display-name="page.selectedWorkingCalendarTargetDisplayName"
       :is-saving="page.isSavingWorkingDay"
       :error-messages="page.workingCalendarEditorErrorMessages"
       @close="page.closeWorkingDayEditor"

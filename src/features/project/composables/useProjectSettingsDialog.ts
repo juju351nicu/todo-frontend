@@ -17,8 +17,10 @@ import {
   PROJECT_ERROR_CODES,
   PROJECT_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/project/utils/apiErrors";
+import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project設定Dialogで編集する表示情報と取得時点のversion。 */
 interface ProjectSettingsForm {
@@ -57,6 +59,55 @@ const parseAccountId = (value: number | string | null): number | null => {
   const accountId = Number(value);
   return Number.isSafeInteger(accountId) && accountId > 0 ? accountId : null;
 };
+
+/**
+ * Project設定Dialogの部品に付ける`data-project-settings-control`属性の値。
+ * `ProjectSettingsDialog.vue`はこの値で属性を付け、`useProjectSettingsDialog`は操作の後（失敗した場合も含む）に
+ * 同じ値で部品を探してフォーカスを戻す。
+ */
+export const PROJECT_SETTINGS_CONTROL = {
+  /** 基本情報の「Project名」入力欄。 */
+  projectName: "project-name",
+  /** 「Projectをアーカイブ」ボタン。 */
+  archive: "archive",
+  /** 「メンバーを追加」の「アカウントID」入力欄。 */
+  addAccountId: "add-account-id",
+  /** Dialog下部の「閉じる」ボタン。ほかの候補がすべて消えた・disabledのときの戻し先。 */
+  close: "close",
+} as const;
+
+/**
+ * メンバー一覧の行ごとのProject role選択に付ける`data-project-settings-control`属性の値を組み立てる。
+ *
+ * @param accountId 行のアカウントID
+ * @returns `"member:{accountId}:role"`形式の属性値
+ */
+export const memberRoleControlKey = (accountId: number): string =>
+  `member:${accountId}:role`;
+
+/**
+ * Backendの文言が「最新状態を取得してください。」で終わる409のerror code（`messages.properties`の
+ * `error.project.conflict.version`・`member-version`・`member`）。画面は409の後に必ず再取得するため、
+ * これらのときだけ取り直し済みの案内を添える。最後のOWNER・無効なアカウント等は再取得しても状況が変わらないので添えない。
+ */
+const RELOAD_GUIDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
+  "PROJECT_VERSION_CONFLICT",
+  "PROJECT_MEMBER_VERSION_CONFLICT",
+  "PROJECT_MEMBER_CONFLICT",
+]);
+
+/** 409のResponseに、取り直し済みの案内を添えるerror codeが含まれるか。 */
+const needsReloadGuidance = (error: ProjectApiError): boolean =>
+  Array.isArray(error.errorResponse?.fieldErrors) &&
+  error.errorResponse.fieldErrors.some(
+    (fieldError) =>
+      typeof fieldError?.errorCode === "string" &&
+      RELOAD_GUIDANCE_ERROR_CODES.has(fieldError.errorCode)
+  );
+
+/** `data-project-settings-control`属性の値から、その要素を探すselectorを作る。 */
+const projectSettingsControlSelector = (key: string): string =>
+  `[data-project-settings-control="${key}"]`;
 
 /**
  * Task Board上のProject設定Dialogについて、Project更新・archive・member管理をまとめて扱う。
@@ -195,6 +246,24 @@ export const useProjectSettingsDialog = (
     isDialogOpen.value = true;
   };
 
+  /**
+   * 操作の後（失敗した場合も含む）、候補の部品へフォーカスを戻す。
+   * 更新中はDialog内の入力欄とボタンをすべてdisabledにするため、押した部品からフォーカスが外れて
+   * bodyへ移り、キーボードだけでは続けて操作できなくなる（動作確認/12_Project設定 G-3・G-5）。
+   * 候補がすべて消えた・disabledのとき（自分を降格した後など）は「閉じる」へ戻す。
+   * Dialogを閉じた後（401・自己除外）は何もしない。isSaving等をfalseへ戻した後に呼ぶ。
+   *
+   * @param candidates `PROJECT_SETTINGS_CONTROL`または`memberRoleControlKey`の値（優先順）
+   */
+  const restoreControlFocus = async (candidates: readonly string[]): Promise<void> => {
+    if (!isDialogOpen.value) {
+      return;
+    }
+    await focusFirstEnabledElement(
+      [...candidates, PROJECT_SETTINGS_CONTROL.close].map(projectSettingsControlSelector)
+    );
+  };
+
   /** 更新処理中でない場合だけProject設定Dialogを閉じる。 */
   const closeDialog = (): void => {
     if (!isBusy.value) {
@@ -228,11 +297,12 @@ export const useProjectSettingsDialog = (
     } catch (error: unknown) {
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.updateFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
-        await reloadProjectAfterConflict();
+        await reloadProjectAfterConflict(error);
       }
     } finally {
       isSavingProject.value = false;
     }
+    await restoreControlFocus([PROJECT_SETTINGS_CONTROL.projectName]);
   };
 
   /** ACTIVEなProjectだけを対象にarchive確認Dialogを開く。 */
@@ -281,11 +351,13 @@ export const useProjectSettingsDialog = (
       isArchiveConfirmOpen.value = false;
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.archiveFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
-        await reloadProjectAfterConflict();
+        await reloadProjectAfterConflict(error);
       }
     } finally {
       isArchivingProject.value = false;
     }
+    // archive後は「Projectをアーカイブ」が消え、入力欄は読み取り専用になるため、候補にないときは「閉じる」へ戻る。
+    await restoreControlFocus([PROJECT_SETTINGS_CONTROL.archive]);
   };
 
   /** 入力した有効アカウントを選択roleでProjectへ追加する。 */
@@ -319,15 +391,16 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       addMemberAccountId.value = null;
       addMemberRole.value = "MEMBER";
-      successMessage.value = `アカウントID ${accountId} をProjectへ追加しました。`;
+      successMessage.value = `${resolveProjectMemberDisplayName(updatedProject.members, accountId)}（ID: ${accountId}）をProjectへ追加しました。`;
     } catch (error: unknown) {
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberAddFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
-        await reloadProjectAfterConflict();
+        await reloadProjectAfterConflict(error);
       }
     } finally {
       isSavingMember.value = false;
     }
+    await restoreControlFocus([PROJECT_SETTINGS_CONTROL.addAccountId]);
   };
 
   /** 指定memberが有効なProjectの最後のOWNERか判定する。 */
@@ -379,18 +452,23 @@ export const useProjectSettingsDialog = (
         request
       );
       applyProjectDetail(updatedProject);
-      successMessage.value = `アカウントID ${member.accountId} のProject roleを更新しました。`;
+      successMessage.value = `${member.displayName}（ID: ${member.accountId}）のProject roleを更新しました。`;
     } catch (error: unknown) {
       await handleApiError(
         error,
         DISPLAY_MESSAGES.project.settings.memberRoleUpdateFailed
       );
       if (error instanceof ProjectApiError && error.status === 409) {
-        await reloadProjectAfterConflict();
+        await reloadProjectAfterConflict(error);
       }
     } finally {
       isSavingMember.value = false;
     }
+    // 変更後は「role保存」がdisabledに戻るため、同じ行のrole選択へ戻す。
+    await restoreControlFocus([
+      memberRoleControlKey(member.accountId),
+      PROJECT_SETTINGS_CONTROL.addAccountId,
+    ]);
   };
 
   /** 最後のOWNER以外を対象としてmember除外確認Dialogを開く。 */
@@ -447,9 +525,10 @@ export const useProjectSettingsDialog = (
       memberToRemove.value = null;
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberRemoveFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
-        await reloadProjectAfterConflict();
+        await reloadProjectAfterConflict(error);
       }
       isSavingMember.value = false;
+      await restoreControlFocus([PROJECT_SETTINGS_CONTROL.addAccountId]);
       return;
     }
 
@@ -465,7 +544,7 @@ export const useProjectSettingsDialog = (
     try {
       const updatedProject = await ProjectApi.getProject(current.projectId);
       applyProjectDetail(updatedProject);
-      successMessage.value = `アカウントID ${target.accountId} をProjectから除外しました。`;
+      successMessage.value = `${target.displayName}（ID: ${target.accountId}）をProjectから除外しました。`;
     } catch (error: unknown) {
       // DELETEは確定済みのため再実行を促さず、最新表示の再取得だけを案内する。
       await handleProjectRefreshError(
@@ -475,10 +554,18 @@ export const useProjectSettingsDialog = (
     } finally {
       isSavingMember.value = false;
     }
+    // 除外した行の部品は消えるため、メンバー追加欄へ戻す。
+    await restoreControlFocus([PROJECT_SETTINGS_CONTROL.addAccountId]);
   };
 
-  /** 409競合後にProject詳細を再取得し、古いProject／member versionを画面へ残さない。 */
-  const reloadProjectAfterConflict = async (): Promise<void> => {
+  /**
+   * 409競合後にProject詳細を再取得し、古いProject／member versionを画面へ残さない。
+   * version競合等（`RELOAD_GUIDANCE_ERROR_CODES`）で再取得できたときは、Backendの「最新状態を取得してください。」の後ろに、
+   * 画面側で取り直し済みであることの案内を添える（動作確認/12_Project設定 G-4。07・08の対応と同じ）。
+   *
+   * @param conflict 操作APIが返した409
+   */
+  const reloadProjectAfterConflict = async (conflict: ProjectApiError): Promise<void> => {
     const current = project.value;
     if (current === null || isLoadingLatest.value) {
       return;
@@ -487,6 +574,12 @@ export const useProjectSettingsDialog = (
     isLoadingLatest.value = true;
     try {
       applyProjectDetail(await ProjectApi.getProject(current.projectId));
+      if (needsReloadGuidance(conflict)) {
+        errorMessages.value = [
+          ...messagesBeforeReload,
+          DISPLAY_MESSAGES.project.settings.conflictReloaded,
+        ];
+      }
     } catch (error: unknown) {
       if (
         error instanceof ProjectApiError &&

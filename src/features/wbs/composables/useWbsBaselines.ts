@@ -19,6 +19,43 @@ import {
   buildWbsBaselineCreateRequest,
   validateWbsBaselineCreateForm,
 } from "@/features/wbs/utils/wbsBaseline";
+import { hasApiFieldError } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * baseline cardの部品に付ける`data-wbs-baseline-control`属性の値。
+ * 有効化すると押した「比較対象にする」が消えてフォーカスがbodyへ外れるため、
+ * 有効化の後は直前まで比較中だったbaselineの「比較対象にする」（なければ「現在計画を保存」）へ戻す
+ * （動作確認/20_baseline_EVM_Excel帳票 G-5）。
+ */
+export const WBS_BASELINE_CONTROL = {
+  /** card見出しの「現在計画を保存」ボタン。 */
+  create: "create",
+} as const;
+
+/**
+ * baseline一覧の行の「比較対象にする」ボタンに付ける`data-wbs-baseline-control`属性の値を作る。
+ *
+ * @param baselineId 行のbaseline ID
+ * @returns 属性の値
+ */
+export const baselineActivateControlKey = (baselineId: number): string =>
+  `activate:${baselineId}`;
+
+/** `data-wbs-baseline-control`属性の値から、その要素を探すselectorを作る。 */
+const baselineControlSelector = (key: string): string =>
+  `[data-wbs-baseline-control="${key}"]`;
+
+/**
+ * Backendの文言が「最新状態を取得して…」となる409のerror code
+ * （`messages.properties`の`error.wbs.conflict.baseline-version`・`baseline-create`）。
+ * 画面は409の後に必ず一覧を取り直すため、取り直せたときだけ取り直し済みの案内を添える。
+ * archive済みProjectの409は取り直しても操作できないので添えない。
+ */
+const RELOAD_GUIDANCE_ERROR_CODES: readonly string[] = [
+  "WBS_BASELINE_VERSION_CONFLICT",
+  "WBS_BASELINE_CREATE_CONFLICT",
+];
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 /** `useWbsBaselines`が画面の他領域へ委ねる操作。 */
@@ -133,10 +170,15 @@ export const useWbsBaselines = (
     baselineEditorErrorMessages.value = [];
   };
 
-  /** baseline API競合後にも一覧とactive baseline詳細を最新状態へ戻す。 */
-  const reloadWbsBaselines = async (): Promise<void> => {
+  /**
+   * baseline API競合後にも一覧とactive baseline詳細を最新状態へ戻す。
+   *
+   * @returns 取り直せた場合はtrue。失敗した場合はfalse（理由は`baselineErrorMessages`等へ出す）
+   */
+  const reloadWbsBaselines = async (): Promise<boolean> => {
     try {
       await loadWbsBaselines();
+      return true;
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof WbsApiError &&
@@ -148,11 +190,12 @@ export const useWbsBaselines = (
           DISPLAY_MESSAGES.wbs.baseline.reloadFailed,
           baselineErrorMessages
         );
-        return;
+        return false;
       }
       baselineErrorMessages.value.push(
         DISPLAY_MESSAGES.wbs.baseline.reloadFailed
       );
+      return false;
     }
   };
 
@@ -192,7 +235,21 @@ export const useWbsBaselines = (
         error,
         DISPLAY_MESSAGES.wbs.baseline.conflict
       );
-      await reloadWbsBaselines();
+      const reloaded = await reloadWbsBaselines();
+      // version競合等で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに取り直し済みの案内を添える
+      // （動作確認/20_baseline_EVM_Excel帳票 G-6。12・18・19の対応と同じ）。
+      if (
+        reloaded &&
+        !context.isSessionInvalidated() &&
+        RELOAD_GUIDANCE_ERROR_CODES.some((code) =>
+          hasApiFieldError(error.errorResponse, code)
+        )
+      ) {
+        messageTarget.value = [
+          ...messageTarget.value,
+          DISPLAY_MESSAGES.wbs.baseline.conflictReloaded,
+        ];
+      }
       return;
     }
     messageTarget.value = resolveWbsErrorMessages(error, fallbackMessage);
@@ -277,6 +334,8 @@ export const useWbsBaselines = (
       return;
     }
 
+    // 有効化の後に押したボタンは消えるため、直前まで比較中だったbaselineの「比較対象にする」へフォーカスを戻す。
+    const previousActiveBaselineId = activeBaseline.value?.baselineId ?? null;
     activatingBaselineId.value = baseline.baselineId;
     try {
       const activated = await WbsApi.activateWbsBaseline(
@@ -297,6 +356,15 @@ export const useWbsBaselines = (
       );
     } finally {
       activatingBaselineId.value = null;
+    }
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([
+        baselineControlSelector(baselineActivateControlKey(baseline.baselineId)),
+        ...(previousActiveBaselineId === null
+          ? []
+          : [baselineControlSelector(baselineActivateControlKey(previousActiveBaselineId))]),
+        baselineControlSelector(WBS_BASELINE_CONTROL.create),
+      ]);
     }
   };
 

@@ -34,16 +34,40 @@ export const buildDependencyTaskOptions = (
   }));
 
 /**
- * 依存関係一覧の各行へ、先行・後続Taskの表示名を付ける。
+ * 現在の利用者が、依存関係の端点（先行・後続）としてこのTaskを追加・削除に使えるか判定する。
+ *
+ * Backendの`TaskResourceAuthorizationLogic.checkCanUpdate`と同じ条件にそろえ、
+ * Project管理権限（SYSTEM_ADMIN・OWNER・MANAGER）があれば全Task、なければ担当者が本人のTaskだけを許可する。
+ * 画面で操作できない候補やボタンを出さないための判定で、最終判定はBackendが行う。
+ *
+ * @param task 判定するTask。WBSに表示していないTaskはundefined
+ * @param currentAccountId ログイン中のアカウントID。未取得ならnull
+ * @param canManageAnyTask Project管理権限があるか
+ * @returns 端点として使える場合はtrue
+ */
+export const canChangeDependencyEndpoint = (
+  task: Readonly<Pick<WbsTask, "assigneeAccountId">> | undefined,
+  currentAccountId: number | null,
+  canManageAnyTask: boolean
+): boolean =>
+  canManageAnyTask ||
+  (task !== undefined &&
+    currentAccountId !== null &&
+    task.assigneeAccountId === currentAccountId);
+
+/**
+ * 依存関係一覧の各行へ、先行・後続Taskの表示名と削除できるかを付ける。
  * 権限やarchiveでWBSに表示されないTaskの端点も行を消さず、Task IDで示す。
  *
  * @param dependencies Backendが返したProject内の依存関係
- * @param taskOptions 現在WBSに表示しているTaskの候補
+ * @param taskOptions 現在WBSに表示している全Taskの候補（表示名の引き当てに使う）
+ * @param canChangeTaskId 端点のTaskを変更できるか。両端とも変更できる行だけ削除可能とする
  * @returns 表示名付きの新しい配列。Backendの並びを保つ
  */
 export const buildDependencyRows = (
   dependencies: readonly TaskDependency[],
-  taskOptions: readonly TaskDependencyTaskOption[]
+  taskOptions: readonly TaskDependencyTaskOption[],
+  canChangeTaskId: (taskId: number) => boolean
 ): TaskDependencyRow[] => {
   const labelByTaskId = new Map(
     taskOptions.map((option) => [option.value, option.title])
@@ -56,6 +80,9 @@ export const buildDependencyRows = (
     successorLabel:
       labelByTaskId.get(dependency.successorTaskId) ??
       `Task ID: ${dependency.successorTaskId}（表示対象外）`,
+    canDelete:
+      canChangeTaskId(dependency.predecessorTaskId) &&
+      canChangeTaskId(dependency.successorTaskId),
   }));
 };
 

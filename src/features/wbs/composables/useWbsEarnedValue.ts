@@ -7,6 +7,14 @@ import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors"
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { getToday } from "@/features/wbs/utils/effort";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * EVM cardの「集計」ボタンに付ける`data-earned-value-control`属性の値。
+ * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
+ * （動作確認/20_baseline_EVM_Excel帳票 G-3）。
+ */
+export const EARNED_VALUE_SUBMIT_CONTROL = "submit";
 
 /**
  * WBS画面のEVM（Earned Value Management）指標の取得状態を管理する。
@@ -60,6 +68,20 @@ export const useWbsEarnedValue = (context: WbsPageContext) => {
     }
   };
 
+  /**
+   * 「集計」を押したときの処理。EVMを取得してから「集計」へフォーカスを戻す。
+   *
+   * @param statusDate 集計対象に含めるyyyy-MM-dd形式の業務日
+   */
+  const submitEarnedValueMetrics = async (statusDate: string): Promise<void> => {
+    await loadEarnedValueMetrics(statusDate);
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([
+        `[data-earned-value-control="${EARNED_VALUE_SUBMIT_CONTROL}"]`,
+      ]);
+    }
+  };
+
   /** EVM参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。409はactive baselineがないことを表す。 */
   const handleEarnedValueReadError = async (error: unknown): Promise<void> => {
     const result = resolveWbsStandardErrorMessages(error, {
@@ -91,5 +113,6 @@ export const useWbsEarnedValue = (context: WbsPageContext) => {
     earnedValueStatusDate,
     isLoadingEarnedValue,
     loadEarnedValueMetrics,
+    submitEarnedValueMetrics,
   };
 };

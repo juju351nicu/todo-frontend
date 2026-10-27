@@ -15,6 +15,10 @@ import {
   getWorkingDayTypeLabel,
   parseWorkingCalendarTargetKey,
 } from "@/features/wbs/utils/workingCalendar";
+import {
+  WORKING_CALENDAR_SUBMIT_CONTROL,
+  workingDayEditControlKey,
+} from "@/features/wbs/composables/useWbsWorkingCalendar";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useSyncedDraft } from "@/shared/composables/useSyncedDraft";
 
@@ -25,6 +29,8 @@ interface Props {
   targetOptions: WorkingCalendarTargetOption[];
   selectedTargetKey: string;
   canEditSelectedTarget: boolean;
+  /** 変更できない理由の案内。変更できる場合はnull。 */
+  readOnlyMessage: string | null;
   isLoading: boolean;
   isMutating: boolean;
   errorMessages: string[];
@@ -60,7 +66,10 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
 </script>
 
 <template>
-  <UCard class="mx-auto mt-4 max-w-400">
+  <!--
+    操作結果のmessageを画面上端に固定するため、cardの外枠のoverflow-hiddenを外す（stickyはoverflowを持つ祖先の中でしか効かない）。
+  -->
+  <UCard class="mx-auto mt-4 max-w-400" :ui="{ root: 'overflow-visible' }">
     <template #header>
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-calendar-cog-outline" class="size-6" />
@@ -71,10 +80,17 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
     <p class="mb-4 text-sm text-muted">
       平日480分・土日0分の既定値へ、Project共通例外、個人例外の順で上書きします。個人例外を表示するとProject共通設定も確認できます。
     </p>
-    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
-      <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-    </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <!--
+      操作結果のmessageは、calendarを下へスクロールしている間も画面上端（固定ヘッダーの下）に出す。
+      月末の行で登録・削除すると、card上端のmessageが画面外になり結果が分からなかったため（動作確認/19_workload_稼働日calendar G-3・G-5）。
+      負のmarginとpaddingでcard本文の左右の余白（nuxtUiTheme.ts の card.body の p-4）まで覆い、下を流れる表が透けないようにする。
+    -->
+    <div v-if="errorMessages.length || successMessage" class="sticky top-16 z-10 -mx-4 flex flex-col gap-4 bg-default px-4 pt-2 pb-4">
+      <StatusAlert v-if="errorMessages.length" type="error">
+        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+      </StatusAlert>
+      <StatusAlert v-if="successMessage" type="success">{{ successMessage }}</StatusAlert>
+    </div>
 
     <form @submit.prevent="submit">
       <div class="-m-3 flex flex-wrap items-center">
@@ -107,6 +123,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
             icon="i-mdi-magnify"
             :loading="isLoading"
             :disabled="isMutating || targetOptions.length === 0"
+            :data-working-calendar-control="WORKING_CALENDAR_SUBMIT_CONTROL"
             block
           >
             表示
@@ -115,9 +132,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
       </div>
     </form>
 
-    <StatusAlert v-if="!canEditSelectedTarget" type="info" variant="soft" class="mt-4">
-      この表示対象は参照専用です。Project共通設定はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が変更できます。
-    </StatusAlert>
+    <StatusAlert v-if="readOnlyMessage" type="info" variant="soft" class="mt-4">{{ readOnlyMessage }}</StatusAlert>
 
     <div v-if="isLoading" class="mt-4 flex flex-col gap-3">
       <USkeleton v-for="row in 5" :key="row" class="h-8 w-full" />
@@ -170,6 +185,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
                     variant="ghost"
                     square
                     :disabled="isMutating"
+                    :data-working-calendar-control="workingDayEditControlKey(day.workDate)"
                     :aria-label="`${day.workDate}の稼働日例外を${findSelectedOverride(day) ? '編集' : '登録'}`"
                     @click="emit('edit', day.workDate)"
                   />

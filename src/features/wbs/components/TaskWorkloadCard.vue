@@ -6,6 +6,7 @@ import {
   getWorkloadCapacityLabel,
   getWorkloadVarianceColor,
 } from "@/features/wbs/utils/taskWorkload";
+import { WORKLOAD_CONTROL } from "@/features/wbs/composables/useWbsWorkload";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useSyncedDraft } from "@/shared/composables/useSyncedDraft";
 
@@ -65,7 +66,16 @@ const submit = (): void => {
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/6">
-          <UButton type="submit" color="primary" icon="i-mdi-magnify" :loading="isLoading" block>集計</UButton>
+          <UButton
+            type="submit"
+            color="primary"
+            icon="i-mdi-magnify"
+            :loading="isLoading"
+            :data-workload-control="WORKLOAD_CONTROL.submit"
+            block
+          >
+            集計
+          </UButton>
         </div>
       </div>
     </form>

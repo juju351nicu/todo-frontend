@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { useProjectTemplatePage } from "@/features/project/composables/useProjectTemplatePage";
+import {
+  PROJECT_TEMPLATE_CONTROL,
+  templateItemControlKey,
+  useProjectTemplatePage,
+} from "@/features/project/composables/useProjectTemplatePage";
 import {
   formatProjectTemplateOffset,
   formatProjectTemplateTaskTitle,
@@ -24,6 +28,7 @@ const {
   editForm,
   errorMessages,
   initialize,
+  isApplyFeedback,
   isApplying,
   isArchiveConfirmOpen,
   isArchiving,
@@ -45,7 +50,7 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoadingList || isLoadingDetail" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
+  <div class="page-surface p-6">
     <UCard class="mx-auto max-w-360">
       <template #header>
         <div class="flex flex-wrap items-center gap-3">
@@ -60,7 +65,8 @@ onBeforeMount(initialize);
         </div>
       </template>
 
-      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
+      <!-- Templateからの作成の結果は、作成ボタンの上に出す（isApplyFeedback）。 -->
+      <StatusAlert v-if="errorMessages.length && !isApplyFeedback" type="error" class="mb-4">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
       <StatusAlert v-if="successMessage" type="success" closable class="mb-4" @close="successMessage = ''">
@@ -78,9 +84,10 @@ onBeforeMount(initialize);
                 :class="
                   selectedTemplate?.projectTemplateId === template.projectTemplateId
                     ? 'bg-primary/12 text-primary'
-                    : 'hover:bg-black/4'
+                    : 'hover:bg-elevated'
                 "
                 :disabled="isMutating || isLoadingDetail"
+                :data-project-template-control="templateItemControlKey(template.projectTemplateId)"
                 @click="selectTemplate(template)"
               >
                 <UIcon name="i-mdi-folder-star-outline" class="size-6 shrink-0 opacity-60" />
@@ -116,6 +123,7 @@ onBeforeMount(initialize);
                 icon="i-mdi-pencil-outline"
                 class="ms-auto"
                 :disabled="isMutating"
+                :data-project-template-control="PROJECT_TEMPLATE_CONTROL.editButton"
                 @click="beginEditing"
               >
                 編集
@@ -139,7 +147,13 @@ onBeforeMount(initialize);
                 </template>
                 <div class="relative">
                   <UFormField label="Template名">
-                    <UInput v-model="editForm.name" :maxlength="100" :disabled="isSaving" class="w-full" />
+                    <UInput
+                      v-model="editForm.name"
+                      :maxlength="100"
+                      :disabled="isSaving"
+                      class="w-full"
+                      :data-project-template-control="PROJECT_TEMPLATE_CONTROL.editName"
+                    />
                   </UFormField>
                   <FieldCounter :value="editForm.name" :max="100" />
                 </div>
@@ -225,12 +239,16 @@ onBeforeMount(initialize);
               <StatusAlert type="info" variant="soft" density="compact" class="mb-4">
                 各slotへ異なるACTIVEアカウントIDを割り当ててください。自分はOWNERとして参加する必要があります。
               </StatusAlert>
+              <StatusAlert v-if="errorMessages.length && isApplyFeedback" type="error" class="mb-4">
+                <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+              </StatusAlert>
               <div class="flex justify-end">
                 <UButton
                   color="primary"
                   icon="i-mdi-folder-plus-outline"
                   :loading="isApplying"
                   :disabled="!canApplyTemplate || isMutating"
+                  :data-project-template-control="PROJECT_TEMPLATE_CONTROL.applyButton"
                   @click="applyTemplate"
                 >
                   Projectを作成してBoardを開く

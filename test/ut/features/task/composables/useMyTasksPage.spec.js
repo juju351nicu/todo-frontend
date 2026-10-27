@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useMyTasksPage } from "@/features/task/composables/useMyTasksPage";
+import {
+  MY_TASKS_RELOAD_CONTROL,
+  myTaskCompleteControlKey,
+  useMyTasksPage,
+} from "@/features/task/composables/useMyTasksPage";
 import { TaskApiError } from "@/features/task/api/taskApi";
 
 const mocks = vi.hoisted(() => ({
@@ -130,6 +134,21 @@ describe("useMyTasksPage", () => {
     expect(mocks.todoStore.completeTodo).toHaveBeenCalledWith(15);
     expect(mocks.todoStore.findMyTasks).toHaveBeenCalledTimes(2);
     expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
+    expect(page.successMessage.value).toBe("「期限超過Task」を完了しました。");
+  });
+
+  it("完了の後に再取得できなかった場合は、成功の案内を出さずに再取得失敗を出す", async () => {
+    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    const page = useMyTasksPage();
+    await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await page.completeTask(tasks[0]);
+
+    expect(page.successMessage.value).toBe("");
+    expect(page.errorMessages.value).toEqual([
+      "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
+    ]);
   });
 
   it("取得失敗時は既存一覧を維持して接続エラーを表示する", async () => {
@@ -245,5 +264,63 @@ describe("useMyTasksPage", () => {
     mocks.userStore.hasPermission.mockReturnValue(false);
     const readonlyPage = useMyTasksPage();
     expect(readonlyPage.canStartTimers.value).toBe(false);
+  });
+
+  describe("完了の後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // presentに入れた部品だけが画面にあるものとして扱う（完了したTaskの「完了」は一覧から消える）。
+    const stubDocument = (present) => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => {
+          const key = selector.match(/data-my-task-control="([^"]+)"/)?.[1];
+          return present.includes(key) ? { focus: () => focused.push(key), matches: () => false } : null;
+        },
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("完了したTaskと同じ位置へ来たTaskの「完了」へ戻す", async () => {
+      mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+      const page = useMyTasksPage();
+      await page.loadTasks();
+      mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [tasks[0], tasks[2]] });
+      const focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(17), MY_TASKS_RELOAD_CONTROL]);
+
+      await page.completeTask(tasks[1]);
+
+      expect(focused).toEqual([myTaskCompleteControlKey(17)]);
+    });
+
+    it("最後のTaskを完了したら1つ前、Taskがなくなったら再読み込みボタンへ戻す", async () => {
+      mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+      const page = useMyTasksPage();
+      await page.loadTasks();
+      mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: tasks.slice(0, 2) });
+      let focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(16), MY_TASKS_RELOAD_CONTROL]);
+
+      await page.completeTask(tasks[2]);
+      expect(focused).toEqual([myTaskCompleteControlKey(16)]);
+
+      mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [] });
+      focused = stubDocument([MY_TASKS_RELOAD_CONTROL]);
+      await page.completeTask(tasks[0]);
+      expect(focused).toEqual([MY_TASKS_RELOAD_CONTROL]);
+    });
+
+    it("完了に失敗してTaskが残る場合は、そのTaskの「完了」へ戻す", async () => {
+      mocks.todoStore.completeTodo.mockRejectedValue(new TypeError("Failed to fetch"));
+      const page = useMyTasksPage();
+      await page.loadTasks();
+      const focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(16), myTaskCompleteControlKey(17)]);
+
+      await page.completeTask(tasks[1]);
+
+      expect(focused).toEqual([myTaskCompleteControlKey(16)]);
+    });
   });
 });

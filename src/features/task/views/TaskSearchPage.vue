@@ -2,7 +2,11 @@
 import { onBeforeMount } from "vue";
 
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
-import { useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
+import {
+  TASK_SEARCH_CONTROL,
+  TASK_SEARCH_KEYWORD_MAX_LENGTH,
+  useTaskSearchPage,
+} from "@/features/task/composables/useTaskSearchPage";
 import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -76,6 +80,7 @@ onBeforeMount(initialize);
               :search-input="false"
               clear
               class="w-full"
+              :data-task-search-control="TASK_SEARCH_CONTROL.savedViewSelect"
               @update:model-value="applySavedView($event ?? null)"
               @clear="applySavedView(null)"
             />
@@ -83,7 +88,12 @@ onBeforeMount(initialize);
         </div>
         <div class="relative w-full p-3 md:w-1/3">
           <UFormField label="Saved View名">
-            <UInput v-model="savedViewName" :maxlength="100" class="w-full" />
+            <UInput
+              v-model="savedViewName"
+              :maxlength="100"
+              class="w-full"
+              :data-task-search-control="TASK_SEARCH_CONTROL.savedViewName"
+            />
           </UFormField>
           <FieldCounter :value="savedViewName" :max="100" class="end-7 bottom-3.5" />
         </div>
@@ -124,6 +134,7 @@ onBeforeMount(initialize);
               v-model="filters.keyword"
               placeholder="Task名・説明・Project名／キー"
               icon="i-mdi-magnify"
+              :maxlength="TASK_SEARCH_KEYWORD_MAX_LENGTH"
               class="w-full"
               @keydown.enter="executeSearch"
             >
@@ -133,7 +144,7 @@ onBeforeMount(initialize);
                   variant="ghost"
                   size="xs"
                   square
-                  class="text-black/60"
+                  class="text-muted"
                   aria-label="キーワードをクリア"
                   @click="filters.keyword = ''"
                 />
@@ -253,7 +264,8 @@ onBeforeMount(initialize);
     <StatusAlert v-if="truncated" type="info" variant="soft" class="mb-4">
       検索結果が100件を超えたため、先頭100件を表示しています。条件を追加してください。
     </StatusAlert>
-    <StatusAlert v-if="!isBusy && tasks.length === 0" type="info" variant="soft" class="mb-4">
+    <!-- 検索に失敗したときは結果を消しているだけなので、「一致するTaskはありません」とは出さない（動作確認/15_Task検索 G-2）。 -->
+    <StatusAlert v-if="!isBusy && tasks.length === 0 && !errorMessages.length" type="info" variant="soft" class="mb-4">
       条件に一致するTaskはありません。
     </StatusAlert>
 

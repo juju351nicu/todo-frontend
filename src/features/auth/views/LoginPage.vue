@@ -58,7 +58,7 @@ onMounted(initialize);
               variant="ghost"
               square
               size="sm"
-              class="text-black/60"
+              class="text-muted"
               :ui="{ leadingIcon: 'size-6' }"
               :aria-label="showPassword ? 'パスワードを隠す' : 'パスワードを表示'"
               @click="showPassword = !showPassword"
@@ -68,7 +68,7 @@ onMounted(initialize);
       </UFormField>
       <p class="cursor-pointer">パスワードを忘れた方</p>
       <div class="text-center">
-        <UButton type="submit" color="success" size="lg" :disabled="isLoading">ログイン</UButton>
+        <UButton type="submit" color="primary" size="lg" :disabled="isLoading">ログイン</UButton>
       </div>
     </form>
     <button type="button" class="text-start" @click="submitRegister">新しいアカウントを作成</button>

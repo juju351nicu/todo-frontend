@@ -9,6 +9,7 @@ import type {
   NotificationAlert,
   NotificationEvent,
 } from "@/features/notification/types/notification";
+import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
 
 /** 別画面で通知発生操作を完了したとき、ベルの明示的再読込を依頼するbrowser event名。 */
@@ -55,14 +56,17 @@ export const useNotificationCenter = () => {
     }
   };
 
-  /** メニューを開いた利用者が一覧を視認できた後、保存型イベントだけを一括既読にする。 */
+  /**
+   * メニューを開いた利用者が一覧を視認できた後、保存型イベントだけをBackendで一括既読にし、badgeを減らす。
+   * 一覧の未読の印（`read: false`）はここでは外さず、メニューを閉じるまで残す。
+   * 開いた直後に外すと印がほぼ一瞬で消え、どれが新着か見分けられないため。
+   */
   const markEventsRead = async (): Promise<void> => {
     if (unreadEventCount.value === 0) {
       return;
     }
     try {
       await NotificationApi.markEventsRead();
-      events.value = events.value.map((event) => ({ ...event, read: true }));
       badgeCount.value = Math.max(0, badgeCount.value - unreadEventCount.value);
       unreadEventCount.value = 0;
     } catch (error: unknown) {
@@ -70,10 +74,14 @@ export const useNotificationCenter = () => {
     }
   };
 
-  /** 通知popoverの開閉を反映し、開いた時だけ最新状態の取得と既読更新を行う。 */
+  /**
+   * 通知popoverの開閉を反映する。開いた時は最新状態の取得と既読更新を行い、
+   * 閉じた時に一覧の未読の印を外す（既読はBackendへ保存済みで、次に開いた時は既読として取得される）。
+   */
   const handleMenuVisibility = async (visible: boolean): Promise<void> => {
     isMenuOpen.value = visible;
     if (!visible) {
+      events.value = events.value.map((event) => ({ ...event, read: true }));
       return;
     }
     await loadNotificationCenter();
@@ -91,6 +99,18 @@ export const useNotificationCenter = () => {
     }
     isMenuOpen.value = false;
     await router.push(path);
+  };
+
+  const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
+    useExpandableNotificationMessages();
+
+  /**
+   * イベント通知を押したときの処理。遷移先があれば遷移し、管理者お知らせのように遷移先がなければ本文の全文表示を切り替える。
+   *
+   * @param eventItem 押されたイベント通知
+   */
+  const openNotificationEvent = async (eventItem: NotificationEvent): Promise<void> => {
+    await openOrToggleNotification(eventItem, navigateToNotification);
   };
 
   /** Windowへfocusが戻った時点で、別タブの操作結果を通知へ反映する。 */
@@ -139,14 +159,17 @@ export const useNotificationCenter = () => {
   return {
     alerts,
     badgeCount,
+    canExpandNotification,
     errorMessage,
     events,
     handleMenuVisibility,
     hasItems,
     isLoading,
     isMenuOpen,
+    isNotificationExpanded,
     loadNotificationCenter,
     navigateToNotification,
+    openNotificationEvent,
     unreadEventCount,
     unresolvedAlertCount,
   };

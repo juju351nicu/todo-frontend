@@ -1,120 +1,58 @@
 <script setup lang="ts">
-import type { MemberDetailForm } from "@/features/member/utils/memberForm";
+import { computed } from "vue";
+
+import { buildMemberConfirmItems, type MemberDetailForm } from "@/features/member/utils/memberForm";
 
 /** パスワードを表示せずに確認する会員フォーム。 */
-defineProps<{
-    memberForm: MemberDetailForm;
+const props = defineProps<{
+  memberForm: MemberDetailForm;
 }>();
 
 /** 保存せず戻る操作と、確認済みフォームの保存要求を親画面へ通知する。 */
 const emit = defineEmits<{
-    "close-modal": [];
-    "confirm-submit": [];
+  "close-modal": [];
+  "confirm-submit": [];
 }>();
 
-/**
- * モーダル画面を閉じる。
- */
-const handleCloseModal = (): void => {
-    emit("close-modal");
-};
+const isUpdate = computed(() => props.memberForm.memberId > 0);
+const confirmItems = computed(() => buildMemberConfirmItems(props.memberForm));
 
 /**
- * 確認した会員情報を登録・更新する。
+ * Dialogを閉じる操作（戻る・Esc・背景のクリック）を親画面へ伝える。
+ * 表示の有無は親画面の`v-if`が決めるため、ここでは開閉状態を持たない。
+ *
+ * @param open UModalが通知する開閉状態
  */
-const handleConfirmSubmit = (): void => {
-    emit("confirm-submit");
+const handleOpenChange = (open: boolean): void => {
+  if (!open) {
+    emit("close-modal");
+  }
 };
 </script>
+
 <template>
-    <div id="modal">
-        <div class="modal">
-            <h4> {{ memberForm.memberId > 0 ? '更新' : ' (登録)' }}確認画面</h4>
-            <div class="page-container">
-                <div class="-m-3 flex flex-col">
-                    <span class="p-3 sm:w-1/2">{{ memberForm.lastName }} &nbsp;{{ memberForm.firstName }}</span>
-                    <span class="p-3 sm:w-1/2">{{ memberForm.loginId }}</span>
-                    <span class="p-3 sm:w-1/2">パスワード: {{ memberForm.password ? '入力済み' : '変更なし' }}</span>
-                    <span class="p-3 sm:w-1/2">{{ memberForm.email }}</span>
-                    <span class="p-3 sm:w-1/2">{{ memberForm.role }}</span>
-                </div>
-            </div>
-            <button type="button" class="modal__btn" @click="handleCloseModal">戻る</button>
-            <button type="button" class="modal__btn" @click="handleConfirmSubmit">{{ memberForm.memberId > 0 ? '更新' : '登録'
-            }}</button>
-        </div>
-        <div class="modal-overlay"></div>
-    </div>
+  <!--
+    旧画面は固定幅600px・高さ600pxの独自のoverlayで、幅390pxでは左右が切れ、Escで閉じず、Dialogとして読み上げられず、
+    権限を数値で出していた（動作確認/24_ログイン_会員 G-5）。16のTodo確認画面と同じUModalにする。
+  -->
+  <UModal
+    :open="true"
+    :title="isUpdate ? '更新内容の確認' : '登録内容の確認'"
+    description="この内容で保存します。"
+    :ui="{ content: 'max-w-140' }"
+    @update:open="handleOpenChange"
+  >
+    <template #body>
+      <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+        <template v-for="item in confirmItems" :key="item.label">
+          <dt class="text-sm text-muted">{{ item.label }}</dt>
+          <dd class="break-words">{{ item.value }}</dd>
+        </template>
+      </dl>
+    </template>
+    <template #footer>
+      <UButton variant="ghost" @click="emit('close-modal')">戻る</UButton>
+      <UButton color="primary" @click="emit('confirm-submit')">{{ isUpdate ? "更新" : "登録" }}</UButton>
+    </template>
+  </UModal>
 </template>
-<style scoped>
-/* ========================================
-      Modal css
-  ========================================= */
-
-.modal {
-    padding: 10px 20px;
-    border: 2px solid #a5272a;
-    background: #faebd7;
-    z-index: 2;
-    display: block;
-    text-align: center;
-    position: fixed;
-    width: 600px;
-    height: 600px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    border-radius: 10px;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-.modal__message {
-    margin-top: 10px;
-}
-
-.modal__cancel {
-    margin-right: 30px;
-}
-
-.modal__cancel:hover {
-    cursor: pointer;
-    color: rgb(14, 48, 240);
-    font-weight: bold;
-}
-
-.modal__btn {
-    display: inline-block;
-    margin: 30px auto;
-    text-decoration: none;
-    width: 80px;
-    height: 30px;
-    text-decoration: none;
-    color: #000000;
-    border: solid 2px #a5272a;
-    border-radius: 3px;
-    transition: 0.4s;
-    text-align: center;
-    vertical-align: middle;
-    background-color: #faebd7;
-}
-
-.modal__btn:hover {
-    background: #a5272a;
-    color: white;
-    cursor: pointer;
-}
-
-.modal-overlay {
-    z-index: 1;
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 120%;
-    background-color: rgba(0, 0, 0, 0.75);
-}
-</style>

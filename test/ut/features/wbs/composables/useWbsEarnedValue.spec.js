@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
-import { useWbsEarnedValue } from "@/features/wbs/composables/useWbsEarnedValue";
+import {
+  EARNED_VALUE_SUBMIT_CONTROL,
+  useWbsEarnedValue,
+} from "@/features/wbs/composables/useWbsEarnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 import {
@@ -156,6 +159,14 @@ describe("useWbsEarnedValue", () => {
       expect(state.earnedValue.value).toBeNull();
       expect(state.earnedValueErrorMessages.value).toEqual([message]);
       expect(context.handleUnauthorized).not.toHaveBeenCalled();
+    });
+
+    it("「集計」を押した後は「集計」へフォーカスを戻す", async () => {
+      const state = useWbsEarnedValue(buildWbsPageContext());
+
+      await state.submitEarnedValueMetrics("2026-08-31");
+
+      expect(mocks.focusedControls).toEqual([EARNED_VALUE_SUBMIT_CONTROL]);
     });
 
     it("clearEarnedValueは基準日を残して指標とエラーだけを破棄する", async () => {

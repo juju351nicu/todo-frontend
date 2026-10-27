@@ -1,16 +1,9 @@
 <script setup lang="ts" generic="T extends object">
-import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
-import type { PaginationState, RowSelectionState, SortingState } from "@tanstack/vue-table";
-import { computed, ref, useSlots, watch } from "vue";
+import { computed, useSlots } from "vue";
 
+import { useDataTable } from "@/shared/composables/useDataTable";
 import type { DataTableHeader, DataTablePageOption } from "@/shared/types/dataTable";
-import {
-  formatPageRange,
-  fromRowSelection,
-  resolvePageSize,
-  toRowSelection,
-} from "@/shared/utils/dataTable";
 
 /**
  * 移行前のVuetify v-data-table（density compact）と同じ表示・操作を、Nuxt UIの`UTable`で提供する一覧表。
@@ -20,6 +13,8 @@ import {
  *   見出しのcheckboxは表示中ページの行だけを対象にする（Vuetifyの既定と同じ）。
  * - footerに表示件数の選択とページ移動を表示する。`hideFooter`がtrueの場合は全件を1ページで表示する。
  * - cellの表示を変える場合は`<key>-cell`slotを使う。slot propsの`item`は行データ、`value`はその列の値。
+ *
+ * 並べ替え・ページ・選択の状態は`useDataTable`が持ち、このcomponentは描画とslotの受け渡しだけを行う。
  */
 const props = withDefaults(
   defineProps<{
@@ -49,70 +44,29 @@ const selected = defineModel<(string | number)[]>("selected", { default: () => [
 const itemsPerPage = defineModel<number>("itemsPerPage", { default: 10 });
 
 const slots = useSlots();
+/** 親が渡した`<key>-cell`slotの名前。`UTable`の同名slotへそのまま中継する。 */
 const cellSlotNames = computed<string[]>(() => Object.keys(slots).filter((name) => name.endsWith("-cell")));
 
-const sorting = ref<SortingState>([]);
-const pageIndex = ref<number>(0);
-
-/** `itemValue`で指定した行IDを取り出す。型引数`T`はinterfaceも受け付けるため、property参照だけをここに閉じ込める。 */
-const readRowId = (row: T): string | number => (row as Record<string, unknown>)[props.itemValue] as string | number;
-
-const rowIds = computed<(string | number)[]>(() => props.items.map(readRowId));
-const pageSize = computed<number>(() =>
-  props.hideFooter ? Math.max(props.items.length, 1) : resolvePageSize(itemsPerPage.value, props.items.length),
-);
-const pagination = computed<PaginationState>({
-  get: () => ({ pageIndex: pageIndex.value, pageSize: pageSize.value }),
-  set: (value) => {
-    pageIndex.value = value.pageIndex;
-  },
+const {
+  columns,
+  getRowId,
+  movePage,
+  pageCount,
+  pageIndex,
+  pageRangeText,
+  pagination,
+  rowSelection,
+  sortableHeaders,
+  sorting,
+} = useDataTable<T>({
+  headers: () => props.headers,
+  items: () => props.items,
+  itemValue: () => props.itemValue,
+  selectable: () => props.selectable,
+  hideFooter: () => props.hideFooter,
+  selected,
+  itemsPerPage,
 });
-const rowSelection = computed<RowSelectionState>({
-  get: () => toRowSelection(selected.value),
-  set: (value) => {
-    selected.value = fromRowSelection(value, rowIds.value);
-  },
-});
-
-const pageCount = computed<number>(() => Math.max(Math.ceil(props.items.length / pageSize.value), 1));
-const pageRangeText = computed<string>(() => formatPageRange(pageIndex.value, pageSize.value, props.items.length));
-
-// 件数変更や削除で現在ページが範囲外になった場合、Vuetifyと同じく表示可能な最終ページへ戻す。
-watch(pageCount, (count) => {
-  if (pageIndex.value > count - 1) {
-    pageIndex.value = count - 1;
-  }
-});
-watch(itemsPerPage, () => {
-  pageIndex.value = 0;
-});
-
-const ALIGN_CLASSES: Record<NonNullable<DataTableHeader["align"]>, string> = {
-  start: "text-start",
-  center: "text-center",
-  end: "text-end",
-};
-
-const sortableHeaders = computed<DataTableHeader[]>(() => props.headers.filter((header) => header.sortable !== false));
-
-const columns = computed<TableColumn<T>[]>(() => {
-  const dataColumns = props.headers.map<TableColumn<T>>((header) => {
-    const alignClass = ALIGN_CLASSES[header.align ?? "start"];
-    return {
-      accessorKey: header.key,
-      header: header.title,
-      enableSorting: header.sortable !== false,
-      meta: { class: { th: alignClass, td: alignClass } },
-    };
-  });
-  return props.selectable ? [{ id: "select", enableSorting: false }, ...dataColumns] : dataColumns;
-});
-
-const getRowId = (row: T): string => String(readRowId(row));
-
-const movePage = (index: number): void => {
-  pageIndex.value = Math.min(Math.max(index, 0), pageCount.value - 1);
-};
 </script>
 
 <template>

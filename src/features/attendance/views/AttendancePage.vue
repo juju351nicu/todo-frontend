@@ -3,7 +3,7 @@ import { onBeforeMount } from "vue";
 
 import AttendanceCorrectionDialog from "@/features/attendance/components/AttendanceCorrectionDialog.vue";
 import AttendancePunchPanel from "@/features/attendance/components/AttendancePunchPanel.vue";
-import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
+import { ATTENDANCE_CONTROL, useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
   formatAttendanceAllocationDifference,
@@ -38,6 +38,7 @@ const {
   canWriteAttendance,
   changeMonth,
   closeCorrectionDialog,
+  correctionErrorMessages,
   correctionForm,
   correctionRequests,
   currentUserDisplayName,
@@ -74,7 +75,7 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-4 md:p-6">
+  <div class="page-surface p-4 md:p-6">
     <UCard class="mx-auto max-w-360">
       <template #header>
         <div class="flex flex-wrap items-center gap-3">
@@ -87,6 +88,7 @@ onBeforeMount(initialize);
               size="sm"
               :disabled="isLoading || isPunching"
               class="w-full"
+              :data-attendance-control="ATTENDANCE_CONTROL.month"
               @update:model-value="changeMonth(String($event ?? ''))"
             />
           </UFormField>
@@ -128,6 +130,7 @@ onBeforeMount(initialize);
               icon="i-mdi-send"
               class="ms-auto"
               :loading="isSubmittingMonth"
+              :data-attendance-control="ATTENDANCE_CONTROL.submitMonth"
               @click="submitMonth"
             >
               {{ monthSummary.statusCode === "REJECTED" ? "再提出" : "提出" }}
@@ -244,6 +247,7 @@ onBeforeMount(initialize);
                   size="sm"
                   icon="i-mdi-file-edit-outline"
                   class="ms-auto"
+                  :data-attendance-control="ATTENDANCE_CONTROL.requestCorrection"
                   @click="openCorrectionDialog"
                 >
                   修正申請
@@ -310,7 +314,7 @@ onBeforeMount(initialize);
                   </div>
                 </UCard>
               </div>
-              <div v-else class="rounded-sm bg-[#424242] p-4 text-center text-[#EEEEEE]">
+              <div v-else class="rounded-sm bg-muted p-4 text-center text-muted">
                 この日の打刻はありません。
               </div>
 
@@ -337,6 +341,7 @@ onBeforeMount(initialize);
                     size="sm"
                     class="ms-auto"
                     :loading="cancellingCorrectionId === request.attendanceCorrectionRequestId"
+                    :data-attendance-control="ATTENDANCE_CONTROL.cancelCorrection"
                     @click="cancelCorrectionRequest(request)"
                   >
                     申請取消
@@ -359,6 +364,7 @@ onBeforeMount(initialize);
   </div>
   <AttendanceCorrectionDialog
     :model-value="isCorrectionDialogOpen"
+    :error-messages="correctionErrorMessages"
     :form="correctionForm"
     :submitting="isSubmittingCorrection"
     :work-date="selectedWorkDate"

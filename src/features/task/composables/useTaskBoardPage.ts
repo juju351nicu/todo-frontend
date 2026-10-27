@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -12,6 +12,7 @@ import type {
   TaskCreateRequest,
   TaskDetail,
   TaskPriority,
+  TaskType,
   TaskUpdateRequest,
 } from "@/features/project/types/project";
 import ProjectTaskApi, {
@@ -23,8 +24,12 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import {
   buildProjectMemberOptions,
+  resolveProjectMemberDisplayName,
+} from "@/features/project/utils/projectMember";
+import {
   buildTaskStatusIdOptions,
   TASK_PRIORITY_OPTIONS,
   type TaskSelectOption,
@@ -99,8 +104,21 @@ export const useTaskBoardPage = () => {
 
   const board = ref<TaskBoard | null>(null);
   const errorMessages = ref<string[]>([]);
+  /**
+   * Task作成・編集Dialog内に表示する、入力チェックと保存・archiveの失敗理由。
+   * Dialogを開いている間は画面上部の`errorMessages`がDialogの裏に隠れて見えないため、Dialogの操作結果はここへ出す。
+   * 409競合（Dialogを閉じて最新Boardを取り直す）だけは画面上部へ出す。
+   */
+  const editorErrorMessages = ref<string[]>([]);
   const dragSnapshot = ref<TaskBoard | null>(null);
   const form = ref<TaskForm>(createEmptyTaskForm());
+  /**
+   * 編集Dialogで開いたTaskの、取得時点の担当者アカウントID。
+   * 担当者欄はフォーム上で変えられるため、MEMBERが更新できるか（現在の担当者が本人か）はこちらで判定する。
+   */
+  const editingTaskAssigneeAccountId = ref<number | null>(null);
+  /** 開いているTaskのWBS上の種別。新規作成中はnull。 */
+  const editingTaskType = ref<TaskType | null>(null);
   const isArchiveConfirmOpen = ref(false);
   const isArchiving = ref(false);
   const isEditorOpen = ref(false);
@@ -133,6 +151,14 @@ export const useTaskBoardPage = () => {
   );
   const canUpdateTask = computed(
     () => userStore.hasPermission("TASK_UPDATE") && isProjectActive.value
+  );
+  /**
+   * Task Dialogのコメント欄で投稿できるか。Backendは`TASK_READ`とProject参照可否で投稿を許可し、
+   * 担当者・`TASK_UPDATE`は問わない（`todo-backend`の`docs/project-board-task-mvp-design.md` §60）。
+   * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
+   */
+  const canPostTaskComment = computed(
+    () => userStore.hasPermission("TASK_READ") && isProjectActive.value
   );
   const currentProjectRole = computed(
     () =>
@@ -181,9 +207,43 @@ export const useTaskBoardPage = () => {
       canManageProjectTasks.value
   );
   const isEditing = computed(() => form.value.taskId !== null);
-  const isReadonly = computed(() => isEditing.value && !canUpdateTask.value);
+  /**
+   * 開いたTaskを更新できるか。OWNER・MANAGER・SYSTEM_ADMINはProject内の全Task、
+   * MEMBERは現在の担当者が本人のTaskだけ（Backendの`TaskResourceAuthorizationLogic#checkCanUpdate`と同じ規則）。
+   * チェックリストの操作も同じ規則（`checkCanManageChecklist`）。
+   */
+  const canUpdateEditingTask = computed(
+    () =>
+      canUpdateTask.value &&
+      (canManageProjectTasks.value ||
+        editingTaskAssigneeAccountId.value === userStore.memberId)
+  );
+  const isReadonly = computed(
+    () => isEditing.value && !canUpdateEditingTask.value
+  );
+  /**
+   * 開いているTaskが通常Task（`TASK`）か。実績工数（Timer・日別実績）とTask Templateへの保存は通常Taskだけが対象で、
+   * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない
+   * （`todo-backend`の`docs/time-tracking-design.md` §4.3、`TaskTemplateLogic#calculateDueOffsetDays`）。
+   */
+  const isEditingRegularTask = computed(
+    () => isEditing.value && editingTaskType.value === "TASK"
+  );
+  /** 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。 */
+  const canRecordTaskWork = computed(() => isEditingRegularTask.value);
+  /** 開いているTaskを「Templateとして保存」できるか。保存自体は`TASK_READ`で許可される（Backendの`TaskTemplateController`）。 */
+  const canCaptureTaskTemplate = computed(() => isEditingRegularTask.value);
+  /**
+   * Task Templateを適用するときに担当者を限定するaccount ID。限定しない場合はnull。
+   * MEMBERは自分を担当者にするTaskだけを作成できる（Backendの`TaskResourceAuthorizationLogic#checkCanCreate`）ため、
+   * 既定担当が他人のTemplateをそのまま適用すると403になる。MEMBERには自分だけを候補にし、初期値も自分にする。
+   */
+  const taskTemplateAssigneeAccountId = computed<number | null>(() =>
+    canManageProjectTasks.value ? null : userStore.memberId
+  );
   const canStartTaskTimer = computed(
     () =>
+      canRecordTaskWork.value &&
       form.value.taskId !== null &&
       canUpdateTask.value &&
       isCurrentUserProjectMember.value &&
@@ -195,7 +255,7 @@ export const useTaskBoardPage = () => {
       !isSaving.value &&
       !isArchiving.value &&
       !isReadonly.value &&
-      (isEditing.value ? canUpdateTask.value : canCreateTask.value)
+      (isEditing.value ? canUpdateEditingTask.value : canCreateTask.value)
   );
 
   const statusOptions = computed<TaskSelectOption<number>[]>(() =>
@@ -208,14 +268,26 @@ export const useTaskBoardPage = () => {
       userStore.hasRole("SYSTEM_ADMIN") ||
       currentProjectRole.value === "OWNER" ||
       currentProjectRole.value === "MANAGER";
+    // Board Taskは停止中アカウントを担当者のまま保存できる。既存Taskの担当者が選択肢から消えないよう、
+    // 停止中の参加者も「（MEMBER・無効）」のように状態付きで候補へ残す。
     return buildProjectMemberOptions(
       (project.value?.members ?? []).filter(
         (member) => canAssignAnyMember || member.accountId === userStore.memberId
-      )
+      ),
+      { includeInactive: true }
     );
   });
 
   const priorityOptions = TASK_PRIORITY_OPTIONS;
+
+  /**
+   * Task cardの担当者バッジに出す参加者名を返す。Projectから外れたアカウントは`ID: {accountId}`で示す。
+   *
+   * @param accountId Taskの担当者アカウントID
+   * @returns 参加者の表示名
+   */
+  const resolveAssigneeDisplayName = (accountId: number): string =>
+    resolveProjectMemberDisplayName(project.value?.members ?? [], accountId);
 
   /** Project管理APIの確定ResponseをBoard見出し・認可・担当者候補へ反映する。 */
   const applyProjectDetail = (updatedProject: ProjectDetail): void => {
@@ -264,6 +336,7 @@ export const useTaskBoardPage = () => {
   /** 選択列を初期値にしてTask新規登録Dialogを開く。 */
   const openTaskCreator = (taskStatusId?: number): void => {
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     if (!canCreateTask.value) {
       errorMessages.value = ["Taskを登録するpermissionがありません。"];
@@ -290,10 +363,13 @@ export const useTaskBoardPage = () => {
     }
     isLoadingTask.value = true;
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     try {
       const task = await ProjectTaskApi.getTask(projectId.value, taskId);
       form.value = buildTaskForm(task);
+      editingTaskAssigneeAccountId.value = task.assigneeAccountId;
+      editingTaskType.value = task.taskType;
       isEditorOpen.value = true;
     } catch (error: unknown) {
       await handleApiError(
@@ -347,6 +423,7 @@ export const useTaskBoardPage = () => {
     isArchiveConfirmOpen.value = false;
     isEditorOpen.value = false;
     form.value = createEmptyTaskForm();
+    editorErrorMessages.value = [];
   };
 
   /** Taskフォームの必須項目と日付順序をBackend送信前に検証する。 */
@@ -369,7 +446,7 @@ export const useTaskBoardPage = () => {
     if (!isEditing.value && form.value.taskStatusId === null) {
       messages.push("登録先の列を選択してください。");
     }
-    errorMessages.value = messages;
+    editorErrorMessages.value = messages;
     return messages.length === 0;
   };
 
@@ -403,6 +480,7 @@ export const useTaskBoardPage = () => {
     const taskId = form.value.taskId;
     isSaving.value = true;
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     try {
       if (taskId === null) {
@@ -419,7 +497,12 @@ export const useTaskBoardPage = () => {
       }
     } catch (error: unknown) {
       try {
-        await handleApiError(error, DISPLAY_MESSAGES.task.board.saveFailed);
+        await handleApiError(
+          error,
+          DISPLAY_MESSAGES.task.board.saveFailed,
+          DISPLAY_MESSAGES.task.board.operationForbidden,
+          resolveEditorMessageTarget(error)
+        );
         if (error instanceof ProjectTaskApiError && error.status === 409) {
           closeTaskEditorAfterSaving();
           await reloadBoardAfterConflict();
@@ -453,10 +536,11 @@ export const useTaskBoardPage = () => {
       form.value.taskId === null ||
       form.value.version === null
     ) {
-      errorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
+      editorErrorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
       return;
     }
     errorMessages.value = [];
+    editorErrorMessages.value = [];
     successMessage.value = "";
     isArchiveConfirmOpen.value = true;
   };
@@ -493,7 +577,12 @@ export const useTaskBoardPage = () => {
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
       try {
-        await handleApiError(error, DISPLAY_MESSAGES.task.board.archiveFailed);
+        await handleApiError(
+          error,
+          DISPLAY_MESSAGES.task.board.archiveFailed,
+          DISPLAY_MESSAGES.task.board.operationForbidden,
+          resolveEditorMessageTarget(error)
+        );
         if (error instanceof ProjectTaskApiError && error.status === 409) {
           closeTaskEditorAfterSaving();
           await reloadBoardAfterConflict();
@@ -712,13 +801,32 @@ export const useTaskBoardPage = () => {
       destinationTasks[destinationTaskIndex + 1] ?? null,
       snapshot
     );
+    await restoreMoveHandleFocus(taskId);
   };
 
-  /** 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。 */
+  /**
+   * キーボード移動の後（失敗して元へ戻した場合も含む）、移動したTaskの移動アイコンへフォーカスを戻す。
+   * 移動中はアイコンをdisabledにするためフォーカスが外れ、続けて方向キーで動かせなくなるため。
+   * 移動したTaskはBoardの再描画で別の要素になるので、`data-task-move-handle`属性で探し直す。
+   *
+   * @param taskId 移動したTask ID
+   */
+  const restoreMoveHandleFocus = (taskId: number): Promise<void> =>
+    focusFirstEnabledElement([`[data-task-move-handle="${taskId}"]`]);
+
+  /**
+   * 競合後に最新Boardを取得し、回復時点の認証・認可・公開範囲を優先する。
+   * 409のmessage（「再読み込みしてください」等）の後ろに、画面側で再取得を済ませたことを添える。
+   * 利用者が手動で再読込しなくてよいと分かるようにするため。
+   */
   const reloadBoardAfterConflict = async (): Promise<void> => {
     const messagesBeforeReload = [...errorMessages.value];
     try {
       await loadBoardData();
+      errorMessages.value = [
+        ...messagesBeforeReload,
+        DISPLAY_MESSAGES.task.board.conflictReloaded,
+      ];
     } catch (error: unknown) {
       if (
         isTaskBoardApiError(error) &&
@@ -787,14 +895,34 @@ export const useTaskBoardPage = () => {
     errorMessages.value = [fallbackMessage];
   };
 
-  /** Project・Task APIのstatusと項目エラーを画面動作へ変換する。 */
+  /**
+   * Task作成・編集Dialogの保存・archiveで起きたAPIエラーの表示先を決める。
+   * 409競合はDialogを閉じて最新Boardを取り直すため画面上部へ、それ以外はDialogを開いたまま中へ出す。
+   *
+   * @param error 保存・archiveで発生したエラー
+   * @returns メッセージを書き込むRef
+   */
+  const resolveEditorMessageTarget = (error: unknown): Ref<string[]> =>
+    error instanceof ProjectTaskApiError && error.status === 409
+      ? errorMessages
+      : editorErrorMessages;
+
+  /**
+   * Project・Task APIのstatusと項目エラーを画面動作へ変換する。
+   *
+   * @param error APIの失敗
+   * @param fallbackMessage 契約済みcodeがない場合のmessage
+   * @param forbiddenMessage 403のmessage
+   * @param messageTarget messageの表示先。既定は画面上部、Dialogの操作では`editorErrorMessages`
+   */
   const handleApiError = async (
     error: unknown,
     fallbackMessage: string,
-    forbiddenMessage: string = DISPLAY_MESSAGES.task.board.operationForbidden
+    forbiddenMessage: string = DISPLAY_MESSAGES.task.board.operationForbidden,
+    messageTarget: Ref<string[]> = errorMessages
   ): Promise<void> => {
     if (!isTaskBoardApiError(error)) {
-      errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      messageTarget.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -802,14 +930,14 @@ export const useTaskBoardPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [forbiddenMessage];
+      messageTarget.value = [forbiddenMessage];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [DISPLAY_MESSAGES.task.board.resourceNotFound];
+      messageTarget.value = [DISPLAY_MESSAGES.task.board.resourceNotFound];
       return;
     }
-    errorMessages.value = resolveApiErrorMessages(
+    messageTarget.value = resolveApiErrorMessages(
       error.errorResponse,
       TASK_BOARD_ERROR_CODES,
       fallbackMessage
@@ -839,10 +967,15 @@ export const useTaskBoardPage = () => {
     canMoveTask,
     canSave,
     canStartTaskTimer,
+    canCaptureTaskTemplate,
+    canPostTaskComment,
+    canRecordTaskWork,
     canUpdateTask,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,
+    taskTemplateAssigneeAccountId,
+    editorErrorMessages,
     errorMessages,
     form,
     finishTaskDrag,
@@ -865,6 +998,7 @@ export const useTaskBoardPage = () => {
     openTaskWorkLogs,
     priorityOptions,
     project,
+    resolveAssigneeDisplayName,
     saveTask,
     statusOptions,
     startTaskDrag,

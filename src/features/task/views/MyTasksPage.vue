@@ -2,7 +2,11 @@
 import { onBeforeMount } from "vue";
 
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
-import { useMyTasksPage } from "@/features/task/composables/useMyTasksPage";
+import {
+  MY_TASKS_RELOAD_CONTROL,
+  myTaskCompleteControlKey,
+  useMyTasksPage,
+} from "@/features/task/composables/useMyTasksPage";
 import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -19,6 +23,7 @@ const {
   myTasks,
   selectedFilter,
   showTask,
+  successMessage,
   visibleTasks,
 } = useMyTasksPage();
 
@@ -48,6 +53,7 @@ const FILTER_OPTIONS = [
         aria-label="My Tasksを再読み込み"
         title="再読み込み"
         :loading="isLoading"
+        :data-my-task-control="MY_TASKS_RELOAD_CONTROL"
         @click="loadTasks"
       />
     </div>
@@ -56,6 +62,7 @@ const FILTER_OPTIONS = [
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
     <!-- Vuetifyのv-btn-toggle（outlined・mandatory）と同じく、どちらか1つを必ず選択した状態にする。 -->
     <UFieldGroup class="mb-4" role="group" aria-label="My Tasksの期間">
@@ -88,12 +95,16 @@ const FILTER_OPTIONS = [
           </template>
           <ul v-if="group.items.length" class="py-2">
             <li v-for="task in group.items" :key="task.taskId" class="border-b border-default last:border-b-0">
+              <!--
+                行の中のTimer・完了ボタンでEnterを押したときに行のEnterまで動き、完了と同時にBoardへ移っていたため、
+                行自身にフォーカスがあるときだけ開く（.self。動作確認/14_MyTasks G-5）。
+              -->
               <div
                 role="button"
                 tabindex="0"
-                class="flex cursor-pointer items-start px-4 py-1.5 hover:bg-black/4"
+                class="flex cursor-pointer items-start px-4 py-1.5 hover:bg-elevated"
                 @click="showTask(task)"
-                @keydown.enter="showTask(task)"
+                @keydown.enter.self="showTask(task)"
               >
                 <TodoPriorityBadge :priority="task.priority" size="xs" class="me-2 mt-0.5" />
                 <span class="min-w-0 flex-1">
@@ -112,8 +123,10 @@ const FILTER_OPTIONS = [
                     size="sm"
                     variant="ghost"
                     square
-                    aria-label="Taskを完了"
+                    :aria-label="`「${task.title}」を完了`"
                     title="完了"
+                    :disabled="isLoading"
+                    :data-my-task-control="myTaskCompleteControlKey(task.taskId)"
                     @click.stop="completeTask(task)"
                   />
                 </span>

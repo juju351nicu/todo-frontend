@@ -16,6 +16,18 @@ import {
 } from "@/features/task/utils/taskForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * 「登録する」「更新する」ボタンに付ける`data-todo-detail-control`属性の値。
+ * 確認Dialogを「戻る」「更新」で閉じると、親画面の`v-if`がDialogを消すため、Dialogがフォーカスを戻せずbodyへ外れる
+ * （Escで閉じたときはDialog自身が戻す）。そこで閉じた後にこのボタンへ戻す（動作確認/16_Todo G-5）。
+ */
+export const TODO_SUBMIT_CONTROL = "submit";
+
+/** 確認Dialogを閉じた後に、「登録する」「更新する」ボタンへフォーカスを戻す。 */
+const restoreSubmitFocus = (): Promise<void> =>
+  focusFirstEnabledElement([`[data-todo-detail-control="${TODO_SUBMIT_CONTROL}"]`]);
 
 interface PriorityItem {
   priorityLabel: string;
@@ -184,8 +196,10 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     isShowConfirm.value = true;
   };
 
+  /** 確認Dialogを閉じ、「登録する」「更新する」へフォーカスを戻す。 */
   const closeConfirm = (): void => {
     isShowConfirm.value = false;
+    void restoreSubmitFocus();
   };
 
   /** 確認済みのTodoを新規登録または更新する。 */
@@ -274,6 +288,8 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     } finally {
       isSubmitting.value = false;
     }
+    // 401でLoginへ移った後は、部品が見つからないので何もしない。
+    await restoreSubmitFocus();
   };
 
   watch(

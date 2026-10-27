@@ -1,8 +1,11 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectTemplateApiError } from "@/features/project/api/projectTemplateApi";
-import { useProjectTemplateCapture } from "@/features/project/composables/useProjectTemplateCapture";
+import {
+  CAPTURE_NAME_CONTROL,
+  useProjectTemplateCapture,
+} from "@/features/project/composables/useProjectTemplateCapture";
 
 const mocks = vi.hoisted(() => ({
   projectTemplateApi: { capture: vi.fn() },
@@ -196,5 +199,53 @@ describe("useProjectTemplateCapture", () => {
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
     expect(state.isOpen.value).toBe(false);
     expect(state.errorMessages.value).toEqual([]);
+  });
+
+  describe("保存に失敗した後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => ({
+          focus: () => focused.push(selector.match(/data-project-template-capture="([^"]+)"/)?.[1]),
+          matches: () => false,
+        }),
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("同じ名前の409でDialogが開いたままなら、Template名へ戻す", async () => {
+      mocks.projectTemplateApi.capture.mockRejectedValue(
+        new ProjectTemplateApiError(409, {
+          fieldErrors: [
+            { field: "name", errorCode: "PROJECT_TEMPLATE_NAME_CONFLICT", message: "同じ名前のactive Project Templateが既に存在します。" },
+          ],
+        })
+      );
+      const focused = stubDocument();
+      const state = useProjectTemplateCapture(ref(5), ref(false));
+      state.open();
+      state.name.value = "開発Template";
+
+      await state.capture();
+
+      expect(state.isOpen.value).toBe(true);
+      expect(focused).toEqual([CAPTURE_NAME_CONTROL]);
+    });
+
+    it("保存できてDialogが閉じたときは、フォーカスを動かさない", async () => {
+      const focused = stubDocument();
+      const state = useProjectTemplateCapture(ref(5), ref(false));
+      state.open();
+      state.name.value = "開発Template";
+
+      await state.capture();
+
+      expect(focused).toEqual([]);
+    });
   });
 });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
+import { DASHBOARD_CONTROL, useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
 import {
   formatDashboardBusinessDate,
   getAdvancedDashboardWarningLabel,
@@ -16,7 +16,6 @@ import {
 import {
   formatNotificationOccurredAt,
   getNotificationEventIcon,
-  normalizeNotificationNavigationPath,
 } from "@/features/notification/utils/notification";
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
 import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
@@ -35,6 +34,7 @@ const {
   advancedDashboard,
   advancedErrorMessages,
   advancedStatusDate,
+  canExpandNotification,
   dashboard,
   displayName,
   errorMessages,
@@ -42,7 +42,7 @@ const {
   isAdvancedNotEntitled,
   isInitialLoading,
   isLoading,
-  loadAdvancedDashboard,
+  isNotificationExpanded,
   loadDashboard,
   openAdvancedAccessInquiry,
   openAdvancedProject,
@@ -52,6 +52,8 @@ const {
   openProject,
   openProjects,
   openTask,
+  reloadDashboard,
+  submitAdvancedDashboard,
 } = useDashboardPage();
 
 onBeforeMount(loadDashboard);
@@ -81,7 +83,8 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
         aria-label="Dashboardを再読み込み"
         title="再読み込み"
         :loading="isLoading"
-        @click="loadDashboard"
+        :data-dashboard-control="DASHBOARD_CONTROL.reload"
+        @click="reloadDashboard"
       />
     </div>
 
@@ -92,7 +95,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
 
     <div v-if="dashboard" class="-m-3 flex flex-wrap items-stretch">
       <div class="w-full p-3 lg:w-7/12">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-format-list-checks" class="size-6 text-primary" />
@@ -105,25 +108,25 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           <template v-if="dashboard.myTasks.available">
             <div class="-m-1 mb-2 flex flex-wrap">
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#FFEBEE] p-3">
+                <div class="min-h-19 rounded-sm bg-error/10 p-3">
                   <div class="text-xs text-muted">期限超過</div>
                   <div class="text-2xl font-bold text-error">{{ dashboard.myTasks.overdueCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#FFF3E0] p-3">
+                <div class="min-h-19 rounded-sm bg-warning/10 p-3">
                   <div class="text-xs text-muted">今日</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.dueTodayCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#E3F2FD] p-3">
+                <div class="min-h-19 rounded-sm bg-info/10 p-3">
                   <div class="text-xs text-muted">今週</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.dueThisWeekCount }}</div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
-                <div class="min-h-19 rounded-sm bg-[#F5F5F5] p-3">
+                <div class="min-h-19 rounded-sm bg-elevated p-3">
                   <div class="text-xs text-muted">今後</div>
                   <div class="text-2xl font-bold">{{ dashboard.myTasks.upcomingCount }}</div>
                 </div>
@@ -134,7 +137,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <li v-for="task in dashboard.myTasks.items" :key="task.taskId" class="border-b border-default last:border-b-0">
                 <button
                   type="button"
-                  class="flex w-full items-start px-4 py-2 text-start hover:bg-black/4"
+                  class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
                   @click="openTask(task)"
                 >
                   <TodoPriorityBadge :priority="task.priority" size="xs" class="me-3 mt-0.5" />
@@ -168,7 +171,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-5/12">
-        <UCard variant="outline" class="h-full border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="h-full border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-bell-outline" class="size-6 text-deep-purple" />
@@ -186,18 +189,30 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               :key="event.notificationEventId"
               class="border-b border-default last:border-b-0"
             >
+              <!-- 遷移先のないお知らせは、押すと本文の全文を開閉する（2行では読み切れないため）。 -->
               <button
                 type="button"
-                class="flex w-full items-start px-4 py-2 text-start"
-                :class="normalizeNotificationNavigationPath(event.navigationPath) !== null ? 'hover:bg-black/4' : 'cursor-default'"
+                class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
+                :aria-expanded="canExpandNotification(event) ? isNotificationExpanded(event.notificationEventId) : undefined"
                 @click="openNotificationEvent(event)"
               >
                 <UIcon :name="getNotificationEventIcon(event.eventType)" class="me-3 size-6 shrink-0" />
-                <span class="min-w-0">
+                <span class="min-w-0 flex-1">
                   <span class="block text-base" :class="{ 'font-bold': !event.read }">{{ event.title }}</span>
-                  <span class="line-clamp-2 text-sm text-muted">
-                    {{ event.message }}<br />
+                  <span
+                    class="text-sm whitespace-pre-line text-muted"
+                    :class="isNotificationExpanded(event.notificationEventId) ? 'block' : 'line-clamp-2'"
+                    >{{ event.message }}</span
+                  >
+                  <span class="flex items-center gap-1 text-sm text-muted">
                     {{ formatNotificationOccurredAt(event.occurredAt) }}
+                    <span v-if="canExpandNotification(event)" class="ms-auto inline-flex items-center text-xs">
+                      {{ isNotificationExpanded(event.notificationEventId) ? "閉じる" : "全文を表示" }}
+                      <UIcon
+                        :name="isNotificationExpanded(event.notificationEventId) ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                        class="size-4"
+                      />
+                    </span>
                   </span>
                 </span>
               </button>
@@ -208,7 +223,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-2/3">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-folder-multiple-outline" class="size-6 text-teal" />
@@ -266,7 +281,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
 
       <div class="w-full p-3 lg:w-1/3">
-        <UCard variant="outline" class="flex h-full flex-col border-black/28" :ui="dividedCardUi">
+        <UCard variant="outline" class="flex h-full flex-col border-default" :ui="dividedCardUi">
           <template #header>
             <div class="flex items-center gap-2">
               <UIcon name="i-mdi-clock-outline" class="size-6 text-indigo" />
@@ -320,7 +335,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
       </div>
     </div>
 
-    <UCard v-if="dashboard" variant="outline" class="mt-6 border-black/28" :ui="dividedCardUi">
+    <UCard v-if="dashboard" variant="outline" class="mt-6 border-default" :ui="dividedCardUi">
       <template #header>
         <div class="flex flex-wrap items-center gap-2">
           <UIcon name="i-mdi-chart-box-outline" class="size-6 text-amber-darken-3" />
@@ -342,11 +357,17 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           計算式と参照範囲はBackendが一元管理します。
         </p>
 
-        <form v-if="!isAdvancedNotEntitled" class="mb-4" @submit.prevent="loadAdvancedDashboard()">
+        <form v-if="!isAdvancedNotEntitled" class="mb-4" @submit.prevent="submitAdvancedDashboard">
           <div class="-m-1 flex flex-wrap items-center">
             <div class="w-full p-1 sm:w-5/12 md:w-1/4">
               <UFormField label="EVM基準日" class="pb-0">
-                <UInput v-model="advancedStatusDate" type="date" :disabled="isAdvancedLoading" class="w-full" />
+                <UInput
+                  v-model="advancedStatusDate"
+                  type="date"
+                  :disabled="isAdvancedLoading"
+                  class="w-full"
+                  :data-dashboard-control="DASHBOARD_CONTROL.advancedStatusDate"
+                />
               </UFormField>
             </div>
             <div class="w-full p-1 sm:w-1/4 md:w-1/6">

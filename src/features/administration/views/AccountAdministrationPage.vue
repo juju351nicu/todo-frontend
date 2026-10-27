@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { useAccountAdministrationPage } from "@/features/administration/composables/useAccountAdministrationPage";
+import {
+  accountRoleEditControlKey,
+  useAccountAdministrationPage,
+} from "@/features/administration/composables/useAccountAdministrationPage";
 import {
   getAccountStatusColor,
   getAccountStatusLabel,
-} from "@/features/administration/utils/accountStatus";
+} from "@/shared/utils/accountStatus";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";
@@ -91,7 +94,8 @@ onBeforeMount(initialize);
             size="xs"
             square
             class="size-8"
-            aria-label="ロールを編集"
+            :aria-label="`${item.displayName}のロールを編集`"
+            :data-account-admin-control="accountRoleEditControlKey(item.accountId)"
             @click="openRoleEditor(item)"
           />
           <span v-else class="text-muted">参照のみ</span>

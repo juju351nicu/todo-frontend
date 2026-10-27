@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AdministrationApiError } from "@/features/administration/api/administrationApi";
 import { useAccountAdministrationPage } from "@/features/administration/composables/useAccountAdministrationPage";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   administrationApi: {
@@ -261,12 +262,39 @@ describe("useAccountAdministrationPage", () => {
 
     await page.saveRoles();
 
+    // 取り直した対象のversionが変わっていた（別の操作で更新されていた）ので、取り直し済みの案内を添える。
     expect(page.errorMessages.value).toEqual([
       "他の操作で更新されています。再度確認してください。",
+      DISPLAY_MESSAGES.administration.account.conflictReloaded,
     ]);
     expect(mocks.administrationApi.getAccounts).toHaveBeenCalledTimes(2);
     expect(page.accounts.value[0].version).toBe(3);
     expect(page.isEditorOpen.value).toBe(false);
+  });
+
+  it("最後の管理者の保護等でversionが変わらない409では、取り直し済みの案内を添えない", async () => {
+    mocks.administrationApi.updateAccountRoles.mockRejectedValue(
+      new AdministrationApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "AUTHORIZATION_CONFLICT",
+            field: "version",
+            message: "最後の有効なシステム管理者は変更できません。",
+          },
+        ],
+      })
+    );
+    mocks.administrationApi.getAccounts.mockResolvedValue(accounts);
+    const page = useAccountAdministrationPage();
+    await page.initialize();
+    page.openRoleEditor(page.accounts.value[1]);
+    page.selectedRoleCodes.value = ["READ_ONLY_ADMIN"];
+
+    await page.saveRoles();
+
+    expect(page.errorMessages.value).toEqual([
+      "最後の有効なシステム管理者は変更できません。",
+    ]);
   });
 
   it("契約済み入力エラーはBackend順で複数表示する", async () => {
@@ -336,6 +364,7 @@ describe("useAccountAdministrationPage", () => {
 
     expect(page.errorMessages.value).toEqual([
       "アカウントのロールを更新できませんでした。",
+      DISPLAY_MESSAGES.administration.account.conflictReloaded,
     ]);
     expect(page.accounts.value[0].version).toBe(3);
     expect(page.selectedAccount.value).toBeNull();

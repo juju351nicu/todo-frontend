@@ -12,6 +12,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_LENGTH = 255;
@@ -19,15 +20,57 @@ export const CHECKLIST_ITEM_MAX_LENGTH = 255;
 /** 1 Taskに登録できるチェック項目の最大件数。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_COUNT = 50;
 
-/** trim後1文字以上、最大文字数以下のチェック項目本文か。 */
+/**
+ * 操作後にフォーカスを戻すチェック項目の部品。
+ * `toggle`は完了状態のcheckbox、`move-up`・`move-down`は上下移動のボタン、`edit`は編集ボタン。
+ */
+export type ChecklistControl = "toggle" | "move-up" | "move-down" | "edit";
+
+/**
+ * 部品に付ける`data-checklist-control`属性の値を組み立てる。
+ * `TaskChecklistPanel.vue`はこの値で属性を付け、`useTaskChecklist`は同じ値で部品を探してフォーカスを戻す。
+ *
+ * @param itemId checklist item ID
+ * @param control 部品の種類
+ * @returns `"{itemId}:{control}"`形式の属性値
+ */
+export const checklistControlKey = (
+  itemId: number,
+  control: ChecklistControl
+): string => `${itemId}:${control}`;
+
+/**
+ * trim後1文字以上、最大文字数以下のチェック項目本文か。
+ * `String.prototype.trim`は全角空白も除くため、全角空白だけの本文も無効として扱う
+ * （Backendの`@NotBlank`も全角空白だけの本文を400にする）。
+ */
 const isValidChecklistContent = (content: string): boolean => {
   const trimmedContent = content.trim();
   return trimmedContent.length > 0 && trimmedContent.length <= CHECKLIST_ITEM_MAX_LENGTH;
 };
 
+/** 更新系APIへ渡すProject IDとTask ID。 */
+interface ChecklistMutationTarget {
+  projectId: number;
+  taskId: number;
+}
+
 /**
- * Task詳細内のchecklist取得・追加・更新・並び替え・削除を扱う。
- * 404／409では取得時点versionを破棄し、Backendの最新一覧へ回復する。
+ * Task詳細（Board画面のTask Dialog）内のチェックリストの取得・追加・更新・並び替え・削除を扱う。
+ *
+ * - 初期化と再読込: `projectId`・`taskId`が変わるたびに編集中・削除確認中の状態と追加欄を捨て、一覧を取り直す。
+ * - 参照のみ: `disabled`がtrueの間は更新系APIを呼ばない（BackendはMEMBERに担当Taskだけを許可する。
+ *   `todo-backend`の`TaskResourceAuthorizationLogic#checkCanManageChecklist`）。
+ * - 401: 一覧と操作中の状態を捨て、Sessionを破棄してLoginへ遷移する。
+ * - 403: 権限不足の文言を出す。参照で403・404になった場合は一覧を空にする。
+ * - 404／409: 取得時点のversionを捨て、Backendの最新一覧へ置き換えてから、
+ *   Backendの文言と再取得済みの案内を出す。
+ * - 完了状態の切替・上下移動・編集の後は、操作した項目の部品へフォーカスを戻す（`data-checklist-control`属性）。
+ *
+ * @param projectId 対象ProjectのID。nullの間は一覧を空にしてAPIを呼ばない
+ * @param taskId 対象TaskのID。nullの間は一覧を空にしてAPIを呼ばない
+ * @param disabled 参照のみ（権限がない、archive済みProject等）のときtrue
+ * @returns 一覧・入力欄・処理中フラグ・表示文言のref／computedと、各操作の関数
  */
 export const useTaskChecklist = (
   projectId: Readonly<Ref<number | null>>,
@@ -37,18 +80,26 @@ export const useTaskChecklist = (
   const router = useRouter();
   const userStore = useUserStore();
 
+  /** Backendのposition順のチェック項目。更新APIの確定Responseで置き換える。 */
   const items = ref<TaskChecklistItem[]>([]);
+  /** 追加欄の入力値（trim前）。 */
   const newContent = ref("");
+  /** 本文を編集中の項目ID。編集していないときはnull。 */
   const editingItemId = ref<number | null>(null);
+  /** 編集欄の入力値（trim前）。 */
   const editContent = ref("");
+  /** 削除確認Dialogで確認中の項目。確認していないときはnull。 */
   const deletingItem = ref<TaskChecklistItem | null>(null);
+  /** パネル内に赤で出す文言（複数行）。 */
   const errorMessages = ref<string[]>([]);
+  /** パネル内に緑で出す文言。出さないときは空文字。 */
   const successMessage = ref("");
   const isLoading = ref(false);
   const isCreating = ref(false);
   const isUpdating = ref(false);
   const isDeleting = ref(false);
   const isReordering = ref(false);
+  /** いずれかの更新系APIを実行中か。実行中は全項目の操作部品をdisabledにして二重送信を防ぐ。 */
   const isMutating = computed(
     () =>
       isCreating.value ||
@@ -59,6 +110,7 @@ export const useTaskChecklist = (
   const completedCount = computed(
     () => items.value.filter((item) => item.completed).length
   );
+  /** 追加欄の本文が有効で、上限件数未満、参照のみでなく、他の更新中でない場合だけ追加できる。 */
   const canAdd = computed(
     () =>
       !disabled.value &&
@@ -73,7 +125,37 @@ export const useTaskChecklist = (
   /** 編集中の本文が有効で、他の更新中でない場合だけ保存できる。 */
   const canSaveEdit = computed<boolean>(() => isValidChecklistContent(editContent.value) && !isMutating.value);
 
-  /** API statusと契約済みerror codeを利用者向けメッセージへ変換する。 */
+  /** 前回の操作結果の文言を消す。新しい操作・取得を始めるときに呼ぶ。 */
+  const clearFeedback = (): void => {
+    errorMessages.value = [];
+    successMessage.value = "";
+  };
+
+  /**
+   * 更新系APIを今呼んでよいときだけ、送り先のProject IDとTask IDを返す。
+   *
+   * @returns 参照のみ・他の更新中・ID未確定のいずれかならnull
+   */
+  const resolveMutationTarget = (): ChecklistMutationTarget | null => {
+    if (
+      disabled.value ||
+      isMutating.value ||
+      projectId.value === null ||
+      taskId.value === null
+    ) {
+      return null;
+    }
+    return { projectId: projectId.value, taskId: taskId.value };
+  };
+
+  /**
+   * API statusと契約済みerror codeを利用者向けメッセージへ変換する。
+   *
+   * @param error APIまたは通信で発生した例外
+   * @param fallback 契約外のerror codeや本文なしのときに出す文言
+   * @param forbidden 403のときに出す文言（参照と更新で文言が違う）
+   * @returns パネルに出す文言。通信失敗は接続失敗の文言1件
+   */
   const getErrorMessages = (
     error: unknown,
     fallback: string,
@@ -95,20 +177,6 @@ export const useTaskChecklist = (
     );
   };
 
-  /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
-  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskChecklistApiError) || error.status !== 401) {
-      return false;
-    }
-    items.value = [];
-    clearMutationDrafts();
-    errorMessages.value = [];
-    successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
-    return true;
-  };
-
   /** 編集・削除対象を破棄し、古いversionを再利用できない状態へ戻す。 */
   const clearMutationDrafts = (): void => {
     editingItemId.value = null;
@@ -116,15 +184,36 @@ export const useTaskChecklist = (
     deletingItem.value = null;
   };
 
-  /** Task IDが有効なときだけchecklistを取得する。 */
+  /**
+   * 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。
+   *
+   * @param error APIまたは通信で発生した例外
+   * @returns 401を処理した（呼出側は以降の表示更新をしない）ときtrue
+   */
+  const handleUnauthorized = async (error: unknown): Promise<boolean> => {
+    if (!(error instanceof TaskChecklistApiError) || error.status !== 401) {
+      return false;
+    }
+    items.value = [];
+    clearMutationDrafts();
+    clearFeedback();
+    userStore.clearSession();
+    await router.push({ name: "Login" });
+    return true;
+  };
+
+  /**
+   * Task IDが有効なときだけchecklistを取得する。
+   *
+   * @returns 取得できたときtrue。IDが未確定・取得失敗のときfalse
+   */
   const loadItems = async (): Promise<boolean> => {
     if (projectId.value === null || taskId.value === null) {
       items.value = [];
       return false;
     }
     isLoading.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       items.value = await TaskChecklistApi.findItems(
         projectId.value,
@@ -152,7 +241,15 @@ export const useTaskChecklist = (
     }
   };
 
-  /** 404／409後に操作対象を破棄し、最新一覧へ置き換える。 */
+  /**
+   * 404／409後に操作対象を破棄し、最新一覧へ置き換える。
+   * 再取得に成功したら、Backendの文言（「最新状態を取得してください」等）の後ろに再取得済みの案内を添える。
+   * 画面はすでに最新一覧を表示しているので、利用者が手動で再読込しなくてよいと分かるようにするため。
+   * 再取得自体が401・403・404等になった場合は、古い競合の文言よりそちらを優先して出す。
+   *
+   * @param error 更新系APIが返した404または409
+   * @param fallback Backendの文言を出せないときの代わりの文言
+   */
   const recoverLatestItems = async (
     error: TaskChecklistApiError,
     fallback: string
@@ -167,14 +264,16 @@ export const useTaskChecklist = (
     const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
     isLoading.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       items.value = await TaskChecklistApi.findItems(
         currentProjectId,
         currentTaskId
       );
-      errorMessages.value = mutationMessages;
+      errorMessages.value = [
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.checklist.conflictReloaded,
+      ];
     } catch (reloadError: unknown) {
       if (await handleUnauthorized(reloadError)) {
         return;
@@ -202,62 +301,49 @@ export const useTaskChecklist = (
     }
   };
 
-  /** 入力本文をtrimしてTask末尾へchecklist itemを追加する。 */
-  const addItem = async (): Promise<void> => {
+  /**
+   * 更新系APIの失敗を共通処理する。401はLoginへ、404／409は最新一覧へ回復し、それ以外は文言を出す。
+   *
+   * @param error 更新系APIまたは通信で発生した例外
+   * @param fallback 契約外のerror codeや本文なしのときに出す文言
+   */
+  const handleMutationError = async (
+    error: unknown,
+    fallback: string
+  ): Promise<void> => {
+    if (await handleUnauthorized(error)) return;
     if (
-      !canAdd.value ||
-      projectId.value === null ||
-      taskId.value === null
+      error instanceof TaskChecklistApiError &&
+      (error.status === 404 || error.status === 409)
     ) {
+      await recoverLatestItems(
+        error,
+        DISPLAY_MESSAGES.task.checklist.conflictFallback
+      );
       return;
     }
-    isCreating.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
-    try {
-      items.value.push(
-        await TaskChecklistApi.createItem(projectId.value, taskId.value, {
-          content: newContent.value.trim(),
-        })
-      );
-      newContent.value = "";
-      successMessage.value = "チェック項目を追加しました。";
-    } catch (error: unknown) {
-      if (await handleUnauthorized(error)) return;
-      if (
-        error instanceof TaskChecklistApiError &&
-        (error.status === 404 || error.status === 409)
-      ) {
-        await recoverLatestItems(
-          error,
-          "チェックリストが変更されています。最新の一覧を表示しました。"
-        );
-        return;
-      }
-      errorMessages.value = getErrorMessages(
-        error,
-        DISPLAY_MESSAGES.task.checklist.createFailed
-      );
-    } finally {
-      isCreating.value = false;
-    }
+    errorMessages.value = getErrorMessages(error, fallback);
   };
 
-  /** checklist itemの本文編集を開始する。 */
-  const startEditing = (item: TaskChecklistItem): void => {
-    if (disabled.value || isMutating.value) return;
-    deletingItem.value = null;
-    editingItemId.value = item.checklistItemId;
-    editContent.value = item.content;
-    errorMessages.value = [];
-    successMessage.value = "";
-  };
-
-  /** 未送信の本文編集を破棄する。 */
-  const cancelEditing = (): void => {
-    editingItemId.value = null;
-    editContent.value = "";
-  };
+  /**
+   * 完了状態の切替・上下移動・編集の後（失敗した場合も含む）、操作した項目の部品へフォーカスを戻す。
+   * 更新中は全項目の部品をdisabledにするためフォーカスが外れ、キーボードだけでは続けて操作できなくなるため。
+   * 一覧の再描画で別の要素になるので`data-checklist-control`属性で探し直し、disabledの部品は飛ばす
+   * （`focusFirstEnabledElement`）。isUpdating等をfalseへ戻した後に呼ぶ。
+   *
+   * @param itemId 操作したchecklist item ID
+   * @param candidates フォーカスを戻す部品の候補（優先順）
+   */
+  const restoreControlFocus = (
+    itemId: number,
+    candidates: readonly ChecklistControl[]
+  ): Promise<void> =>
+    focusFirstEnabledElement(
+      candidates.map(
+        (control) =>
+          `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
+      )
+    );
 
   /** Backend確定Responseで対象itemを置き換える。 */
   const replaceItem = (updated: TaskChecklistItem): void => {
@@ -266,15 +352,66 @@ export const useTaskChecklist = (
     );
   };
 
-  /** 取得時点versionを使用して本文を更新する。 */
+  /** 入力本文をtrimしてTask末尾へchecklist itemを追加し、成功したら追加欄を空にする。 */
+  const addItem = async (): Promise<void> => {
+    const target = resolveMutationTarget();
+    if (!canAdd.value || target === null) {
+      return;
+    }
+    isCreating.value = true;
+    clearFeedback();
+    try {
+      items.value.push(
+        await TaskChecklistApi.createItem(target.projectId, target.taskId, {
+          content: newContent.value.trim(),
+        })
+      );
+      newContent.value = "";
+      successMessage.value = DISPLAY_MESSAGES.task.checklist.created;
+    } catch (error: unknown) {
+      await handleMutationError(
+        error,
+        DISPLAY_MESSAGES.task.checklist.createFailed
+      );
+    } finally {
+      isCreating.value = false;
+    }
+  };
+
+  /** checklist itemの本文編集を開始する。削除確認中なら閉じる。 */
+  const startEditing = (item: TaskChecklistItem): void => {
+    if (disabled.value || isMutating.value) return;
+    deletingItem.value = null;
+    editingItemId.value = item.checklistItemId;
+    editContent.value = item.content;
+    clearFeedback();
+  };
+
+  /** 未送信の本文編集を破棄する（フォーカスは動かさない）。 */
+  const cancelEditing = (): void => {
+    editingItemId.value = null;
+    editContent.value = "";
+  };
+
+  /**
+   * 利用者の操作（「取消」・Escキー）で本文編集をやめ、その項目の編集ボタンへフォーカスを戻す。
+   * 編集欄は閉じると消えるため、戻さないとフォーカスがDialogの先頭へ外れる。
+   */
+  const discardEditing = async (): Promise<void> => {
+    const itemId = editingItemId.value;
+    cancelEditing();
+    if (itemId !== null) {
+      await restoreControlFocus(itemId, ["edit"]);
+    }
+  };
+
+  /**
+   * 取得時点versionを使用して本文を更新する。完了状態は変えない。
+   * Enterキーからも呼ばれるため、保存ボタンのdisabledとは別に本文の長さを確かめる。
+   */
   const saveEdit = async (): Promise<void> => {
-    if (
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null ||
-      editingItemId.value === null
-    ) {
+    const target = resolveMutationTarget();
+    if (target === null || editingItemId.value === null) {
       return;
     }
     const item = items.value.find(
@@ -282,23 +419,22 @@ export const useTaskChecklist = (
     );
     const content = editContent.value.trim();
     if (!item || !content || content.length > CHECKLIST_ITEM_MAX_LENGTH) {
-      errorMessages.value = ["チェック項目を1〜255文字で入力してください。"];
+      errorMessages.value = [DISPLAY_MESSAGES.task.checklist.contentInvalid];
       return;
     }
     isUpdating.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       replaceItem(
         await TaskChecklistApi.updateItem(
-          projectId.value,
-          taskId.value,
+          target.projectId,
+          target.taskId,
           item.checklistItemId,
           { content, completed: item.completed, version: item.version }
         )
       );
       cancelEditing();
-      successMessage.value = "チェック項目を更新しました。";
+      successMessage.value = DISPLAY_MESSAGES.task.checklist.updated;
     } catch (error: unknown) {
       await handleMutationError(
         error,
@@ -307,26 +443,25 @@ export const useTaskChecklist = (
     } finally {
       isUpdating.value = false;
     }
+    // 保存に失敗して編集欄が残っている場合は、編集欄のフォーカスを奪わない。
+    if (editingItemId.value === null) {
+      await restoreControlFocus(item.checklistItemId, ["edit"]);
+    }
   };
 
-  /** 取得時点versionを使用して完了状態を反転する。 */
+  /** 取得時点versionを使用して完了状態を反転する。本文は変えない。 */
   const toggleItem = async (item: TaskChecklistItem): Promise<void> => {
-    if (
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null
-    ) {
+    const target = resolveMutationTarget();
+    if (target === null) {
       return;
     }
     isUpdating.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       replaceItem(
         await TaskChecklistApi.updateItem(
-          projectId.value,
-          taskId.value,
+          target.projectId,
+          target.taskId,
           item.checklistItemId,
           {
             content: item.content,
@@ -343,19 +478,22 @@ export const useTaskChecklist = (
     } finally {
       isUpdating.value = false;
     }
+    await restoreControlFocus(item.checklistItemId, ["toggle"]);
   };
 
-  /** itemを上下へ1件移動し、全itemのID・versionを送信する。 */
+  /**
+   * itemを上下へ1件移動する。Backendは全itemのID・versionを要求するため、入れ替え後の全件を送る。
+   * 先頭で上、末尾で下を指定した場合はAPIを呼ばない。
+   *
+   * @param item 動かす項目
+   * @param direction -1で上、1で下
+   */
   const moveItem = async (
     item: TaskChecklistItem,
     direction: -1 | 1
   ): Promise<void> => {
-    if (
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null
-    ) {
+    const target = resolveMutationTarget();
+    if (target === null) {
       return;
     }
     const index = items.value.findIndex(
@@ -371,12 +509,11 @@ export const useTaskChecklist = (
       reordered[index],
     ];
     isReordering.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       items.value = await TaskChecklistApi.reorderItems(
-        projectId.value,
-        taskId.value,
+        target.projectId,
+        target.taskId,
         {
           items: reordered.map((candidate) => ({
             checklistItemId: candidate.checklistItemId,
@@ -392,9 +529,14 @@ export const useTaskChecklist = (
     } finally {
       isReordering.value = false;
     }
+    // 先頭・末尾へ動かすと同じ向きのボタンはdisabledになるため、そのときは逆向きのボタンへ戻す。
+    await restoreControlFocus(
+      item.checklistItemId,
+      direction === -1 ? ["move-up", "move-down"] : ["move-down", "move-up"]
+    );
   };
 
-  /** 削除確認対象を保持する。 */
+  /** 削除確認Dialogを開く。本文の編集中なら編集を捨てる。 */
   const openDeleteConfirm = (item: TaskChecklistItem): void => {
     if (disabled.value || isMutating.value) return;
     cancelEditing();
@@ -406,25 +548,26 @@ export const useTaskChecklist = (
     deletingItem.value = null;
   };
 
-  /** 確認対象を取得時点version付きで削除する。 */
+  /** 削除確認Dialogが閉じられた（Esc・外側クリック等）場合に削除対象を破棄する。 */
+  const handleDeleteDialogVisibility = (open: boolean): void => {
+    if (!open) {
+      cancelDelete();
+    }
+  };
+
+  /** 確認対象を取得時点version付きで削除し、204のときだけ一覧から外す。 */
   const confirmDelete = async (): Promise<void> => {
     const item = deletingItem.value;
-    if (
-      !item ||
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null
-    ) {
+    const target = resolveMutationTarget();
+    if (!item || target === null) {
       return;
     }
     isDeleting.value = true;
-    errorMessages.value = [];
-    successMessage.value = "";
+    clearFeedback();
     try {
       await TaskChecklistApi.deleteItem(
-        projectId.value,
-        taskId.value,
+        target.projectId,
+        target.taskId,
         item.checklistItemId,
         item.version
       );
@@ -432,7 +575,7 @@ export const useTaskChecklist = (
         (candidate) => candidate.checklistItemId !== item.checklistItemId
       );
       cancelDelete();
-      successMessage.value = "チェック項目を削除しました。";
+      successMessage.value = DISPLAY_MESSAGES.task.checklist.deleted;
     } catch (error: unknown) {
       await handleMutationError(
         error,
@@ -443,25 +586,7 @@ export const useTaskChecklist = (
     }
   };
 
-  /** 更新系APIの401と競合回復を共通処理する。 */
-  async function handleMutationError(
-    error: unknown,
-    fallback: string
-  ): Promise<void> {
-    if (await handleUnauthorized(error)) return;
-    if (
-      error instanceof TaskChecklistApiError &&
-      (error.status === 404 || error.status === 409)
-    ) {
-      await recoverLatestItems(
-        error,
-        "チェックリストが変更されています。最新の一覧を表示しました。"
-      );
-      return;
-    }
-    errorMessages.value = getErrorMessages(error, fallback);
-  }
-
+  // 別のTaskを開いたときに前のTaskの編集・削除対象（古いversion）を送らないよう、取り直す前に捨てる。
   watch(
     [projectId, taskId],
     () => {
@@ -472,27 +597,20 @@ export const useTaskChecklist = (
     { immediate: true }
   );
 
-  /** 削除確認dialogが閉じられた場合に削除対象を破棄する。 */
-  const handleDeleteDialogVisibility = (open: boolean): void => {
-    if (!open) {
-      cancelDelete();
-    }
-  };
-
   return {
-    canSaveEdit,
-    handleDeleteDialogVisibility,
-    progressPercent,
     addItem,
     canAdd,
+    canSaveEdit,
     cancelDelete,
     cancelEditing,
     completedCount,
     confirmDelete,
     deletingItem,
+    discardEditing,
     editContent,
     editingItemId,
     errorMessages,
+    handleDeleteDialogVisibility,
     isCreating,
     isDeleting,
     isLoading,
@@ -504,6 +622,7 @@ export const useTaskChecklist = (
     moveItem,
     newContent,
     openDeleteConfirm,
+    progressPercent,
     saveEdit,
     startEditing,
     successMessage,

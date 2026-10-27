@@ -26,6 +26,42 @@ export class ProjectApiError extends Error {
   }
 }
 
+/**
+ * Project詳細Responseの参加者に、表示名（`displayName`）・状態（`accountStatus`）がない場合の既定値を補う。
+ *
+ * 2つの項目はBackendの「Project詳細の参加者に表示名とアカウント状態を返す」変更で追加された。
+ * Frontendだけ先に反映された環境でも、担当者の選択肢（ACTIVEだけを出す）が空にならず、名前の代わりにIDが出るようにする。
+ * Backendが常に返すようになれば、この補完は値を変えない。
+ *
+ * @param detail BackendのProject詳細Response
+ * @returns 参加者の表示名と状態を必ず持つProject詳細
+ */
+const normalizeProjectDetail = (detail: ProjectDetail): ProjectDetail => ({
+  ...detail,
+  members: (detail.members ?? []).map((member) => ({
+    ...member,
+    displayName: member.displayName || `アカウントID: ${member.accountId}`,
+    accountStatus: member.accountStatus ?? "ACTIVE",
+  })),
+});
+
+/**
+ * Board取得ResponseのTask cardに種別（`taskType`）がない場合、`TASK`で補う。
+ *
+ * この項目はBackendの「Board Task cardにTask種別を返す」変更で追加された。Frontendだけ先に反映された環境でも、
+ * 従来どおりすべてのTaskでTimer・日別実績の入口を出せるようにする。Backendが常に返すようになれば、この補完は値を変えない。
+ *
+ * @param board BackendのBoard取得Response
+ * @returns すべてのTask cardが種別を持つBoard
+ */
+const normalizeTaskBoard = (board: TaskBoard): TaskBoard => ({
+  ...board,
+  columns: board.columns.map((column) => ({
+    ...column,
+    tasks: column.tasks.map((task) => ({ ...task, taskType: task.taskType ?? "TASK" })),
+  })),
+});
+
 /** 非2xx ResponseをProjectApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
   ensureApiSuccess(
@@ -56,7 +92,7 @@ const getProjects = async (): Promise<ProjectSummary[]> => {
 const getProject = async (projectId: number): Promise<ProjectDetail> => {
   const response = await HttpClient.getRequest(`${API_PATHS.PROJECTS}/${projectId}`);
   await ensureSuccess(response);
-  return (await response.json()) as ProjectDetail;
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
 };
 
 /**
@@ -71,7 +107,7 @@ const getTaskBoard = async (projectId: number): Promise<TaskBoard> => {
     `${API_PATHS.PROJECTS}/${projectId}/board`
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskBoard;
+  return normalizeTaskBoard((await response.json()) as TaskBoard);
 };
 
 /**
@@ -91,7 +127,7 @@ const updateProject = async (
     request
   );
   await ensureSuccess(response);
-  return (await response.json()) as ProjectDetail;
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
 };
 
 /**
@@ -111,7 +147,7 @@ const addProjectMember = async (
     request
   );
   await ensureSuccess(response);
-  return (await response.json()) as ProjectDetail;
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
 };
 
 /**
@@ -133,7 +169,7 @@ const updateProjectMember = async (
     request
   );
   await ensureSuccess(response);
-  return (await response.json()) as ProjectDetail;
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
 };
 
 /**

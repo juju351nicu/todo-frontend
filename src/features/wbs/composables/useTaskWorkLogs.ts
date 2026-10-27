@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { buildProjectMemberOptions } from "@/features/project/utils/projectMember";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -26,6 +27,11 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 export interface UseTaskWorkLogsOptions {
   /** 日別実績の変更・競合後に、担当者別workloadを現在の集計期間で再取得する。 */
   readonly reloadWorkload: () => Promise<void>;
+  /**
+   * 利用者がDialogを閉じた後に呼ぶ。Boardの導線で付いたURLのqueryを外し、再読込で再び開かないようにするために使う。
+   * Session失効による破棄（`discardWorkLogDialog`）では呼ばない。
+   */
+  readonly onDialogClosed?: () => void;
 }
 
 /**
@@ -36,12 +42,13 @@ export interface UseTaskWorkLogsOptions {
  * - 対象は通常Task（`taskType === "TASK"`）だけ。SummaryとMilestoneでは画面上部へ理由を表示してDialogを開かない。
  * - 変更権限: TASK_UPDATEを持ち、Project管理権限（SYSTEM_ADMIN・OWNER・MANAGER）があれば全実績、
  *   それ以外は本人担当Taskの本人の実績だけ。最終判定はBackendが行う。
- * - Boardの「日別実績」導線（URLの`panel=work-logs&taskId=…`）では、`useWbsPage`が初期表示後にこのDialogを開く。
+ * - Boardの「日別実績」導線（URLの`panel=work-logs&taskId=…`）では、`useWbsPage`が初期表示後にこのDialogを開き、
+ *   利用者が閉じたら`onDialogClosed`でqueryを外す。
  * - 変更後と404・409の後は`reloadWorkload`でworkloadも再取得する。
  * - 401では`context.handleUnauthorized`へ委ね、Dialogは統括の`useWbsPage`が`discardWorkLogDialog`で閉じる。
  *
  * @param context Project ID、WBS Task、Project member、権限、画面上部message、Session失効処理を提供する画面共通context
- * @param options 変更後のworkload再取得
+ * @param options 変更後のworkload再取得と、Dialogを閉じた後の通知
  */
 export const useTaskWorkLogs = (
   context: WbsPageContext,
@@ -74,17 +81,17 @@ export const useTaskWorkLogs = (
       (canManageAnyWorkLog.value ||
         workLogTask.value.assigneeAccountId === userStore.memberId)
   );
-  /** 作業者の候補。Project管理権限がなければ本人だけ。 */
+  /**
+   * 作業者の候補。Project管理権限がなければ本人だけ。
+   * Backendは停止中アカウントを作業者に指定できない（400）ため、ACTIVEな参加者だけを表示名付きで出す。
+   */
   const workLogWorkerOptions = computed<TaskWorkLogWorkerOption[]>(() =>
-    (context.project.value?.members ?? [])
-      .filter(
+    buildProjectMemberOptions(
+      (context.project.value?.members ?? []).filter(
         (member) =>
           canManageAnyWorkLog.value || member.accountId === userStore.memberId
       )
-      .map((member) => ({
-        title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-        value: member.accountId,
-      }))
+    )
   );
   const isWorkLogMutating = computed(
     () => isSavingWorkLog.value || isDeletingWorkLog.value
@@ -157,10 +164,11 @@ export const useTaskWorkLogs = (
     workLogEditorErrorMessages.value = result.messages;
   };
 
-  /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄する。 */
+  /** 読込・保存・削除中でなければ日別実績Dialogと一時状態を破棄し、閉じたことを統括composableへ知らせる。 */
   const closeWorkLogDialog = (): void => {
     if (!isLoadingWorkLogs.value && !isWorkLogMutating.value) {
       closeWorkLogDialogAfterOperation();
+      options.onDialogClosed?.();
     }
   };
 

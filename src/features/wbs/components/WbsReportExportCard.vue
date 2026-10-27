@@ -57,6 +57,7 @@ const requestDownload = (reportType: WbsReportType): void => {
           icon="i-mdi-calendar-week"
           :loading="exportingReportType === 'weekly'"
           :disabled="exportingReportType !== null"
+          data-wbs-report-control="weekly"
           block
           @click="requestDownload('weekly')"
         >
@@ -70,6 +71,7 @@ const requestDownload = (reportType: WbsReportType): void => {
           icon="i-mdi-calendar-month"
           :loading="exportingReportType === 'monthly'"
           :disabled="exportingReportType !== null"
+          data-wbs-report-control="monthly"
           block
           @click="requestDownload('monthly')"
         >

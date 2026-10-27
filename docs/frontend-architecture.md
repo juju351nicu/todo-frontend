@@ -44,10 +44,10 @@ src/
 
 2026-10にVuetify 3からNuxt UI 4（Vite plugin）とTailwind CSS 4へ移行した。計画と経緯はリポジトリ外の`../nuxt-ui-migration-plan.md`に残している。
 
-- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。移行前のVuetify既定デザインと同じ見た目になるよう、button・badge・card・alert・入力欄・table・modal・tabの寸法と色を上書きする。
-- `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、Vuetify既定色のpalette、elevation影、breakpoint、`page-container`／`app-table`等の共通utility。
+- `src/app/theme/nuxtUiTheme.ts`: Nuxt UIの全体テーマ。semantic colorとpaletteの対応（primary＝brand、secondary＝plum、neutral＝stone等）と、移行前のVuetify既定に合わせたbutton・badge・card・alert・入力欄・table・modal・tabの寸法を定義する。寸法は参考デザインへ段階的に寄せる。
+- `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、独自palette（brand・plum）とヘッダー色、白文字とのコントラストを保つsemantic colorの濃さ、elevation影、breakpoint、`page-surface`／`page-container`／`app-table`等の共通utility。
 - `src/shared/components`: `StatusAlert`、`AppAlert`、`AppSnackbar`、`AppDataTable`、`SearchField`、`FieldCounter`。
-- `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`）。
+- `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`、`AppDataTable`の並べ替え・ページ・選択状態を持つ`useDataTable`）。
 
 ## 各ディレクトリの責務
 
@@ -75,6 +75,7 @@ src/
 - `src/shared/types/error.ts`: Backend共通エラー型
 - `src/shared/utils/apiError.ts`: error code／field判定と安全な表示message抽出
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
+- `src/shared/types/accountStatus.ts`、`src/shared/utils/accountStatus.ts`: アカウント状態コード（ACTIVE／LOCKED／DISABLED）と表示名・表示色。管理画面とProject参加者表示で共通に使う
 - `src/features/dashboard/api/dashboardApi.ts`: permission別Basic Dashboardと資格境界を持つ高度Dashboard API
 - `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠、横断EVM／負荷のDashboard契約型
 - `src/features/dashboard/composables/useDashboardPage.ts`: Basic／高度Dashboard取得、資格不足、401、再読込、既存画面遷移
@@ -139,6 +140,7 @@ src/
 - `src/features/project/composables/useProjectTemplateCapture.ts`: Boardからのcapture Dialog状態、入力検証、認証・機能資格エラー
 - `src/features/project/composables/useProjectTemplatePage.ts`: 本人Templateの一覧・詳細・header編集・archive・Project適用・競合回復
 - `src/features/project/utils/apiErrors.ts`: Project一覧・設定・member管理が表示契約を持つerror code集合と409回復優先status
+- `src/features/project/utils/projectMember.ts`: Project参加者の表示名・状態付きラベル、担当者選択肢（既定はACTIVEだけ）、アカウントIDからの表示名解決
 - `src/features/project/components/ProjectSettingsDialog.vue`: Task Boardから開くProject設定・member管理Dialog
 - `src/features/project/components/ProjectTemplateCaptureButton.vue`: OWNER／SYSTEM_ADMIN向けProject snapshot保存Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
@@ -159,9 +161,11 @@ src/
 - `src/features/wbs/composables/useWbsPage.ts`: WBS画面の統括。Project・WBS・依存関係・baselineのスナップショット取得、権限判定、401処理、Board遷移と、下記の領域別composableの配線
 - `src/features/wbs/composables/wbsPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、WBS、階層行、権限、画面上部message、Session失効処理）の型
 - `src/features/wbs/composables/useWbsTaskEditor.ts`: Task編集Dialogと409時のWBS再取得
-- `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得
+- `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得。操作結果はcard内のmessageへ出し、MEMBERは本人担当Taskだけを端点にできる
+- `src/features/wbs/components/WbsDependencyCard.vue`: Task依存関係の一覧・追加ボタン・削除ボタン・操作結果を表示するcard
 - `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
 - `src/features/wbs/composables/useWbsWorkingCalendar.ts`: 稼働日calendarの表示対象・編集可否・例外の登録・更新・削除
+- `src/features/wbs/composables/useWorkingDayEditForm.ts`: 稼働日例外DialogのForm作り直し、種別切替時の分数補正、対象の表示文言
 - `src/features/wbs/composables/useTaskEffortPlans.ts`／`useTaskWorkLogs.ts`: 通常Taskの日別予定／日別実績Dialog
 - `src/features/wbs/composables/useWbsBaselines.ts`: baselineの一覧・比較・作成・有効化
 - `src/features/wbs/composables/useWbsEarnedValue.ts`／`useWbsReportExport.ts`: EVMの取得／週次・月次Excel帳票のdownload
@@ -182,7 +186,8 @@ src/
 - `src/features/wbs/views/WbsPage.vue`: Boardと同じTaskを表示する階層表・Gantt切替・日別予定実績・workload・稼働日calendar・baseline・EVM・Excel帳票入口画面
 - `src/features/notification/api/notificationApi.ts`: 通知一覧・一括既読・管理者お知らせ発行API
 - `src/features/notification/types/notification.ts`: イベント型通知、導出型警告、badge、既読、お知らせ入力のAPI契約型
-- `src/features/notification/composables/useNotificationCenter.ts`: ベルの取得・既読・画面遷移と非polling更新契機
+- `src/features/notification/composables/useNotificationCenter.ts`: ベルの取得・既読・画面遷移と非polling更新契機。既読はBackendへ開いた時に保存し、一覧の未読の印は閉じるまで残す
+- `src/features/notification/composables/useExpandableNotificationMessages.ts`: 遷移先のない通知（管理者お知らせ）の本文を押して全文表示する開閉状態。ベルとDashboardで共有
 - `src/features/notification/components/NotificationBell.vue`: 全認証画面の未読・未解決badgeと通知一覧
 - `src/features/notification/composables/useAnnouncementManagementPage.ts`: 管理者お知らせ入力、UTC変換、送信、認証・入力エラー処理
 - `src/features/notification/views/AnnouncementManagementPage.vue`: SYSTEM_ADMIN向け全利用者お知らせ配信画面

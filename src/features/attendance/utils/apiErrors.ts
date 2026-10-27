@@ -1,3 +1,4 @@
+import type { ErrorResponse } from "@/shared/types/error";
 /**
  * Attendance APIでFrontendが表示契約を持つerror code集合。
  * 未知codeはBackend本文を表示せず、本人・管理・CSV操作ごとの固定fallbackへ変換する。
@@ -45,3 +46,36 @@ export const ATTENDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
 export {
   API_RECOVERY_PRIORITY_STATUSES as ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
 } from "@/shared/utils/apiError";
+
+/**
+ * Backendの文言が「最新状態を読み直してください。」「最新状態から申請し直してください。」となる409のerror code
+ * （`messages.properties`の`error.attendance.conflict.version`・`punch`・`month-version`・`month-persistence`・
+ * `correction-version`・`correction-persistence`・`correction-base`）。
+ * 本人勤怠・勤怠管理の画面は409の後に必ず取り直すため、取り直せたときだけ取り直し済みの案内を添える
+ * （動作確認/22_勤怠管理 G-6。12・18〜20の対応と同じ）。月の状態・打刻の順序等の409は取り直しても同じなので添えない。
+ */
+export const ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
+  "ATTENDANCE_VERSION_CONFLICT",
+  "ATTENDANCE_PUNCH_CONFLICT",
+  "ATTENDANCE_MONTH_VERSION_CONFLICT",
+  "ATTENDANCE_MONTH_CONFLICT",
+  "ATTENDANCE_CORRECTION_VERSION_CONFLICT",
+  "ATTENDANCE_CORRECTION_CONFLICT",
+  "ATTENDANCE_CORRECTION_BASE_CONFLICT",
+]);
+
+/**
+ * 409のResponseに、取り直し済みの案内を添えるerror codeが含まれるか。
+ *
+ * @param errorResponse 勤怠APIの409が持つBackend共通エラー
+ * @returns `ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES`のcodeがあればtrue
+ */
+export const needsAttendanceReloadGuidance = (
+  errorResponse: ErrorResponse | null
+): boolean =>
+  Array.isArray(errorResponse?.fieldErrors) &&
+  errorResponse.fieldErrors.some(
+    (fieldError) =>
+      typeof fieldError?.errorCode === "string" &&
+      ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES.has(fieldError.errorCode)
+  );

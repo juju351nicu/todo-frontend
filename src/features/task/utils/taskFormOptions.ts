@@ -1,4 +1,4 @@
-import type { ProjectMember, TaskPriority, TaskStatus } from "@/features/project/types/project";
+import type { TaskPriority, TaskStatus } from "@/features/project/types/project";
 
 /** Task入力のselect選択肢。`title`は表示名、`value`はBackendへ送る値。 */
 export interface TaskSelectOption<TValue> {
@@ -12,13 +12,6 @@ export const TASK_PRIORITY_OPTIONS: readonly TaskSelectOption<TaskPriority>[] = 
   { title: "中", value: 2 },
   { title: "高", value: 3 },
 ];
-
-/** Project memberを担当者selectの選択肢へ変換する。表示はアカウントIDとProject role。 */
-export const buildProjectMemberOptions = (members: readonly ProjectMember[]): TaskSelectOption<number>[] =>
-  members.map((member) => ({
-    title: `アカウントID: ${member.accountId}（${member.projectRole}）`,
-    value: member.accountId,
-  }));
 
 /**
  * Board列をtask status ID選択肢へ変換する。

@@ -218,6 +218,14 @@ describe("useWbsReportExport", () => {
       expect(mocks.createObjectUrl).not.toHaveBeenCalled();
     });
 
+    it("downloadの後は押したボタンへフォーカスを戻す", async () => {
+      const state = useWbsReportExport(buildWbsPageContext(), ref("2026-08-31"));
+
+      await state.downloadWbsReport("monthly", "2026-08-31");
+
+      expect(mocks.focusedControls).toEqual(["monthly"]);
+    });
+
     it("clearReportExportMessagesは前回downloadの結果messageを破棄する", async () => {
       const state = useWbsReportExport(buildWbsPageContext(), ref("2026-08-30"));
       await state.downloadWbsReport("weekly", "2026-09-05");

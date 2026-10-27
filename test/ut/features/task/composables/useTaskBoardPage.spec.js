@@ -58,6 +58,8 @@ const project = {
       joinedAt: "2026-08-14T00:00:00Z",
       assignedBy: 1,
       version: 1,
+      displayName: "参加 二郎",
+      accountStatus: "ACTIVE",
     },
   ],
   taskStatuses: [
@@ -82,6 +84,7 @@ const task = {
   dateTo: "2026-08-15",
   assigneeAccountId: 2,
   priority: 2,
+  taskType: "TASK",
   position: 1024,
   archived: false,
   createdBy: 2,
@@ -196,6 +199,47 @@ describe("useTaskBoardPage", () => {
     expect(page.canStartTaskTimer.value).toBe(true);
   });
 
+  it.each(["SUMMARY", "MILESTONE"])(
+    "%sのTaskはTimer・日別実績の入口を出さない（実績工数は通常Taskだけ）",
+    async (taskType) => {
+      mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+      mocks.projectTaskApi.getTask.mockResolvedValue({ ...structuredClone(task), taskType });
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.openTaskEditor(31);
+
+      expect(page.isEditorOpen.value).toBe(true);
+      expect(page.canRecordTaskWork.value).toBe(false);
+      expect(page.canStartTaskTimer.value).toBe(false);
+      // Task Templateへの保存も通常Taskだけ（Backendが400で拒否する）。
+      expect(page.canCaptureTaskTemplate.value).toBe(false);
+    }
+  );
+
+  it("通常TaskではOWNERにTimer・日別実績の入口を出す", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.canRecordTaskWork.value).toBe(true);
+    expect(page.canStartTaskTimer.value).toBe(true);
+    expect(page.canCaptureTaskTemplate.value).toBe(true);
+  });
+
+  it("Task Template適用の担当者は、MEMBERなら本人だけに限定し、OWNERなら限定しない", async () => {
+    const memberPage = useTaskBoardPage();
+    await memberPage.initialize();
+    expect(memberPage.taskTemplateAssigneeAccountId.value).toBe(mocks.userStore.memberId);
+
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const ownerPage = useTaskBoardPage();
+    await ownerPage.initialize();
+    expect(ownerPage.taskTemplateAssigneeAccountId.value).toBeNull();
+  });
+
   it("Task詳細から同じTaskの日別実績入力をWBSで開く", async () => {
     const page = useTaskBoardPage();
     await page.initialize();
@@ -208,6 +252,59 @@ describe("useTaskBoardPage", () => {
       params: { projectId: 5 },
       query: { taskId: "31", panel: "work-logs" },
     });
+  });
+
+  it("MEMBERは自分が担当のTaskを編集できる", async () => {
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(false);
+    expect(page.canSave.value).toBe(true);
+  });
+
+  it("MEMBERは他人が担当のTaskを参照のみで開き、担当者名を選択肢から表示できる", async () => {
+    // Backendは他人が担当のTaskをMEMBERが更新すると403にするため、保存できる見た目にしない。
+    mocks.projectApi.getProject.mockResolvedValue({
+      ...structuredClone(project),
+      members: [
+        ...structuredClone(project.members),
+        { ...project.members[0], accountId: 1, projectRole: "OWNER", displayName: "管理 一郎" },
+      ],
+    });
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(true);
+    expect(page.canSave.value).toBe(false);
+    expect(page.memberOptions.value.map((option) => option.value)).toContain(1);
+  });
+
+  it("MEMBERが担当者欄を自分に変えても、取得時点で他人が担当のTaskは参照のみのままにする", async () => {
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+    await page.openTaskEditor(31);
+
+    page.form.value.assigneeAccountId = 2;
+
+    expect(page.isReadonly.value).toBe(true);
+  });
+
+  it("OWNERは他人が担当のTaskも編集できる", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, assigneeAccountId: 1 });
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.isReadonly.value).toBe(false);
+    expect(page.canSave.value).toBe(true);
   });
 
   it("MEMBERは自分が担当しないTaskのTimerを開始表示しない", async () => {
@@ -300,7 +397,11 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual(["他の操作で更新されています。"]);
+    expect(page.errorMessages.value).toEqual([
+      "他の操作で更新されています。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
     expect(page.isEditorOpen.value).toBe(false);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
   });
@@ -330,7 +431,7 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "タイトルは45文字以内で入力してください。",
       "期限は開始日以降の日付を指定してください。",
     ]);
@@ -355,10 +456,10 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "Taskを保存できませんでした。",
     ]);
-    expect(page.errorMessages.value).not.toContain("内部Task情報を含む文言");
+    expect(page.editorErrorMessages.value).not.toContain("内部Task情報を含む文言");
   });
 
   it("本文なし403はSessionを維持してTask操作権限不足を表示する", async () => {
@@ -371,11 +472,27 @@ describe("useTaskBoardPage", () => {
 
     await page.saveTask();
 
-    expect(page.errorMessages.value).toEqual([
+    expect(page.editorErrorMessages.value).toEqual([
       "このTask操作を実行するpermissionがありません。",
     ]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
+  it("入力チェックの結果はTask Dialog内に出し、画面上部（Dialogの裏）には出さない", async () => {
+    const page = useTaskBoardPage();
+    await page.initialize();
+    page.openTaskCreator(11);
+    page.form.value.title = "期限の確認";
+    page.form.value.detail = "詳細";
+    page.form.value.dateFrom = "2026-10-30";
+    page.form.value.dateTo = "2026-10-29";
+
+    await page.saveTask();
+
+    expect(page.editorErrorMessages.value).toEqual(["終了日は開始日以降にしてください。"]);
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.isEditorOpen.value).toBe(true);
   });
 
   it("Task保存確定後のBoard再取得失敗を保存失敗として誤表示しない", async () => {
@@ -542,6 +659,30 @@ describe("useTaskBoardPage", () => {
     expect(page.canArchiveTask.value).toBe(false);
   });
 
+  it("コメントの投稿はBackendと同じくTASK_READだけで許可し、TASK_UPDATEを問わない", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canUpdateTask.value).toBe(false);
+    expect(page.canPostTaskComment.value).toBe(true);
+  });
+
+  it("TASK_READがない、またはarchive済みProjectではコメントを投稿できない", async () => {
+    mocks.permissions.delete("TASK_READ");
+    const page = useTaskBoardPage();
+    await page.initialize();
+    expect(page.canPostTaskComment.value).toBe(false);
+
+    mocks.permissions.add("TASK_READ");
+    mocks.projectApi.getProject.mockResolvedValue({ ...structuredClone(ownerProject), status: "ARCHIVED" });
+    const archivedPage = useTaskBoardPage();
+    await archivedPage.initialize();
+    expect(archivedPage.canPostTaskComment.value).toBe(false);
+  });
+
   it("MEMBERはTask permissionを持っていても繰り返し規則を変更できない", async () => {
     const page = useTaskBoardPage();
 
@@ -655,7 +796,11 @@ describe("useTaskBoardPage", () => {
 
     await page.archiveTask();
 
-    expect(page.errorMessages.value).toEqual(["Taskが先に更新されています。"]);
+    expect(page.errorMessages.value).toEqual([
+      "Taskが先に更新されています。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
     expect(page.isArchiveConfirmOpen.value).toBe(false);
     expect(page.isEditorOpen.value).toBe(false);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
@@ -731,6 +876,27 @@ describe("useTaskBoardPage", () => {
     }
   );
 
+  it("方向キーで移動した後、移動したTaskの移動アイコンへフォーカスを戻す", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));
+    // 単体テストの実行環境にはDOMがないため、Board画面の移動アイコンを探すdocumentを差し替える。
+    // 移動中はアイコンがdisabledになりフォーカスが外れるため、移動後に探し直して戻すことを確かめる。
+    const focus = vi.fn();
+    const querySelector = vi.fn(() => ({ focus, matches: () => false }));
+    vi.stubGlobal("document", { querySelector });
+    try {
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.moveTaskByKeyboard(31, "RIGHT");
+
+      expect(querySelector).toHaveBeenCalledWith('[data-task-move-handle="31"]');
+      expect(focus).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("先頭Taskの上・左方向では移動APIを送信しない", async () => {
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
     mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(keyboardBoard));
@@ -776,6 +942,8 @@ describe("useTaskBoardPage", () => {
 
     expect(page.errorMessages.value).toEqual([
       "移動中にTaskが更新されました。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     ]);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
     expect(page.board.value).toEqual(board);
@@ -848,6 +1016,8 @@ describe("useTaskBoardPage", () => {
 
     expect(page.errorMessages.value).toEqual([
       "移動中にTaskが更新されました。",
+      // 画面側で最新Boardを再取得済みであることも添える。
+      "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     ]);
     expect(mocks.projectApi.getTaskBoard).toHaveBeenCalledTimes(2);
     expect(page.board.value).toEqual(board);

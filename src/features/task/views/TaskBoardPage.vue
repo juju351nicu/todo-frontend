@@ -4,6 +4,7 @@ import Draggable from "vuedraggable";
 
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
+import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
@@ -29,10 +30,15 @@ const {
   canMoveTask,
   canSave,
   canStartTaskTimer,
+  canCaptureTaskTemplate,
+  canPostTaskComment,
+  canRecordTaskWork,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
   closeTaskEditor,
+  taskTemplateAssigneeAccountId,
+  editorErrorMessages,
   errorMessages,
   finishTaskDrag,
   form,
@@ -55,6 +61,7 @@ const {
   openTaskWorkLogs,
   priorityOptions,
   project,
+  resolveAssigneeDisplayName,
   saveTask,
   statusOptions,
   startTaskDrag,
@@ -69,8 +76,8 @@ onBeforeMount(initialize);
 
 <template>
   <LoadingIndicator v-if="isLoading || isLoadingTask || isMoving || isArchiving" />
-  <div class="min-h-[calc(100vh-64px)] bg-[#424242] p-6">
-    <div class="mb-4 flex flex-wrap items-center gap-3 text-white">
+  <div class="page-surface p-6">
+    <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
         :to="{ name: 'ProjectList' }"
         icon="i-mdi-arrow-left"
@@ -88,15 +95,14 @@ onBeforeMount(initialize);
           <span v-if="project.description">・{{ project.description }}</span>
         </div>
       </div>
-      <UBadge v-if="project" :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm" class="ms-auto">
-        {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
+      <UBadge v-if="project" :color="getProjectStatusColor(project.status)" size="sm" class="ms-auto">
+        {{ getProjectStatusLabel(project.status) }}
       </UBadge>
       <UButton
         v-if="board"
         :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
         icon="i-mdi-file-tree-outline"
         variant="soft"
-        class="text-white"
       >
         WBSを開く
       </UButton>
@@ -114,6 +120,7 @@ onBeforeMount(initialize);
         :can-apply="canCreateTask"
         :can-edit="canUpdateTask"
         :project-active="project.status === 'ACTIVE'"
+        :restricted-assignee-account-id="taskTemplateAssigneeAccountId"
         @task-created="handleTemplateTaskCreated"
       />
       <TaskRecurrenceDialog
@@ -147,7 +154,7 @@ onBeforeMount(initialize);
       <div
         v-for="column in board.columns"
         :key="column.taskStatusId"
-        class="board-column flex max-h-[calc(100vh-190px)] flex-[0_0_340px] flex-col rounded-sm bg-black/12 text-default"
+        class="board-column flex max-h-[calc(100vh-190px)] flex-[0_0_340px] flex-col rounded-sm bg-elevated text-default"
       >
         <div class="flex items-center px-4 py-2 text-base">
           {{ column.name }}
@@ -180,7 +187,7 @@ onBeforeMount(initialize);
         >
           <template #item="{ element: task }">
             <div
-              class="task-card mb-3 cursor-pointer rounded-sm border-s-4 bg-[#cbcbcb] shadow-elevation-2 focus-visible:outline-2 focus-visible:outline-primary"
+              class="task-card mb-3 cursor-pointer rounded-sm border-s-4 bg-default ring ring-default shadow-elevation-1 focus-visible:outline-2 focus-visible:outline-primary"
               :class="PRIORITY_BORDER_CLASSES[task.priority as 1 | 2 | 3]"
               tabindex="0"
               @click="openTaskEditor(task.taskId)"
@@ -196,6 +203,7 @@ onBeforeMount(initialize);
                   variant="ghost"
                   square
                   :disabled="isMoving"
+                  :data-task-move-handle="task.taskId"
                   :aria-label="`${task.title}を移動。上下キーで列内移動、左右キーで列移動`"
                   aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
                   title="方向キー: 上下で列内移動、左右で列移動"
@@ -212,7 +220,7 @@ onBeforeMount(initialize);
                   <UBadge :color="getTaskPriorityColor(task.priority)" size="xs">
                     優先度: {{ getTaskPriorityLabel(task.priority) }}
                   </UBadge>
-                  <UBadge size="xs" icon="i-mdi-account-outline">ID: {{ task.assigneeAccountId }}</UBadge>
+                  <UBadge size="xs" icon="i-mdi-account-outline">{{ resolveAssigneeDisplayName(task.assigneeAccountId) }}</UBadge>
                 </div>
                 <div class="mt-2 text-xs text-muted">{{ task.dateFrom }} ～ {{ task.dateTo }}</div>
               </div>
@@ -233,6 +241,10 @@ onBeforeMount(initialize);
     >
       <template #body>
         <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>
+        <!-- 画面上部のmessageはDialogの裏に隠れるため、入力チェックと保存・archiveの失敗はDialog内に出す。 -->
+        <StatusAlert v-if="editorErrorMessages.length" type="error" class="mb-4">
+          <div v-for="message in editorErrorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
         <form @submit.prevent="saveTask">
           <div class="relative mb-2">
             <UFormField label="タイトル">
@@ -303,11 +315,13 @@ onBeforeMount(initialize);
           </UFormField>
           <div v-if="form.taskId !== null && board" class="my-4 flex flex-wrap items-center gap-2">
             <TaskTimerActionButton v-if="canStartTaskTimer" :project-id="board.projectId" :task-id="form.taskId" />
-            <UButton icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">日別実績を入力</UButton>
+            <UButton v-if="canRecordTaskWork" icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">
+              日別実績を入力
+            </UButton>
             <TaskWorkLogAuditDialog :project-id="board.projectId" :task-id="form.taskId" />
           </div>
           <TaskTemplateCaptureButton
-            v-if="form.taskId !== null && project !== null"
+            v-if="form.taskId !== null && project !== null && canCaptureTaskTemplate"
             :project-id="project.projectId"
             :task-id="form.taskId"
             :disabled="project.status === 'ARCHIVED'"
@@ -322,7 +336,7 @@ onBeforeMount(initialize);
             v-if="form.taskId !== null && board"
             :project-id="board.projectId"
             :task-id="form.taskId"
-            :disabled="isReadonly || project?.status === 'ARCHIVED'"
+            :disabled="!canPostTaskComment"
           />
         </form>
       </template>

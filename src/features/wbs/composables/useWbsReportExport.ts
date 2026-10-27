@@ -7,6 +7,7 @@ import type { WbsReportDownload, WbsReportType } from "@/features/wbs/types/wbs"
 import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * Backendから受け取ったExcel Blobをbrowserの一時URLで保存し、使用後に必ず解放する。
@@ -83,6 +84,13 @@ export const useWbsReportExport = (
       await handleWbsReportDownloadError(error);
     } finally {
       exportingReportType.value = null;
+    }
+    // download中は両方のボタンがdisabledになりフォーカスがbodyへ外れるため、押したボタンへ戻す
+    // （動作確認/20_baseline_EVM_Excel帳票 G-4）。downloadは利用者が押したときだけ動く。
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([
+        `[data-wbs-report-control="${reportType}"]`,
+      ]);
     }
   };
 

@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { DashboardApiError } from "@/features/dashboard/api/dashboardApi";
-import { useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
+import {
+  DASHBOARD_CONTROL,
+  useDashboardPage,
+} from "@/features/dashboard/composables/useDashboardPage";
 
 const mocks = vi.hoisted(() => ({
   dashboardApi: {
@@ -483,6 +486,19 @@ describe("useDashboardPage", () => {
     );
   });
 
+  it("遷移先のないお知らせは遷移せず、押すたびに本文の全文表示を切り替える", async () => {
+    const page = useDashboardPage();
+    const announcement = { ...event, notificationEventId: 11, navigationPath: null };
+
+    expect(page.canExpandNotification(announcement)).toBe(true);
+    expect(page.canExpandNotification(event)).toBe(false);
+    await page.openNotificationEvent(announcement);
+    expect(page.isNotificationExpanded(11)).toBe(true);
+    await page.openNotificationEvent(announcement);
+    expect(page.isNotificationExpanded(11)).toBe(false);
+    expect(mocks.router.push).not.toHaveBeenCalled();
+  });
+
   it("各summaryから既存の一覧画面へ遷移する", async () => {
     const page = useDashboardPage();
 
@@ -496,6 +512,45 @@ describe("useDashboardPage", () => {
     });
     expect(mocks.router.push).toHaveBeenNthCalledWith(3, {
       name: "Attendance",
+    });
+  });
+
+  describe("操作の後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => ({
+          focus: () => focused.push(selector.match(/data-dashboard-control="([^"]+)"/)?.[1]),
+          matches: () => false,
+        }),
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("「再読み込み」の後は同じボタンへ、「集計」の後はEVM基準日へ戻す", async () => {
+      mocks.dashboardApi.getAdvancedDashboard.mockResolvedValue(advancedDashboard);
+      const page = useDashboardPage();
+      const focused = stubDocument();
+
+      await page.reloadDashboard();
+      await page.submitAdvancedDashboard();
+
+      expect(focused).toEqual([DASHBOARD_CONTROL.reload, DASHBOARD_CONTROL.advancedStatusDate]);
+    });
+
+    it("初期表示（loadDashboard）ではフォーカスを動かさない", async () => {
+      mocks.dashboardApi.getAdvancedDashboard.mockResolvedValue(advancedDashboard);
+      const page = useDashboardPage();
+      const focused = stubDocument();
+
+      await page.loadDashboard();
+
+      expect(focused).toEqual([]);
     });
   });
 });

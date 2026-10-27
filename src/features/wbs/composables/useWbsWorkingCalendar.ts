@@ -1,6 +1,11 @@
 import { computed, ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import {
+  formatProjectMemberLabel,
+  isActiveProjectMember,
+  resolveProjectMemberDisplayName,
+} from "@/features/project/utils/projectMember";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -27,6 +32,38 @@ import {
   validateWorkingDayForm,
 } from "@/features/wbs/utils/workingCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { hasApiFieldError } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * 稼働日calendarの各行の「登録・編集」ボタンに付ける`data-working-calendar-control`属性の値を作る。
+ * 削除すると同じ行の削除ボタンが消えてフォーカスがbodyへ外れるため、削除の後はこのボタンへ戻す
+ * （動作確認/19_workload_稼働日calendar G-4）。
+ *
+ * @param workDate 行の日付（yyyy-MM-dd）
+ * @returns 属性の値
+ */
+export const workingDayEditControlKey = (workDate: string): string =>
+  `day:${workDate}:edit`;
+
+/**
+ * 稼働日calendar cardの「表示」ボタンに付ける`data-working-calendar-control`属性の値。
+ * 取得中は「表示」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
+ * （動作確認/19_workload_稼働日calendar G-12）。
+ */
+export const WORKING_CALENDAR_SUBMIT_CONTROL = "submit";
+
+/** `data-working-calendar-control`属性の値から、その要素を探すselectorを作る。 */
+const workingCalendarControlSelector = (key: string): string =>
+  `[data-working-calendar-control="${key}"]`;
+
+/**
+ * Backendの文言が「最新状態を取得してください。」で終わる409のerror code
+ * （`messages.properties`の`error.wbs.conflict.working-day-version`）。
+ * 画面は409の後に必ずcalendarを取り直すため、取り直せたときだけ取り直し済みの案内を添える。
+ * 同じ日付の例外の重複（`WORKING_DAY_ALREADY_EXISTS`）は文言が再取得を求めないので添えない。
+ */
+const RELOAD_GUIDANCE_ERROR_CODE = "WORKING_DAY_VERSION_CONFLICT";
 
 /** `useWbsWorkingCalendar`が画面の他領域へ委ねる操作。 */
 export interface UseWbsWorkingCalendarOptions {
@@ -46,6 +83,7 @@ export interface UseWbsWorkingCalendarOptions {
  * - 表示対象: Project管理権限（SYSTEM_ADMIN・OWNER・MANAGER）があればProject共通と全memberの個人例外、
  *   それ以外はProject共通と本人の個人例外だけ。
  * - 変更権限: ProjectがACTIVEでTASK_UPDATEを持ち、Project共通はProject管理権限、個人例外はProject管理権限または本人。
+ *   個人例外は、対象の参加者がACTIVEの場合だけ変更できる（Backendは無効化・ロック中の参加者の個人例外を400にする）。
  * - 変更・404・409の後はcalendar全体と`reloadWorkload`でworkloadを再取得する（Backendの変更Responseは対象日だけのため）。
  * - 401では`context.handleUnauthorized`へ委ね、編集Dialogと削除確認は統括の`useWbsPage`が`discardWorkingDayDialogs`で閉じる。
  *
@@ -91,7 +129,7 @@ export const useWbsWorkingCalendar = (
     );
     return targetOptions.concat(
       members.map((member) => ({
-        title: `個人例外: アカウントID ${member.accountId}（${member.projectRole}）`,
+        title: `個人例外: ${formatProjectMemberLabel(member)}`,
         value: buildWorkingCalendarTargetKey({
           kind: "MEMBER",
           accountId: member.accountId,
@@ -103,7 +141,33 @@ export const useWbsWorkingCalendar = (
   const selectedWorkingCalendarTarget = computed(() =>
     parseWorkingCalendarTargetKey(workingCalendarSelectedTargetKey.value)
   );
-  const canEditSelectedWorkingCalendarTarget = computed(() => {
+  /** 個人例外を表示している場合の参加者名。稼働日例外Dialogの説明に使う。Project共通ならnull。 */
+  const selectedWorkingCalendarTargetDisplayName = computed(() => {
+    const target = selectedWorkingCalendarTarget.value;
+    return target?.kind === "MEMBER"
+      ? resolveProjectMemberDisplayName(
+          context.project.value?.members ?? [],
+          target.accountId
+        )
+      : null;
+  });
+  /**
+   * 個人例外を表示していて、その参加者がACTIVEでない（無効化・ロック中、またはProjectから外れた）場合はtrue。
+   * 表示はできるが、Backendは個人例外の登録・更新を`INVALID_WORKING_CALENDAR`（400）にするため、変更の操作を出さない
+   * （動作確認/19_workload_稼働日calendar G-7）。
+   */
+  const isSelectedTargetInactiveMember = computed(() => {
+    const target = selectedWorkingCalendarTarget.value;
+    if (target?.kind !== "MEMBER") {
+      return false;
+    }
+    const member = context.project.value?.members.find(
+      (candidate) => candidate.accountId === target.accountId
+    );
+    return member === undefined || !isActiveProjectMember(member);
+  });
+  /** 表示対象が自分の権限で変更できるか（Backendの`WorkingCalendarAuthorizationLogic`と同じ規則）。 */
+  const hasWorkingCalendarTargetPermission = computed(() => {
     const target = selectedWorkingCalendarTarget.value;
     if (
       !context.canEditWbs.value ||
@@ -116,6 +180,30 @@ export const useWbsWorkingCalendar = (
       ? context.canManageProject.value
       : context.canManageProject.value ||
           target.accountId === userStore.memberId;
+  });
+  const canEditSelectedWorkingCalendarTarget = computed(
+    () =>
+      hasWorkingCalendarTargetPermission.value &&
+      !isSelectedTargetInactiveMember.value
+  );
+  /**
+   * 変更できない理由の案内。変更できる場合はnull。
+   * archive済みProject、参加者が無効、権限がない、の順に、利用者が直せない理由から示す
+   * （archive済みで権限の案内を出すと、OWNERにも権限が足りないように読めたため。動作確認/19_workload_稼働日calendar G-10）。
+   */
+  const workingCalendarReadOnlyMessage = computed(() => {
+    if (canEditSelectedWorkingCalendarTarget.value) {
+      return null;
+    }
+    if (
+      context.project.value !== null &&
+      context.project.value.status !== "ACTIVE"
+    ) {
+      return DISPLAY_MESSAGES.wbs.workingCalendar.archivedReadOnly;
+    }
+    return hasWorkingCalendarTargetPermission.value
+      ? DISPLAY_MESSAGES.wbs.workingCalendar.inactiveMemberReadOnly
+      : DISPLAY_MESSAGES.wbs.workingCalendar.readOnly;
   });
   const isWorkingCalendarMutating = computed(
     () => isSavingWorkingDay.value || isDeletingWorkingDay.value
@@ -344,7 +432,7 @@ export const useWbsWorkingCalendar = (
           ? DISPLAY_MESSAGES.wbs.workingCalendar.conflict
           : DISPLAY_MESSAGES.wbs.workingCalendar.resourceNotFound
       );
-      await reloadWorkingCalendarAndWorkload();
+      await reloadAfterStaleOperation(error);
       return;
     }
     workingCalendarEditorErrorMessages.value = resolveWbsErrorMessages(
@@ -414,6 +502,10 @@ export const useWbsWorkingCalendar = (
     isDeletingWorkingDay.value = true;
     workingCalendarErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
+    // 削除後は削除ボタンが消えるため、成功・失敗にかかわらず同じ行の「登録・編集」へフォーカスを戻す。
+    const editControl = workingCalendarControlSelector(
+      workingDayEditControlKey(override.workDate)
+    );
     try {
       if (target.kind === "PROJECT") {
         await WbsApi.deleteProjectWorkingDay(
@@ -436,6 +528,9 @@ export const useWbsWorkingCalendar = (
       await handleWorkingDayDeleteError(error);
     } finally {
       isDeletingWorkingDay.value = false;
+    }
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([editControl]);
     }
   };
 
@@ -465,7 +560,7 @@ export const useWbsWorkingCalendar = (
         error,
         DISPLAY_MESSAGES.wbs.workingCalendar.stale
       );
-      await reloadWorkingCalendarAndWorkload();
+      await reloadAfterStaleOperation(error);
       return;
     }
     workingCalendarErrorMessages.value = [
@@ -474,10 +569,31 @@ export const useWbsWorkingCalendar = (
   };
 
   /**
+   * 「表示」を押したときの処理。calendarを取得してから「表示」へフォーカスを戻す。
+   * 初期表示ではフォーカスを動かさないよう、利用者の操作だけをこの関数で受ける。
+   *
+   * @param dateRange yyyy-MM-dd形式の表示開始日・終了日
+   * @param targetKey `workingCalendarTargetOptions`に含まれる表示対象key
+   */
+  const submitWorkingCalendar = async (
+    dateRange: WorkingCalendarDateRange,
+    targetKey: string
+  ): Promise<void> => {
+    await loadWorkingCalendar(dateRange, targetKey);
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([
+        workingCalendarControlSelector(WORKING_CALENDAR_SUBMIT_CONTROL),
+      ]);
+    }
+  };
+
+  /**
    * 現在の期間・対象でcalendarを再取得し、古い例外IDとversionを残さない。
    * 再取得の前に表示していた操作結果（競合理由等）は、再取得後も残す。
+   *
+   * @returns 取り直せた場合はtrue。対象が不正、または取得に失敗した場合はfalse
    */
-  const reloadWorkingCalendar = async (): Promise<void> => {
+  const reloadWorkingCalendar = async (): Promise<boolean> => {
     const messagesBeforeReload = [...workingCalendarErrorMessages.value];
     const projectId = context.projectId.value;
     const target = selectedWorkingCalendarTarget.value;
@@ -486,7 +602,7 @@ export const useWbsWorkingCalendar = (
         ...messagesBeforeReload,
         DISPLAY_MESSAGES.wbs.workingCalendar.reloadFailed,
       ];
-      return;
+      return false;
     }
     try {
       workingCalendar.value = await WbsApi.getWorkingCalendar(
@@ -499,6 +615,7 @@ export const useWbsWorkingCalendar = (
       if (!context.isSessionInvalidated()) {
         workingCalendarErrorMessages.value = messagesBeforeReload;
       }
+      return true;
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof WbsApiError &&
@@ -506,12 +623,13 @@ export const useWbsWorkingCalendar = (
       ) {
         // Session・permission・公開範囲の変化は、操作時点の競合理由より優先する。
         await handleWorkingCalendarReadError(refreshError);
-        return;
+        return false;
       }
       workingCalendarErrorMessages.value = [
         ...messagesBeforeReload,
         DISPLAY_MESSAGES.wbs.workingCalendar.reloadFailed,
       ];
+      return false;
     }
   };
 
@@ -521,8 +639,33 @@ export const useWbsWorkingCalendar = (
    * workloadはcalendar例外から稼働可能時間を算出するため、calendarだけを再取得すると
    * 稼働可能時間・残容量・過配賦表示が次回の手動集計まで古い値になる。
    */
-  const reloadWorkingCalendarAndWorkload = async (): Promise<void> => {
-    await Promise.all([reloadWorkingCalendar(), options.reloadWorkload()]);
+  const reloadWorkingCalendarAndWorkload = async (): Promise<boolean> => {
+    const [calendarReloaded] = await Promise.all([
+      reloadWorkingCalendar(),
+      options.reloadWorkload(),
+    ]);
+    return calendarReloaded;
+  };
+
+  /**
+   * 404・409の後にcalendarとworkloadを取り直す。
+   * version競合（`RELOAD_GUIDANCE_ERROR_CODE`）で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに、
+   * 画面側で取り直し済みであることの案内を添える（動作確認/19_workload_稼働日calendar G-6。12・18の対応と同じ）。
+   *
+   * @param error 変更・削除APIが返した404または409
+   */
+  const reloadAfterStaleOperation = async (error: WbsApiError): Promise<void> => {
+    const reloaded = await reloadWorkingCalendarAndWorkload();
+    if (
+      reloaded &&
+      !context.isSessionInvalidated() &&
+      hasApiFieldError(error.errorResponse, RELOAD_GUIDANCE_ERROR_CODE)
+    ) {
+      workingCalendarErrorMessages.value = [
+        ...workingCalendarErrorMessages.value,
+        DISPLAY_MESSAGES.wbs.workingCalendar.conflictReloaded,
+      ];
+    }
   };
 
   /**
@@ -570,10 +713,13 @@ export const useWbsWorkingCalendar = (
     requestWorkingDayDelete,
     saveWorkingDay,
     selectedWorkingCalendarTarget,
+    selectedWorkingCalendarTargetDisplayName,
+    submitWorkingCalendar,
     workingCalendar,
     workingCalendarDateRange,
     workingCalendarEditorErrorMessages,
     workingCalendarErrorMessages,
+    workingCalendarReadOnlyMessage,
     workingCalendarSelectedTargetKey,
     workingCalendarSuccessMessage,
     workingCalendarTargetOptions,

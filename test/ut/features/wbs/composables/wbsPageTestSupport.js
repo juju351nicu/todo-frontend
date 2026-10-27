@@ -11,9 +11,11 @@ import { buildWbsTreeRows } from "@/features/wbs/utils/wbsTree";
  * `resetWbsPageMocks`を`beforeEach`で呼び、spec間・test間で状態を持ち越さない。
  */
 export const mocks = {
+  /** フォーカスを戻した部品の`data-*`属性の値。`resetWbsPageMocks`で空にする。 */
+  focusedControls: [],
   permissions: new Set(),
   route: { params: { projectId: "7" }, query: {} },
-  router: { push: vi.fn() },
+  router: { push: vi.fn(), replace: vi.fn() },
   userStore: {
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
@@ -129,6 +131,8 @@ export const project = {
       joinedAt: "2026-08-01T00:00:00Z",
       assignedBy: 1,
       version: 0,
+      displayName: "管理 一郎",
+      accountStatus: "ACTIVE",
     },
     {
       accountId: 2,
@@ -136,6 +140,8 @@ export const project = {
       joinedAt: "2026-08-01T00:00:00Z",
       assignedBy: 1,
       version: 0,
+      displayName: "参加 二郎",
+      accountStatus: "ACTIVE",
     },
   ],
   taskStatuses: [],
@@ -484,6 +490,7 @@ export const buildEditForm = (overrides = {}) => ({
 /**
  * 全mockを既定の成功Responseへ戻し、権限をTASK_UPDATEだけを持つ通常member（accountId 2）にする。
  * Excel download用に`URL.createObjectURL`と`document`をstubし、実DOMへ依存させない。
+ * フォーカスを戻す処理の部品探索（`document.querySelector`）は、`mocks.focusedControls`へ`data-*`属性の値を記録する。
  */
 export const resetWbsPageMocks = () => {
   vi.clearAllMocks();
@@ -494,6 +501,7 @@ export const resetWbsPageMocks = () => {
   mocks.route.params.projectId = "7";
   mocks.route.query = {};
   mocks.router.push.mockResolvedValue(undefined);
+  mocks.router.replace.mockResolvedValue(undefined);
   mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
   mocks.wbsApi.activateWbsBaseline.mockResolvedValue(
     structuredClone({ ...inactiveBaselineSummary, active: true, version: 3 })
@@ -574,8 +582,13 @@ export const resetWbsPageMocks = () => {
     configurable: true,
     value: mocks.revokeObjectUrl,
   });
+  mocks.focusedControls = [];
   vi.stubGlobal("document", {
     body: { appendChild: mocks.appendDownloadAnchor },
+    querySelector: (selector) => ({
+      focus: () => mocks.focusedControls.push(selector.match(/="([^"]+)"\]$/)?.[1]),
+      matches: () => false,
+    }),
     createElement: vi.fn(() => ({
       click: mocks.clickDownloadAnchor,
       download: "",

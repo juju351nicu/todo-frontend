@@ -123,6 +123,8 @@ export interface TaskDependencyRow extends TaskDependency {
   predecessorLabel: string;
   /** 後続TaskのWBSコード付き表示名。 */
   successorLabel: string;
+  /** 現在の利用者がこの依存関係を削除できるか。先行・後続の両方を変更できる場合だけtrue。 */
+  canDelete: boolean;
 }
 
 /** Taskへ計上された1作業者・1業務日単位の実績工数。 */
@@ -191,7 +193,7 @@ export interface TaskWorkLogForm {
 
 /** Task日別実績の作業者selectへ表示するProject member候補。 */
 export interface TaskWorkLogWorkerOption {
-  /** アカウントIDとProject roleを含む表示文字列。 */
+  /** 表示名とProject roleを含む表示文字列。 */
   title: string;
   /** 作業者となるProject memberのアカウントID。 */
   value: number;
@@ -268,7 +270,7 @@ export interface TaskEffortPlanForm {
 
 /** Task日別予定の予定担当者selectへ表示するProject member候補。 */
 export interface TaskEffortPlanAssigneeOption {
-  /** アカウントIDとProject roleを含む表示文字列。 */
+  /** 表示名とProject roleを含む表示文字列。 */
   title: string;
   /** 予定担当者となるProject memberのアカウントID。 */
   value: number;

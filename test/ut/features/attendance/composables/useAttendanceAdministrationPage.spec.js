@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 import { AttendanceApiError } from "@/features/attendance/api/attendanceApi";
-import { useAttendanceAdministrationPage } from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import {
+  ATTENDANCE_ADMIN_CONTROL,
+  useAttendanceAdministrationPage,
+} from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const mocks = vi.hoisted(() => ({
   attendanceApi: {
@@ -15,6 +20,8 @@ const mocks = vi.hoisted(() => ({
     rejectCorrectionRequest: vi.fn(),
     rejectMonth: vi.fn(),
   },
+  /** フォーカスを戻した部品のselector。単体テストにはDOMがないため、documentの差し替えで記録する。 */
+  focusedSelectors: [],
   appendDownloadAnchor: vi.fn(),
   clickDownloadAnchor: vi.fn(),
   createObjectUrl: vi.fn(() => "blob:attendance-export"),
@@ -125,8 +132,13 @@ describe("useAttendanceAdministrationPage", () => {
       configurable: true,
       value: mocks.revokeObjectUrl,
     });
+    mocks.focusedSelectors = [];
     vi.stubGlobal("document", {
       body: { appendChild: mocks.appendDownloadAnchor },
+      querySelector: (selector) => ({
+        focus: () => mocks.focusedSelectors.push(selector),
+        matches: () => false,
+      }),
       createElement: vi.fn(() => ({
         click: mocks.clickDownloadAnchor,
         download: "",
@@ -177,9 +189,34 @@ describe("useAttendanceAdministrationPage", () => {
     await page.reject();
 
     expect(mocks.attendanceApi.rejectMonth).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "差戻し理由を入力してください。",
+    // 画面上部では押した位置から見えないため、入力欄の下へ出して入力欄へ移す。
+    expect(page.monthRejectReasonError.value).toBe("差戻し理由を入力してください。");
+    expect(page.errorMessages.value).toEqual([]);
+    expect(mocks.focusedSelectors).toEqual([
+      `[data-attendance-admin-control="${ATTENDANCE_ADMIN_CONTROL.rejectReason}"]`,
     ]);
+  });
+
+  it("差戻し理由を入力すると、入力欄の下の案内を消す", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.selectMonth(listItem);
+    await page.reject();
+
+    page.rejectReason.value = "休憩を確認";
+    await nextTick();
+
+    expect(page.monthRejectReasonError.value).toBe("");
+  });
+
+  it("承認の後は、消えたボタンの代わりに一覧の同じ行へフォーカスを戻す", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.selectMonth(listItem);
+    mocks.focusedSelectors.length = 0;
+
+    await page.approve();
+
+    // 単体テストのdocumentは常に要素を返すため、候補の先頭（押したボタン）へ戻したことだけを確かめる。
+    expect(mocks.focusedSelectors).toEqual(['[data-attendance-admin-control="approve"]']);
   });
 
   it("提出済み月を理由付きで差し戻して一覧を再取得する", async () => {
@@ -286,7 +323,8 @@ describe("useAttendanceAdministrationPage", () => {
     await page.rejectCorrectionRequest();
 
     expect(mocks.attendanceApi.rejectCorrectionRequest).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual(["却下理由を入力してください。"]);
+    expect(page.correctionRejectReasonError.value).toBe("却下理由を入力してください。");
+    expect(page.errorMessages.value).toEqual([]);
   });
 
   it("409時は古いversionを維持せず詳細と一覧を再取得する", async () => {
@@ -312,9 +350,31 @@ describe("useAttendanceAdministrationPage", () => {
     expect(mocks.attendanceApi.getAdministrationMonth).toHaveBeenCalledTimes(2);
     expect(mocks.attendanceApi.getAdministrationMonths).toHaveBeenCalledOnce();
     expect(page.selectedDetail.value.version).toBe(2);
+    // 取り直し済みなので、Backendの「最新状態を読み直してください」の後ろに取り直し済みの案内を添える。
     expect(page.errorMessages.value).toEqual([
       "ほかの利用者が更新しました。",
+      DISPLAY_MESSAGES.attendance.conflictReloaded,
     ]);
+  });
+
+  it("月の状態の409は、取り直しても同じなので取り直し済みの案内を添えない", async () => {
+    const page = useAttendanceAdministrationPage();
+    await page.selectMonth(listItem);
+    mocks.attendanceApi.approveMonth.mockRejectedValue(
+      new AttendanceApiError(409, {
+        fieldErrors: [
+          {
+            field: "statusCode",
+            errorCode: "ATTENDANCE_MONTH_STATE_CONFLICT",
+            message: "提出済みの月だけを審査できます。",
+          },
+        ],
+      })
+    );
+
+    await page.approve();
+
+    expect(page.errorMessages.value).toEqual(["提出済みの月だけを審査できます。"]);
   });
 
   it("契約済み400の複数messageをBackend順で表示する", async () => {
@@ -487,6 +547,17 @@ describe("useAttendanceAdministrationPage", () => {
     ).not.toHaveBeenCalled();
     expect(page.errorMessages.value).toEqual([
       "実在する表示月を指定してください。",
+    ]);
+  });
+
+  it("月次CSVの出力の後は「月次CSV」へフォーカスを戻す", async () => {
+    const page = useAttendanceAdministrationPage();
+    mocks.focusedSelectors.length = 0;
+
+    await page.downloadMonthlyCsv();
+
+    expect(mocks.focusedSelectors).toEqual([
+      `[data-attendance-admin-control="${ATTENDANCE_ADMIN_CONTROL.export}"]`,
     ]);
   });
 

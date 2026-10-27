@@ -13,13 +13,30 @@ import type {
   DashboardTask,
 } from "@/features/dashboard/types/dashboard";
 import { useUserStore } from "@/features/auth/stores/user";
-import { normalizeNotificationNavigationPath } from "@/features/notification/utils/notification";
+import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * Dashboardの部品に付ける`data-dashboard-control`属性の値。
+ * 再読込中は「再読み込み」が、集計中は「EVM基準日」がdisabledになりフォーカスがbodyへ外れるため、
+ * 利用者が押した操作の後にここへ戻す（動作確認/17_Dashboard G-9）。
+ */
+export const DASHBOARD_CONTROL = {
+  /** 画面右上の「再読み込み」ボタン。 */
+  reload: "reload",
+  /** 高度Dashboardの「EVM基準日」入力欄。 */
+  advancedStatusDate: "advanced-status-date",
+} as const;
+
+/** `data-dashboard-control`属性の値から、その要素を探すselectorを作る。 */
+const dashboardControlSelector = (key: string): string =>
+  `[data-dashboard-control="${key}"]`;
 
 const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
   "FEATURE_NOT_ENTITLED",
@@ -35,6 +52,8 @@ const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
  */
 export const useDashboardPage = () => {
   const router = useRouter();
+  const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
+    useExpandableNotificationMessages();
   const userStore = useUserStore();
 
   const dashboard = ref<BasicDashboardResponse | null>(null);
@@ -196,22 +215,38 @@ export const useDashboardPage = () => {
     });
   };
 
+  /**
+   * 「再読み込み」を押したときの処理。Dashboardを取り直してから、同じボタンへフォーカスを戻す。
+   * 初期表示（`loadDashboard`）ではフォーカスを動かさないよう、利用者の操作だけをこの関数で受ける。
+   */
+  const reloadDashboard = async (): Promise<void> => {
+    await loadDashboard();
+    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.reload)]);
+  };
+
+  /** 高度Dashboardの「集計」（またはEVM基準日でEnter）の後に、EVM基準日へフォーカスを戻す。 */
+  const submitAdvancedDashboard = async (): Promise<void> => {
+    await loadAdvancedDashboard();
+    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
+  };
+
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
   const openAdvancedAccessInquiry = async (): Promise<void> => {
     await router.push({ name: "InquiryForm" });
   };
 
-  /** Backend通知の安全なFrontend内pathだけへ遷移する。 */
+  /**
+   * 通知を押したときの処理。Backend通知の安全なFrontend内pathがあればそこへ遷移し、
+   * 管理者お知らせのように遷移先がなければ本文の全文表示を切り替える（一覧は2行に切り詰めるため）。
+   *
+   * @param event 押された通知
+   */
   const openNotificationEvent = async (
     event: DashboardNotificationEvent
   ): Promise<void> => {
-    const navigationPath = normalizeNotificationNavigationPath(
-      event.navigationPath
-    );
-    if (navigationPath === null) {
-      return;
-    }
-    await router.push(navigationPath);
+    await openOrToggleNotification(event, async (navigationPath) => {
+      await router.push(navigationPath);
+    });
   };
 
   /** My Tasksの全件画面へ遷移する。 */
@@ -233,6 +268,7 @@ export const useDashboardPage = () => {
     advancedDashboard,
     advancedErrorMessages,
     advancedStatusDate,
+    canExpandNotification,
     dashboard,
     displayName,
     errorMessages,
@@ -240,6 +276,7 @@ export const useDashboardPage = () => {
     isAdvancedNotEntitled,
     isInitialLoading,
     isLoading,
+    isNotificationExpanded,
     loadAdvancedDashboard,
     loadDashboard,
     openAdvancedAccessInquiry,
@@ -250,5 +287,7 @@ export const useDashboardPage = () => {
     openProject,
     openProjects,
     openTask,
+    reloadDashboard,
+    submitAdvancedDashboard,
   };
 };

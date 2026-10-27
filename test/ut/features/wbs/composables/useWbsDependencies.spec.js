@@ -60,7 +60,7 @@ describe("useWbsDependencies", () => {
     page.openDependencyEditor();
 
     expect(page.isDependencyEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
+    expect(page.dependencyErrorMessages.value).toEqual([
       "Task依存関係を更新するpermissionがありません。",
     ]);
   });
@@ -84,7 +84,7 @@ describe("useWbsDependencies", () => {
     });
     expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
     expect(page.isDependencyEditorOpen.value).toBe(false);
-    expect(page.successMessage.value).toBe("Task依存関係を追加しました。");
+    expect(page.dependencySuccessMessage.value).toBe("Task依存関係を追加しました。");
   });
 
   it("同じTask・負の待ち時間・重複方向では作成APIを呼ばない", async () => {
@@ -205,7 +205,9 @@ describe("useWbsDependencies", () => {
     });
 
     expect(page.isDependencyEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual(["Taskが更新されています。"]);
+    expect(page.dependencyErrorMessages.value).toEqual(["Taskが更新されています。"]);
+    // 依存関係cardは画面下部にあるため、操作結果は画面上部の共通messageへは出さない。
+    expect(page.errorMessages.value).toEqual([]);
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledTimes(2);
     expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledTimes(2);
     expect(page.wbs.value).toEqual(updatedWbs);
@@ -279,7 +281,7 @@ describe("useWbsDependencies", () => {
     expect(mocks.wbsApi.deleteTaskDependency).toHaveBeenCalledWith(7, 31, 3);
     expect(page.dependencies.value).toEqual([]);
     expect(page.dependencyPendingDelete.value).toBeNull();
-    expect(page.successMessage.value).toBe("Task依存関係を削除しました。");
+    expect(page.dependencySuccessMessage.value).toBe("Task依存関係を削除しました。");
   });
 
   it("削除確認をキャンセルした場合はAPIを呼ばない", async () => {
@@ -315,7 +317,7 @@ describe("useWbsDependencies", () => {
     await page.confirmDependencyDelete();
 
     expect(page.dependencyPendingDelete.value).toBeNull();
-    expect(page.errorMessages.value).toEqual(["更新されています。"]);
+    expect(page.dependencyErrorMessages.value).toEqual(["更新されています。"]);
     expect(mocks.wbsApi.getTaskDependencies).toHaveBeenCalledTimes(2);
     expect(page.dependencies.value).toEqual(updatedDependencyList.dependencies);
   });
@@ -372,30 +374,61 @@ describe("useWbsDependencies", () => {
       expect(state.dependencyPendingDeleteRow.value).toBeNull();
     });
 
-    it("削除APIの403では確認対象を残して権限不足を画面上部へ表示する", async () => {
+    it("削除APIの403では確認Dialogを閉じ、権限不足を依存関係card内へ表示する", async () => {
       mocks.wbsApi.deleteTaskDependency.mockRejectedValue(new WbsApiError(403, null));
-      const { context, options, state } = buildDependencies();
+      const { options, state } = buildDependencies();
       state.requestDependencyDelete(31);
 
       await state.confirmDependencyDelete();
 
-      expect(state.dependencyPendingDelete.value?.dependencyId).toBe(31);
-      expect(context.errorMessages.value).toEqual([
+      // 開いたままだとcard内の案内が確認Dialogの裏に隠れ、押しても何も起きないように見えるため閉じる。
+      expect(state.dependencyPendingDelete.value).toBeNull();
+      expect(state.dependencyErrorMessages.value).toEqual([
         DISPLAY_MESSAGES.wbs.dependency.forbidden,
       ]);
       expect(options.dependencyList.value.dependencies).toHaveLength(1);
       expect(options.reloadPageSnapshot).not.toHaveBeenCalled();
     });
 
+    it("Project管理権限のないMEMBERには、本人担当のTaskだけを追加候補にし、担当外を含む行は削除させない", () => {
+      const { context, state } = buildDependencies();
+      // Task 2だけを別のaccountの担当にする（既定のログイン利用者はaccountId 2のMEMBER）。
+      context.wbs.value.tasks = context.wbs.value.tasks.map((task) =>
+        task.taskId === 2 ? { ...task, assigneeAccountId: 9 } : task
+      );
+
+      expect(state.dependencyTaskOptions.value.map((option) => option.value)).toEqual([1, 3]);
+      // 依存関係31はTask 1→2。担当外のTask 2を含むので削除できない。
+      expect(state.dependencyRows.value[0].canDelete).toBe(false);
+      state.requestDependencyDelete(31);
+      expect(state.dependencyPendingDelete.value).toBeNull();
+      expect(state.dependencyErrorMessages.value).toEqual([DISPLAY_MESSAGES.wbs.dependency.forbidden]);
+    });
+
+    it("Project管理権限があれば担当者に関係なく全Taskを候補にし、全行を削除できる", () => {
+      const { context, state } = buildDependencies({ canManageProject: computed(() => true) });
+      context.wbs.value.tasks = context.wbs.value.tasks.map((task) => ({ ...task, assigneeAccountId: 9 }));
+
+      expect(state.dependencyTaskOptions.value.map((option) => option.value)).toEqual([1, 2, 3]);
+      expect(state.dependencyRows.value[0].canDelete).toBe(true);
+    });
+
+    it("TASK_UPDATEがなければ候補も削除可能な行もない", () => {
+      const { state } = buildDependencies({ canEditWbs: computed(() => false) });
+
+      expect(state.dependencyTaskOptions.value).toEqual([]);
+      expect(state.dependencyRows.value[0].canDelete).toBe(false);
+    });
+
     it("競合後の画面再取得が500なら競合理由に再読込案内を追加する", async () => {
       mocks.wbsApi.deleteTaskDependency.mockRejectedValue(new WbsApiError(409, null));
-      const { context, options, state } = buildDependencies();
+      const { options, state } = buildDependencies();
       options.reloadPageSnapshot.mockRejectedValue(new WbsApiError(500, null));
       state.requestDependencyDelete(31);
 
       await state.confirmDependencyDelete();
 
-      expect(context.errorMessages.value).toEqual([
+      expect(state.dependencyErrorMessages.value).toEqual([
         DISPLAY_MESSAGES.wbs.dependency.stale,
         DISPLAY_MESSAGES.wbs.dependency.reloadFailed,
       ]);

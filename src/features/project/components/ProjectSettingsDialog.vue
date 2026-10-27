@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { useProjectSettingsDialog } from "@/features/project/composables/useProjectSettingsDialog";
+import {
+  memberRoleControlKey,
+  PROJECT_SETTINGS_CONTROL,
+  useProjectSettingsDialog,
+} from "@/features/project/composables/useProjectSettingsDialog";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
+import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
+import { formatShortDateTime } from "@/shared/utils/dateTime";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -76,16 +83,26 @@ const SECTION_TABS = [
       <span class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-folder-cog-outline" class="size-6" />
         Project設定
-        <UBadge :color="project.status === 'ACTIVE' ? 'success' : 'neutral'" size="sm" class="ms-auto">
-          {{ project.status === "ACTIVE" ? "利用中" : "アーカイブ" }}
+        <UBadge :color="getProjectStatusColor(project.status)" size="sm" class="ms-auto">
+          {{ getProjectStatusLabel(project.status) }}
         </UBadge>
       </span>
     </template>
     <template #body>
-      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
-        <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-      </StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+      <!--
+        結果のmessageはDialog本文のスクロールに付いて上端へ固定する。メンバーが多いと下の行で「role保存」を押した位置から
+        本文の先頭が見えず、成功・失敗が分からなかったため（動作確認/12_Project設定 G-6）。
+        負のtopとmarginでUModal本文の上余白（nuxtUiTheme.ts の modal.body の pt-4）まで覆い、上を流れる内容が透けないようにする。
+      -->
+      <div
+        v-if="errorMessages.length || successMessage"
+        class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4"
+      >
+        <StatusAlert v-if="errorMessages.length" type="error">
+          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
+        <StatusAlert v-if="successMessage" type="success" :class="{ 'mt-2': errorMessages.length }">{{ successMessage }}</StatusAlert>
+      </div>
       <StatusAlert v-if="!isProjectActive" type="info" class="mb-4">
         アーカイブ済みProjectは履歴参照専用です。Project情報とメンバーは変更できません。
       </StatusAlert>
@@ -105,6 +122,7 @@ const SECTION_TABS = [
                 :readonly="!canUpdateProject"
                 :disabled="isBusy"
                 class="w-full"
+                :data-project-settings-control="PROJECT_SETTINGS_CONTROL.projectName"
               />
             </UFormField>
             <FieldCounter :value="projectForm.name" :max="100" />
@@ -140,6 +158,7 @@ const SECTION_TABS = [
               icon="i-mdi-archive-outline"
               class="ms-auto"
               :disabled="isBusy"
+              :data-project-settings-control="PROJECT_SETTINGS_CONTROL.archive"
               @click="openArchiveConfirm"
             >
               Projectをアーカイブ
@@ -148,7 +167,8 @@ const SECTION_TABS = [
         </template>
 
         <template #members>
-          <StatusAlert v-if="!canManageMembers" type="info" class="mb-4">
+          <!-- archive済みでは上の「履歴参照専用です」が理由なので、権限不足の案内は出さない（OWNERにも出て誤解を招いたため）。 -->
+          <StatusAlert v-if="!canManageMembers && isProjectActive" type="info" class="mb-4">
             メンバーを参照できます。変更にはPROJECT_MEMBER_UPDATE permissionとOWNER権限が必要です。
           </StatusAlert>
 
@@ -165,6 +185,7 @@ const SECTION_TABS = [
                     min="1"
                     :disabled="isBusy"
                     class="w-full"
+                    :data-project-settings-control="PROJECT_SETTINGS_CONTROL.addAccountId"
                     @update:model-value="addMemberAccountId = $event"
                   />
                 </UFormField>
@@ -209,9 +230,19 @@ const SECTION_TABS = [
               <tr v-for="member in project.members" :key="member.accountId">
                 <td>
                   <div class="font-medium">
-                    ID: {{ member.accountId }}
+                    {{ member.displayName }}
                     <UBadge v-if="isCurrentMember(member)" size="xs" color="primary" class="ms-1">自分</UBadge>
+                    <UBadge
+                      v-if="member.accountStatus !== 'ACTIVE'"
+                      size="xs"
+                      variant="outline"
+                      :color="getAccountStatusColor(member.accountStatus)"
+                      class="ms-1"
+                    >
+                      {{ getAccountStatusLabel(member.accountStatus) }}
+                    </UBadge>
                   </div>
+                  <div class="text-xs text-muted">ID: {{ member.accountId }}</div>
                   <div class="text-xs text-muted">{{ getProjectRoleDescription(member.projectRole) }}</div>
                 </td>
                 <td class="min-w-52.5">
@@ -222,14 +253,15 @@ const SECTION_TABS = [
                     value-key="value"
                     size="sm"
                     :disabled="isBusy || !canManageMembers"
-                    :aria-label="`アカウントID ${member.accountId} のProject role`"
+                    :aria-label="`${member.displayName}（ID: ${member.accountId}）のProject role`"
                     class="w-full"
+                    :data-project-settings-control="memberRoleControlKey(member.accountId)"
                   />
                   <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
                 </td>
                 <td>
                   <div class="text-xs">割当者ID: {{ member.assignedBy }}</div>
-                  <div class="text-xs">参加日時: {{ member.joinedAt }}</div>
+                  <div class="text-xs">参加日時: {{ formatShortDateTime(member.joinedAt) }}</div>
                   <div class="text-xs">version: {{ member.version }}</div>
                 </td>
                 <td class="text-end">
@@ -240,7 +272,7 @@ const SECTION_TABS = [
                       variant="soft"
                       :loading="isSavingMember"
                       :disabled="!canSaveMemberRole(member)"
-                      :aria-label="`アカウントID ${member.accountId} のroleを保存`"
+                      :aria-label="`${member.displayName}（ID: ${member.accountId}）のroleを保存`"
                       @click="saveMemberRole(member)"
                     >
                       role保存
@@ -252,7 +284,7 @@ const SECTION_TABS = [
                       square
                       icon="i-mdi-account-remove-outline"
                       :disabled="isBusy || isLastOwner(member)"
-                      :aria-label="`アカウントID ${member.accountId} をProjectから除外`"
+                      :aria-label="`${member.displayName}（ID: ${member.accountId}）をProjectから除外`"
                       @click="openRemoveConfirm(member)"
                     />
                   </div>
@@ -265,7 +297,14 @@ const SECTION_TABS = [
       </UTabs>
     </template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isBusy" @click="closeDialog">閉じる</UButton>
+      <UButton
+        variant="ghost"
+        :disabled="isBusy"
+        :data-project-settings-control="PROJECT_SETTINGS_CONTROL.close"
+        @click="closeDialog"
+      >
+        閉じる
+      </UButton>
     </template>
   </UModal>
 
@@ -296,7 +335,7 @@ const SECTION_TABS = [
       </span>
     </template>
     <template v-if="memberToRemove" #body>
-      <p>アカウントID {{ memberToRemove.accountId }} のmembershipを削除します。</p>
+      <p>{{ memberToRemove.displayName }}（ID: {{ memberToRemove.accountId }}）のmembershipを削除します。</p>
       <StatusAlert v-if="isCurrentMember(memberToRemove)" type="warning" variant="soft" class="mt-3">
         自分を除外すると、このProjectを参照できなくなりProject一覧へ戻ります。
       </StatusAlert>

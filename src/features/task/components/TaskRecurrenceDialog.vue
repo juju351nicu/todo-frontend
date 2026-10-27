@@ -47,6 +47,7 @@ const {
   isArchiving,
   isCreating,
   isEditing,
+  isFormOpen,
   isLoading,
   isLoadingGenerations,
   isLoadingTemplates,
@@ -62,6 +63,7 @@ const {
   saveRule,
   selectRule,
   selectedRule,
+  selectedRuleAssigneeDisplayName,
   startCreating,
   statusOptions,
   successMessage,
@@ -82,7 +84,7 @@ const CREATION_MODE_OPTIONS = [
 </script>
 
 <template>
-  <UButton icon="i-mdi-calendar-sync-outline" variant="soft" class="text-white" @click="open">繰り返しTask</UButton>
+  <UButton icon="i-mdi-calendar-sync-outline" variant="soft" @click="open">繰り返しTask</UButton>
 
   <UModal v-model:open="isOpen" :dismissible="!isMutating" :ui="{ content: 'max-w-320' }">
     <template #title>
@@ -100,7 +102,9 @@ const CREATION_MODE_OPTIONS = [
       </span>
     </template>
     <template #body>
-      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <!-- 作成・編集フォームを開いている間は、エラーを「作成」「更新」ボタンのすぐ上に出す（下のform内）。
+           フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
+      <StatusAlert v-if="errorMessage && !isFormOpen" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
       <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
         {{ successMessage }}
       </StatusAlert>
@@ -130,7 +134,7 @@ const CREATION_MODE_OPTIONS = [
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-black/4'"
+                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
                 @click="selectRule(rule)"
               >
                 <span class="min-w-0 flex-1">
@@ -147,7 +151,7 @@ const CREATION_MODE_OPTIONS = [
         </div>
 
         <div class="w-full p-3 md:w-2/3">
-          <form v-if="isCreating || isEditing" @submit.prevent="isCreating ? createRule() : saveRule()">
+          <form v-if="isFormOpen" @submit.prevent="isCreating ? createRule() : saveRule()">
             <div class="mb-3 flex items-center">
               <h2 class="text-xl font-medium">{{ isCreating ? "規則を作成" : "規則を編集" }}</h2>
               <UBadge v-if="isEditing && selectedRule" size="sm" class="ms-auto">version {{ selectedRule.version }}</UBadge>
@@ -374,6 +378,7 @@ const CREATION_MODE_OPTIONS = [
                 </UButton>
               </div>
             </div>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isMutating" @click="cancelForm">キャンセル</UButton>
               <UButton type="submit" color="primary" :loading="isSaving">{{ isCreating ? "作成" : "更新" }}</UButton>
@@ -424,7 +429,7 @@ const CREATION_MODE_OPTIONS = [
                 <strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～ {{ selectedRule.endDate ?? "終了日なし" }}
               </div>
               <div class="w-full p-1 sm:w-1/2"><strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前</div>
-              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> アカウントID {{ selectedRule.assigneeAccountId }}</div>
+              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> {{ selectedRuleAssigneeDisplayName }}</div>
               <div class="w-full p-1 sm:w-1/2"><strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日</div>
               <div class="w-full p-1 sm:w-1/2"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</div>
               <div class="w-full p-1 sm:w-1/2">

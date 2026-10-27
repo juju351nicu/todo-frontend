@@ -43,6 +43,9 @@ export const DISPLAY_MESSAGES = {
       updateFailed: "アカウントのロールを更新できませんでした。",
       reloadFailed:
         "最新のアカウント情報を再取得できませんでした。再読込してください。",
+      /** version競合（409）の後に、画面側で一覧を取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のアカウント情報を再取得しました。内容を確認してから、もう一度変更してください。",
     },
     audit: {
       readForbidden: "監査ログを参照するpermissionがありません。",
@@ -65,6 +68,9 @@ export const DISPLAY_MESSAGES = {
     advancedLoadFailed: "高度Dashboardを取得できませんでした。",
   },
   attendance: {
+    /** version競合等（409）の後に、画面側で勤怠を取り直せたときにBackendの文言の後ろへ添える案内。 */
+    conflictReloaded:
+      "最新の勤怠を再取得しました。内容を確認してから、もう一度操作してください。",
     self: {
       forbidden: "本人勤怠を操作するpermissionがありません。",
       accountNotFound: "勤怠対象のアカウントが見つかりません。",
@@ -105,6 +111,9 @@ export const DISPLAY_MESSAGES = {
         "Project memberのroleを更新できませんでした。",
       memberRemoveFailed: "Project memberを除外できませんでした。",
       reloadFailed: "最新のProject情報を再取得できませんでした。",
+      /** 409の後に画面側でProject詳細を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のProject情報を再取得しました。内容を確認してから、もう一度操作してください。",
       memberRemovedRefreshFailed:
         "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
     },
@@ -123,6 +132,9 @@ export const DISPLAY_MESSAGES = {
       applyFailed: "Project TemplateからProjectを作成できませんでした。",
       reloadFailed:
         "最新のProject Templateを再取得できませんでした。再読込してください。",
+      /** version競合の409の後に画面側でTemplateを取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のProject Templateを再取得しました。内容を確認してから、もう一度操作してください。",
     },
   },
   task: {
@@ -136,6 +148,8 @@ export const DISPLAY_MESSAGES = {
         "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
       reloadFailed:
         "最新のMy Tasksを取得できませんでした。再読込してください。",
+      /** 完了したTaskは一覧から消えるため、何が完了したかを示す。 */
+      completed: (title: string): string => `「${title}」を完了しました。`,
     },
     todo: {
       readForbidden: "Todoを参照するpermissionがありません。",
@@ -155,6 +169,8 @@ export const DISPLAY_MESSAGES = {
         "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
       reloadFailed:
         "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
+      /** 一覧の「完了」の後に、どのTodoを完了したかを示す。 */
+      completed: (title: string): string => `「${title}」を完了しました。`,
     },
     board: {
       readForbidden:
@@ -171,6 +187,8 @@ export const DISPLAY_MESSAGES = {
         "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
       moveFailed: "Taskを移動できませんでした。",
       reloadFailed: "最新のProject Boardを再取得できませんでした。",
+      conflictReloaded:
+        "最新のProject Boardを再取得しました。内容を確認してから、もう一度操作してください。",
     },
     comments: {
       readForbidden: "Taskコメントを参照するpermissionがありません。",
@@ -179,11 +197,21 @@ export const DISPLAY_MESSAGES = {
         "対象のProject、Taskまたはコメントが見つかりません。",
       loadFailed: "コメントを取得できませんでした。",
       projectLoadFailed: "Projectのコメントを取得できませんでした。",
+      created: "コメントを投稿しました。",
+      updated: "コメントを更新しました。",
+      deleted: "コメントを削除しました。",
+      /** 本文が空・長すぎる状態で投稿・更新を呼んだときの文言。上限はTASK_COMMENT_MAX_LENGTHと同じ。 */
+      bodyInvalid: "コメント本文を1〜2000文字で入力してください。",
       createFailed: "コメントを投稿できませんでした。",
       updateFailed: "コメントを更新できませんでした。",
       deleteFailed: "コメントを削除できませんでした。",
       reloadFailed:
         "最新のコメント一覧を取得できませんでした。再読込してください。",
+      /** 404・409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のコメント一覧を再取得しました。内容を確認してから、もう一度操作してください。",
+      /** 404・409でBackendの文言を表示できない（未知のerror code等）ときの代わりの文言。 */
+      conflictFallback: "コメントが変更されています。最新の一覧を表示しました。",
     },
     checklist: {
       readForbidden: "Task checklistを参照するpermissionがありません。",
@@ -192,6 +220,11 @@ export const DISPLAY_MESSAGES = {
       resourceNotFound:
         "対象のProject、Taskまたはchecklist itemが見つかりません。",
       loadFailed: "チェックリストを取得できませんでした。",
+      created: "チェック項目を追加しました。",
+      updated: "チェック項目を更新しました。",
+      deleted: "チェック項目を削除しました。",
+      /** Enterキーで保存したときに本文が空・長すぎる場合の文言。上限はCHECKLIST_ITEM_MAX_LENGTHと同じ。 */
+      contentInvalid: "チェック項目を1〜255文字で入力してください。",
       createFailed: "チェック項目を追加できませんでした。",
       updateFailed: "チェック項目を更新できませんでした。",
       toggleFailed: "完了状態を更新できませんでした。",
@@ -199,6 +232,12 @@ export const DISPLAY_MESSAGES = {
       deleteFailed: "チェック項目を削除できませんでした。",
       reloadFailed:
         "最新のチェックリストを取得できませんでした。再読込してください。",
+      /** 404・409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のチェックリストを再取得しました。内容を確認してから、もう一度操作してください。",
+      /** 404・409でBackendの文言を表示できない（未知のerror code等）ときの代わりの文言。 */
+      conflictFallback:
+        "チェックリストが変更されています。最新の一覧を表示しました。",
     },
     search: {
       readForbidden: "Task検索を参照するpermissionがありません。",
@@ -214,6 +253,11 @@ export const DISPLAY_MESSAGES = {
         "最新のSaved View一覧を取得できませんでした。再読込してください。",
       savedRefreshFailed:
         "Saved Viewの変更は完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+      /** version競合の409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のSaved Viewを再取得しました。内容を確認してから、もう一度操作してください。",
+      /** キーワードがBackendの上限を超えたとき。Backendの既定の文言は項目名を含まないため画面で先に止める。 */
+      keywordTooLong: "キーワードは100文字以内で入力してください。",
     },
     template: {
       readForbidden: "Task Templateを参照するpermissionがありません。",
@@ -281,6 +325,9 @@ export const DISPLAY_MESSAGES = {
     updateFailed: "WBS Taskを更新できませんでした。",
     conflict: "WBSが他の操作で更新されました。最新情報を確認してください。",
     reloadFailed: "最新のWBSを再取得できませんでした。再読込してください。",
+    /** Task更新のversion競合（409）の後に、画面側で最新WBSを取り直せたときにBackendの文言の後ろへ添える案内。 */
+    conflictReloaded:
+      "最新のWBSを再取得しました。内容を確認してから、もう一度編集してください。",
     earnedValue: {
       forbidden: "EVMを参照するpermissionがありません。",
       activeBaselineRequired:
@@ -326,6 +373,17 @@ export const DISPLAY_MESSAGES = {
       stale:
         "稼働日例外が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "稼働日例外を削除できませんでした。",
+      /** 表示対象を変更する権限がない場合に、calendarの上へ出す案内。 */
+      readOnly:
+        "この表示対象は参照専用です。Project共通設定はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が変更できます。",
+      /** archive済みProjectのcalendarを表示している場合の案内。Backendは変更を409にする。 */
+      archivedReadOnly: "archive済みProjectのcalendarは参照だけできます。",
+      /** 無効化・ロックされた参加者の個人例外を表示している場合の案内。Backendは個人例外の登録・更新を400にする。 */
+      inactiveMemberReadOnly:
+        "無効化またはロックされたアカウントの個人例外は参照だけできます。",
+      /** version競合（409）の後に、画面側でcalendarを取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のcalendarを再取得しました。内容を確認してから、もう一度操作してください。",
       reloadFailed:
         "最新の稼働日calendarを再取得できませんでした。再読込してください。",
     },
@@ -371,6 +429,9 @@ export const DISPLAY_MESSAGES = {
         "baselineが他の操作で更新されました。最新情報を確認してください。",
       reloadFailed:
         "最新のbaselineを再取得できませんでした。画面を再読込してください。",
+      /** 409（version競合・作成競合）の後に、画面側でbaselineを取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のbaselineを再取得しました。内容を確認してから、もう一度操作してください。",
     },
   },
 } as const;

@@ -54,3 +54,28 @@ export const buildTodoUpsertRequest = (
   version: form.version,
   user_id: form.userId,
 });
+
+/** Todoの登録・更新の確認Dialogに並べる1項目。 */
+export interface TodoConfirmItem {
+  label: string;
+  value: string;
+}
+
+const TODO_PRIORITY_LABELS: Readonly<Record<number, string>> = { 1: "低", 2: "中", 3: "高" };
+
+/**
+ * Todoの登録・更新の確認Dialog（`TodoUpsertConfirm.vue`）に並べる項目と値を、詳細画面と同じ見出しで組み立てる。
+ * 値だけを並べていた旧画面では、完了フラグが「0」「1」と出て何の値か分からなかったため、表示用の文言へ変換する
+ * （動作確認/16_Todo G-5）。
+ *
+ * @param form 確認するTodo編集フォーム
+ * @returns 見出しと値の組（タイトル・着手日・期限日・重要度・完了フラグ・詳細の順）
+ */
+export const buildTodoConfirmItems = (form: TodoDetailForm): TodoConfirmItem[] => [
+  { label: "タイトル", value: form.title },
+  { label: "着手日", value: form.dateFrom },
+  { label: "期限日", value: form.dateTo },
+  { label: "重要度", value: TODO_PRIORITY_LABELS[form.priority] ?? String(form.priority) },
+  { label: "完了フラグ", value: form.doneFlag === 1 ? "完了" : "未完了" },
+  { label: "詳細", value: form.detail },
+];

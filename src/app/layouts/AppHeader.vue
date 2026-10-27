@@ -9,7 +9,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="fixed inset-x-0 top-0 z-1006 flex h-16 items-center bg-material-deep-purple-500 px-2.5 text-white shadow-elevation-4">
+  <header class="fixed inset-x-0 top-0 z-1006 flex h-16 items-center bg-sidebar px-2.5 text-white shadow-elevation-4">
     <UButton
       icon="i-mdi-menu"
       variant="ghost"

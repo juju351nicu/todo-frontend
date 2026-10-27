@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildTodoConfirmItems,
   buildTodoUpsertRequest,
   createTodoDetailForm,
 } from "@/features/task/utils/taskForm";
@@ -63,5 +64,37 @@ describe("Todo detail form mapper", () => {
       version: 4,
       user_id: 5,
     });
+  });
+});
+
+describe("buildTodoConfirmItems", () => {
+  it("確認Dialogの項目を詳細画面と同じ見出しで、重要度・完了フラグは表示用の文言にして並べる", () => {
+    const form = createTodoDetailForm({
+      todo_id: 3,
+      date_from: "2026-10-27",
+      date_to: "2026-10-30",
+      title: "買い物",
+      detail: "牛乳とパン",
+      done_flag: "1",
+      priority: 1,
+      version: 2,
+      user_id: 5,
+    });
+
+    expect(buildTodoConfirmItems(form)).toEqual([
+      { label: "タイトル", value: "買い物" },
+      { label: "着手日", value: "2026-10-27" },
+      { label: "期限日", value: "2026-10-30" },
+      { label: "重要度", value: "低" },
+      { label: "完了フラグ", value: "完了" },
+      { label: "詳細", value: "牛乳とパン" },
+    ]);
+  });
+
+  it("未完了は「未完了」と表示する", () => {
+    const items = buildTodoConfirmItems(createTodoDetailForm({ done_flag: "0", priority: 3 }));
+
+    expect(items.find((item) => item.label === "完了フラグ")?.value).toBe("未完了");
+    expect(items.find((item) => item.label === "重要度")?.value).toBe("高");
   });
 });

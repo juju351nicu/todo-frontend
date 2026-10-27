@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDependencyRows,
+  canChangeDependencyEndpoint,
   buildDependencyTaskLabel,
   buildDependencyTaskOptions,
   buildTaskDependencyCreateRequest,
@@ -43,17 +44,38 @@ describe("Task依存関係の表示名", () => {
   });
 
   it("表示対象外の端点Taskも行を消さずTask IDで示す", () => {
-    const rows = buildDependencyRows(existingDependencies, [
-      { title: "1 Phase 1", value: 1 },
-    ]);
+    const rows = buildDependencyRows(
+      existingDependencies,
+      [{ title: "1 Phase 1", value: 1 }],
+      () => true
+    );
 
     expect(rows).toEqual([
       {
         ...existingDependencies[0],
         predecessorLabel: "1 Phase 1",
         successorLabel: "Task ID: 2（表示対象外）",
+        canDelete: true,
       },
     ]);
+  });
+
+  it("先行・後続の片方でも変更できなければ削除不可の行にする", () => {
+    const rows = buildDependencyRows(existingDependencies, [], (taskId) => taskId !== 2);
+
+    expect(rows[0].canDelete).toBe(false);
+  });
+});
+
+describe("依存関係の端点として使えるTask", () => {
+  it.each([
+    ["Project管理権限があれば担当者に関係なく使える", { assigneeAccountId: 9 }, 2, true, true],
+    ["管理権限がなくても本人担当なら使える", { assigneeAccountId: 2 }, 2, false, true],
+    ["管理権限がなく他人担当なら使えない", { assigneeAccountId: 9 }, 2, false, false],
+    ["WBSに表示していないTaskは管理権限がなければ使えない", undefined, 2, false, false],
+    ["ログイン利用者のIDが未取得なら使えない", { assigneeAccountId: 2 }, null, false, false],
+  ])("%s", (_name, task, currentAccountId, canManageAnyTask, expected) => {
+    expect(canChangeDependencyEndpoint(task, currentAccountId, canManageAnyTask)).toBe(expected);
   });
 });
 
