@@ -1,8 +1,11 @@
 import { ref } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
+import {
+  TODO_SUBMIT_CONTROL,
+  useTodoDetailPage,
+} from "@/features/task/composables/useTodoDetailPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -359,5 +362,40 @@ describe("useTodoDetailPage", () => {
     expect(page.errorMessages.value).toEqual([]);
     expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+  });
+
+  describe("確認Dialogを閉じた後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => ({
+          focus: () => focused.push(selector.match(/data-todo-detail-control="([^"]+)"/)?.[1]),
+          matches: () => false,
+        }),
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("「戻る」で閉じたときも、登録した後も「登録する」へ戻す", async () => {
+      mocks.userStore.hasPermission.mockReturnValue(true);
+      mocks.todoStore.upsertTodoInfo.mockResolvedValue(undefined);
+      const page = useTodoDetailPage(ref(0));
+      await vi.waitFor(() => expect(page.todoForm.todoId).toBe(0));
+      const focused = stubDocument();
+
+      page.showConfirm();
+      page.closeConfirm();
+      await vi.waitFor(() => expect(focused).toHaveLength(1));
+      page.showConfirm();
+      await page.confirmSubmit();
+
+      expect(focused.every((key) => key === TODO_SUBMIT_CONTROL)).toBe(true);
+      expect(focused.length).toBeGreaterThanOrEqual(2);
+    });
   });
 });

@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoListPage } from "@/features/task/composables/useTodoListPage";
+import {
+  todoEditControlKey,
+  useTodoListPage,
+} from "@/features/task/composables/useTodoListPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -119,6 +122,44 @@ describe("useTodoListPage", () => {
       done_flag_values: [0, 1],
     });
     expect(item.doneFlag).toBe(true);
+    expect(page.successMessage.value).toBe("「設計」を完了しました。");
+  });
+
+  it("完了の後に一覧を取り直せなかった場合は、成功の案内を出さずに再取得失敗を出す", async () => {
+    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    mocks.todoStore.findTodoList.mockRejectedValue(new TypeError("Failed to fetch"));
+    const page = useTodoListPage();
+
+    await page.completeTodo({ ...todo });
+
+    expect(page.successMessage.value).toBe("");
+    expect(page.errorMessages.value).toEqual([
+      "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+    ]);
+  });
+
+  describe("完了の後のフォーカス", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("完了でdisabledになった「完了」ではなく、同じ行の「編集」へ戻す", async () => {
+      // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => ({
+          focus: () => focused.push(selector.match(/data-todo-control="([^"]+)"/)?.[1]),
+          matches: () => false,
+        }),
+      });
+      mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+      mocks.todoStore.findTodoList.mockResolvedValue({ todoList: [{ ...todo, doneFlag: true }] });
+      const page = useTodoListPage();
+
+      await page.completeTodo({ ...todo });
+
+      expect(focused).toEqual([todoEditControlKey(42)]);
+    });
   });
 
   it("既知codeの複数入力エラーをBackend順で表示する", async () => {

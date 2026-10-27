@@ -163,6 +163,8 @@ export const DISPLAY_MESSAGES = {
         "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
       reloadFailed:
         "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
+      /** 一覧の「完了」の後に、どのTodoを完了したかを示す。 */
+      completed: (title: string): string => `「${title}」を完了しました。`,
     },
     board: {
       readForbidden:

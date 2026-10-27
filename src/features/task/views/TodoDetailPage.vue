@@ -2,7 +2,7 @@
 import { toRef } from "vue";
 
 import TodoUpsertConfirm from "@/features/task/components/TodoUpsertConfirm.vue";
-import { useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
+import { TODO_SUBMIT_CONTROL, useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -40,7 +40,7 @@ const {
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
     <StatusAlert v-if="!canWriteTodo" type="info" class="mb-4">このTodoは参照専用です。</StatusAlert>
-    <UCard class="w-200">
+    <UCard class="w-full max-w-200">
       <template #header>
         <span>{{ todoForm.todoId > 0 ? todoForm.todoId : " (新規)" }}</span>
       </template>
@@ -109,7 +109,14 @@ const {
           </UFormField>
         </div>
         <div class="p-3 pt-0">
-          <UButton v-if="canWriteTodo" class="me-4" color="success" type="button" @click="showConfirm">
+          <UButton
+            v-if="canWriteTodo"
+            class="me-4"
+            color="success"
+            type="button"
+            :data-todo-detail-control="TODO_SUBMIT_CONTROL"
+            @click="showConfirm"
+          >
             {{ todoForm.todoId > 0 ? "更新する" : "登録する" }}
           </UButton>
           <UButton v-if="canWriteTodo" type="button" @click="clearForm">クリア</UButton>

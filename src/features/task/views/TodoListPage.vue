@@ -3,7 +3,7 @@ import { onBeforeMount } from "vue";
 
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
 import TodoSearchCard from "@/features/task/components/TodoSearchCard.vue";
-import { useTodoListPage } from "@/features/task/composables/useTodoListPage";
+import { todoEditControlKey, useTodoListPage } from "@/features/task/composables/useTodoListPage";
 import { formatRemainingDays, truncateTodoDetail } from "@/features/task/utils/taskDisplay";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -22,6 +22,7 @@ const {
   searchTitle,
   selectedDoneFlag,
   showTodoDetail,
+  successMessage,
   todoList,
 } = useTodoListPage();
 
@@ -33,6 +34,7 @@ onBeforeMount(initialize);
   <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </StatusAlert>
+  <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
   <TodoSearchCard v-model:search-title="searchTitle" v-model:selected-done-flag="selectedDoneFlag" @search="search" />
   <br />
   <AppDataTable
@@ -62,7 +64,8 @@ onBeforeMount(initialize);
           size="xs"
           square
           class="m-1 size-8"
-          :aria-label="canWriteTodo(item) ? 'Todoを編集' : 'Todoを表示'"
+          :aria-label="canWriteTodo(item) ? `「${item.title}」を編集` : `「${item.title}」を表示`"
+          :data-todo-control="todoEditControlKey(item.todoId)"
           @click="showTodoDetail(item)"
         />
         <UButton
@@ -71,7 +74,7 @@ onBeforeMount(initialize);
           size="xs"
           square
           class="m-1 size-8"
-          aria-label="Todoを完了"
+          :aria-label="`「${item.title}」を完了`"
           :disabled="item.doneFlag"
           @click="completeTodo(item)"
         />
