@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
+import { DASHBOARD_CONTROL, useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
 import {
   formatDashboardBusinessDate,
   getAdvancedDashboardWarningLabel,
@@ -43,7 +43,6 @@ const {
   isInitialLoading,
   isLoading,
   isNotificationExpanded,
-  loadAdvancedDashboard,
   loadDashboard,
   openAdvancedAccessInquiry,
   openAdvancedProject,
@@ -53,6 +52,8 @@ const {
   openProject,
   openProjects,
   openTask,
+  reloadDashboard,
+  submitAdvancedDashboard,
 } = useDashboardPage();
 
 onBeforeMount(loadDashboard);
@@ -82,7 +83,8 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
         aria-label="Dashboardを再読み込み"
         title="再読み込み"
         :loading="isLoading"
-        @click="loadDashboard"
+        :data-dashboard-control="DASHBOARD_CONTROL.reload"
+        @click="reloadDashboard"
       />
     </div>
 
@@ -355,11 +357,17 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           計算式と参照範囲はBackendが一元管理します。
         </p>
 
-        <form v-if="!isAdvancedNotEntitled" class="mb-4" @submit.prevent="loadAdvancedDashboard()">
+        <form v-if="!isAdvancedNotEntitled" class="mb-4" @submit.prevent="submitAdvancedDashboard">
           <div class="-m-1 flex flex-wrap items-center">
             <div class="w-full p-1 sm:w-5/12 md:w-1/4">
               <UFormField label="EVM基準日" class="pb-0">
-                <UInput v-model="advancedStatusDate" type="date" :disabled="isAdvancedLoading" class="w-full" />
+                <UInput
+                  v-model="advancedStatusDate"
+                  type="date"
+                  :disabled="isAdvancedLoading"
+                  class="w-full"
+                  :data-dashboard-control="DASHBOARD_CONTROL.advancedStatusDate"
+                />
               </UFormField>
             </div>
             <div class="w-full p-1 sm:w-1/4 md:w-1/6">

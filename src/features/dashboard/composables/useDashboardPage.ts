@@ -20,6 +20,23 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * Dashboardの部品に付ける`data-dashboard-control`属性の値。
+ * 再読込中は「再読み込み」が、集計中は「EVM基準日」がdisabledになりフォーカスがbodyへ外れるため、
+ * 利用者が押した操作の後にここへ戻す（動作確認/17_Dashboard G-9）。
+ */
+export const DASHBOARD_CONTROL = {
+  /** 画面右上の「再読み込み」ボタン。 */
+  reload: "reload",
+  /** 高度Dashboardの「EVM基準日」入力欄。 */
+  advancedStatusDate: "advanced-status-date",
+} as const;
+
+/** `data-dashboard-control`属性の値から、その要素を探すselectorを作る。 */
+const dashboardControlSelector = (key: string): string =>
+  `[data-dashboard-control="${key}"]`;
 
 const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
   "FEATURE_NOT_ENTITLED",
@@ -198,6 +215,21 @@ export const useDashboardPage = () => {
     });
   };
 
+  /**
+   * 「再読み込み」を押したときの処理。Dashboardを取り直してから、同じボタンへフォーカスを戻す。
+   * 初期表示（`loadDashboard`）ではフォーカスを動かさないよう、利用者の操作だけをこの関数で受ける。
+   */
+  const reloadDashboard = async (): Promise<void> => {
+    await loadDashboard();
+    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.reload)]);
+  };
+
+  /** 高度Dashboardの「集計」（またはEVM基準日でEnter）の後に、EVM基準日へフォーカスを戻す。 */
+  const submitAdvancedDashboard = async (): Promise<void> => {
+    await loadAdvancedDashboard();
+    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
+  };
+
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
   const openAdvancedAccessInquiry = async (): Promise<void> => {
     await router.push({ name: "InquiryForm" });
@@ -255,5 +287,7 @@ export const useDashboardPage = () => {
     openProject,
     openProjects,
     openTask,
+    reloadDashboard,
+    submitAdvancedDashboard,
   };
 };
