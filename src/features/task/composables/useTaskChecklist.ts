@@ -152,7 +152,11 @@ export const useTaskChecklist = (
     }
   };
 
-  /** 404／409後に操作対象を破棄し、最新一覧へ置き換える。 */
+  /**
+   * 404／409後に操作対象を破棄し、最新一覧へ置き換える。
+   * 再取得に成功したら、Backendの文言（「最新状態を取得してください」等）の後ろに再取得済みの案内を添える。
+   * 画面はすでに最新一覧を表示しているので、利用者が手動で再読込しなくてよいと分かるようにするため。
+   */
   const recoverLatestItems = async (
     error: TaskChecklistApiError,
     fallback: string
@@ -174,7 +178,10 @@ export const useTaskChecklist = (
         currentProjectId,
         currentTaskId
       );
-      errorMessages.value = mutationMessages;
+      errorMessages.value = [
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.checklist.conflictReloaded,
+      ];
     } catch (reloadError: unknown) {
       if (await handleUnauthorized(reloadError)) {
         return;
@@ -230,7 +237,7 @@ export const useTaskChecklist = (
       ) {
         await recoverLatestItems(
           error,
-          "チェックリストが変更されています。最新の一覧を表示しました。"
+          DISPLAY_MESSAGES.task.checklist.conflictFallback
         );
         return;
       }
@@ -455,7 +462,7 @@ export const useTaskChecklist = (
     ) {
       await recoverLatestItems(
         error,
-        "チェックリストが変更されています。最新の一覧を表示しました。"
+        DISPLAY_MESSAGES.task.checklist.conflictFallback
       );
       return;
     }

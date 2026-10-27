@@ -177,7 +177,29 @@ describe("useTaskChecklist", () => {
     expect(mocks.taskChecklistApi.findItems).toHaveBeenCalledTimes(2);
     expect(page.items.value).toEqual([latest]);
     expect(page.editingItemId.value).toBeNull();
-    expect(page.errorMessages.value).toEqual(["別の操作で変更されました。"]);
+    // 画面はすでに最新一覧を表示しているので、Backendの文言に再取得済みの案内を添える。
+    expect(page.errorMessages.value).toEqual([
+      "別の操作で変更されました。",
+      DISPLAY_MESSAGES.task.checklist.conflictReloaded,
+    ]);
+  });
+
+  it("409でBackendの文言を表示できないときは固定の文言と再取得済みの案内を出す", async () => {
+    mocks.taskChecklistApi.findItems
+      .mockResolvedValueOnce([structuredClone(firstItem)])
+      .mockResolvedValueOnce([structuredClone(firstItem)]);
+    mocks.taskChecklistApi.updateItem.mockRejectedValue(
+      new TaskChecklistApiError(409, null)
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+
+    await page.toggleItem(page.items.value[0]);
+
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.checklist.conflictFallback,
+      DISPLAY_MESSAGES.task.checklist.conflictReloaded,
+    ]);
   });
 
   it("契約済みcodeの複数項目エラーをBackend順で表示する", async () => {
