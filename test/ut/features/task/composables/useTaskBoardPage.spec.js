@@ -84,6 +84,7 @@ const task = {
   dateTo: "2026-08-15",
   assigneeAccountId: 2,
   priority: 2,
+  taskType: "TASK",
   position: 1024,
   archived: false,
   createdBy: 2,
@@ -195,6 +196,33 @@ describe("useTaskBoardPage", () => {
     expect(mocks.projectTaskApi.getTask).toHaveBeenCalledWith(5, 31);
     expect(page.form.value.taskId).toBe(31);
     expect(page.isEditorOpen.value).toBe(true);
+    expect(page.canStartTaskTimer.value).toBe(true);
+  });
+
+  it.each(["SUMMARY", "MILESTONE"])(
+    "%sのTaskはTimer・日別実績の入口を出さない（実績工数は通常Taskだけ）",
+    async (taskType) => {
+      mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+      mocks.projectTaskApi.getTask.mockResolvedValue({ ...structuredClone(task), taskType });
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.openTaskEditor(31);
+
+      expect(page.isEditorOpen.value).toBe(true);
+      expect(page.canRecordTaskWork.value).toBe(false);
+      expect(page.canStartTaskTimer.value).toBe(false);
+    }
+  );
+
+  it("通常TaskではOWNERにTimer・日別実績の入口を出す", async () => {
+    mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
+    const page = useTaskBoardPage();
+    await page.initialize();
+
+    await page.openTaskEditor(31);
+
+    expect(page.canRecordTaskWork.value).toBe(true);
     expect(page.canStartTaskTimer.value).toBe(true);
   });
 

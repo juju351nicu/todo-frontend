@@ -45,6 +45,23 @@ const normalizeProjectDetail = (detail: ProjectDetail): ProjectDetail => ({
   })),
 });
 
+/**
+ * Board取得ResponseのTask cardに種別（`taskType`）がない場合、`TASK`で補う。
+ *
+ * この項目はBackendの「Board Task cardにTask種別を返す」変更で追加された。Frontendだけ先に反映された環境でも、
+ * 従来どおりすべてのTaskでTimer・日別実績の入口を出せるようにする。Backendが常に返すようになれば、この補完は値を変えない。
+ *
+ * @param board BackendのBoard取得Response
+ * @returns すべてのTask cardが種別を持つBoard
+ */
+const normalizeTaskBoard = (board: TaskBoard): TaskBoard => ({
+  ...board,
+  columns: board.columns.map((column) => ({
+    ...column,
+    tasks: column.tasks.map((task) => ({ ...task, taskType: task.taskType ?? "TASK" })),
+  })),
+});
+
 /** 非2xx ResponseをProjectApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
   ensureApiSuccess(
@@ -90,7 +107,7 @@ const getTaskBoard = async (projectId: number): Promise<TaskBoard> => {
     `${API_PATHS.PROJECTS}/${projectId}/board`
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskBoard;
+  return normalizeTaskBoard((await response.json()) as TaskBoard);
 };
 
 /**

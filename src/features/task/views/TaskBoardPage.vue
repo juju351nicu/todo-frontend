@@ -30,6 +30,7 @@ const {
   canSave,
   canStartTaskTimer,
   canPostTaskComment,
+  canRecordTaskWork,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
@@ -310,7 +311,9 @@ onBeforeMount(initialize);
           </UFormField>
           <div v-if="form.taskId !== null && board" class="my-4 flex flex-wrap items-center gap-2">
             <TaskTimerActionButton v-if="canStartTaskTimer" :project-id="board.projectId" :task-id="form.taskId" />
-            <UButton icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">日別実績を入力</UButton>
+            <UButton v-if="canRecordTaskWork" icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">
+              日別実績を入力
+            </UButton>
             <TaskWorkLogAuditDialog :project-id="board.projectId" :task-id="form.taskId" />
           </div>
           <TaskTemplateCaptureButton

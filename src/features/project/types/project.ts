@@ -79,6 +79,12 @@ export interface ProjectMemberUpdateRequest {
   version: number;
 }
 
+/**
+ * WBS上のTask構造種別（Backendの`TaskType`コード）。
+ * 実績工数とTimerは`TASK`だけが対象で、`SUMMARY`・`MILESTONE`ではBackendが400で拒否する。
+ */
+export type TaskType = "TASK" | "SUMMARY" | "MILESTONE";
+
 /** Project内Taskの優先度。1=低、2=中、3=高。 */
 export type TaskPriority = 1 | 2 | 3;
 
@@ -91,6 +97,10 @@ export interface TaskCard {
   dateTo: string;
   assigneeAccountId: number;
   priority: TaskPriority;
+  /**
+   * WBS上のTask種別。Backendが返さない古い版では、API境界（`projectApi`・`projectTaskApi`）で`TASK`を補う。
+   */
+  taskType: TaskType;
   position: number;
   createdBy: number;
   createdAt: string;

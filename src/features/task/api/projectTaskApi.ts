@@ -32,6 +32,20 @@ const ensureSuccess = (response: Response): Promise<void> =>
   );
 
 /**
+ * Task詳細Responseに種別（`taskType`）がない場合、`TASK`で補う。
+ *
+ * この項目はBackendの「Task詳細にTask種別を返す」変更で追加された。Frontendだけ先に反映された環境でも、
+ * 従来どおりTimer・日別実績の入口を出せるようにする。Backendが常に返すようになれば、この補完は値を変えない。
+ *
+ * @param task BackendのTask詳細Response
+ * @returns 種別を必ず持つTask詳細
+ */
+const normalizeTaskDetail = (task: TaskDetail): TaskDetail => ({
+  ...task,
+  taskType: task.taskType ?? "TASK",
+});
+
+/**
  * Projectへ新しいTaskを登録する。
  *
  * @param projectId 登録先Project ID
@@ -48,7 +62,7 @@ const createTask = async (
     payload
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskDetail;
+  return normalizeTaskDetail((await response.json()) as TaskDetail);
 };
 
 /**
@@ -84,7 +98,7 @@ const getTask = async (projectId: number, taskId: number): Promise<TaskDetail> =
     `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}`
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskDetail;
+  return normalizeTaskDetail((await response.json()) as TaskDetail);
 };
 
 /**
@@ -129,7 +143,7 @@ const updateTask = async (
     payload
   );
   await ensureSuccess(response);
-  return (await response.json()) as TaskDetail;
+  return normalizeTaskDetail((await response.json()) as TaskDetail);
 };
 
 export default {

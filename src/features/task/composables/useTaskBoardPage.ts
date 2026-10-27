@@ -12,6 +12,7 @@ import type {
   TaskCreateRequest,
   TaskDetail,
   TaskPriority,
+  TaskType,
   TaskUpdateRequest,
 } from "@/features/project/types/project";
 import ProjectTaskApi, {
@@ -116,6 +117,8 @@ export const useTaskBoardPage = () => {
    * 担当者欄はフォーム上で変えられるため、MEMBERが更新できるか（現在の担当者が本人か）はこちらで判定する。
    */
   const editingTaskAssigneeAccountId = ref<number | null>(null);
+  /** 開いているTaskのWBS上の種別。新規作成中はnull。 */
+  const editingTaskType = ref<TaskType | null>(null);
   const isArchiveConfirmOpen = ref(false);
   const isArchiving = ref(false);
   const isEditorOpen = ref(false);
@@ -218,8 +221,16 @@ export const useTaskBoardPage = () => {
   const isReadonly = computed(
     () => isEditing.value && !canUpdateEditingTask.value
   );
+  /**
+   * 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。実績工数は通常Task（`TASK`）だけが対象で、
+   * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない（`todo-backend`の`docs/time-tracking-design.md` §4.3）。
+   */
+  const canRecordTaskWork = computed(
+    () => isEditing.value && editingTaskType.value === "TASK"
+  );
   const canStartTaskTimer = computed(
     () =>
+      canRecordTaskWork.value &&
       form.value.taskId !== null &&
       canUpdateTask.value &&
       isCurrentUserProjectMember.value &&
@@ -345,6 +356,7 @@ export const useTaskBoardPage = () => {
       const task = await ProjectTaskApi.getTask(projectId.value, taskId);
       form.value = buildTaskForm(task);
       editingTaskAssigneeAccountId.value = task.assigneeAccountId;
+      editingTaskType.value = task.taskType;
       isEditorOpen.value = true;
     } catch (error: unknown) {
       await handleApiError(
@@ -943,6 +955,7 @@ export const useTaskBoardPage = () => {
     canSave,
     canStartTaskTimer,
     canPostTaskComment,
+    canRecordTaskWork,
     canUpdateTask,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
