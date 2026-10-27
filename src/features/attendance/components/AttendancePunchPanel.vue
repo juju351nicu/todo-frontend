@@ -72,6 +72,7 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
           :disabled="!canClockIn || isPunching"
           :loading="isPunching && canClockIn"
           :aria-label="`${formatAttendanceDate(workDate)}の出勤を打刻`"
+          data-attendance-punch="clock-in"
           @click="emit('punch', 'clock-in')"
         >
           出勤
@@ -84,6 +85,7 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
           :disabled="!canClockOut || isPunching"
           :loading="isPunching && canClockOut"
           :aria-label="`${formatAttendanceDate(workDate)}の退勤を打刻`"
+          data-attendance-punch="clock-out"
           @click="emit('punch', 'clock-out')"
         >
           退勤
@@ -96,6 +98,7 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
           :disabled="!canStartBreak || isPunching"
           :loading="isPunching && canStartBreak"
           :aria-label="`${formatAttendanceDate(workDate)}の休憩開始を打刻`"
+          data-attendance-punch="break-start"
           @click="emit('punch', 'break-start')"
         >
           休憩開始
@@ -108,6 +111,7 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
           :disabled="!canEndBreak || isPunching"
           :loading="isPunching && canEndBreak"
           :aria-label="`${formatAttendanceDate(workDate)}の休憩終了を打刻`"
+          data-attendance-punch="break-end"
           @click="emit('punch', 'break-end')"
         >
           休憩終了

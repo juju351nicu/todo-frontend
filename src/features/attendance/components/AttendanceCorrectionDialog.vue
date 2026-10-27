@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import type { AttendanceCorrectionForm } from "@/features/attendance/types/attendance";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 /** 本人画面が所有する修正入力を表示し、全変更と確定操作をEventで返す。 */
 defineProps<{
+  /** 入力チェック・申請APIの失敗。Dialogを開いている間は画面上部が隠れるため、Dialogの中へ出す。 */
+  errorMessages: string[];
   form: AttendanceCorrectionForm;
   modelValue: boolean;
   submitting: boolean;
@@ -37,6 +40,15 @@ defineEmits<{
     :ui="{ content: 'max-w-245', body: 'max-h-[70vh] overflow-y-auto' }"
   >
     <template #body>
+      <!--
+        失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。以前は画面上部（Dialogの後ろ）へ出て見えなかった
+        （動作確認/21_勤怠本人 G-5）。負のtopとmarginでUModal本文の上余白（pt-4）まで覆う（12・18と同じ対応）。
+      -->
+      <div v-if="errorMessages.length" class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4">
+        <StatusAlert type="error">
+          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+        </StatusAlert>
+      </div>
       <div class="relative">
         <UFormField label="修正理由（必須）">
           <UTextarea

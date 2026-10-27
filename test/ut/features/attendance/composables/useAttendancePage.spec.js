@@ -1,7 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AttendanceApiError } from "@/features/attendance/api/attendanceApi";
-import { useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
+import {
+  ATTENDANCE_CONTROL,
+  useAttendancePage,
+} from "@/features/attendance/composables/useAttendancePage";
 
 const mocks = vi.hoisted(() => ({
   attendanceApi: {
@@ -154,6 +157,79 @@ describe("useAttendancePage", () => {
     expect(page.successMessage.value).toBe("出勤を記録しました。");
   });
 
+  describe("打刻の後のフォーカス", () => {
+    // 単体テストの実行環境にはDOMがないため、部品を探すdocumentを差し替える。
+    // 出勤ボタンだけがdisabled（打刻後）で、ほかは押せる状態にする。
+    const stubDocument = () => {
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) => {
+          const action = selector.match(/data-attendance-punch="([^"]+)"/)?.[1];
+          return { focus: () => focused.push(action), matches: () => action === "clock-in" };
+        },
+      });
+      return focused;
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("押したボタンが押せなくなったら、画面の並び順で次に押せるボタンへ移す", async () => {
+      const page = useAttendancePage();
+      await page.initialize();
+      mocks.attendanceApi.punch.mockResolvedValue(buildDay(page.today, "WORKING"));
+      const focused = stubDocument();
+
+      await page.executePunch("clock-in");
+
+      expect(focused).toEqual(["clock-out"]);
+    });
+
+    it("提出の後は、消えた「提出」の代わりに「表示月」へ戻す", async () => {
+      const page = useAttendancePage();
+      await page.initialize();
+      const focused = [];
+      vi.stubGlobal("document", {
+        querySelector: (selector) =>
+          selector.includes(ATTENDANCE_CONTROL.submitMonth)
+            ? null
+            : { focus: () => focused.push(selector), matches: () => false },
+      });
+
+      await page.submitMonth();
+
+      expect(focused).toEqual([`[data-attendance-control="${ATTENDANCE_CONTROL.month}"]`]);
+    });
+  });
+
+  it("修正申請APIの失敗は、開いているDialogの中へ出す", async () => {
+    mocks.attendanceApi.getMonth.mockImplementation((yearMonth) =>
+      Promise.resolve(buildMonth(yearMonth, "APPROVED"))
+    );
+    mocks.attendanceApi.createCorrectionRequest.mockRejectedValue(
+      new AttendanceApiError(400, {
+        fieldErrors: [
+          {
+            errorCode: "ATTENDANCE_CORRECTION_PERIOD_INVALID",
+            field: "workPeriods",
+            message: "勤務区間の時刻を確認してください。",
+          },
+        ],
+      })
+    );
+    const page = useAttendancePage();
+    await page.initialize();
+    page.openCorrectionDialog();
+    page.correctionForm.value.reason = "打刻漏れ";
+
+    await page.submitCorrectionRequest();
+
+    expect(page.isCorrectionDialogOpen.value).toBe(true);
+    expect(page.correctionErrorMessages.value).toEqual(["勤務区間の時刻を確認してください。"]);
+    expect(page.errorMessages.value).toEqual([]);
+  });
+
   it("処理中の打刻操作を二重送信しない", async () => {
     const page = useAttendancePage();
     await page.initialize();
@@ -271,7 +347,9 @@ describe("useAttendancePage", () => {
     await page.submitCorrectionRequest();
 
     expect(mocks.attendanceApi.createCorrectionRequest).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual(["修正理由を入力してください。"]);
+    // Dialogを開いている間は画面上部が隠れるため、理由はDialogの中へ出す。
+    expect(page.correctionErrorMessages.value).toEqual(["修正理由を入力してください。"]);
+    expect(page.errorMessages.value).toEqual([]);
     mocks.attendanceApi.getOwnCorrectionRequests.mockResolvedValue({
       correctionRequests: [{ ...pending, workDate: page.today }],
     });
