@@ -367,6 +367,17 @@ export const DISPLAY_MESSAGES = {
       stale:
         "稼働日例外が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "稼働日例外を削除できませんでした。",
+      /** 表示対象を変更する権限がない場合に、calendarの上へ出す案内。 */
+      readOnly:
+        "この表示対象は参照専用です。Project共通設定はOWNER・MANAGER・SYSTEM_ADMIN、個人例外は本人またはProject管理者が変更できます。",
+      /** archive済みProjectのcalendarを表示している場合の案内。Backendは変更を409にする。 */
+      archivedReadOnly: "archive済みProjectのcalendarは参照だけできます。",
+      /** 無効化・ロックされた参加者の個人例外を表示している場合の案内。Backendは個人例外の登録・更新を400にする。 */
+      inactiveMemberReadOnly:
+        "無効化またはロックされたアカウントの個人例外は参照だけできます。",
+      /** version競合（409）の後に、画面側でcalendarを取り直せたときにBackendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のcalendarを再取得しました。内容を確認してから、もう一度操作してください。",
       reloadFailed:
         "最新の稼働日calendarを再取得できませんでした。再読込してください。",
     },

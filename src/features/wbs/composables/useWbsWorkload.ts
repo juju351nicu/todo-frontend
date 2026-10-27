@@ -12,6 +12,17 @@ import {
 } from "@/features/wbs/utils/taskEffortPlan";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * 担当者別workload cardの部品に付ける`data-workload-control`属性の値。
+ * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
+ * （動作確認/19_workload_稼働日calendar G-12）。
+ */
+export const WORKLOAD_CONTROL = {
+  /** 「集計」ボタン。 */
+  submit: "submit",
+} as const;
 
 /**
  * WBS画面の担当者別workload（日別の予定・実績・稼働可能時間・過配賦）の取得状態を管理する。
@@ -68,6 +79,23 @@ export const useWbsWorkload = (context: WbsPageContext) => {
     }
   };
 
+  /**
+   * 「集計」を押したときの処理。workloadを取得してから「集計」へフォーカスを戻す。
+   * 初期表示や他領域の変更後の再取得（`reloadTaskWorkload`）ではフォーカスを動かさないよう、利用者の操作だけをこの関数で受ける。
+   *
+   * @param dateRange yyyy-MM-dd形式の集計開始日・終了日
+   */
+  const submitTaskWorkload = async (
+    dateRange: TaskWorkloadDateRange
+  ): Promise<void> => {
+    await loadTaskWorkload(dateRange);
+    if (!context.isSessionInvalidated()) {
+      await focusFirstEnabledElement([
+        `[data-workload-control="${WORKLOAD_CONTROL.submit}"]`,
+      ]);
+    }
+  };
+
   /** 他領域の変更後に、利用者が最後に指定した集計期間でworkloadを再取得する。 */
   const reloadTaskWorkload = (): Promise<void> =>
     loadTaskWorkload(workloadDateRange.value);
@@ -90,6 +118,7 @@ export const useWbsWorkload = (context: WbsPageContext) => {
     isLoadingWorkload,
     loadTaskWorkload,
     reloadTaskWorkload,
+    submitTaskWorkload,
     workload,
     workloadDateRange,
     workloadErrorMessages,

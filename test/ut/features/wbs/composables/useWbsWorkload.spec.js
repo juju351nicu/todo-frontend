@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
-import { useWbsWorkload } from "@/features/wbs/composables/useWbsWorkload";
+import {
+  useWbsWorkload,
+  WORKLOAD_CONTROL,
+} from "@/features/wbs/composables/useWbsWorkload";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 import {
@@ -93,6 +96,16 @@ describe("useWbsWorkload", () => {
       await state.loadTaskWorkload(range);
 
       expect(mocks.wbsApi.getTaskWorkload).not.toHaveBeenCalled();
+    });
+
+    it("「集計」を押した後だけ「集計」へフォーカスを戻す", async () => {
+      const state = useWbsWorkload(buildWbsPageContext());
+
+      await state.reloadTaskWorkload();
+      expect(mocks.focusedControls).toEqual([]);
+
+      await state.submitTaskWorkload(range);
+      expect(mocks.focusedControls).toEqual([WORKLOAD_CONTROL.submit]);
     });
 
     it("取得中の再実行ではworkload APIを二重送信しない", async () => {

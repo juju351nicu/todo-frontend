@@ -262,11 +262,12 @@ const VIEW_OPTIONS = [
       :target-options="page.workingCalendarTargetOptions"
       :selected-target-key="page.workingCalendarSelectedTargetKey"
       :can-edit-selected-target="page.canEditSelectedWorkingCalendarTarget"
+      :read-only-message="page.workingCalendarReadOnlyMessage"
       :is-loading="page.isLoadingWorkingCalendar"
       :is-mutating="page.isWorkingCalendarMutating"
       :error-messages="page.workingCalendarErrorMessages"
       :success-message="page.workingCalendarSuccessMessage"
-      @load="page.loadWorkingCalendar"
+      @load="page.submitWorkingCalendar"
       @edit="page.openWorkingDayEditor"
       @request-delete="page.requestWorkingDayDelete"
     />
@@ -277,7 +278,7 @@ const VIEW_OPTIONS = [
       :workload="page.workload"
       :is-loading="page.isLoadingWorkload"
       :error-messages="page.workloadErrorMessages"
-      @load="page.loadTaskWorkload"
+      @load="page.submitTaskWorkload"
     />
 
     <WbsEstimateAccuracyCard
