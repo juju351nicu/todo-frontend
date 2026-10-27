@@ -5,6 +5,7 @@ import type { AccountRole } from "@/features/member/types/member";
 import {
   buildMemberUpsertRequest,
   createMemberDetailForm,
+  MEMBER_ROLE_LABELS,
   type MemberDetailForm,
 } from "@/features/member/utils/memberForm";
 
@@ -13,11 +14,11 @@ interface RoleItem {
   role: AccountRole;
 }
 
-const ROLE_ITEMS: RoleItem[] = [
-  { roleLabel: "管理者", role: 0 },
-  { roleLabel: "閲覧管理者", role: 1 },
-  { roleLabel: "ユーザ", role: 2 },
-];
+/** 管理者だけに出す権限の選択肢。表示名は確認画面と同じ`MEMBER_ROLE_LABELS`を使う。 */
+const ROLE_ITEMS: RoleItem[] = ([0, 1, 2] as const).map((role) => ({
+  roleLabel: MEMBER_ROLE_LABELS[role],
+  role,
+}));
 
 /**
  * 会員詳細・登録画面の状態と操作を提供する。
