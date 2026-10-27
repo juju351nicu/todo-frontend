@@ -2,8 +2,8 @@
  * Nuxt UIの全体テーマ。`vite.config.js`の`@nuxt/ui/vite`プラグインへ`ui`として渡す。
  *
  * 移行前のVuetify 3既定デザイン（Material Design）から、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
- * プラムのアクセント）へ段階的に寄せている。色はこの段階で参考デザインへ移行済みで、寸法・大文字表記・影は
- * まだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
+ * プラムのアクセント）へ段階的に寄せている。色とbutton（大文字表記・字間・影・固定の高さをやめた）は参考デザインへ
+ * 移行済みで、card・入力欄・table・modal・tabs・badgeの寸法はまだVuetifyの既定値に合わせている。画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
  * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../nuxt-ui-migration-plan.md`を参照。
  *
  * Vuetifyとの対応:
@@ -31,11 +31,11 @@ export const themeColors = [
 
 const semanticColors = themeColors;
 
-// Vuetifyのelevated buttonは影付きで、hover時は前景色を4%重ねるだけなので背景をほぼ維持する。
+// 塗りつぶしbuttonは影を付けない。Nuxt UI既定のhover（75%）では白文字とのコントラストが下がるため、背景をほぼ維持する。
 const buttonSolidVariants = semanticColors.map((color) => ({
   color,
   variant: "solid" as const,
-  class: `shadow-elevation-2 hover:bg-${color}/92 active:bg-${color}/88 disabled:opacity-40 aria-disabled:opacity-40 disabled:shadow-none`,
+  class: `hover:bg-${color}/92 active:bg-${color}/88 disabled:opacity-40 aria-disabled:opacity-40`,
 }));
 
 // Vuetifyのoutlinedは前景色そのものの枠線、tonalは前景色12%の背景を使う。
@@ -162,16 +162,18 @@ export const nuxtUiTheme = {
   },
   button: {
     slots: {
-      // Vuetify 3.4の無効buttonは、塗りつぶし以外を26%、色付きの塗りつぶしを40%の不透明度で表す。
-      base: "rounded-sm font-medium uppercase tracking-[.0892857143em] justify-center disabled:opacity-26 aria-disabled:opacity-26",
+      // 大文字表記・字間は付けない（日本語の文言には効かず、英字のラベルだけが目立つため）。
+      // 無効buttonは、塗りつぶし以外を26%、色付きの塗りつぶしを40%の不透明度で表す。
+      base: "rounded-sm font-medium justify-center disabled:opacity-26 aria-disabled:opacity-26",
     },
     variants: {
+      // 高さは固定せず、上下の余白で決める（文言が折り返しても文字がはみ出さない）。
       size: {
-        xs: { base: "h-5 px-2 text-[0.625rem] gap-1", leadingIcon: "size-3.5", trailingIcon: "size-3.5" },
-        sm: { base: "h-7 px-3 text-xs gap-1.5", leadingIcon: "size-4", trailingIcon: "size-4" },
-        md: { base: "h-9 px-4 text-sm gap-2", leadingIcon: "size-4.5", trailingIcon: "size-4.5" },
-        lg: { base: "h-11 px-5 text-base gap-2", leadingIcon: "size-5", trailingIcon: "size-5" },
-        xl: { base: "h-13 px-6 text-lg gap-2", leadingIcon: "size-6", trailingIcon: "size-6" },
+        xs: { base: "px-2 py-0.5 text-[0.625rem] gap-1", leadingIcon: "size-3.5", trailingIcon: "size-3.5" },
+        sm: { base: "px-3 py-1.5 text-xs gap-1.5", leadingIcon: "size-4", trailingIcon: "size-4" },
+        md: { base: "px-4 py-2 text-sm gap-2", leadingIcon: "size-4.5", trailingIcon: "size-4.5" },
+        lg: { base: "px-5 py-2.5 text-base gap-2", leadingIcon: "size-5", trailingIcon: "size-5" },
+        xl: { base: "px-6 py-3 text-lg gap-2", leadingIcon: "size-6", trailingIcon: "size-6" },
       },
     },
     compoundVariants: [
@@ -179,11 +181,11 @@ export const nuxtUiTheme = {
       ...buttonOutlineVariants,
       ...buttonSoftVariants,
       ...buttonGhostVariants,
-      // 色指定なしのVuetify buttonはsurface色（白背景・影付き）で表示される。
+      // 色指定なしのbuttonは白背景で表示する。影を付けないため、白い背景の上でも見えるよう枠線を付ける。
       {
         color: "neutral" as const,
         variant: "solid" as const,
-        class: "bg-default text-default shadow-elevation-2 hover:bg-elevated active:bg-accented disabled:shadow-none",
+        class: "bg-default text-default ring ring-inset ring-accented hover:bg-elevated active:bg-accented",
       },
       { color: "neutral" as const, variant: "outline" as const, class: "ring-current bg-transparent" },
       { color: "neutral" as const, variant: "soft" as const, class: "bg-inverted/12 hover:bg-inverted/16" },
