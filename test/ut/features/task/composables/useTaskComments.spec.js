@@ -180,8 +180,31 @@ describe("useTaskComments", () => {
     expect(page.comments.value).toEqual([latest]);
     expect(page.editingCommentId.value).toBeNull();
     expect(page.editBody.value).toBe("");
+    // 画面はすでに最新一覧を表示しているので、Backendの文言に再取得済みの案内を添える。
     expect(page.errorMessages.value).toEqual([
       "別の操作でTaskコメントが変更されました。",
+      DISPLAY_MESSAGES.task.comments.conflictReloaded,
+    ]);
+  });
+
+  it("削除の409でBackendの文言を表示できないときは固定の文言と再取得済みの案内を出す", async () => {
+    mocks.taskCommentApi.findComments
+      .mockResolvedValueOnce([structuredClone(ownComment)])
+      .mockResolvedValueOnce([]);
+    mocks.taskCommentApi.deleteComment.mockRejectedValue(
+      new TaskCommentApiError(409, null)
+    );
+    const page = createPage();
+    await waitForInitialLoad();
+    page.openDeleteConfirm(page.comments.value[0]);
+
+    await page.confirmDelete();
+
+    expect(page.comments.value).toEqual([]);
+    expect(page.deletingComment.value).toBeNull();
+    expect(page.errorMessages.value).toEqual([
+      DISPLAY_MESSAGES.task.comments.conflictFallback,
+      DISPLAY_MESSAGES.task.comments.conflictReloaded,
     ]);
   });
 

@@ -208,7 +208,11 @@ export const useTaskComments = (
     editBody.value = "";
   };
 
-  /** 409または404の古い操作対象を破棄し、最新コメント一覧へ置き換える。 */
+  /**
+   * 409または404の古い操作対象を破棄し、最新コメント一覧へ置き換える。
+   * 再取得に成功したら、Backendの文言（「最新状態を取得してください」等）の後ろに再取得済みの案内を添える。
+   * 画面はすでに最新一覧を表示しているので、利用者が手動で再読込しなくてよいと分かるようにするため。
+   */
   const recoverLatestComments = async (
     error: TaskCommentApiError,
     fallback: string
@@ -230,7 +234,10 @@ export const useTaskComments = (
         currentProjectId,
         currentTaskId
       );
-      errorMessages.value = mutationMessages;
+      errorMessages.value = [
+        ...mutationMessages,
+        DISPLAY_MESSAGES.task.comments.conflictReloaded,
+      ];
     } catch (reloadError: unknown) {
       if (await handleUnauthorized(reloadError)) {
         return;
@@ -310,7 +317,7 @@ export const useTaskComments = (
       ) {
         await recoverLatestComments(
           error,
-          "コメントが変更されています。最新の一覧を表示しました。"
+          DISPLAY_MESSAGES.task.comments.conflictFallback
         );
         return;
       }
@@ -377,7 +384,7 @@ export const useTaskComments = (
       ) {
         await recoverLatestComments(
           error,
-          "コメントが変更されています。最新の一覧を表示しました。"
+          DISPLAY_MESSAGES.task.comments.conflictFallback
         );
         return;
       }

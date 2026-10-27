@@ -186,6 +186,11 @@ export const DISPLAY_MESSAGES = {
       deleteFailed: "コメントを削除できませんでした。",
       reloadFailed:
         "最新のコメント一覧を取得できませんでした。再読込してください。",
+      /** 404・409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
+      conflictReloaded:
+        "最新のコメント一覧を再取得しました。内容を確認してから、もう一度操作してください。",
+      /** 404・409でBackendの文言を表示できない（未知のerror code等）ときの代わりの文言。 */
+      conflictFallback: "コメントが変更されています。最新の一覧を表示しました。",
     },
     checklist: {
       readForbidden: "Task checklistを参照するpermissionがありません。",
