@@ -11,10 +11,20 @@ import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 
+/**
+ * Task Dialog内のコメント欄。取得・投稿・本人の編集削除・競合回復・フォーカス戻しは`useTaskComments`が担当し、
+ * このComponentは一覧・投稿欄・編集欄・削除確認Dialogの表示だけを行う。
+ */
 const props = withDefaults(
   defineProps<{
+    /** 対象TaskのProject ID。 */
     projectId: number;
+    /** 対象Task ID。変わると一覧を取り直し、投稿欄・編集中・削除確認中の状態を捨てる。 */
     taskId: number;
+    /**
+     * 投稿・編集・削除をさせないときtrue（`TASK_UPDATE`のないaccount、archive済みProject等）。
+     * trueの間は投稿欄を読み取り専用にし、本人のコメントにも編集・削除ボタンを出さない。
+     */
     disabled?: boolean;
   }>(),
   { disabled: false },

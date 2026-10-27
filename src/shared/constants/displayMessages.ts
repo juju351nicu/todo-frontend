@@ -181,6 +181,11 @@ export const DISPLAY_MESSAGES = {
         "対象のProject、Taskまたはコメントが見つかりません。",
       loadFailed: "コメントを取得できませんでした。",
       projectLoadFailed: "Projectのコメントを取得できませんでした。",
+      created: "コメントを投稿しました。",
+      updated: "コメントを更新しました。",
+      deleted: "コメントを削除しました。",
+      /** 本文が空・長すぎる状態で投稿・更新を呼んだときの文言。上限はTASK_COMMENT_MAX_LENGTHと同じ。 */
+      bodyInvalid: "コメント本文を1〜2000文字で入力してください。",
       createFailed: "コメントを投稿できませんでした。",
       updateFailed: "コメントを更新できませんでした。",
       deleteFailed: "コメントを削除できませんでした。",
