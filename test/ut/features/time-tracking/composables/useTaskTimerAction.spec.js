@@ -1,8 +1,11 @@
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
-import { useTaskTimerAction } from "@/features/time-tracking/composables/useTaskTimerAction";
+import {
+  taskTimerActionKey,
+  useTaskTimerAction,
+} from "@/features/time-tracking/composables/useTaskTimerAction";
 import { useTaskTimerStore } from "@/features/time-tracking/stores/taskTimer";
 
 vi.mock("@/app/router", () => ({ default: { push: vi.fn() } }));
@@ -79,5 +82,31 @@ describe("useTaskTimerAction", () => {
 
     expect(startTimer).toHaveBeenCalledWith(12, 345);
     expect(stopCurrentTimer).toHaveBeenCalledTimes(1);
+  });
+
+  describe("操作後のフォーカス", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it.each([
+      ["開始", "startTimer", "startTimer"],
+      ["停止", "stopTimer", "stopCurrentTimer"],
+    ])("%sの後、同じTaskのbuttonへフォーカスを戻す", async (_label, actionName, storeAction) => {
+      vi.spyOn(timerStore, storeAction).mockResolvedValue(false);
+      // 単体テストの実行環境にはDOMがないため、buttonを探すdocumentを差し替える。
+      // 開始と停止でbuttonが切り替わりフォーカスが外れるため、操作後に探し直して戻すことを確かめる。
+      const focus = vi.fn();
+      const querySelector = vi.fn(() => ({ focus, matches: () => false }));
+      vi.stubGlobal("document", { querySelector });
+      const action = useTaskTimerAction({ projectId: () => 12, taskId: () => 345 });
+
+      await action[actionName]();
+
+      expect(querySelector).toHaveBeenCalledWith(
+        `[data-task-timer-action="${taskTimerActionKey(12, 345)}"]`
+      );
+      expect(focus).toHaveBeenCalledOnce();
+    });
   });
 });

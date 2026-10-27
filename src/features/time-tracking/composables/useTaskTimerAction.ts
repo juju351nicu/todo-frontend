@@ -3,6 +3,18 @@ import { computed, toValue } from "vue";
 import type { MaybeRefOrGetter } from "vue";
 
 import { useTaskTimerStore } from "@/features/time-tracking/stores/taskTimer";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * Timer開始／停止buttonに付ける`data-task-timer-action`属性の値を組み立てる。
+ * `TaskTimerActionButton.vue`はこの値で属性を付け、`useTaskTimerAction`は操作後に同じ値でbuttonを探してフォーカスを戻す。
+ *
+ * @param projectId Timer対象Project ID
+ * @param taskId Timer対象Task ID
+ * @returns `"{projectId}:{taskId}"`形式の属性値
+ */
+export const taskTimerActionKey = (projectId: number, taskId: number): string =>
+  `${projectId}:${taskId}`;
 
 /** `useTaskTimerAction`の対象Taskと事前の無効化条件。 */
 export interface TaskTimerActionTarget {
@@ -39,17 +51,33 @@ export const useTaskTimerAction = (target: TaskTimerActionTarget) => {
       isAnotherTaskRunning.value,
   );
 
-  /** 対象TaskのTimerを開始する。 */
+  /** 対象Taskのbuttonへ付ける`data-task-timer-action`属性の値。 */
+  const actionKey = computed<string>(() =>
+    taskTimerActionKey(toValue(target.projectId), toValue(target.taskId)),
+  );
+
+  /**
+   * 開始・停止の後（失敗した場合も含む）、同じTaskのbuttonへフォーカスを戻す。
+   * 開始と停止で別のbuttonへ切り替わり、更新中はdisabledにもなるため、押したbuttonからフォーカスが外れて
+   * キーボードだけでは続けて停止できなくなる。切り替わった後のbuttonを属性で探し直す。
+   */
+  const restoreActionFocus = (): Promise<void> =>
+    focusFirstEnabledElement([`[data-task-timer-action="${actionKey.value}"]`]);
+
+  /** 対象TaskのTimerを開始し、同じTaskのbutton（停止button）へフォーカスを戻す。 */
   const startTimer = async (): Promise<void> => {
     await timerStore.startTimer(toValue(target.projectId), toValue(target.taskId));
+    await restoreActionFocus();
   };
 
-  /** 対象Taskで実行中の現在Timerを停止し、日別実績へ反映する。 */
+  /** 対象Taskで実行中の現在Timerを停止して日別実績へ反映し、同じTaskのbutton（開始button）へフォーカスを戻す。 */
   const stopTimer = async (): Promise<void> => {
     await timerStore.stopCurrentTimer();
+    await restoreActionFocus();
   };
 
   return {
+    actionKey,
     currentTimer,
     isAnotherTaskRunning,
     isDisabled,
