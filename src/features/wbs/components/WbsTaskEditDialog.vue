@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import type { WbsParentOption, WbsTask, WbsTaskEditForm, WbsTaskType } from "@/features/wbs/types/wbs";
+import { WBS_TASK_EDITOR_CONTROL } from "@/features/wbs/composables/useWbsTaskEditor";
 import { formatWbsTaskDialogTitle } from "@/features/wbs/utils/wbsDialog";
 import { buildWbsTaskEditForm } from "@/features/wbs/utils/wbsForm";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
@@ -63,9 +64,16 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
   >
     <template #body>
       <template v-if="form">
-        <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
-          <div v-for="message in errorMessages" :key="message">{{ message }}</div>
-        </StatusAlert>
+        <!--
+          失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。幅390pxでは本文がスクロールし、
+          下の「保存」を押した位置から本文の先頭のmessageが見えなかったため（動作確認/18_WBS本体 G-6。12と同じ対応）。
+          負のtopとmarginでUModal本文の上余白（nuxtUiTheme.ts の modal.body の pt-4）まで覆い、上を流れる内容が透けないようにする。
+        -->
+        <div v-if="errorMessages.length" class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4">
+          <StatusAlert type="error">
+            <div v-for="message in errorMessages" :key="message">{{ message }}</div>
+          </StatusAlert>
+        </div>
 
         <form @submit.prevent="submitForm">
           <div class="-m-3 flex flex-wrap">
@@ -161,7 +169,16 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="closeDialog">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="isSaving" :disabled="form === null" @click="submitForm">保存</UButton>
+      <UButton
+        color="primary"
+        variant="ghost"
+        :loading="isSaving"
+        :disabled="form === null"
+        :data-wbs-task-editor-control="WBS_TASK_EDITOR_CONTROL.save"
+        @click="submitForm"
+      >
+        保存
+      </UButton>
     </template>
   </UModal>
 </template>

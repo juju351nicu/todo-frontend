@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
-import { useWbsTaskEditor } from "@/features/wbs/composables/useWbsTaskEditor";
+import {
+  useWbsTaskEditor,
+  WBS_TASK_EDITOR_CONTROL,
+} from "@/features/wbs/composables/useWbsTaskEditor";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 import {
@@ -144,6 +147,28 @@ describe("useWbsTaskEditor", () => {
     expect(page.isEditorOpen.value).toBe(true);
   });
 
+  it("Dialogを開いたまま失敗を表示した後は「保存」へフォーカスを戻す", async () => {
+    mocks.wbsApi.updateWbsTask.mockRejectedValue(new WbsApiError(400, null));
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(mocks.focusedControls).toEqual([WBS_TASK_EDITOR_CONTROL.save]);
+  });
+
+  it("成功してDialogを閉じた場合はフォーカスを動かさない（UModalが編集ボタンへ戻す）", async () => {
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(mocks.focusedControls).toEqual([]);
+  });
+
   it("契約済み400の複数messageをBackend順で表示する", async () => {
     mocks.wbsApi.updateWbsTask.mockRejectedValue(
       new WbsApiError(400, {
@@ -220,11 +245,36 @@ describe("useWbsTaskEditor", () => {
     await page.saveWbsTask(buildEditForm());
 
     expect(page.isEditorOpen.value).toBe(false);
+    // 画面は取り直し済みなので、Backendの「再読み込みしてください」の後ろに取り直し済みの案内を添える。
     expect(page.errorMessages.value).toEqual([
       "他の操作で更新されています。",
+      DISPLAY_MESSAGES.wbs.conflictReloaded,
     ]);
     expect(mocks.wbsApi.getWbs).toHaveBeenCalledTimes(2);
     expect(page.wbs.value).toEqual(updatedWbs);
+  });
+
+  it("archive済みTaskの409では、取り直しても編集できないので取り直し済みの案内を添えない", async () => {
+    mocks.wbsApi.updateWbsTask.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_ARCHIVED",
+            field: "taskId",
+            message: "archive済みTaskのWBSは変更できません。",
+          },
+        ],
+      })
+    );
+    const page = useWbsPage();
+    await page.initialize();
+    page.openTaskEditor(2);
+
+    await page.saveWbsTask(buildEditForm());
+
+    expect(page.errorMessages.value).toEqual([
+      "archive済みTaskのWBSは変更できません。",
+    ]);
   });
 
   it("WBS更新409後の再取得で401になった場合は競合案内を残さない", async () => {

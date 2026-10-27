@@ -319,6 +319,9 @@ export const DISPLAY_MESSAGES = {
     updateFailed: "WBS Taskを更新できませんでした。",
     conflict: "WBSが他の操作で更新されました。最新情報を確認してください。",
     reloadFailed: "最新のWBSを再取得できませんでした。再読込してください。",
+    /** Task更新のversion競合（409）の後に、画面側で最新WBSを取り直せたときにBackendの文言の後ろへ添える案内。 */
+    conflictReloaded:
+      "最新のWBSを再取得しました。内容を確認してから、もう一度編集してください。",
     earnedValue: {
       forbidden: "EVMを参照するpermissionがありません。",
       activeBaselineRequired:

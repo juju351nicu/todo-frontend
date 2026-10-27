@@ -11,6 +11,8 @@ import { buildWbsTreeRows } from "@/features/wbs/utils/wbsTree";
  * `resetWbsPageMocks`を`beforeEach`で呼び、spec間・test間で状態を持ち越さない。
  */
 export const mocks = {
+  /** フォーカスを戻した部品の`data-*`属性の値。`resetWbsPageMocks`で空にする。 */
+  focusedControls: [],
   permissions: new Set(),
   route: { params: { projectId: "7" }, query: {} },
   router: { push: vi.fn(), replace: vi.fn() },
@@ -488,6 +490,7 @@ export const buildEditForm = (overrides = {}) => ({
 /**
  * 全mockを既定の成功Responseへ戻し、権限をTASK_UPDATEだけを持つ通常member（accountId 2）にする。
  * Excel download用に`URL.createObjectURL`と`document`をstubし、実DOMへ依存させない。
+ * フォーカスを戻す処理の部品探索（`document.querySelector`）は、`mocks.focusedControls`へ`data-*`属性の値を記録する。
  */
 export const resetWbsPageMocks = () => {
   vi.clearAllMocks();
@@ -579,8 +582,13 @@ export const resetWbsPageMocks = () => {
     configurable: true,
     value: mocks.revokeObjectUrl,
   });
+  mocks.focusedControls = [];
   vi.stubGlobal("document", {
     body: { appendChild: mocks.appendDownloadAnchor },
+    querySelector: (selector) => ({
+      focus: () => mocks.focusedControls.push(selector.match(/="([^"]+)"\]$/)?.[1]),
+      matches: () => false,
+    }),
     createElement: vi.fn(() => ({
       click: mocks.clickDownloadAnchor,
       download: "",

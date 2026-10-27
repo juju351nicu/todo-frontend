@@ -14,6 +14,30 @@ import {
   validateWbsTaskEditForm,
 } from "@/features/wbs/utils/wbsForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { hasApiFieldError } from "@/shared/utils/apiError";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
+
+/**
+ * WBS Task編集Dialogの部品に付ける`data-wbs-task-editor-control`属性の値。
+ * 保存中は「保存」がdisabledになりフォーカスがbodyへ外れるため、Dialogを開いたまま失敗を表示する場合はここへ戻す
+ * （動作確認/18_WBS本体 G-4）。
+ */
+export const WBS_TASK_EDITOR_CONTROL = {
+  /** Dialog下部の「保存」ボタン。 */
+  save: "save",
+} as const;
+
+/** `data-wbs-task-editor-control`属性の値から、その要素を探すselectorを作る。 */
+const wbsTaskEditorControlSelector = (key: string): string =>
+  `[data-wbs-task-editor-control="${key}"]`;
+
+/**
+ * Backendの文言が「WBSを再読み込みしてください。」で終わる409のerror code
+ * （`messages.properties`の`error.wbs.conflict.task-version`）。
+ * 画面は409の後に必ずWBSを取り直すため、このときだけ取り直し済みの案内を添える。
+ * archive済みProject・Taskの409は取り直しても編集できないので添えない。
+ */
+const RELOAD_GUIDANCE_ERROR_CODE = "TASK_VERSION_CONFLICT";
 
 /** `useWbsTaskEditor`が画面全体の操作として受け取るもの。 */
 export interface UseWbsTaskEditorOptions {
@@ -125,6 +149,8 @@ export const useWbsTaskEditor = (
     context.errorMessages.value = [];
     editorErrorMessages.value = [];
     context.successMessage.value = "";
+    // 409以外の失敗でDialogを開いたままにした場合だけ、保存後に「保存」へフォーカスを戻す。
+    let shouldRestoreSaveFocus = false;
     try {
       context.wbs.value = await WbsApi.updateWbsTask(
         projectId,
@@ -140,19 +166,38 @@ export const useWbsTaskEditor = (
           error,
           DISPLAY_MESSAGES.wbs.conflict
         );
-        await reloadWbsAfterConflict();
+        await reloadWbsAfterConflict(error);
       } else {
         await handleUpdateApiError(error);
+        shouldRestoreSaveFocus = isEditorOpen.value;
       }
     } finally {
       isSaving.value = false;
     }
+    if (shouldRestoreSaveFocus) {
+      // disabledが解除されたDOMへ反映された後に戻す（`focusFirstEnabledElement`がnextTickを待つ）。
+      await focusFirstEnabledElement([
+        wbsTaskEditorControlSelector(WBS_TASK_EDITOR_CONTROL.save),
+      ]);
+    }
   };
 
-  /** 409競合後に最新WBSを取得し、古い親関係とversionを画面へ残さない。 */
-  const reloadWbsAfterConflict = async (): Promise<void> => {
+  /**
+   * 409競合後に最新WBSを取得し、古い親関係とversionを画面へ残さない。
+   * version競合（`RELOAD_GUIDANCE_ERROR_CODE`）で取り直せたときは、Backendの「WBSを再読み込みしてください。」の後ろに、
+   * 画面側で取り直し済みであることの案内を添える（動作確認/18_WBS本体 G-5。12・13の対応と同じ）。
+   *
+   * @param conflict 更新APIが返した409
+   */
+  const reloadWbsAfterConflict = async (conflict: WbsApiError): Promise<void> => {
     try {
       await options.reloadWbs();
+      if (hasApiFieldError(conflict.errorResponse, RELOAD_GUIDANCE_ERROR_CODE)) {
+        context.errorMessages.value = [
+          ...context.errorMessages.value,
+          DISPLAY_MESSAGES.wbs.conflictReloaded,
+        ];
+      }
     } catch (refreshError: unknown) {
       if (
         refreshError instanceof WbsApiError &&
