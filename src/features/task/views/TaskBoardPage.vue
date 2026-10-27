@@ -29,6 +29,7 @@ const {
   canMoveTask,
   canSave,
   canStartTaskTimer,
+  canPostTaskComment,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
@@ -328,7 +329,7 @@ onBeforeMount(initialize);
             v-if="form.taskId !== null && board"
             :project-id="board.projectId"
             :task-id="form.taskId"
-            :disabled="!canUpdateTask || project?.status === 'ARCHIVED'"
+            :disabled="!canPostTaskComment"
           />
         </form>
       </template>

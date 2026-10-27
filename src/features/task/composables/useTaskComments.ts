@@ -69,7 +69,7 @@ interface CommentMutationTarget {
  *
  * @param projectId コメント対象Project ID。nullの間は一覧を空にしてAPIを呼ばない
  * @param taskId コメント対象Task ID。nullの間は一覧を空にしてAPIを呼ばない
- * @param disabled 投稿・編集・削除をさせないときtrue（`TASK_UPDATE`がない、archive済みProject等）
+ * @param disabled 投稿・編集・削除をさせないときtrue（`TASK_READ`がない、archive済みProject）
  * @returns コメント一覧、入力状態、所有者判定と各操作
  */
 export const useTaskComments = (

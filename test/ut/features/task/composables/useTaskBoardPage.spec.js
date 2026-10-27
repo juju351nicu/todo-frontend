@@ -617,6 +617,30 @@ describe("useTaskBoardPage", () => {
     expect(page.canArchiveTask.value).toBe(false);
   });
 
+  it("コメントの投稿はBackendと同じくTASK_READだけで許可し、TASK_UPDATEを問わない", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canUpdateTask.value).toBe(false);
+    expect(page.canPostTaskComment.value).toBe(true);
+  });
+
+  it("TASK_READがない、またはarchive済みProjectではコメントを投稿できない", async () => {
+    mocks.permissions.delete("TASK_READ");
+    const page = useTaskBoardPage();
+    await page.initialize();
+    expect(page.canPostTaskComment.value).toBe(false);
+
+    mocks.permissions.add("TASK_READ");
+    mocks.projectApi.getProject.mockResolvedValue({ ...structuredClone(ownerProject), status: "ARCHIVED" });
+    const archivedPage = useTaskBoardPage();
+    await archivedPage.initialize();
+    expect(archivedPage.canPostTaskComment.value).toBe(false);
+  });
+
   it("MEMBERはTask permissionを持っていても繰り返し規則を変更できない", async () => {
     const page = useTaskBoardPage();
 

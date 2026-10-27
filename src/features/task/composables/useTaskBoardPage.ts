@@ -149,6 +149,14 @@ export const useTaskBoardPage = () => {
   const canUpdateTask = computed(
     () => userStore.hasPermission("TASK_UPDATE") && isProjectActive.value
   );
+  /**
+   * Task Dialogのコメント欄で投稿できるか。Backendは`TASK_READ`とProject参照可否で投稿を許可し、
+   * 担当者・`TASK_UPDATE`は問わない（`todo-backend`の`docs/project-board-task-mvp-design.md` §60）。
+   * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
+   */
+  const canPostTaskComment = computed(
+    () => userStore.hasPermission("TASK_READ") && isProjectActive.value
+  );
   const currentProjectRole = computed(
     () =>
       project.value?.members.find(
@@ -934,6 +942,7 @@ export const useTaskBoardPage = () => {
     canMoveTask,
     canSave,
     canStartTaskTimer,
+    canPostTaskComment,
     canUpdateTask,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,

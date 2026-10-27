@@ -23,7 +23,7 @@ const props = withDefaults(
     /** 対象Task ID。変わると一覧を取り直し、投稿欄・編集中・削除確認中の状態を捨てる。 */
     taskId: number;
     /**
-     * 投稿・編集・削除をさせないときtrue（`TASK_UPDATE`のないaccount、archive済みProject等）。
+     * 投稿・編集・削除をさせないときtrue（`TASK_READ`がない、archive済みProject。`useTaskBoardPage#canPostTaskComment`）。
      * trueの間は投稿欄を読み取り専用にし、本人のコメントにも編集・削除ボタンを出さない。
      */
     disabled?: boolean;
