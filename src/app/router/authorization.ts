@@ -17,6 +17,12 @@ export const hasAnyPermission = (
   );
 
 /**
+ * 未ログインで保護画面へ入ったときにLogin画面へ渡すquery。
+ * Login画面（`useLoginPage`）はこの`reason`を見て要ログインの案内を画面内へ表示し、表示後にURLから除去する。
+ */
+export const LOGIN_REQUIRED_QUERY = { reason: "login_required" } as const;
+
+/**
  * ログイン後またはNot Found画面から戻る既定ルートを決定する。
  * Basic Dashboardはpermission別にavailable=falseを返すため、全認証利用者が同じ入口を使用する。
  *

@@ -4,6 +4,7 @@ import { onMounted } from "vue";
 import { useLoginPage } from "@/features/auth/composables/useLoginPage";
 import AppAlert from "@/shared/components/AppAlert.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   errorMessages,
@@ -11,6 +12,7 @@ const {
   isLoading,
   isShowModal,
   loginForm,
+  loginNotice,
   showPassword,
   submitForm,
   submitGithub,
@@ -29,6 +31,9 @@ onMounted(initialize);
   </template>
   <UCard class="mx-auto mt-9 w-93.5" :ui="{ body: 'flex flex-col justify-center px-4 pt-0 pb-4' }">
     <h1 class="mt-6 text-center text-xl font-medium leading-8 tracking-[.0125em]">ログイン</h1>
+    <div v-if="loginNotice" class="mx-9 mt-3">
+      <StatusAlert type="info" variant="soft" density="compact">{{ loginNotice }}</StatusAlert>
+    </div>
     <p class="mt-3 pt-3 text-center text-base tracking-[.009375em]">ログインIDでログイン</p>
     <form class="mx-9" @submit.prevent="submitForm">
       <UFormField>

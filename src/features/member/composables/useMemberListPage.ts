@@ -8,6 +8,7 @@ import {
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
+import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 const MEMBER_TABLE_HEADERS: DataTableHeader[] = [
   {
@@ -24,6 +25,16 @@ const MEMBER_TABLE_HEADERS: DataTableHeader[] = [
   { title: "最終ログインした時刻", align: "start", key: "lastLogin" },
   { title: "編集", align: "start", sortable: false, key: "actions" },
 ];
+
+/**
+ * 会員一覧の登録日・更新日・最終ログイン日時（BackendのISO日時）を、利用端末のタイムゾーンの短い日時へ変換する。
+ * 並べ替えはISO文字列のまま行うため、行データは変えずにcellの表示だけで使う。
+ *
+ * @param value BackendのISO日時。未登録・未ログインはnull
+ * @returns nullの場合は空文字
+ */
+export const formatMemberDateTime = (value: string | null): string =>
+  value === null ? "" : formatShortDateTime(value);
 
 /** 会員一覧画面の状態と操作を提供する。 */
 export const useMemberListPage = () => {

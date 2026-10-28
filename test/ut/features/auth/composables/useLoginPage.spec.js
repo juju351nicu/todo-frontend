@@ -71,6 +71,40 @@ describe("useLoginPage", () => {
     expect(mocks.router.replace).toHaveBeenCalledWith({ path: "/", query: {} });
   });
 
+  it("保護画面から戻されたときは要ログインの案内を画面内に出してURLから除去する", async () => {
+    mocks.route.query = { reason: "login_required" };
+    const page = useLoginPage();
+
+    await page.initialize();
+
+    expect(page.loginNotice.value).toBe(
+      "この画面を開くにはログインが必要です。ログインしてください。"
+    );
+    expect(page.isShowModal.value).toBe(false);
+    expect(mocks.router.replace).toHaveBeenCalledWith({ path: "/", query: {} });
+  });
+
+  it("queryがなければ案内を出さずURLも変えない", async () => {
+    const page = useLoginPage();
+
+    await page.initialize();
+
+    expect(page.loginNotice.value).toBe("");
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
+  it("既存Sessionがあれば要ログインの案内を出さずに既定画面へ移動する", async () => {
+    mocks.userStore.restoreSession.mockResolvedValue(true);
+    mocks.route.query = { reason: "login_required" };
+    const page = useLoginPage();
+
+    await page.initialize();
+
+    expect(page.loginNotice.value).toBe("");
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Dashboard" });
+    expect(mocks.router.replace).not.toHaveBeenCalled();
+  });
+
   it("ログイン成功時はフォームをStoreへ渡してDashboardへ移動する", async () => {
     mocks.userStore.authLogin.mockResolvedValue(true);
     const page = useLoginPage();

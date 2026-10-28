@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { useMemberListPage } from "@/features/member/composables/useMemberListPage";
+import { formatMemberDateTime, useMemberListPage } from "@/features/member/composables/useMemberListPage";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
@@ -33,6 +33,9 @@ onBeforeMount(initialize);
     selectable
     class="rounded-sm ring ring-default"
   >
+    <template #registeredDate-cell="{ item }">{{ formatMemberDateTime(item.registeredDate) }}</template>
+    <template #updatedDate-cell="{ item }">{{ formatMemberDateTime(item.updatedDate) }}</template>
+    <template #lastLogin-cell="{ item }">{{ formatMemberDateTime(item.lastLogin) }}</template>
     <template #actions-cell="{ item }">
       <button type="button" class="me-2 align-middle" aria-label="会員を編集" @click="showMemberDetail(item)">
         <UIcon name="i-mdi-pencil" class="size-4" />

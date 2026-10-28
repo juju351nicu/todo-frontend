@@ -1,6 +1,6 @@
 # Work Management Frontend 作業指示
 
-Codex等のAIコーディングツールは、変更前にこのファイル、`docs/coding-guidelines.md`、`docs/frontend-architecture.md`を最後まで読むこと。
+Codex等のAIコーディングツールは、変更前にこのファイル、`docs/coding-guidelines.md`、`docs/frontend-architecture.md`を最後まで読むこと。設計の大きな決定の理由は`docs/adr/`に、Backendの設計書の目次は`todo-backend/docs/README.md`にある。
 
 ## 実装原則
 

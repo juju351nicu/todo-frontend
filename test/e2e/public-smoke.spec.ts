@@ -13,18 +13,21 @@ test("未認証利用者へログイン画面を表示する", async ({ page }) 
   ).toBeVisible();
 });
 
-test("未認証で保護画面へ入るとログインへ戻す", async ({ page }) => {
-  let dialogMessage = "";
-  page.once("dialog", async (dialog) => {
-    dialogMessage = dialog.message();
-    await dialog.accept();
+test("未認証で保護画面へ入るとログインへ戻し、理由を画面内に出す", async ({ page }) => {
+  let dialogCount = 0;
+  page.on("dialog", async (dialog) => {
+    dialogCount += 1;
+    await dialog.dismiss();
   });
 
   await page.goto("/dashboard");
 
   await expect(page).toHaveURL(/\/$/);
-  expect(dialogMessage).toBe("ログインが必要です");
+  await expect(page.getByRole("alert")).toContainText(
+    "この画面を開くにはログインが必要です。"
+  );
   await expect(page.getByPlaceholder("ログインID")).toBeVisible();
+  expect(dialogCount).toBe(0);
 });
 
 test("認証失敗でアカウントの存在を公開しない", async ({ page }) => {
