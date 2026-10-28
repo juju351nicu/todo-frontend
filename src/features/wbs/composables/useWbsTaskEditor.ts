@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 
+import { useUserStore } from "@/features/auth/stores/user";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { WbsTask, WbsTaskEditForm } from "@/features/wbs/types/wbs";
@@ -56,6 +57,8 @@ export interface UseWbsTaskEditorOptions {
  *
  * - 呼び出すAPI: `WbsApi.updateWbsTask`（取得時点version付き）。成功時はResponseのWBS全体で`context.wbs`を差し替える。
  * - 更新にはTASK_UPDATE permissionが必要。階層の循環・計画の整合はBackendが最終判定する。
+ * - 編集の入口（`canEditTask`）は、Backendが保存を許す行だけに出す。利用中のProjectで、SYSTEM_ADMIN・OWNER・MANAGERは
+ *   全Task、MEMBERは自分が担当するTaskだけ（`docs/wbs-core-design.md` §2。以前は入力してから403・409を知った）。
  * - 409競合ではDialogを閉じ、`reloadWbs`で最新WBSを再取得して再編集を促す。再取得の401・403・404は競合理由より優先する。
  * - 401では`context.handleUnauthorized`へ委ね、Dialogは統括の`useWbsPage`が`discardTaskEditor`で閉じる。
  *
@@ -66,6 +69,20 @@ export const useWbsTaskEditor = (
   context: WbsPageContext,
   options: UseWbsTaskEditorOptions
 ) => {
+  const userStore = useUserStore();
+
+  /**
+   * そのTaskのWBS情報を保存できるか。Backendの判定（TASK_UPDATE、利用中のProject、Project管理者または担当者本人）と同じ条件で、
+   * 押しても必ず失敗する編集の入口を出さないために使う。最終判定はBackendが行う。
+   *
+   * @param task 判定するTask（担当アカウントIDだけを使う）
+   * @returns 保存できる場合はtrue
+   */
+  const canEditTask = (task: Readonly<Pick<WbsTask, "assigneeAccountId">>): boolean =>
+    context.canEditWbs.value &&
+    context.project.value?.status === "ACTIVE" &&
+    (context.canManageProject.value || task.assigneeAccountId === userStore.memberId);
+
   /** 編集中Taskの取得時点の複製。Dialogを閉じている間はnull。 */
   const editingTask = ref<WbsTask | null>(null);
   const editorErrorMessages = ref<string[]>([]);
@@ -83,7 +100,7 @@ export const useWbsTaskEditor = (
   );
 
   /**
-   * TASK_UPDATEを持つ利用者だけに、取得済みTaskの編集Dialogを開く。
+   * 保存できるTask（`canEditTask`）だけ、取得済みTaskの編集Dialogを開く。保存できない場合は理由を画面上部に出す。
    *
    * @param taskId 階層表で選択したTask ID
    */
@@ -99,6 +116,14 @@ export const useWbsTaskEditor = (
     );
     if (task === undefined) {
       context.errorMessages.value = ["編集対象のTaskが見つかりません。"];
+      return;
+    }
+    if (!canEditTask(task)) {
+      context.errorMessages.value = [
+        context.project.value?.status === "ACTIVE"
+          ? "担当していないTaskのWBS情報は編集できません。"
+          : "archive済みのProjectのTaskは編集できません。",
+      ];
       return;
     }
     editingTask.value = { ...task };
@@ -226,6 +251,7 @@ export const useWbsTaskEditor = (
   };
 
   return {
+    canEditTask,
     closeTaskEditor,
     discardTaskEditor: closeTaskEditorAfterSaving,
     editingTask,

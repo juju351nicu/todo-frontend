@@ -190,7 +190,7 @@ const VIEW_OPTIONS = [
                     @click="page.openWorkLogDialog(row.taskId)"
                   />
                   <UButton
-                    v-if="page.canEditWbs"
+                    v-if="page.canEditTask(row)"
                     icon="i-mdi-pencil-outline"
                     size="sm"
                     variant="ghost"

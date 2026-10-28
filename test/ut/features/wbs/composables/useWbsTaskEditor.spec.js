@@ -11,6 +11,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   buildWbsPageContext,
   mocks,
+  project,
   wbs,
   updatedWbs,
   buildEditForm,
@@ -63,6 +64,48 @@ describe("useWbsTaskEditor", () => {
     expect(page.isEditorOpen.value).toBe(false);
     expect(page.errorMessages.value).toEqual([
       "WBSを更新するpermissionがありません。",
+    ]);
+  });
+
+  it("MEMBERは自分が担当するTaskだけ編集でき、他人の担当Taskは入口を出さずDialogも開かない（改善提案 1-19）", async () => {
+    const othersWbs = structuredClone(wbs);
+    othersWbs.tasks = othersWbs.tasks.map((task) => ({ ...task, assigneeAccountId: 1 }));
+    mocks.wbsApi.getWbs.mockResolvedValue(othersWbs);
+    const page = useWbsPage();
+    await page.initialize();
+
+    expect(page.canEditTask({ assigneeAccountId: 2 })).toBe(true);
+    expect(page.canEditTask({ assigneeAccountId: 1 })).toBe(false);
+
+    page.openTaskEditor(2);
+
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "担当していないTaskのWBS情報は編集できません。",
+    ]);
+  });
+
+  it("OWNER・MANAGER・SYSTEM_ADMINは他人の担当Taskも編集できる", async () => {
+    mocks.roles.add("SYSTEM_ADMIN");
+    const page = useWbsPage();
+    await page.initialize();
+
+    expect(page.canEditTask({ assigneeAccountId: 1 })).toBe(true);
+  });
+
+  it("archive済みProjectでは担当Taskでも編集の入口を出さない", async () => {
+    mocks.projectApi.getProject.mockResolvedValue({
+      ...structuredClone(project),
+      status: "ARCHIVED",
+    });
+    const page = useWbsPage();
+    await page.initialize();
+
+    expect(page.canEditTask({ assigneeAccountId: 2 })).toBe(false);
+    page.openTaskEditor(2);
+    expect(page.isEditorOpen.value).toBe(false);
+    expect(page.errorMessages.value).toEqual([
+      "archive済みのProjectのTaskは編集できません。",
     ]);
   });
 
