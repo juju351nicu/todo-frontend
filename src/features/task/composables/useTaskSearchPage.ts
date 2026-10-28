@@ -159,6 +159,12 @@ export const useTaskSearchPage = () => {
     isDeleteConfirmationOpen.value = false;
   };
 
+  /**
+   * 直近の処理で401を受けてLoginへ移ったか。Session切れの後に、破棄した画面へ案内を足さないために使う。
+   * `handleUnauthorized`がtrueにし、続けて複数のAPIを呼ぶ処理（`recoverSavedViews`）が開始時にfalseへ戻す。
+   */
+  let isSessionEnded = false;
+
   /** 認証・認可状態が変化した場合にServer由来の画面状態をすべて破棄する。 */
   const clearProtectedState = (): void => {
     options.value = { projects: [], assignees: [], statuses: [] };
@@ -190,6 +196,7 @@ export const useTaskSearchPage = () => {
     if (!(error instanceof TaskSearchApiError) || error.status !== 401) {
       return false;
     }
+    isSessionEnded = true;
     clearProtectedState();
     errorMessages.value = [];
     successMessage.value = "";
@@ -407,9 +414,18 @@ export const useTaskSearchPage = () => {
     clearSavedViewState();
     try {
       await reloadSavedViews(preferredId);
-      errorMessages.value = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
+      const recoveryMessages = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
         ? [...mutationMessages, DISPLAY_MESSAGES.task.search.conflictReloaded]
         : mutationMessages;
+      // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す（改善提案 1-16）。
+      // 検索は画面のメッセージを置き換えるため、取り直しの案内はその後に先頭へ足す。
+      isSessionEnded = false;
+      if (selectedSavedViewId.value !== null && (await refreshOptions(true))) {
+        await executeSearch();
+      }
+      if (!isSessionEnded) {
+        errorMessages.value = [...recoveryMessages, ...errorMessages.value];
+      }
     } catch (reloadError: unknown) {
       if (await handleUnauthorized(reloadError)) return;
       if (

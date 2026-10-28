@@ -185,6 +185,72 @@ describe("useTaskSearchPage", () => {
     ]);
   });
 
+  it("更新競合でSaved Viewを取り直したら、最新の条件で検索し直す（改善提案 1-16）", async () => {
+    const latestSavedView = {
+      ...savedView,
+      filters: { ...emptyFilters, statusCode: "TODO" },
+      version: 3,
+    };
+    mocks.api.updateTaskSavedView.mockRejectedValue(
+      new TaskSearchApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+            field: "version",
+            message: "他の画面で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockResolvedValueOnce([latestSavedView]);
+    const page = useTaskSearchPage();
+    await page.initialize();
+    await page.applySavedView(5);
+    mocks.api.searchTasks.mockClear();
+
+    await page.updateSavedView();
+
+    expect(mocks.api.searchTasks).toHaveBeenCalledOnce();
+    expect(mocks.api.searchTasks).toHaveBeenCalledWith(
+      expect.objectContaining({ statusCode: "TODO" })
+    );
+    expect(page.tasks.value).toEqual(searchResponse.tasks);
+    // 検索し直しても、取り直しの案内は消さない。
+    expect(page.errorMessages.value).toEqual([
+      "他の画面で更新されています。",
+      "最新のSaved Viewを再取得しました。内容を確認してから、もう一度操作してください。",
+    ]);
+  });
+
+  it("取り直し後の検索し直しで401になったら、案内を足さずLoginへ移る", async () => {
+    mocks.api.updateTaskSavedView.mockRejectedValue(
+      new TaskSearchApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_SAVED_VIEW_VERSION_CONFLICT",
+            field: "version",
+            message: "他の画面で更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.api.getTaskSavedViews
+      .mockResolvedValueOnce([savedView])
+      .mockResolvedValueOnce([savedView]);
+    const page = useTaskSearchPage();
+    await page.initialize();
+    await page.applySavedView(5);
+    mocks.api.searchTasks.mockRejectedValueOnce(new TaskSearchApiError(401, null));
+
+    await page.updateSavedView();
+
+    expect(mocks.userStore.clearSession).toHaveBeenCalledOnce();
+    expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    expect(page.errorMessages.value).toEqual([]);
+  });
+
   it("検索条件の契約済み複数errorをBackend順で表示する", async () => {
     mocks.api.searchTasks.mockRejectedValue(
       new TaskSearchApiError(400, {
@@ -387,7 +453,7 @@ describe("useTaskSearchPage", () => {
     );
   });
 
-  it("期限FromがToより後ならAPIを呼ばず画面で検証する", async () => {
+  it("期限（から）が期限（まで）より後ならAPIを呼ばず画面で検証する", async () => {
     const page = useTaskSearchPage();
     page.filters.dueFrom = "2026-09-30";
     page.filters.dueTo = "2026-09-01";

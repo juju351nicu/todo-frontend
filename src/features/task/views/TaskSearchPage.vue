@@ -215,7 +215,7 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
-          <UFormField label="期限From">
+          <UFormField label="期限（から）">
             <UInput
               :model-value="filters.dueFrom ?? ''"
               type="date"
@@ -225,7 +225,7 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
-          <UFormField label="期限To">
+          <UFormField label="期限（まで）">
             <UInput
               :model-value="filters.dueTo ?? ''"
               type="date"
