@@ -5,6 +5,9 @@ import {
   formatProjectTemplateTaskTitle,
   getProjectTemplatePriorityLabel,
   getProjectTemplateTaskTypeLabel,
+  formatProjectTemplateParent,
+  resolveProjectTemplateSlotName,
+  resolveProjectTemplateStatusName,
 } from "@/features/project/utils/projectTemplateDisplay";
 
 describe("projectTemplateDisplay", () => {
@@ -33,5 +36,27 @@ describe("projectTemplateDisplay", () => {
 
   it("snapshot内に存在しないTask IDはIDで表示する", () => {
     expect(formatProjectTemplateTaskTitle([], 99)).toBe("ID: 99");
+  });
+});
+
+describe("Template詳細の内部コード・番号を名前で示す（改善提案 1-14）", () => {
+  const statuses = [{ statusCode: "TODO", name: "未着手", position: 1, completed: false }];
+  const memberSlots = [{ slotKey: "OWNER_1", displayName: "管理 一郎", projectRole: "OWNER", position: 1 }];
+  const tasks = [
+    { projectTemplateTaskId: 129, parentProjectTemplateTaskId: null, wbsCode: "1", title: "設計" },
+    { projectTemplateTaskId: 130, parentProjectTemplateTaskId: 129, wbsCode: "1.1", title: "画面設計" },
+  ];
+
+  it("Board列コードを列名、担当slotのキーを表示名にし、対応がなければコードのまま示す", () => {
+    expect(resolveProjectTemplateStatusName("TODO", statuses)).toBe("未着手");
+    expect(resolveProjectTemplateStatusName("UNKNOWN", statuses)).toBe("UNKNOWN");
+    expect(resolveProjectTemplateSlotName("OWNER_1", memberSlots)).toBe("管理 一郎");
+    expect(resolveProjectTemplateSlotName("MEMBER_9", memberSlots)).toBe("MEMBER_9");
+  });
+
+  it("親をsnapshot IDではなくWBS番号と件名で示し、最上位・見つからない親は空にする", () => {
+    expect(formatProjectTemplateParent(129, tasks)).toBe("親: 1 設計");
+    expect(formatProjectTemplateParent(null, tasks)).toBe("");
+    expect(formatProjectTemplateParent(999, tasks)).toBe("");
   });
 });

@@ -1,4 +1,9 @@
-import type { ProjectTemplateTask, ProjectTemplateTaskType } from "@/features/project/types/projectTemplate";
+import type {
+  ProjectTemplateMemberSlot,
+  ProjectTemplateStatus,
+  ProjectTemplateTask,
+  ProjectTemplateTaskType,
+} from "@/features/project/types/projectTemplate";
 
 const TASK_TYPE_LABELS: Readonly<Record<ProjectTemplateTaskType, string>> = {
   SUMMARY: "Summary",
@@ -46,4 +51,46 @@ export const formatProjectTemplateTaskTitle = (tasks: readonly ProjectTemplateTa
     return `ID: ${taskId}`;
   }
   return task.wbsCode ? `${task.wbsCode} ${task.title}` : task.title;
+};
+
+/**
+ * Template TaskのBoard列コード（`TODO`等）を、Templateに保存した列名で示す（改善提案 1-14）。
+ *
+ * @param statusCode Template TaskのBoard列コード
+ * @param statuses Templateに保存したBoard列
+ * @returns 列名。対応する列がなければコード自体
+ */
+export const resolveProjectTemplateStatusName = (
+  statusCode: string,
+  statuses: readonly ProjectTemplateStatus[]
+): string => statuses.find((status) => status.statusCode === statusCode)?.name ?? statusCode;
+
+/**
+ * Template Taskの担当slotのキー（`OWNER_1`等）を、slotの表示名で示す（改善提案 1-14）。
+ *
+ * @param slotKey Template Taskの担当slotのキー
+ * @param memberSlots Templateに保存したmember slot
+ * @returns slotの表示名。対応するslotがなければキー自体
+ */
+export const resolveProjectTemplateSlotName = (
+  slotKey: string,
+  memberSlots: readonly ProjectTemplateMemberSlot[]
+): string => memberSlots.find((slot) => slot.slotKey === slotKey)?.displayName ?? slotKey;
+
+/**
+ * Template Taskの親を、snapshot IDではなく親TaskのWBS番号と件名で示す（改善提案 1-14）。
+ *
+ * @param parentProjectTemplateTaskId 親のsnapshot Task ID。最上位はnull
+ * @param tasks 同じTemplateのTask
+ * @returns 例 `親: 1 設計`。最上位、または親が見つからない場合は空文字
+ */
+export const formatProjectTemplateParent = (
+  parentProjectTemplateTaskId: number | null,
+  tasks: readonly ProjectTemplateTask[]
+): string => {
+  if (parentProjectTemplateTaskId === null) {
+    return "";
+  }
+  const parent = tasks.find((task) => task.projectTemplateTaskId === parentProjectTemplateTaskId);
+  return parent === undefined ? "" : `親: ${[parent.wbsCode, parent.title].filter(Boolean).join(" ")}`;
 };

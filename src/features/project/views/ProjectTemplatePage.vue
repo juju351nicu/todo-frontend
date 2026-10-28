@@ -8,9 +8,12 @@ import {
 } from "@/features/project/composables/useProjectTemplatePage";
 import {
   formatProjectTemplateOffset,
+  formatProjectTemplateParent,
   formatProjectTemplateTaskTitle,
   getProjectTemplatePriorityLabel,
   getProjectTemplateTaskTypeLabel,
+  resolveProjectTemplateSlotName,
+  resolveProjectTemplateStatusName,
 } from "@/features/project/utils/projectTemplateDisplay";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -93,7 +96,7 @@ onBeforeMount(initialize);
                 <UIcon name="i-mdi-folder-star-outline" class="size-6 shrink-0 opacity-60" />
                 <span class="min-w-0">
                   <span class="block text-base">{{ template.name }}</span>
-                  <span class="block text-sm opacity-60">基準日 {{ template.baseDate }}・version {{ template.version }}</span>
+                  <span class="block text-sm opacity-60">基準日 {{ template.baseDate }}</span>
                 </span>
               </button>
             </li>
@@ -111,10 +114,7 @@ onBeforeMount(initialize);
               <div>
                 <h1 class="text-2xl">{{ selectedTemplate.name }}</h1>
                 <div class="text-sm text-muted">
-                  基準日 {{ selectedTemplate.baseDate }}・version {{ selectedTemplate.version }}
-                  <span v-if="selectedTemplate.sourceProjectId !== null">
-                    ・capture元Project ID {{ selectedTemplate.sourceProjectId }}
-                  </span>
+                  基準日 {{ selectedTemplate.baseDate }}
                 </div>
               </div>
               <UButton
@@ -223,7 +223,7 @@ onBeforeMount(initialize);
                 <div v-for="slot in selectedTemplate.memberSlots" :key="slot.slotKey" class="w-full p-3 md:w-1/2">
                   <UFormField
                     :label="`${slot.displayName}（${slot.projectRole}）`"
-                    :help="slot.slotKey === 'OWNER_1' ? '未指定時は自分を割り当てます。' : `slot: ${slot.slotKey}`"
+                    :help="slot.slotKey === 'OWNER_1' ? '未指定時は自分を割り当てます。' : '割り当てるアカウントIDを入力します。'"
                   >
                     <UInput
                       :model-value="applyForm.memberMappings[slot.slotKey] ?? undefined"
@@ -265,7 +265,7 @@ onBeforeMount(initialize);
                   <ul class="py-2">
                     <li v-for="slot in selectedTemplate.memberSlots" :key="slot.slotKey" class="px-4 py-1.5">
                       <div class="text-base">{{ slot.displayName }}</div>
-                      <div class="text-sm text-muted">{{ slot.slotKey }}・{{ slot.projectRole }}</div>
+                      <div class="text-sm text-muted">{{ slot.projectRole }}</div>
                     </li>
                   </ul>
                 </UCard>
@@ -277,10 +277,7 @@ onBeforeMount(initialize);
                   </template>
                   <ul class="py-2">
                     <li v-for="status in selectedTemplate.statuses" :key="status.statusCode" class="flex items-center px-4 py-1.5">
-                      <span class="flex-1">
-                        <span class="block text-base">{{ status.name }}</span>
-                        <span class="block text-sm text-muted">{{ status.statusCode }}</span>
-                      </span>
+                      <span class="flex-1 text-base">{{ status.name }}</span>
                       <UBadge v-if="status.completed" size="xs" color="success">完了列</UBadge>
                     </li>
                   </ul>
@@ -310,14 +307,13 @@ onBeforeMount(initialize);
                       <td>
                         <div class="font-medium">{{ task.wbsCode || "-" }} {{ task.title }}</div>
                         <div v-if="task.detail" class="max-w-md text-xs whitespace-pre-wrap">{{ task.detail }}</div>
-                        <div class="text-xs text-muted">
-                          snapshot ID {{ task.projectTemplateTaskId }}
-                          <span v-if="task.parentProjectTemplateTaskId !== null">・親 {{ task.parentProjectTemplateTaskId }}</span>
+                        <div v-if="task.parentProjectTemplateTaskId !== null" class="text-xs text-muted">
+                          {{ formatProjectTemplateParent(task.parentProjectTemplateTaskId, selectedTemplate.tasks) }}
                         </div>
                       </td>
                       <td>{{ getProjectTemplateTaskTypeLabel(task.taskType) }}</td>
-                      <td>{{ task.statusCode }}</td>
-                      <td>{{ task.assigneeSlotKey }}</td>
+                      <td>{{ resolveProjectTemplateStatusName(task.statusCode, selectedTemplate.statuses) }}</td>
+                      <td>{{ resolveProjectTemplateSlotName(task.assigneeSlotKey, selectedTemplate.memberSlots) }}</td>
                       <td>
                         {{ formatProjectTemplateOffset(task.startOffsetDays) }} ～
                         {{ formatProjectTemplateOffset(task.dueOffsetDays) }}
