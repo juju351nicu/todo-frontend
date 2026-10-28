@@ -34,13 +34,19 @@ export const getDashboardProjectRoleLabel = (
   ];
 };
 
+// 画面ではbaselineを「基準計画」、AC（Actual Cost）を「実績工数」と呼ぶ（改善提案 1-18。英語の用語を減らす）。
 const ADVANCED_WARNING_LABELS: Readonly<Record<string, string>> = {
-  BASELINE_PLAN_UNALLOCATED: "baseline予定工数に未配賦があります",
-  BASELINE_PLAN_OVER_ALLOCATED: "baseline予定工数を超えて配賦されています",
-  UNBASELINED_TASK_EXISTS: "baseline作成後のTaskがあります",
-  UNBASELINED_ACTUAL_EXCLUDED: "baseline外Taskの実績をACから除外しています",
+  BASELINE_PLAN_UNALLOCATED: "基準計画の予定工数に未配賦があります",
+  BASELINE_PLAN_OVER_ALLOCATED: "基準計画の予定工数を超えて配賦されています",
+  UNBASELINED_TASK_EXISTS: "基準計画の作成後に追加されたTaskがあります",
+  UNBASELINED_ACTUAL_EXCLUDED: "基準計画にないTaskの実績を実績工数（AC）から除外しています",
 };
 
-/** 高度Dashboardの安定したEVM警告codeを利用者向け表示へ変換する。 */
+/**
+ * 高度Dashboardの安定したEVM警告codeを利用者向け表示へ変換する。
+ *
+ * @param code Backendの警告code
+ * @returns 表示文言。未知のcodeはcodeそのもの
+ */
 export const getAdvancedDashboardWarningLabel = (code: string): string =>
   ADVANCED_WARNING_LABELS[code] ?? code;
