@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   permissions: new Set(),
   projectApi: {
     addProjectMember: vi.fn(),
+    findMemberCandidates: vi.fn(),
     getProject: vi.fn(),
     removeProjectMember: vi.fn(),
     updateProject: vi.fn(),
@@ -254,6 +255,43 @@ describe("useProjectSettingsDialog", () => {
     });
     expect(onProjectUpdated).toHaveBeenCalledWith(updated);
     expect(dialog.addMemberAccountId.value).toBeNull();
+  });
+
+  it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す（改善提案 2-9）", async () => {
+    const candidate = { accountId: 9, displayName: "山田 太郎", email: "yamada@example.com", loginId: "yamada" };
+    mocks.projectApi.findMemberCandidates.mockResolvedValue([candidate]);
+    mocks.projectApi.addProjectMember.mockResolvedValue(structuredClone(project));
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.memberCandidateQuery.value = "  山田 ";
+
+    await dialog.searchMemberCandidates();
+
+    expect(mocks.projectApi.findMemberCandidates).toHaveBeenCalledWith(5, "山田");
+    expect(dialog.memberCandidates.value).toEqual([candidate]);
+    expect(dialog.searchedMemberCandidateQuery.value).toBe("山田");
+
+    dialog.selectMemberCandidate(candidate);
+    expect(dialog.addMemberAccountId.value).toBe(9);
+    expect(dialog.canAddMember.value).toBe(true);
+
+    await dialog.addMember();
+    expect(mocks.projectApi.addProjectMember).toHaveBeenCalledWith(5, { accountId: 9, projectRole: "MEMBER" });
+    expect(dialog.memberCandidates.value).toEqual([]);
+    expect(dialog.memberCandidateQuery.value).toBe("");
+  });
+
+  it("空白だけの語ではmember候補を探さず、検索に失敗したら候補を消して理由を出す", async () => {
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.memberCandidateQuery.value = "　 ";
+    await dialog.searchMemberCandidates();
+    expect(mocks.projectApi.findMemberCandidates).not.toHaveBeenCalled();
+    expect(dialog.searchedMemberCandidateQuery.value).toBe("");
+
+    mocks.projectApi.findMemberCandidates.mockRejectedValue(new ProjectApiError(403, null));
+    dialog.memberCandidateQuery.value = "山";
+    await dialog.searchMemberCandidates();
+    expect(dialog.memberCandidates.value).toEqual([]);
+    expect(dialog.errorMessages.value).toHaveLength(1);
   });
 
   it("参加済みアカウントは追加APIへ送信しない", async () => {

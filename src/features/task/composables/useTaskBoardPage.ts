@@ -153,13 +153,11 @@ export const useTaskBoardPage = () => {
     () => userStore.hasPermission("TASK_UPDATE") && isProjectActive.value
   );
   /**
-   * Task Dialogのコメント欄で投稿できるか。Backendは`TASK_READ`とProject参照可否で投稿を許可し、
-   * 担当者・`TASK_UPDATE`は問わない（`todo-backend`の`docs/task-comment-design.md`「1.3 規則」）。
-   * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
+   * 本人のTask Templateをarchiveできるか。Templateは本人専用で、BackendはTASK_READで保存・archiveを許す
+   * （改善提案 2-8。以前はarchiveにTASK_UPDATEが要り、参照のみの利用者は作ったTemplateを消せなかった）。
+   * TemplateはProjectに属さないため、Projectの状態は問わない。
    */
-  const canPostTaskComment = computed(
-    () => userStore.hasPermission("TASK_READ") && isProjectActive.value
-  );
+  const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
   const currentProjectRole = computed(
     () =>
       project.value?.members.find(
@@ -176,6 +174,24 @@ export const useTaskBoardPage = () => {
     (project.value?.members ?? []).some(
       (member) => member.accountId === userStore.memberId
     )
+  );
+  /**
+   * このProjectで変更操作（コメント投稿・Template保存等）へ進めるか。READ_ONLY_ADMINは参加していないProjectも
+   * 参照できるが変更できない（改善提案 2-12。Backendの`ProjectAuthorizationLogic#canOperateProject`）。
+   */
+  const canOperateProject = computed(
+    () => userStore.hasRole("SYSTEM_ADMIN") || isCurrentUserProjectMember.value
+  );
+  /**
+   * Task Dialogのコメント欄で投稿できるか。Backendは`TASK_READ`とProjectへの参加（SYSTEM_ADMINは不要）で投稿を許可し、
+   * 担当者・`TASK_UPDATE`は問わない（`todo-backend`の`docs/task-comment-design.md`「1.3 規則」）。
+   * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
+   */
+  const canPostTaskComment = computed(
+    () =>
+      userStore.hasPermission("TASK_READ") &&
+      isProjectActive.value &&
+      canOperateProject.value
   );
   const canCreateTaskRecurrence = computed(
     () =>
@@ -231,8 +247,13 @@ export const useTaskBoardPage = () => {
   );
   /** 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。 */
   const canRecordTaskWork = computed(() => isEditingRegularTask.value);
-  /** 開いているTaskを「Templateとして保存」できるか。保存自体は`TASK_READ`で許可される（Backendの`TaskTemplateController`）。 */
-  const canCaptureTaskTemplate = computed(() => isEditingRegularTask.value);
+  /**
+   * 開いているTaskを「Templateとして保存」できるか。保存自体は`TASK_READ`で許可される（Backendの`TaskTemplateController`）が、
+   * 保存元Projectへの参加が要る（READ_ONLY_ADMINは未参加Projectから保存できない。改善提案 2-12）。
+   */
+  const canCaptureTaskTemplate = computed(
+    () => isEditingRegularTask.value && canOperateProject.value
+  );
   /**
    * Task Templateを適用するときに担当者を限定するaccount ID。限定しない場合はnull。
    * MEMBERは自分を担当者にするTaskだけを作成できる（Backendの`TaskResourceAuthorizationLogic#checkCanCreate`）ため、
@@ -971,6 +992,7 @@ export const useTaskBoardPage = () => {
     canPostTaskComment,
     canRecordTaskWork,
     canUpdateTask,
+    canArchiveTaskTemplate,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,

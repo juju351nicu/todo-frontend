@@ -147,6 +147,17 @@ describe("Project API", () => {
     );
   });
 
+  it("member候補の検索語をURLエンコードしてquery parameterへ設定し、候補配列を返す（改善提案 2-9）", async () => {
+    const candidates = [{ accountId: 9, displayName: "山田 太郎", email: "y@example.com", loginId: null }];
+    HttpClient.getRequest.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ candidates }) });
+
+    await expect(ProjectApi.findMemberCandidates(5, "山田&a")).resolves.toEqual(candidates);
+
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/5/member-candidates?query=%E5%B1%B1%E7%94%B0%26a"
+    );
+  });
+
   it("Project member除外ではmember versionをquery parameterへ設定して204を本文なしで扱う", async () => {
     HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
 

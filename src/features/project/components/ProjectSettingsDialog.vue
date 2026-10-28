@@ -56,8 +56,14 @@ const {
   isRemoveConfirmOpen,
   isSavingMember,
   isSavingProject,
+  isSearchingMemberCandidates,
+  memberCandidateQuery,
+  memberCandidates,
   memberRoleDrafts,
   memberToRemove,
+  searchMemberCandidates,
+  searchedMemberCandidateQuery,
+  selectMemberCandidate,
   openArchiveConfirm,
   openDialog,
   openRemoveConfirm,
@@ -178,7 +184,64 @@ const SECTION_TABS = [
             <template #header>
               <div class="text-base font-normal">メンバーを追加</div>
             </template>
-            <div class="-m-3 flex flex-wrap items-center">
+            <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（改善提案 2-9）。 -->
+            <form class="-m-3 mb-0 flex flex-wrap items-end" @submit.prevent="searchMemberCandidates">
+              <div class="w-full p-3 md:w-3/4">
+                <UFormField
+                  label="名前・メールアドレス・ログインIDで探す"
+                  help="有効で、まだ参加していないアカウントを先頭の一致で最大20件出します。"
+                >
+                  <UInput
+                    v-model="memberCandidateQuery"
+                    :disabled="isBusy"
+                    placeholder="例：山田、yamada@"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 md:w-1/4">
+                <UButton
+                  type="submit"
+                  block
+                  variant="outline"
+                  icon="i-mdi-account-search-outline"
+                  :loading="isSearchingMemberCandidates"
+                  :disabled="isBusy || memberCandidateQuery.trim().length === 0"
+                >
+                  検索
+                </UButton>
+              </div>
+            </form>
+            <ul v-if="memberCandidates.length > 0" class="mt-3 divide-y divide-default rounded border border-default">
+              <li
+                v-for="candidate in memberCandidates"
+                :key="candidate.accountId"
+                class="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+              >
+                <div class="min-w-0">
+                  <div class="truncate">{{ candidate.displayName }}</div>
+                  <div class="truncate text-sm text-muted">
+                    {{ candidate.email }}<template v-if="candidate.loginId"> ・ {{ candidate.loginId }}</template>
+                    ・ ID: {{ candidate.accountId }}
+                  </div>
+                </div>
+                <UButton
+                  size="sm"
+                  :variant="Number(addMemberAccountId) === candidate.accountId ? 'solid' : 'outline'"
+                  :disabled="isBusy"
+                  @click="selectMemberCandidate(candidate)"
+                >
+                  {{ Number(addMemberAccountId) === candidate.accountId ? "選択中" : "選ぶ" }}
+                </UButton>
+              </li>
+            </ul>
+            <p
+              v-else-if="searchedMemberCandidateQuery !== '' && !isSearchingMemberCandidates"
+              class="mt-3 text-sm text-muted"
+            >
+              「{{ searchedMemberCandidateQuery }}」で始まる、追加できるアカウントは見つかりませんでした。
+            </p>
+            <div class="-m-3 mt-3 flex flex-wrap items-center">
               <div class="w-full p-3 md:w-5/12">
                 <UFormField
                   label="アカウントID"

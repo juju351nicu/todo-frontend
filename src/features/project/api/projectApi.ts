@@ -1,6 +1,8 @@
 import type {
+  ProjectCreateRequest,
   ProjectDetail,
   ProjectListResponse,
+  ProjectMemberCandidate,
   ProjectMemberCreateRequest,
   ProjectMemberUpdateRequest,
   ProjectSummary,
@@ -131,6 +133,40 @@ const updateProject = async (
 };
 
 /**
+ * Templateを使わずにProjectを作る（改善提案 2-13）。作成者はOWNERになり、標準のBoard列はBackendが作る。
+ *
+ * @param request Projectキー・名前・説明
+ * @returns 作成したProject詳細
+ * @throws ProjectApiError 入力不正（400）、Projectキー重複（409 `PROJECT_KEY_CONFLICT`）、permission不足の場合
+ */
+const createProject = async (request: ProjectCreateRequest): Promise<ProjectDetail> => {
+  const response = await HttpClient.postRequest(API_PATHS.PROJECTS, request);
+  await ensureSuccess(response);
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
+};
+
+/**
+ * Project memberへ追加できるアカウント候補を、名前・メールアドレス・ログインIDの前方一致で探す（改善提案 2-9）。
+ * Backendは有効でまだ参加していないアカウントを最大20件、アカウントID順に返す。空白だけの語は空配列。
+ *
+ * @param projectId 追加先Project ID
+ * @param query 検索する語
+ * @returns 候補。該当がない場合は空配列
+ * @throws ProjectApiError 未認証、permission・Project role不足（OWNER以外）、Project未検出の場合
+ */
+const findMemberCandidates = async (
+  projectId: number,
+  query: string
+): Promise<ProjectMemberCandidate[]> => {
+  const params = new URLSearchParams({ query });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/member-candidates?${params.toString()}`
+  );
+  await ensureSuccess(response);
+  return ((await response.json()) as { candidates: ProjectMemberCandidate[] }).candidates;
+};
+
+/**
  * 有効なアカウントをProject memberとして追加する。
  *
  * @param projectId 追加先Project ID
@@ -194,6 +230,8 @@ const removeProjectMember = async (
 
 export default {
   addProjectMember,
+  createProject,
+  findMemberCandidates,
   getProject,
   getProjects,
   getTaskBoard,

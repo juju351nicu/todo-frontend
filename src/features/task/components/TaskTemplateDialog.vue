@@ -14,6 +14,8 @@ const props = withDefaults(
     statuses: TaskStatus[];
     canApply?: boolean;
     canEdit?: boolean;
+    /** 本人のTemplateをarchiveできるか（TASK_READ）。編集（TASK_UPDATE）とは別に判定する。 */
+    canArchive?: boolean;
     projectActive?: boolean;
     /**
      * 適用時の担当者をこのaccountだけに限定する場合のID（MEMBERの本人）。nullなら全参加者から選べる。
@@ -21,7 +23,7 @@ const props = withDefaults(
      */
     restrictedAssigneeAccountId?: number | null;
   }>(),
-  { canApply: false, canEdit: false, projectActive: false, restrictedAssigneeAccountId: null },
+  { canApply: false, canEdit: false, canArchive: false, projectActive: false, restrictedAssigneeAccountId: null },
 );
 const emit = defineEmits<{
   taskCreated: [task: TaskDetail];
@@ -133,7 +135,7 @@ const {
                 編集
               </UButton>
               <UButton
-                v-if="canEdit"
+                v-if="canArchive"
                 size="sm"
                 variant="ghost"
                 color="error"

@@ -4,10 +4,10 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/features/auth/stores/user";
 import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
-import { TASK_WRITE_PERMISSION_CODES } from "@/features/auth/types/auth";
 import type { MyTaskItem } from "@/features/task/types/task";
 import {
   LEGACY_TODO_ERROR_CODES,
+  MY_TASK_COMPLETE_ERROR_CODES,
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -53,9 +53,8 @@ export const useMyTasksPage = () => {
   const myTasks = ref<MyTaskItem[]>([]);
   const businessDate = ref("");
   const selectedFilter = ref<MyTaskFilter>("ALL");
-  const canCompleteTasks = computed(() =>
-    userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)
-  );
+  // 完了はProject TaskのcompleteAPI（Task更新と同じTASK_UPDATE）。My Tasksは本人担当のTaskだけなので担当者の条件は満たす。
+  const canCompleteTasks = computed(() => userStore.hasPermission("TASK_UPDATE"));
   const canStartTimers = computed(() => userStore.hasPermission("TASK_UPDATE"));
 
   /** Backendの業務日から今週末までに期限を迎える、期限超過ではないTaskだけを返す。 */
@@ -128,7 +127,8 @@ export const useMyTasksPage = () => {
   const getErrorMessages = (
     error: unknown,
     fallback: string,
-    forbidden: string
+    forbidden: string,
+    knownCodes: ReadonlySet<string> = LEGACY_TODO_ERROR_CODES
   ): string[] => {
     if (!(error instanceof TaskApiError)) {
       return [DISPLAY_MESSAGES.common.connectionFailed];
@@ -139,11 +139,7 @@ export const useMyTasksPage = () => {
     if (error.status === 404) {
       return [DISPLAY_MESSAGES.task.myTasks.resourceNotFound];
     }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      LEGACY_TODO_ERROR_CODES,
-      fallback
-    );
+    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
   };
 
   /** 401ではMy TasksとSession表示を破棄してLoginへ戻す。 */
@@ -243,7 +239,7 @@ export const useMyTasksPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      await todoStore.completeTodo(task.taskId);
+      await todoStore.completeMyTask(task.projectId, task.taskId, task.version);
       myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
       successMessage.value = DISPLAY_MESSAGES.task.myTasks.completed(task.title);
       try {
@@ -271,9 +267,11 @@ export const useMyTasksPage = () => {
       const operationMessages = getErrorMessages(
         error,
         DISPLAY_MESSAGES.task.myTasks.completeFailed,
-        DISPLAY_MESSAGES.task.myTasks.operationForbidden
+        DISPLAY_MESSAGES.task.myTasks.operationForbidden,
+        MY_TASK_COMPLETE_ERROR_CODES
       );
-      if (!(error instanceof TaskApiError) || error.status !== 404) {
+      // 404（Taskがない）と409（他の操作で変わった）は、表示中の一覧が古いので取り直してから理由を出す。
+      if (!(error instanceof TaskApiError) || (error.status !== 404 && error.status !== 409)) {
         setErrors(operationMessages);
         return;
       }

@@ -10,7 +10,7 @@ import { TaskApiError } from "@/features/task/api/taskApi";
 const mocks = vi.hoisted(() => ({
   router: { push: vi.fn() },
   todoStore: {
-    completeTodo: vi.fn(),
+    completeMyTask: vi.fn(),
     findMyTasks: vi.fn(),
   },
   userStore: {
@@ -42,6 +42,7 @@ const tasks = [
     remainingDays: -1,
     priority: 3,
     progressPercent: 25,
+    version: 3,
   },
   {
     taskId: 16,
@@ -56,6 +57,7 @@ const tasks = [
     remainingDays: 0,
     priority: 2,
     progressPercent: 50,
+    version: 0,
   },
   {
     taskId: 17,
@@ -70,6 +72,7 @@ const tasks = [
     remainingDays: 1,
     priority: 1,
     progressPercent: 0,
+    version: 1,
   },
 ];
 
@@ -121,7 +124,7 @@ describe("useMyTasksPage", () => {
   });
 
   it("完了したTaskをMy Tasks一覧から除外する", async () => {
-    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    mocks.todoStore.completeMyTask.mockResolvedValue(undefined);
     const page = useMyTasksPage();
     await page.loadTasks();
     mocks.todoStore.findMyTasks.mockResolvedValue({
@@ -131,14 +134,14 @@ describe("useMyTasksPage", () => {
 
     await page.completeTask(tasks[0]);
 
-    expect(mocks.todoStore.completeTodo).toHaveBeenCalledWith(15);
+    expect(mocks.todoStore.completeMyTask).toHaveBeenCalledWith(1, 15, 3);
     expect(mocks.todoStore.findMyTasks).toHaveBeenCalledTimes(2);
     expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
     expect(page.successMessage.value).toBe("「期限超過Task」を完了しました。");
   });
 
   it("完了の後に再取得できなかった場合は、成功の案内を出さずに再取得失敗を出す", async () => {
-    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    mocks.todoStore.completeMyTask.mockResolvedValue(undefined);
     const page = useMyTasksPage();
     await page.loadTasks();
     mocks.todoStore.findMyTasks.mockRejectedValue(new TypeError("Failed to fetch"));
@@ -209,7 +212,7 @@ describe("useMyTasksPage", () => {
   });
 
   it("完了確定後の再取得失敗は完了操作失敗と区別する", async () => {
-    mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+    mocks.todoStore.completeMyTask.mockResolvedValue(undefined);
     const page = useMyTasksPage();
     await page.loadTasks();
     mocks.todoStore.findMyTasks.mockRejectedValue(new Error("offline"));
@@ -223,7 +226,7 @@ describe("useMyTasksPage", () => {
   });
 
   it("完了404の回復中に401となった場合は古い案内よりSession失効を優先する", async () => {
-    mocks.todoStore.completeTodo.mockRejectedValue(new TaskApiError(404, null));
+    mocks.todoStore.completeMyTask.mockRejectedValue(new TaskApiError(404, null));
     const page = useMyTasksPage();
     await page.loadTasks();
     mocks.todoStore.findMyTasks.mockRejectedValue(new TaskApiError(401, null));
@@ -236,23 +239,56 @@ describe("useMyTasksPage", () => {
     expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
   });
 
-  it("旧Todo更新permissionがない場合は完了操作を表示しない", () => {
-    mocks.userStore.hasAnyPermission.mockReturnValue(false);
+  it("TASK_UPDATEがない場合は完了操作を表示しない", () => {
+    mocks.userStore.hasPermission.mockImplementation(
+      (code) => code !== "TASK_UPDATE"
+    );
 
     const page = useMyTasksPage();
 
     expect(page.canCompleteTasks.value).toBe(false);
+    expect(mocks.userStore.hasPermission).toHaveBeenCalledWith("TASK_UPDATE");
   });
 
-  it("旧Todo更新permissionがない場合は完了APIを呼ばない", async () => {
-    mocks.userStore.hasAnyPermission.mockReturnValue(false);
+  it("TASK_UPDATEがない場合は完了APIを呼ばない", async () => {
+    mocks.userStore.hasPermission.mockImplementation(
+      (code) => code !== "TASK_UPDATE"
+    );
     const page = useMyTasksPage();
 
     await page.completeTask(tasks[0]);
 
-    expect(mocks.todoStore.completeTodo).not.toHaveBeenCalled();
+    expect(mocks.todoStore.completeMyTask).not.toHaveBeenCalled();
     expect(page.errorMessages.value).toEqual([
       "Taskを完了するpermissionがありません。",
+    ]);
+  });
+
+  it("完了が409で競合した場合は一覧を取り直し、Backendの理由を表示する", async () => {
+    mocks.todoStore.completeMyTask.mockRejectedValue(
+      new TaskApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "TASK_VERSION_CONFLICT",
+            field: "version",
+            message: "他の利用者がTaskを更新しました。",
+          },
+        ],
+      })
+    );
+    const page = useMyTasksPage();
+    await page.loadTasks();
+    mocks.todoStore.findMyTasks.mockResolvedValue({
+      businessDate: "2026-09-20",
+      tasks: tasks.slice(1),
+    });
+
+    await page.completeTask(tasks[0]);
+
+    expect(mocks.todoStore.findMyTasks).toHaveBeenCalledTimes(2);
+    expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
+    expect(page.errorMessages.value).toEqual([
+      "他の利用者がTaskを更新しました。",
     ]);
   });
 
@@ -285,7 +321,7 @@ describe("useMyTasksPage", () => {
     });
 
     it("完了したTaskと同じ位置へ来たTaskの「完了」へ戻す", async () => {
-      mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+      mocks.todoStore.completeMyTask.mockResolvedValue(undefined);
       const page = useMyTasksPage();
       await page.loadTasks();
       mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [tasks[0], tasks[2]] });
@@ -297,7 +333,7 @@ describe("useMyTasksPage", () => {
     });
 
     it("最後のTaskを完了したら1つ前、Taskがなくなったら再読み込みボタンへ戻す", async () => {
-      mocks.todoStore.completeTodo.mockResolvedValue(undefined);
+      mocks.todoStore.completeMyTask.mockResolvedValue(undefined);
       const page = useMyTasksPage();
       await page.loadTasks();
       mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: tasks.slice(0, 2) });
@@ -313,7 +349,7 @@ describe("useMyTasksPage", () => {
     });
 
     it("完了に失敗してTaskが残る場合は、そのTaskの「完了」へ戻す", async () => {
-      mocks.todoStore.completeTodo.mockRejectedValue(new TypeError("Failed to fetch"));
+      mocks.todoStore.completeMyTask.mockRejectedValue(new TypeError("Failed to fetch"));
       const page = useMyTasksPage();
       await page.loadTasks();
       const focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(16), myTaskCompleteControlKey(17)]);

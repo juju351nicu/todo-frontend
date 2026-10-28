@@ -8,6 +8,7 @@ import ProjectApi, {
 import type {
   ProjectDetail,
   ProjectMember,
+  ProjectMemberCandidate,
   ProjectMemberCreateRequest,
   ProjectMemberUpdateRequest,
   ProjectRole,
@@ -130,6 +131,13 @@ export const useProjectSettingsDialog = (
   const activeSection = ref<ProjectSettingsSection>("project");
   const addMemberAccountId = ref<number | string | null>(null);
   const addMemberRole = ref<ProjectRole>("MEMBER");
+  /** member候補を探す語（名前・メールアドレス・ログインIDの先頭）。改善提案 2-9。 */
+  const memberCandidateQuery = ref("");
+  /** 直前の検索で見つかったmember候補（有効でまだ参加していないアカウント、最大20件）。 */
+  const memberCandidates = ref<ProjectMemberCandidate[]>([]);
+  const isSearchingMemberCandidates = ref(false);
+  /** 直前に検索した語。候補が0件のときに「見つかりません」を出すかの判定に使う（未検索なら空）。 */
+  const searchedMemberCandidateQuery = ref("");
   const errorMessages = ref<string[]>([]);
   const isArchiveConfirmOpen = ref(false);
   const isArchivingProject = ref(false);
@@ -377,6 +385,44 @@ export const useProjectSettingsDialog = (
     await restoreControlFocus([PROJECT_SETTINGS_CONTROL.archive]);
   };
 
+  /**
+   * member候補を名前・メールアドレス・ログインIDの先頭で探す（改善提案 2-9）。
+   * 以前はアカウントIDの数字を入力するしかなく、利用者は他人のIDを知らなかった。空白だけの語では探さず候補を消す。
+   */
+  const searchMemberCandidates = async (): Promise<void> => {
+    const current = project.value;
+    const query = memberCandidateQuery.value.trim();
+    if (current === null || !canManageMembers.value || isSearchingMemberCandidates.value) {
+      return;
+    }
+    if (query.length === 0) {
+      memberCandidates.value = [];
+      searchedMemberCandidateQuery.value = "";
+      return;
+    }
+    isSearchingMemberCandidates.value = true;
+    errorMessages.value = [];
+    try {
+      memberCandidates.value = await ProjectApi.findMemberCandidates(current.projectId, query);
+      searchedMemberCandidateQuery.value = query;
+    } catch (error: unknown) {
+      memberCandidates.value = [];
+      searchedMemberCandidateQuery.value = "";
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberCandidateSearchFailed);
+    } finally {
+      isSearchingMemberCandidates.value = false;
+    }
+  };
+
+  /**
+   * 候補を選び、追加するアカウントIDへ入れる。Project roleを選んで「追加」を押すと追加する。
+   *
+   * @param candidate 選んだmember候補
+   */
+  const selectMemberCandidate = (candidate: ProjectMemberCandidate): void => {
+    addMemberAccountId.value = candidate.accountId;
+  };
+
   /** 入力した有効アカウントを選択roleでProjectへ追加する。 */
   const addMember = async (): Promise<void> => {
     const current = project.value;
@@ -408,6 +454,10 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       addMemberAccountId.value = null;
       addMemberRole.value = "MEMBER";
+      // 追加したアカウントは候補ではなくなるため、検索結果を消して次の検索から始める。
+      memberCandidates.value = [];
+      memberCandidateQuery.value = "";
+      searchedMemberCandidateQuery.value = "";
       successMessage.value = `${resolveProjectMemberDisplayName(updatedProject.members, accountId)}（ID: ${accountId}）をProjectへ追加しました。`;
     } catch (error: unknown) {
       await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberAddFailed);
@@ -711,12 +761,18 @@ export const useProjectSettingsDialog = (
     isRemoveConfirmOpen,
     isSavingMember,
     isSavingProject,
+    isSearchingMemberCandidates,
+    memberCandidateQuery,
+    memberCandidates,
     memberRoleDrafts,
     memberToRemove,
     openArchiveConfirm,
     openDialog,
     openRemoveConfirm,
     projectForm,
+    searchMemberCandidates,
+    searchedMemberCandidateQuery,
+    selectMemberCandidate,
     projectRoleOptions: PROJECT_ROLE_OPTIONS,
     removeMember,
     saveMemberRole,

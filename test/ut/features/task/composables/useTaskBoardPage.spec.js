@@ -670,6 +670,20 @@ describe("useTaskBoardPage", () => {
     expect(page.canPostTaskComment.value).toBe(true);
   });
 
+  it("本人のTask TemplateのarchiveはTASK_READだけで出し、編集（TASK_UPDATE）とは分ける（改善提案 2-8）", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canUpdateTask.value).toBe(false);
+    expect(page.canArchiveTaskTemplate.value).toBe(true);
+
+    mocks.permissions.delete("TASK_READ");
+    expect(useTaskBoardPage().canArchiveTaskTemplate.value).toBe(false);
+  });
+
   it("TASK_READがない、またはarchive済みProjectではコメントを投稿できない", async () => {
     mocks.permissions.delete("TASK_READ");
     const page = useTaskBoardPage();
@@ -681,6 +695,26 @@ describe("useTaskBoardPage", () => {
     const archivedPage = useTaskBoardPage();
     await archivedPage.initialize();
     expect(archivedPage.canPostTaskComment.value).toBe(false);
+  });
+
+  it("未参加ProjectではREAD_ONLY_ADMINもコメント投稿・Template保存を出さず、SYSTEM_ADMINは出す（改善提案 2-12）", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    mocks.userStore.memberId = 99;
+    try {
+      const readOnlyPage = useTaskBoardPage();
+      await readOnlyPage.initialize();
+      expect(readOnlyPage.canPostTaskComment.value).toBe(false);
+      expect(readOnlyPage.canCaptureTaskTemplate.value).toBe(false);
+
+      mocks.userStore.hasRole.mockImplementation((role) => role === "SYSTEM_ADMIN");
+      const adminPage = useTaskBoardPage();
+      await adminPage.initialize();
+      expect(adminPage.canPostTaskComment.value).toBe(true);
+    } finally {
+      mocks.userStore.memberId = 2;
+      mocks.userStore.hasRole.mockImplementation(() => false);
+    }
   });
 
   it("MEMBERはTask permissionを持っていても繰り返し規則を変更できない", async () => {

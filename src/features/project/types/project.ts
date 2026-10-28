@@ -67,10 +67,37 @@ export interface ProjectUpdateRequest {
   version: number;
 }
 
+/**
+ * Templateを使わずにProjectを作るRequest（`POST /api/v1/projects`。改善提案 2-13）。
+ * 作成者はOWNERになり、標準のBoard列（Todo・進行中・完了）はBackendが作る。
+ */
+export interface ProjectCreateRequest {
+  /** 大文字英数字をハイフンで区切る、作成後に変更しないProjectキー（30文字以内）。 */
+  projectKey: string;
+  /** 表示名（100文字以内）。 */
+  name: string;
+  /** 説明（2000文字以内）。空なら未設定。 */
+  description: string;
+}
+
 /** 有効なアカウントをProject memberとして追加するRequest。 */
 export interface ProjectMemberCreateRequest {
   accountId: number;
   projectRole: ProjectRole;
+}
+
+/**
+ * Project memberへ追加できるアカウント候補（有効で、まだ参加していないアカウント）。
+ * `GET /api/v1/projects/{projectId}/member-candidates`が名前・メールアドレス・ログインIDの前方一致で返す（改善提案 2-9）。
+ */
+export interface ProjectMemberCandidate {
+  accountId: number;
+  /** Backendが参加者名と同じ規則（「姓 名」→メールアドレス→「Account {ID}」）で必ず空でない値にする。 */
+  displayName: string;
+  /** 同名の候補を見分けるためのメールアドレス。 */
+  email: string;
+  /** 同名の候補を見分けるためのログインID。外部認証だけのアカウントはnull。 */
+  loginId: string | null;
 }
 
 /** Project memberのresource roleを現在version付きで変更するRequest。 */
