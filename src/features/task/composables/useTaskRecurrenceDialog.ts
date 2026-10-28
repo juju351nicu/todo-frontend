@@ -9,6 +9,7 @@ import {
   resolveProjectMemberDisplayName,
 } from "@/features/project/utils/projectMember";
 import { buildTaskStatusIdOptions } from "@/features/task/utils/taskFormOptions";
+import { formatRecurrenceSource } from "@/features/task/utils/taskRecurrenceDisplay";
 
 /** `useTaskRecurrenceDialog`へ渡すBoard側の状態。 */
 export interface TaskRecurrenceDialogSource {
@@ -118,6 +119,16 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
       : resolveProjectMemberDisplayName(toValue(source.members), selectedRule.value.assigneeAccountId)
   );
 
+  /**
+   * 選択中の規則の作成元。Template一覧はTemplate作成モードを開いたときだけ取得するため、
+   * 未取得の間は名前を出さず「Task Templateから作成」と示す（一覧取得は機能資格の403になり得るので、ここでは取得しない）。
+   */
+  const selectedRuleSourceLabel = computed(() =>
+    selectedRule.value === null
+      ? ""
+      : formatRecurrenceSource(selectedRule.value.sourceTaskTemplateId, templates.value)
+  );
+
   /** 選択規則をarchiveし、成功・競合いずれの場合も確認Dialogを閉じて最新状態を表示する。 */
   const confirmArchive = async (): Promise<void> => {
     await archiveRule();
@@ -136,6 +147,7 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
     memberOptions,
     open,
     selectedRuleAssigneeDisplayName,
+    selectedRuleSourceLabel,
     startCreating,
     statusOptions,
     toggleWeekday,

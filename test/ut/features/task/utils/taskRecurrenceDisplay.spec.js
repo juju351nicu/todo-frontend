@@ -8,6 +8,7 @@ import {
   getGenerationStatusLabel,
   getRecurrenceStatusColor,
   getRecurrenceStatusLabel,
+  formatRecurrenceSource,
 } from "@/features/task/utils/taskRecurrenceDisplay";
 
 describe("taskRecurrenceDisplay", () => {
@@ -36,5 +37,19 @@ describe("taskRecurrenceDisplay", () => {
 
   it("日時が未設定なら-を表示する", () => {
     expect(formatRecurrenceDateTime(null)).toBe("-");
+  });
+});
+
+describe("formatRecurrenceSource", () => {
+  const templates = [{ taskTemplateId: 54, name: "週次レビュー" }];
+
+  it("作成元を内部のIDではなく名前で示す", () => {
+    expect(formatRecurrenceSource(null, templates)).toBe("直接入力");
+    expect(formatRecurrenceSource(54, templates)).toBe("Task Template「週次レビュー」");
+  });
+
+  it("一覧にないTemplate（未取得・archive済み）はIDを出さずに示す", () => {
+    expect(formatRecurrenceSource(99, templates)).toBe("Task Templateから作成");
+    expect(formatRecurrenceSource(54, [])).toBe("Task Templateから作成");
   });
 });
