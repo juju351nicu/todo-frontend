@@ -12,6 +12,7 @@ const {
   isCancelConfirmOpen,
   isLoading,
   pendingMutation,
+  restoreFocusAfterCancelDialog,
   stopTimer,
   successMessage,
 } = useCurrentTaskTimer();
@@ -60,6 +61,7 @@ const {
     :dismissible="pendingMutation !== 'CANCEL'"
     title="Timerを取消しますか？"
     :ui="{ content: 'max-w-130' }"
+    @after:leave="restoreFocusAfterCancelDialog"
   >
     <template #body>「{{ currentTimer?.taskTitle }}」の計測時間は日別実績へ反映されません。</template>
     <template #footer>

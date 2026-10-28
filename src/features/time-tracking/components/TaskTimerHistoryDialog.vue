@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TASK_TIMER_HISTORY_CONTROL } from "@/features/time-tracking/composables/useCurrentTaskTimer";
 import { useTaskTimerHistory } from "@/features/time-tracking/composables/useTaskTimerHistory";
 import {
   formatElapsedSeconds,
@@ -33,6 +34,7 @@ const {
     class="text-inherit hover:bg-current/4"
     aria-label="Timer履歴を開く"
     title="Timer履歴"
+    :data-task-timer-control="TASK_TIMER_HISTORY_CONTROL"
     @click="openDialog"
   />
 
