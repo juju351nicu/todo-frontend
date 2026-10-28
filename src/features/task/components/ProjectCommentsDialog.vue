@@ -30,7 +30,8 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
     @update:open="closeComments"
   >
     <template #title>
-      <span class="flex items-center">
+      <!-- w-fullにしないと見出しの幅が文字分だけになり、ms-autoの再読み込みボタンが右端へ寄らない（改善提案 1-6）。 -->
+      <span class="flex w-full items-center">
         Projectのコメント
         <UButton
           icon="i-mdi-refresh"
@@ -54,7 +55,7 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
         <li v-for="comment in comments" :key="comment.commentId">
           <button
             type="button"
-            class="flex w-full items-start gap-4 px-4 py-2 text-start enabled:hover:bg-elevated disabled:opacity-38"
+            class="flex w-full items-start gap-4 px-4 py-2 text-start enabled:hover:bg-elevated disabled:cursor-default"
             :disabled="comment.taskArchived"
             @click="selectTask(comment)"
           >
@@ -62,7 +63,8 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
             <span class="min-w-0 flex-1">
               <span class="flex flex-wrap items-center gap-2 text-base">
                 <span>{{ comment.taskTitle }}</span>
-                <UBadge v-if="comment.taskArchived" size="xs">アーカイブ済み</UBadge>
+                <!-- archive済みTaskの行は開けないが、会話の履歴として読めるよう薄くせず、ラベル（neutral）だけで示す（改善提案 1-6）。 -->
+                <UBadge v-if="comment.taskArchived" size="xs" color="neutral" variant="outline">アーカイブ済み</UBadge>
               </span>
               <span class="block text-sm text-muted">
                 {{ comment.authorDisplayName }}
