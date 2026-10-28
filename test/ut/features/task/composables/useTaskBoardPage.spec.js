@@ -697,6 +697,26 @@ describe("useTaskBoardPage", () => {
     expect(archivedPage.canPostTaskComment.value).toBe(false);
   });
 
+  it("未参加ProjectではREAD_ONLY_ADMINもコメント投稿・Template保存を出さず、SYSTEM_ADMINは出す（改善提案 2-12）", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    mocks.userStore.memberId = 99;
+    try {
+      const readOnlyPage = useTaskBoardPage();
+      await readOnlyPage.initialize();
+      expect(readOnlyPage.canPostTaskComment.value).toBe(false);
+      expect(readOnlyPage.canCaptureTaskTemplate.value).toBe(false);
+
+      mocks.userStore.hasRole.mockImplementation((role) => role === "SYSTEM_ADMIN");
+      const adminPage = useTaskBoardPage();
+      await adminPage.initialize();
+      expect(adminPage.canPostTaskComment.value).toBe(true);
+    } finally {
+      mocks.userStore.memberId = 2;
+      mocks.userStore.hasRole.mockImplementation(() => false);
+    }
+  });
+
   it("MEMBERはTask permissionを持っていても繰り返し規則を変更できない", async () => {
     const page = useTaskBoardPage();
 
