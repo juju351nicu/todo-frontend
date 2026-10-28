@@ -579,6 +579,34 @@ describe("useAttendancePage", () => {
   });
 
   it.each([
+    ["DRAFT", "OFF_DUTY", [], "提出前の月は、打刻で直してから提出してください。修正申請は承認・締めの後に使えます。"],
+    ["REJECTED", "OFF_DUTY", [], "提出前の月は、打刻で直してから提出してください。修正申請は承認・締めの後に使えます。"],
+    ["SUBMITTED", "OFF_DUTY", [], "提出した月は審査中です。修正申請は承認の後に使えます。"],
+    ["APPROVED", "OFF_DUTY", ["PENDING"], "この日には審査待ちの修正申請があります。結果が出るまで新しい申請はできません。"],
+    ["APPROVED", "WORKING", [], "勤務・休憩が終わっていない日は修正申請できません。"],
+    ["APPROVED", "OFF_DUTY", [], ""],
+  ])("月次%s・選択日%s・申請%jのとき、修正申請できない理由は「%s」（改善提案 1-22）", (monthStatus, punchState, requestStatuses, expected) => {
+    const page = useAttendancePage();
+    page.monthSummary.value = buildMonth("2026-10", monthStatus);
+    page.selectedDay.value =
+      punchState === "WORKING"
+        ? {
+            ...buildDay("2026-10-01", punchState),
+            // 退勤していない勤務区間（終了時刻なし）がある日
+            workPeriods: [{ startedAt: "2026-10-01T09:00:00+09:00", endedAt: null, breakPeriods: [] }],
+          }
+        : buildDay("2026-10-01", punchState);
+    page.correctionRequests.value = requestStatuses.map((statusCode, index) => ({
+      attendanceCorrectionRequestId: index + 1,
+      statusCode,
+    }));
+
+    expect(page.correctionUnavailableReason.value).toBe(expected);
+    // 理由が出るときは申請ボタンを出さず、申請できるときは理由を出さない。
+    expect(page.canRequestCorrection.value).toBe(expected === "");
+  });
+
+  it.each([
     ["APPROVED", "PENDING", true],
     ["CLOSED", "PENDING", true],
     ["SUBMITTED", "PENDING", false],
