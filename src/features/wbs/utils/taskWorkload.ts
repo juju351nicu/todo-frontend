@@ -49,3 +49,26 @@ export const getWorkloadCapacityColor = (workload: Readonly<TaskWorkloadRow>): S
 /** 容量状態を担当者が判断できる日本語へ変換する。 */
 export const getWorkloadCapacityLabel = (workload: Readonly<TaskWorkloadRow>): string =>
   CAPACITY_LABELS[resolveWorkloadCapacityStatus(workload)];
+
+/**
+ * 同じ表示名を持つ別々の担当者がいる表示名を集める。
+ * workload表では担当者を表示名で示し、同名の人がいるときだけアカウントIDを添えて見分ける（改善提案 1-20）。
+ *
+ * @param workloads 担当者別workloadの行。同じ担当者が日付ごとに複数行あってもよい
+ * @returns 2人以上のアカウントIDが使っている表示名。該当がなければ空集合
+ */
+export const findDuplicatedWorkloadDisplayNames = (
+  workloads: readonly Readonly<TaskWorkloadRow>[]
+): ReadonlySet<string> => {
+  const accountIdsByName = new Map<string, Set<number>>();
+  for (const row of workloads) {
+    const accountIds = accountIdsByName.get(row.accountDisplayName) ?? new Set<number>();
+    accountIds.add(row.accountId);
+    accountIdsByName.set(row.accountDisplayName, accountIds);
+  }
+  return new Set(
+    [...accountIdsByName]
+      .filter(([, accountIds]) => accountIds.size > 1)
+      .map(([displayName]) => displayName)
+  );
+};

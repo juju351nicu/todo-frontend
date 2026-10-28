@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  findDuplicatedWorkloadDisplayNames,
   resolveWorkloadCapacityStatus,
   getWorkloadCapacityColor,
   getWorkloadCapacityLabel,
@@ -71,5 +72,28 @@ describe("workload表示", () => {
     expect(getWorkloadCapacityColor(holiday)).toBe("error");
     expect(getWorkloadCapacityLabel(within)).toBe("配賦内");
     expect(getWorkloadCapacityColor(within)).toBe("success");
+  });
+});
+
+describe("findDuplicatedWorkloadDisplayNames", () => {
+  it("別々のアカウントが同じ表示名を使うときだけ、その表示名を返す", () => {
+    const rows = [
+      buildWorkload({ accountId: 1, accountDisplayName: "山田 太郎" }),
+      buildWorkload({ accountId: 1, accountDisplayName: "山田 太郎", workDate: "2026-09-01" }),
+      buildWorkload({ accountId: 2, accountDisplayName: "佐藤 花子" }),
+      buildWorkload({ accountId: 3, accountDisplayName: "佐藤 花子" }),
+    ];
+
+    expect([...findDuplicatedWorkloadDisplayNames(rows)]).toEqual(["佐藤 花子"]);
+  });
+
+  it("同じ人が日付ごとに複数行あっても同名とは扱わない", () => {
+    const rows = [
+      buildWorkload({ accountId: 1, accountDisplayName: "山田 太郎" }),
+      buildWorkload({ accountId: 1, accountDisplayName: "山田 太郎", workDate: "2026-09-01" }),
+    ];
+
+    expect(findDuplicatedWorkloadDisplayNames(rows).size).toBe(0);
+    expect(findDuplicatedWorkloadDisplayNames([]).size).toBe(0);
   });
 });
