@@ -33,6 +33,7 @@ const {
   canCaptureTaskTemplate,
   canPostTaskComment,
   canRecordTaskWork,
+  canArchiveTaskTemplate,
   canUpdateTask,
   canUpdateTaskRecurrence,
   closeArchiveConfirm,
@@ -119,6 +120,7 @@ onBeforeMount(initialize);
         :statuses="project.taskStatuses"
         :can-apply="canCreateTask"
         :can-edit="canUpdateTask"
+        :can-archive="canArchiveTaskTemplate"
         :project-active="project.status === 'ACTIVE'"
         :restricted-assignee-account-id="taskTemplateAssigneeAccountId"
         @task-created="handleTemplateTaskCreated"

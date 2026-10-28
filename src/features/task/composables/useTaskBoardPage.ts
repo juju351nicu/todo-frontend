@@ -153,6 +153,12 @@ export const useTaskBoardPage = () => {
     () => userStore.hasPermission("TASK_UPDATE") && isProjectActive.value
   );
   /**
+   * 本人のTask Templateをarchiveできるか。Templateは本人専用で、BackendはTASK_READで保存・archiveを許す
+   * （改善提案 2-8。以前はarchiveにTASK_UPDATEが要り、参照のみの利用者は作ったTemplateを消せなかった）。
+   * TemplateはProjectに属さないため、Projectの状態は問わない。
+   */
+  const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
+  /**
    * Task Dialogのコメント欄で投稿できるか。Backendは`TASK_READ`とProject参照可否で投稿を許可し、
    * 担当者・`TASK_UPDATE`は問わない（`todo-backend`の`docs/task-comment-design.md`「1.3 規則」）。
    * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
@@ -971,6 +977,7 @@ export const useTaskBoardPage = () => {
     canPostTaskComment,
     canRecordTaskWork,
     canUpdateTask,
+    canArchiveTaskTemplate,
     canUpdateTaskRecurrence,
     closeArchiveConfirm,
     closeTaskEditor,

@@ -670,6 +670,20 @@ describe("useTaskBoardPage", () => {
     expect(page.canPostTaskComment.value).toBe(true);
   });
 
+  it("本人のTask TemplateのarchiveはTASK_READだけで出し、編集（TASK_UPDATE）とは分ける（改善提案 2-8）", async () => {
+    mocks.permissions.clear();
+    mocks.permissions.add("TASK_READ");
+    const page = useTaskBoardPage();
+
+    await page.initialize();
+
+    expect(page.canUpdateTask.value).toBe(false);
+    expect(page.canArchiveTaskTemplate.value).toBe(true);
+
+    mocks.permissions.delete("TASK_READ");
+    expect(useTaskBoardPage().canArchiveTaskTemplate.value).toBe(false);
+  });
+
   it("TASK_READがない、またはarchive済みProjectではコメントを投稿できない", async () => {
     mocks.permissions.delete("TASK_READ");
     const page = useTaskBoardPage();
