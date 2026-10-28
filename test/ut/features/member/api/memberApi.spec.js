@@ -18,7 +18,7 @@ describe("Member API", () => {
   });
 
   it("会員一覧を取得する", async () => {
-    const payload = { memberId: 1, memberList: [], ids: [], role: 2 };
+    const payload = { memberList: [] };
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(payload),
@@ -40,7 +40,7 @@ describe("Member API", () => {
   });
 
   it("選択された会員IDをquery parameterとして削除APIへ渡す", async () => {
-    const payload = { memberId: 1, memberList: [], ids: [], role: 0 };
+    const payload = { memberList: [] };
     HttpClient.deleteRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(payload),

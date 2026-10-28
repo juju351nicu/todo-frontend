@@ -58,17 +58,20 @@ export const useMemberStore = defineStore("member", {
     },
 
     /**
-     * 指定された会員を削除する。
+     * 指定された会員を削除し、Backendが返した削除後の一覧でStoreの一覧を置き換える。
+     * 以前は削除後も一覧を取り直さず、削除した会員が画面に残っていた。
      *
      * @param memberIds 削除対象の会員ID
-     * @returns 削除成功時はBackend Response、失敗時はnull
+     * @returns 削除成功時はBackend Response（削除後の一覧）、失敗時はnull（一覧は変えない）
      */
     async deleteMemberList(
       memberIds: ReadonlyArray<number | string>
     ): Promise<MemberListResponse | null> {
       this.isLoading = true;
       try {
-        return await MemberApi.deleteMembers(memberIds);
+        const data = await MemberApi.deleteMembers(memberIds);
+        this.memberListInfo = data.memberList;
+        return data;
       } catch (error: unknown) {
         console.error(error);
         return null;

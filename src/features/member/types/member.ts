@@ -24,12 +24,12 @@ export interface MemberListItem {
   version: number;
 }
 
-/** 会員一覧APIレスポンス。 */
+/**
+ * 会員一覧APIと会員削除APIのレスポンス。削除APIは削除後の一覧を返す。
+ * `ACCOUNT_READ`がない利用者には自分の行だけが入る。
+ */
 export interface MemberListResponse {
-  memberId: number;
   memberList: MemberListItem[];
-  ids: string[];
-  role: AccountRole;
 }
 
 /** 会員詳細APIレスポンス。 */

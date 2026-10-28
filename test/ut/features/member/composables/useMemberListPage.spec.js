@@ -64,6 +64,18 @@ describe("useMemberListPage", () => {
     await page.deleteSelectedMembers();
 
     expect(mocks.memberStore.deleteMemberList).toHaveBeenCalledWith([1, 3]);
+    // 削除に失敗した（storeがnullを返した）場合は、選択を残して再操作できるようにする。
+    expect(page.selectedIds.value).toEqual([1, 3]);
+  });
+
+  it("削除できたら、消えた行の選択を外す", async () => {
+    mocks.memberStore.deleteMemberList.mockResolvedValue({ memberList: [] });
+    const page = useMemberListPage();
+    page.selectedIds.value = [1, 3];
+
+    await page.deleteSelectedMembers();
+
+    expect(page.selectedIds.value).toEqual([]);
   });
 
   it("会員詳細画面へ会員ID付きで移動する", () => {
