@@ -1,11 +1,18 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import AdministrationApi, {
   AdministrationApiError,
 } from "@/features/administration/api/administrationApi";
-import type { AuthorizationAuditLog } from "@/features/administration/types/administration";
+import type {
+  AdministrationRole,
+  AuthorizationAuditLog,
+} from "@/features/administration/types/administration";
 import { AUTHORIZATION_AUDIT_ERROR_CODES } from "@/features/administration/utils/apiErrors";
+import {
+  formatRoleNames,
+  resolveRoleName,
+} from "@/features/administration/utils/authorizationAudit";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import type { DataTableHeader } from "@/shared/types/dataTable";
@@ -27,6 +34,9 @@ export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
 /**
  * 権限変更監査ログ画面のページング取得と認証エラー処理を提供する。
  * 画面の1始まりページ番号（`UPagination`）はAPI呼出境界でBackendの0始まりへ変換する。
+ *
+ * ロールは監査ログにコードで記録されるため、初期化時にロール一覧API（`ACCOUNT_READ`）も取得し、
+ * `formatRole`・`formatRoles`で表示名へ変換する。ロール一覧を取得できない場合はコードのまま表示する。
  */
 export const useAuthorizationAuditListPage = () => {
   const router = useRouter();
@@ -41,6 +51,10 @@ export const useAuthorizationAuditListPage = () => {
   const pageSizes: number[] = [...AUTHORIZATION_AUDIT_PAGE_SIZES];
   const totalElements = ref(0);
   const totalPages = ref(0);
+  const roles = ref<AdministrationRole[]>([]);
+  const roleNamesByCode = computed<ReadonlyMap<string, string>>(
+    () => new Map(roles.value.map((role) => [role.roleCode, role.roleName]))
+  );
 
   /** 認証・認可状態が変化した場合に監査ログと件数を画面から破棄する。 */
   const clearProtectedState = (): void => {
@@ -73,10 +87,31 @@ export const useAuthorizationAuditListPage = () => {
     }
   };
 
-  /** 監査ログ一覧の先頭ページを取得する。 */
-  const initialize = async (): Promise<void> => {
-    await loadAuditLogs();
+  /**
+   * ロールの表示名をBackendから取得する。
+   * 監査ログの閲覧（`AUTHORIZATION_AUDIT_READ`）とロール一覧（`ACCOUNT_READ`）はpermissionが別のため、
+   * 失敗しても監査ログの表示は止めず、ロールをコードのまま表示する。Session切れは監査ログ側の401で処理する。
+   */
+  const loadRoleNames = async (): Promise<void> => {
+    try {
+      roles.value = await AdministrationApi.getRoles();
+    } catch {
+      roles.value = [];
+    }
   };
+
+  /** 監査ログ一覧の先頭ページとロールの表示名を並行して取得する。 */
+  const initialize = async (): Promise<void> => {
+    await Promise.all([loadAuditLogs(), loadRoleNames()]);
+  };
+
+  /** ロールコードを表示名へ変換する。表示名がないコードはそのまま返す。 */
+  const formatRole = (roleCode: string): string =>
+    resolveRoleName(roleCode, roleNamesByCode.value);
+
+  /** ロールコード集合を読点区切りの表示名へ変換する。空集合は「なし」。 */
+  const formatRoles = (roleCodes: readonly string[]): string =>
+    formatRoleNames(roleCodes, roleNamesByCode.value);
 
   /** ページ番号を変更し、対応する監査ログを取得する。 */
   const changePage = async (value: number): Promise<void> => {
@@ -123,6 +158,8 @@ export const useAuthorizationAuditListPage = () => {
     changePage,
     changePageSize,
     errorMessages,
+    formatRole,
+    formatRoles,
     headers,
     initialize,
     isLoading,

@@ -4,7 +4,6 @@ import { onBeforeMount } from "vue";
 import { useAuthorizationAuditListPage } from "@/features/administration/composables/useAuthorizationAuditListPage";
 import {
   formatAuthorizationAuditOccurredAt,
-  formatRoleCodes,
   getAuthorizationAuditActionColor,
   getAuthorizationAuditActionLabel,
 } from "@/features/administration/utils/authorizationAudit";
@@ -17,6 +16,8 @@ const {
   changePage,
   changePageSize,
   errorMessages,
+  formatRole,
+  formatRoles,
   headers,
   initialize,
   isLoading,
@@ -78,11 +79,14 @@ onBeforeMount(initialize);
             {{ getAuthorizationAuditActionLabel(item.action) }}
           </UBadge>
         </template>
+        <template #roleCode-cell="{ item }">
+          {{ formatRole(item.roleCode) }}
+        </template>
         <template #beforeRoleCodes-cell="{ item }">
-          {{ formatRoleCodes(item.beforeRoleCodes) }}
+          {{ formatRoles(item.beforeRoleCodes) }}
         </template>
         <template #afterRoleCodes-cell="{ item }">
-          {{ formatRoleCodes(item.afterRoleCodes) }}
+          {{ formatRoles(item.afterRoleCodes) }}
         </template>
       </AppDataTable>
 

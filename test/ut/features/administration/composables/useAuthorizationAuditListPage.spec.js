@@ -6,6 +6,7 @@ import { useAuthorizationAuditListPage } from "@/features/administration/composa
 const mocks = vi.hoisted(() => ({
   administrationApi: {
     getAuthorizationAuditLogs: vi.fn(),
+    getRoles: vi.fn(),
   },
   router: { push: vi.fn() },
   userStore: { clearSession: vi.fn() },
@@ -52,6 +53,41 @@ describe("useAuthorizationAuditListPage", () => {
     mocks.administrationApi.getAuthorizationAuditLogs.mockResolvedValue(
       response
     );
+    mocks.administrationApi.getRoles.mockResolvedValue([
+      { roleCode: "USER", roleName: "一般利用者", systemRole: true, version: 0 },
+      {
+        roleCode: "READ_ONLY_ADMIN",
+        roleName: "参照専用管理者",
+        systemRole: true,
+        version: 0,
+      },
+    ]);
+  });
+
+  it("初期表示でロールの表示名も取得し、監査ログのロールを名前で示す", async () => {
+    const page = useAuthorizationAuditListPage();
+
+    await page.initialize();
+
+    expect(mocks.administrationApi.getRoles).toHaveBeenCalledOnce();
+    expect(page.formatRole("READ_ONLY_ADMIN")).toBe("参照専用管理者");
+    expect(page.formatRoles(["USER", "READ_ONLY_ADMIN"])).toBe(
+      "一般利用者、参照専用管理者"
+    );
+  });
+
+  it("ロール一覧を取得できなくても監査ログを表示し、ロールはコードのまま示す", async () => {
+    mocks.administrationApi.getRoles.mockRejectedValue(
+      new AdministrationApiError(403, null)
+    );
+    const page = useAuthorizationAuditListPage();
+
+    await page.initialize();
+
+    expect(page.auditLogs.value).toEqual([auditLog]);
+    expect(page.errorMessages.value).toEqual([]);
+    expect(page.formatRole("READ_ONLY_ADMIN")).toBe("READ_ONLY_ADMIN");
+    expect(page.formatRoles([])).toBe("なし");
   });
 
   it("初期表示でBackendの先頭ページを取得する", async () => {
