@@ -69,10 +69,14 @@ export const useAppNavigation = (): AppNavigation => {
     if (userStore.hasAnyPermission(ATTENDANCE_READ_PERMISSION_CODES)) {
       links.push({ icon: "i-mdi-clock-outline", label: "勤怠", to: "/attendance" });
     }
-    links.push({ icon: "i-mdi-account", label: "アカウント", to: "/member/memberList" });
-    // 未認証でも共通レイアウトを表示する画面（問い合わせ）があるため、利用者IDがない場合は退会導線を出さない。
+    // 未認証でも共通レイアウトを表示する画面（問い合わせ）があるため、利用者IDがない場合は本人向けの導線を出さない。
+    // 「アカウント」は自分の会員情報（詳細画面）を開く。会員の一覧は、ACCOUNT_READを持つ管理者だけが「会員一覧」から開く
+    // （同じ一覧画面へのリンクが2つ並んでいたため。確認依頼「会員一覧の見え方の変更」3、2026-10-28決定）。
     if (userStore.memberId !== null) {
-      links.push({ icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.memberId}` });
+      links.push(
+        { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.memberId}` },
+        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.memberId}` },
+      );
     }
     if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
       links.push({ icon: "i-mdi-plus-box", label: "Todo新規登録", to: "/todo/register" });
@@ -86,10 +90,11 @@ export const useAppNavigation = (): AppNavigation => {
     if (userStore.hasPermission("NOTIFICATION_ANNOUNCEMENT_CREATE")) {
       links.push({ icon: "i-mdi-bullhorn-outline", label: "お知らせ配信", to: "/administration/notifications" });
     }
-    if (userStore.hasRole("SYSTEM_ADMIN")) {
+    // 会員の登録・一覧はBackend（MemberAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
+    if (userStore.hasPermission("ACCOUNT_UPDATE")) {
       links.push({ icon: "i-mdi-account-plus", label: "会員新規登録", to: "/member/detail" });
     }
-    if (userStore.hasRole("SYSTEM_ADMIN") || userStore.hasRole("READ_ONLY_ADMIN")) {
+    if (userStore.hasPermission("ACCOUNT_READ")) {
       links.push({ icon: "i-mdi-account-multiple", label: "会員一覧", to: "/member/memberList" });
     }
     return links;

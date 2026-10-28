@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   router: {
     push: vi.fn(),
   },
+  userStore: {
+    hasPermission: vi.fn(),
+  },
   memberStore: {
     deleteMemberList: vi.fn(),
     findMemberList: vi.fn(),
@@ -19,6 +22,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("vue-router", () => ({
   useRouter: () => mocks.router,
+}));
+
+vi.mock("@/features/auth/stores/user", () => ({
+  useUserStore: () => mocks.userStore,
 }));
 
 vi.mock("@/features/member/stores/member", () => ({
@@ -32,6 +39,14 @@ describe("useMemberListPage", () => {
     mocks.memberStore.memberListInfo = [];
     mocks.memberStore.findMemberList.mockResolvedValue(null);
     mocks.memberStore.deleteMemberList.mockResolvedValue(null);
+    mocks.userStore.hasPermission.mockReturnValue(false);
+  });
+
+  it("会員の削除はACCOUNT_UPDATEを持つ利用者にだけ出す", () => {
+    expect(useMemberListPage().canDeleteMembers.value).toBe(false);
+
+    mocks.userStore.hasPermission.mockImplementation((code) => code === "ACCOUNT_UPDATE");
+    expect(useMemberListPage().canDeleteMembers.value).toBe(true);
   });
 
   it("画面初期化時に会員一覧を取得する", async () => {

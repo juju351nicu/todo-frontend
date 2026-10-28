@@ -34,12 +34,16 @@ describe("useAppNavigation", () => {
     mocks.router.push.mockResolvedValue(undefined);
   });
 
-  it("permissionがない利用者にはDashboard・アカウント・退会だけを表示する", () => {
+  it("permissionがない利用者にはDashboard・アカウント・退会だけを表示し、アカウントは自分の会員詳細を開く", () => {
     signIn();
     const navigation = useAppNavigation();
 
     expect(labelsOf(navigation)).toEqual(["Dashboard", "アカウント", "退会"]);
-    expect(navigation.navigationLinks.value.at(-1).to).toBe("/member/cancel/7");
+    expect(navigation.navigationLinks.value.map((link) => link.to)).toEqual([
+      "/dashboard",
+      "/member/detail/7",
+      "/member/cancel/7",
+    ]);
   });
 
   it("全permissionとSYSTEM_ADMINを持つ利用者へ既存の表示順で全項目を表示する", () => {
@@ -53,6 +57,7 @@ describe("useAppNavigation", () => {
         "ATTENDANCE_READ_OWN",
         "TASK_WRITE_OWN",
         "ACCOUNT_READ",
+        "ACCOUNT_UPDATE",
         "AUTHORIZATION_AUDIT_READ",
         "NOTIFICATION_ANNOUNCEMENT_CREATE",
       ],
@@ -80,18 +85,18 @@ describe("useAppNavigation", () => {
     ]);
   });
 
-  it("READ_ONLY_ADMINには会員一覧を表示し会員新規登録を表示しない", () => {
-    signIn({ roleCodes: ["READ_ONLY_ADMIN"] });
+  it("ACCOUNT_READだけの利用者（READ_ONLY_ADMIN）には会員一覧を表示し会員新規登録を表示しない", () => {
+    signIn({ roleCodes: ["READ_ONLY_ADMIN"], permissionCodes: ["ACCOUNT_READ"] });
     const labels = labelsOf(useAppNavigation());
 
     expect(labels).toContain("会員一覧");
     expect(labels).not.toContain("会員新規登録");
   });
 
-  it("未認証では利用者IDを含む退会pathを作らない", () => {
+  it("未認証では利用者IDを含むアカウント・退会pathを作らない", () => {
     const navigation = useAppNavigation();
 
-    expect(labelsOf(navigation)).toEqual(["Dashboard", "アカウント"]);
+    expect(labelsOf(navigation)).toEqual(["Dashboard"]);
     expect(navigation.navigationLinks.value.some((link) => link.to.includes("null"))).toBe(false);
   });
 
