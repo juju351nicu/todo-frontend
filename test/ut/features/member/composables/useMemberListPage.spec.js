@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useMemberListPage } from "@/features/member/composables/useMemberListPage";
+import {
+  formatMemberDateTime,
+  useMemberListPage,
+} from "@/features/member/composables/useMemberListPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -63,5 +66,17 @@ describe("useMemberListPage", () => {
     const page = useMemberListPage();
 
     expect(page.headers.map((header) => header.key)).not.toContain("password");
+  });
+});
+
+describe("formatMemberDateTime", () => {
+  it("BackendのISO日時を短い日付・時刻にする", () => {
+    expect(formatMemberDateTime("2026-10-27T16:14:59.244")).toBe(
+      "2026/10/27 16:14"
+    );
+  });
+
+  it("未ログイン等のnullは空欄にする", () => {
+    expect(formatMemberDateTime(null)).toBe("");
   });
 });

@@ -14,6 +14,7 @@ export const DISPLAY_MESSAGES = {
     requestForbidden:
       "ログインの準備を更新できませんでした。画面を再読み込みしてお試しください。",
     loginFailed: "ログインできませんでした。",
+    loginRequired: "この画面を開くにはログインが必要です。ログインしてください。",
     sessionRestoreFailed:
       "ログイン後の利用者情報を確認できませんでした。もう一度お試しください。",
     oauth: {
