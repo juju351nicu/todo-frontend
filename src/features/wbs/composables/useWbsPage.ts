@@ -365,6 +365,8 @@ export const useWbsPage = () => {
     activeView,
     canEditWbs,
     currentAccountId: computed(() => userStore.memberId),
+    /** Projectが利用中（ACTIVE）か。archive済み・未取得はfalse。 */
+    isProjectActive: computed(() => project.value?.status === "ACTIVE"),
     errorMessages,
     initialize,
     isLoading,

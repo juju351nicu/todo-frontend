@@ -130,3 +130,22 @@ export const getBaselineComparisonStatusColor = (status: WbsBaselineComparisonSt
 /** 開始日・終了日のどちらかが比較対象にない場合は`—`、それ以外は`開始 ～ 終了`で表す。 */
 export const formatBaselinePeriod = (dateFrom: string | null, dateTo: string | null): string =>
   dateFrom === null || dateTo === null ? "—" : `${dateFrom} ～ ${dateTo}`;
+
+/**
+ * baselineが1件もないときに出す案内を選ぶ（改善提案 1-21）。
+ * 以前はarchive済みProjectや保存できない利用者にも「現在計画を保存してください」と出していた。
+ *
+ * @param state 利用者がbaselineを保存できるかと、Projectが利用中か
+ * @returns 案内文
+ */
+export const resolveEmptyBaselineGuidance = (state: {
+  canManage: boolean;
+  isProjectActive: boolean;
+}): string => {
+  if (!state.isProjectActive) {
+    return "baselineはありません。archive済みのProjectでは保存できません。";
+  }
+  return state.canManage
+    ? "baselineはまだありません。重要な計画変更の前に現在計画を保存してください。"
+    : "baselineはまだありません。保存はProjectのOWNERまたはMANAGERが行います。";
+};

@@ -11,6 +11,7 @@ import {
   formatBaselinePeriod,
   getBaselineComparisonStatusColor,
   getBaselineComparisonStatusLabel,
+  resolveEmptyBaselineGuidance,
 } from "@/features/wbs/utils/wbsBaseline";
 import {
   baselineActivateControlKey,
@@ -24,6 +25,8 @@ interface Props {
   activeBaselineDetail: WbsBaselineDetailResponse | null;
   comparisonRows: WbsBaselineComparisonRow[];
   canManage: boolean;
+  /** Projectが利用中（ACTIVE）か。baselineがないときの案内の出し分けに使う。 */
+  isProjectActive: boolean;
   isLoading: boolean;
   isMutating: boolean;
   activatingBaselineId: number | null;
@@ -166,7 +169,7 @@ const emit = defineEmits<{
       </template>
     </template>
     <StatusAlert v-else type="info" variant="soft">
-      baselineはまだありません。重要な計画変更の前に現在計画を保存してください。
+      {{ resolveEmptyBaselineGuidance({ canManage, isProjectActive }) }}
     </StatusAlert>
   </UCard>
 </template>

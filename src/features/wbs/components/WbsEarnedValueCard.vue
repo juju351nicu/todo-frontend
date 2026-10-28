@@ -7,6 +7,7 @@ import {
   formatSignedEarnedValueMinutes,
   getEarnedValueRatioColor,
   getEarnedValueVarianceColor,
+  resolveEarnedValueGuidance,
 } from "@/features/wbs/utils/earnedValue";
 import { EARNED_VALUE_SUBMIT_CONTROL } from "@/features/wbs/composables/useWbsEarnedValue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -18,6 +19,10 @@ interface Props {
   metrics: EarnedValueResponse | null;
   isLoading: boolean;
   errorMessages: string[];
+  /** 有効なbaselineがあるか。集計前の案内の出し分けに使う。 */
+  hasActiveBaseline: boolean;
+  /** 利用者がbaselineを保存できるか。baselineがないときの案内の出し分けに使う。 */
+  canManageBaselines: boolean;
 }
 
 const props = defineProps<Props>();
@@ -184,8 +189,9 @@ const submit = (): void => {
       </div>
       <StatusAlert v-else type="info" variant="soft">active baselineにEVM対象の通常Taskはありません。</StatusAlert>
     </template>
-    <StatusAlert v-else type="info" variant="soft" class="mt-4">
-      基準日を指定して集計してください。active baselineがないProjectでは、先に現在計画をbaselineとして保存します。
+    <!-- 集計の失敗（baselineがない409等）を表示している間は、同じ内容の案内を重ねない。 -->
+    <StatusAlert v-else-if="errorMessages.length === 0" type="info" variant="soft" class="mt-4">
+      {{ resolveEarnedValueGuidance({ hasActiveBaseline, canManageBaselines }) }}
     </StatusAlert>
   </UCard>
 </template>
