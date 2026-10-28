@@ -102,6 +102,10 @@ export const DISPLAY_MESSAGES = {
     projectNotFound:
       "Projectが見つからないか、このProjectへ参加していません。",
     listLoadFailed: "Project一覧を取得できませんでした。",
+    create: {
+      forbidden: "Projectを作成するpermissionがありません。",
+      failed: "Projectを作成できませんでした。",
+    },
     settings: {
       operationForbidden: "この操作を実行するpermissionがありません。",
       resourceNotFound: "対象のProjectまたはmemberが見つかりません。",

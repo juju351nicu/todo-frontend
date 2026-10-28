@@ -7,7 +7,24 @@ import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
-const { errorMessages, filteredProjects, initialize, isLoading, openBoard, searchText } = useProjectListPage();
+const {
+  canCreateProject,
+  canSubmitCreate,
+  closeCreateDialog,
+  createErrorMessages,
+  createForm,
+  createFormErrors,
+  errorMessages,
+  filteredProjects,
+  initialize,
+  isCreateDialogOpen,
+  isCreatingProject,
+  isLoading,
+  openBoard,
+  openCreateDialog,
+  searchText,
+  submitCreate,
+} = useProjectListPage();
 
 onBeforeMount(initialize);
 </script>
@@ -21,6 +38,10 @@ onBeforeMount(initialize);
           <UIcon name="i-mdi-view-dashboard-outline" class="size-6" />
           Project一覧
           <SearchField v-model="searchText" label="Projectを検索" class="ms-auto w-80" />
+          <!-- Templateを使わずにProjectを作る（改善提案 2-13）。Projectがない利用者も最初のProjectを作れる。 -->
+          <UButton v-if="canCreateProject" color="primary" icon="i-mdi-folder-plus-outline" @click="openCreateDialog">
+            Projectを作成
+          </UButton>
         </div>
       </template>
 
@@ -62,5 +83,49 @@ onBeforeMount(initialize);
         <p class="mb-0 text-sm text-muted">検索条件またはProjectへの参加状況を確認してください。</p>
       </div>
     </UCard>
+
+    <UModal
+      v-model:open="isCreateDialogOpen"
+      title="Projectを作成"
+      description="作成するとあなたがOWNERになり、Board列（Todo・進行中・完了）が用意されます。"
+      :dismissible="!isCreatingProject"
+    >
+      <template #body>
+        <form id="project-create-form" class="space-y-4" @submit.prevent="submitCreate">
+          <StatusAlert v-if="createErrorMessages.length" type="error">
+            <div v-for="message in createErrorMessages" :key="message">{{ message }}</div>
+          </StatusAlert>
+          <UFormField
+            label="Projectキー"
+            required
+            help="大文字英数字をハイフンで区切ります（例：SALES-2026）。作成後は変更できません。"
+            :error="createFormErrors.projectKey || undefined"
+          >
+            <UInput v-model="createForm.projectKey" :disabled="isCreatingProject" class="w-full" autofocus />
+          </UFormField>
+          <UFormField label="名前" required :error="createFormErrors.name || undefined">
+            <UInput v-model="createForm.name" :disabled="isCreatingProject" class="w-full" />
+          </UFormField>
+          <UFormField label="説明" :error="createFormErrors.description || undefined">
+            <UTextarea v-model="createForm.description" :rows="3" :disabled="isCreatingProject" class="w-full" />
+          </UFormField>
+        </form>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton variant="ghost" :disabled="isCreatingProject" @click="closeCreateDialog">キャンセル</UButton>
+          <UButton
+            type="submit"
+            form="project-create-form"
+            color="primary"
+            icon="i-mdi-check"
+            :loading="isCreatingProject"
+            :disabled="!canSubmitCreate"
+          >
+            作成
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import type {
+  ProjectCreateRequest,
   ProjectDetail,
   ProjectListResponse,
   ProjectMemberCandidate,
@@ -132,6 +133,19 @@ const updateProject = async (
 };
 
 /**
+ * Templateを使わずにProjectを作る（改善提案 2-13）。作成者はOWNERになり、標準のBoard列はBackendが作る。
+ *
+ * @param request Projectキー・名前・説明
+ * @returns 作成したProject詳細
+ * @throws ProjectApiError 入力不正（400）、Projectキー重複（409 `PROJECT_KEY_CONFLICT`）、permission不足の場合
+ */
+const createProject = async (request: ProjectCreateRequest): Promise<ProjectDetail> => {
+  const response = await HttpClient.postRequest(API_PATHS.PROJECTS, request);
+  await ensureSuccess(response);
+  return normalizeProjectDetail((await response.json()) as ProjectDetail);
+};
+
+/**
  * Project memberへ追加できるアカウント候補を、名前・メールアドレス・ログインIDの前方一致で探す（改善提案 2-9）。
  * Backendは有効でまだ参加していないアカウントを最大20件、アカウントID順に返す。空白だけの語は空配列。
  *
@@ -216,6 +230,7 @@ const removeProjectMember = async (
 
 export default {
   addProjectMember,
+  createProject,
   findMemberCandidates,
   getProject,
   getProjects,
