@@ -105,6 +105,20 @@ export const LEGACY_TODO_ERROR_CODES: ReadonlySet<string> = new Set([
   "INVALID_REQUEST_BODY",
 ]);
 
+/**
+ * My Tasksの完了（Project TaskのcompleteAPI）が表示契約を持つerror code。
+ * Backendの`ProjectApiExceptionHandler`が`messages.properties`の文言を付けて返す。
+ */
+export const MY_TASK_COMPLETE_ERROR_CODES: ReadonlySet<string> = new Set([
+  "INVALID_REQUEST_BODY",
+  "TASK_VERSION_CONFLICT",
+  "TASK_POSITION_CONFLICT",
+  "TASK_ARCHIVED",
+  "PROJECT_ARCHIVED",
+  "SUMMARY_TASK_NOT_COMPLETABLE",
+  "COMPLETED_STATUS_NOT_FOUND",
+]);
+
 /** 競合回復中に古い409より優先する認証・認可・公開範囲のHTTP status。 */
 export {
   API_RECOVERY_PRIORITY_STATUSES as TASK_RECOVERY_PRIORITY_STATUSES,

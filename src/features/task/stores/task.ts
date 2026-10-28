@@ -85,6 +85,18 @@ export const useTodoStore = defineStore("todo", {
     },
 
     /**
+     * My TasksのProject Taskを完了にする（完了列の末尾へ移す）。旧Todoの`completeTodo`とは別のAPIを使う。
+     *
+     * @param projectId Taskが属するProject ID
+     * @param taskId    完了にするTask ID
+     * @param version   取得時点のversion
+     * @throws TaskApiError 認証・認可失敗、未検出、競合の場合
+     */
+    completeMyTask(projectId: number, taskId: number, version: number): Promise<void> {
+      return TaskApi.completeMyTask(projectId, taskId, version);
+    },
+
+    /**
      * Todo情報を登録または更新する。
      *
      * @param payload snake_case形式のTodo入力
