@@ -18,7 +18,7 @@ import {
   getNotificationEventIcon,
 } from "@/features/notification/utils/notification";
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
-import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import {
   formatEarnedValueMinutes,
   formatEarnedValuePercent,
@@ -145,7 +145,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                     <span class="block text-base font-medium">{{ task.title }}</span>
                     <span class="line-clamp-2 text-sm text-muted">
                       {{ task.projectName }} ・ {{ task.statusName }}<br />
-                      期限 {{ task.dueDate }} ・ {{ formatMyTaskRemainingDays(task.remainingDays) }} ・
+                      期限 {{ task.dueDate }} ・ {{ formatRemainingDays(task.remainingDays) }} ・
                       進捗 {{ Number(task.progressPercent) }}%
                     </span>
                   </span>

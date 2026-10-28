@@ -7,7 +7,7 @@ import {
   myTaskCompleteControlKey,
   useMyTasksPage,
 } from "@/features/task/composables/useMyTasksPage";
-import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -112,7 +112,7 @@ const FILTER_OPTIONS = [
                   <span class="line-clamp-2 text-sm text-muted">
                     {{ task.projectName }} ・ {{ task.statusName }} ・進捗 {{ Number(task.progressPercent) }}%
                     <br />
-                    期限 {{ task.dueDate }} ・ {{ formatMyTaskRemainingDays(task.remainingDays) }}
+                    期限 {{ task.dueDate }} ・ {{ formatRemainingDays(task.remainingDays) }}
                   </span>
                 </span>
                 <span class="flex items-center gap-1">

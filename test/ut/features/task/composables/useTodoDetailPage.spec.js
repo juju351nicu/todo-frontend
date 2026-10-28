@@ -65,8 +65,30 @@ describe("useTodoDetailPage", () => {
       expect(page.todoForm.todoId).toBe(42);
     });
     expect(page.todoForm.doneFlag).toBe(1);
+    // 担当者名が返らない（会員に姓・名がない）場合はユーザーIDで示す。
     expect(page.fullName.value).toBe("ユーザーID: 5");
     expect(mocks.todoStore.findTodoDetail).toHaveBeenCalledWith(42);
+  });
+
+  it("担当者名が返れば、対象ユーザーを内部のIDではなく名前で示す（改善提案 1-17）", async () => {
+    mocks.todoStore.findTodoDetail.mockResolvedValue({
+      todo_id: 42,
+      date_from: "2026-08-08",
+      date_to: "2026-08-31",
+      title: "詳細画面",
+      detail: "担当者名",
+      done_flag: "0",
+      user_id: 5,
+      owner_name: "松浦 大地",
+      priority: 2,
+      version: 4,
+    });
+
+    const page = useTodoDetailPage(ref(42));
+
+    await vi.waitFor(() => {
+      expect(page.fullName.value).toBe("松浦 大地");
+    });
   });
 
   it("新規登録では詳細APIを呼ばず初期フォームを使用する", async () => {

@@ -64,12 +64,12 @@ const {
         </div>
         <div class="w-full p-3">
           <UFormField label="着手日">
-            <UInput v-model="todoForm.dateFrom" name="dateFrom" :readonly="!canWriteTodo" required class="w-full" />
+            <UInput v-model="todoForm.dateFrom" type="date" name="dateFrom" :readonly="!canWriteTodo" required class="w-full" />
           </UFormField>
         </div>
         <div class="w-full p-3">
           <UFormField label="期限日">
-            <UInput v-model="todoForm.dateTo" name="dateTo" :readonly="!canWriteTodo" required class="w-full" />
+            <UInput v-model="todoForm.dateTo" type="date" name="dateTo" :readonly="!canWriteTodo" required class="w-full" />
           </UFormField>
         </div>
         <div class="w-full p-3">

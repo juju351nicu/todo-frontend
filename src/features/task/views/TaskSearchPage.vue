@@ -7,7 +7,7 @@ import {
   TASK_SEARCH_KEYWORD_MAX_LENGTH,
   useTaskSearchPage,
 } from "@/features/task/composables/useTaskSearchPage";
-import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -309,7 +309,7 @@ onBeforeMount(initialize);
               <td v-if="isColumnVisible('DUE_DATE')">
                 <div>{{ task.dueDate }}</div>
                 <div class="text-xs" :class="task.remainingDays < 0 ? 'text-error' : 'text-muted'">
-                  {{ formatMyTaskRemainingDays(task.remainingDays) }}
+                  {{ formatRemainingDays(task.remainingDays) }}
                 </div>
               </td>
               <td v-if="isColumnVisible('PROGRESS')" class="min-w-30">

@@ -32,8 +32,8 @@ const today = formatTodoSearchDate();
       Todo検索
       <div class="-m-3 flex flex-wrap items-center text-base font-normal tracking-normal">
         <div class="flex-1 p-3">
-          <UFormField class="pb-0">
-            <UInput v-model="searchTitle" placeholder="タイトル" class="w-full" />
+          <UFormField label="タイトル" class="pb-0">
+            <UInput v-model="searchTitle" placeholder="タイトルの一部" class="w-full" />
           </UFormField>
         </div>
         <div v-for="option in DONE_FLAG_OPTIONS" :key="option.value" class="flex-1 p-3">

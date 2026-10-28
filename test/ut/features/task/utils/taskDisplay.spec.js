@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatMyTaskRemainingDays,
   formatRemainingDays,
   formatTodoSearchDate,
   getTaskPriorityColor,
@@ -27,11 +26,10 @@ describe("Todo表示変換", () => {
     expect(getTodoPriorityColor(3)).toBe("#ff0000");
   });
 
-  it("残日数と詳細を一覧表示用へ変換する", () => {
-    expect(formatRemainingDays(5)).toBe("残り5日間");
-    expect(formatMyTaskRemainingDays(-2)).toBe("2日超過");
-    expect(formatMyTaskRemainingDays(0)).toBe("今日");
-    expect(formatMyTaskRemainingDays(5)).toBe("残り5日");
+  it("期限までの日数を期限超過・今日・残り日数で表し、詳細を一覧表示用へ省略する", () => {
+    expect(formatRemainingDays(-2)).toBe("2日超過");
+    expect(formatRemainingDays(0)).toBe("今日");
+    expect(formatRemainingDays(5)).toBe("残り5日");
     expect(truncateTodoDetail("詳細情報")).toBe("詳細情");
   });
 });
