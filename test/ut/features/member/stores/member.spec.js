@@ -37,6 +37,29 @@ describe("Member store", () => {
     expect(store.isLoading).toBe(false);
   });
 
+  it("会員を削除したら、Backendが返した削除後の一覧でStoreを置き換える", async () => {
+    const remaining = [{ memberId: 1, lastName: "山田", firstName: "太郎" }];
+    MemberApi.deleteMembers.mockResolvedValue({ memberList: remaining });
+    const store = useMemberStore();
+    store.memberListInfo = [...remaining, { memberId: 2, lastName: "佐藤", firstName: "花子" }];
+
+    await store.deleteMemberList([2]);
+
+    expect(MemberApi.deleteMembers).toHaveBeenCalledWith([2]);
+    expect(store.memberListInfo).toEqual(remaining);
+  });
+
+  it("削除に失敗した場合は一覧を変えない", async () => {
+    MemberApi.deleteMembers.mockRejectedValue(new Error("403"));
+    const store = useMemberStore();
+    const current = [{ memberId: 2, lastName: "佐藤", firstName: "花子" }];
+    store.memberListInfo = current;
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(store.deleteMemberList([2])).resolves.toBeNull();
+    expect(store.memberListInfo).toEqual(current);
+  });
+
   it("ID指定で会員詳細を取得し、処理中フラグを解除する", async () => {
     const memberDetail = {
       memberId: 7,

@@ -67,9 +67,11 @@ export const useMemberListPage = () => {
     await memberStore.findMemberList();
   };
 
-  /** 選択した会員を削除する。 */
+  /** 選択した会員を削除する。削除できたら、消えた行を選択したままにしないよう選択を外す。 */
   const deleteSelectedMembers = async (): Promise<void> => {
-    await memberStore.deleteMemberList(selectedIds.value);
+    if (await memberStore.deleteMemberList(selectedIds.value)) {
+      selectedIds.value = [];
+    }
   };
 
   /**
