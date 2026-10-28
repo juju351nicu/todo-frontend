@@ -7,7 +7,7 @@ import {
   TASK_SEARCH_KEYWORD_MAX_LENGTH,
   useTaskSearchPage,
 } from "@/features/task/composables/useTaskSearchPage";
-import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -215,7 +215,7 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
-          <UFormField label="期限From">
+          <UFormField label="期限（から）">
             <UInput
               :model-value="filters.dueFrom ?? ''"
               type="date"
@@ -225,7 +225,7 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
-          <UFormField label="期限To">
+          <UFormField label="期限（まで）">
             <UInput
               :model-value="filters.dueTo ?? ''"
               type="date"
@@ -309,7 +309,7 @@ onBeforeMount(initialize);
               <td v-if="isColumnVisible('DUE_DATE')">
                 <div>{{ task.dueDate }}</div>
                 <div class="text-xs" :class="task.remainingDays < 0 ? 'text-error' : 'text-muted'">
-                  {{ formatMyTaskRemainingDays(task.remainingDays) }}
+                  {{ formatRemainingDays(task.remainingDays) }}
                 </div>
               </td>
               <td v-if="isColumnVisible('PROGRESS')" class="min-w-30">

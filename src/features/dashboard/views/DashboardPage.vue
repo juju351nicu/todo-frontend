@@ -18,7 +18,7 @@ import {
   getNotificationEventIcon,
 } from "@/features/notification/utils/notification";
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
-import { formatMyTaskRemainingDays } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import {
   formatEarnedValueMinutes,
   formatEarnedValuePercent,
@@ -145,7 +145,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                     <span class="block text-base font-medium">{{ task.title }}</span>
                     <span class="line-clamp-2 text-sm text-muted">
                       {{ task.projectName }} ・ {{ task.statusName }}<br />
-                      期限 {{ task.dueDate }} ・ {{ formatMyTaskRemainingDays(task.remainingDays) }} ・
+                      期限 {{ task.dueDate }} ・ {{ formatRemainingDays(task.remainingDays) }} ・
                       進捗 {{ Number(task.progressPercent) }}%
                     </span>
                   </span>
@@ -229,7 +229,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <UIcon name="i-mdi-folder-multiple-outline" class="size-6 text-teal" />
               Projects
               <UBadge v-if="dashboard.projects.available" color="teal" size="sm" class="ms-auto">
-                ACTIVE {{ dashboard.projects.activeProjectCount }}件
+                利用中 {{ dashboard.projects.activeProjectCount }}件
               </UBadge>
             </div>
           </template>
@@ -269,7 +269,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 </button>
               </div>
             </div>
-            <StatusAlert v-else type="info" variant="soft">参照できるACTIVE Projectはありません。</StatusAlert>
+            <StatusAlert v-else type="info" variant="soft">参照できる利用中のProjectはありません。</StatusAlert>
           </template>
           <StatusAlert v-else type="info" variant="soft">Project進捗を参照するpermissionがありません。</StatusAlert>
           <template v-if="dashboard.projects.available" #footer>
@@ -408,10 +408,10 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           <div class="mb-4 flex flex-wrap gap-2">
             <UBadge variant="outline">{{ advancedDashboard.projects.length }} Project</UBadge>
             <UBadge :color="advancedDashboard.projectsWithoutActiveBaselineCount > 0 ? 'warning' : 'success'">
-              active baselineなし
+              基準計画なし
               {{ advancedDashboard.projectsWithoutActiveBaselineCount }}件
             </UBadge>
-            <UBadge variant="outline">timezone {{ advancedDashboard.businessZoneId }}</UBadge>
+            <UBadge variant="outline">タイムゾーン {{ advancedDashboard.businessZoneId }}</UBadge>
           </div>
 
           <template v-if="advancedDashboard.projects.length">
@@ -419,7 +419,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <table class="app-table app-table-hover min-w-280 [&_td]:h-13 [&_td]:py-2">
                 <thead>
                   <tr>
-                    <th scope="col">Project / baseline</th>
+                    <th scope="col">Project / 基準計画</th>
                     <th scope="col">EVM</th>
                     <th scope="col">進捗</th>
                     <th scope="col">効率</th>
@@ -489,7 +489,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                       </div>
                       <span v-else class="text-muted">なし</span>
                       <div class="mt-1 text-xs text-muted">
-                        baseline配賦差
+                        基準計画との配賦差
                         {{ formatSignedEarnedValueMinutes(project.baselineAllocationVarianceMinutes) }}
                       </div>
                       <div v-if="project.excludedActualEffortMinutes > 0" class="text-xs text-warning">
@@ -510,7 +510,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 >
                   <span class="block px-4 pt-2 text-base font-bold">{{ project.projectName }}</span>
                   <span class="block px-4 text-sm opacity-60">
-                    {{ project.projectKey }} ・ baseline #{{ project.baselineNumber }}
+                    {{ project.projectKey }} ・ 基準計画 #{{ project.baselineNumber }}
                   </span>
                   <span class="block p-4">
                     <span class="mb-3 flex flex-wrap gap-1">
@@ -558,7 +558,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           </template>
 
           <StatusAlert v-else type="info" variant="soft">
-            active baselineを持つ参照可能なACTIVE Projectはありません。
+            基準計画（baseline）が有効な、参照できる利用中のProjectはありません。
           </StatusAlert>
         </template>
       </template>

@@ -123,3 +123,22 @@ export const formatRecurrenceDateTime = (value: string | null): string => (value
 /** 安定error codeを運用者向け説明へ変換する。未知のcodeは隠さずそのまま表示し、未設定は`-`。 */
 export const formatRecurrenceErrorCode = (value: string | null): string =>
   value ? (BLOCKED_REASON_LABELS[value] ?? value) : "-";
+
+/**
+ * 繰り返し規則の作成元を、内部のIDではなく名前で示す（改善提案 1-9）。
+ *
+ * @param sourceTaskTemplateId 作成元のTask Template ID。直接作成はnull
+ * @param templates 取得済みの本人のactive Task Template。未取得なら空配列
+ * @returns 直接作成は「直接入力」、一覧にあるTemplateは「Task Template「名前」」、
+ *          一覧にない（未取得・archive済み）Templateは「Task Templateから作成」
+ */
+export const formatRecurrenceSource = (
+  sourceTaskTemplateId: number | null,
+  templates: readonly { taskTemplateId: number; name: string }[]
+): string => {
+  if (sourceTaskTemplateId === null) {
+    return "直接入力";
+  }
+  const template = templates.find((item) => item.taskTemplateId === sourceTaskTemplateId);
+  return template === undefined ? "Task Templateから作成" : `Task Template「${template.name}」`;
+};

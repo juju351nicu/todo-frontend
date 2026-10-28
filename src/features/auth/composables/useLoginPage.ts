@@ -136,11 +136,6 @@ export const useLoginPage = () => {
     }
   };
 
-  /** 会員登録画面へ移動する。 */
-  const submitRegister = (): void => {
-    void router.push({ name: "MemberRegister" });
-  };
-
   /** GitHub OAuth2ログインを開始する。 */
   const submitGithub = (): void => {
     window.location.assign(AuthApi.getGitHubAuthorizationUrl());
@@ -156,6 +151,5 @@ export const useLoginPage = () => {
     showPassword,
     submitForm,
     submitGithub,
-    submitRegister,
   };
 };

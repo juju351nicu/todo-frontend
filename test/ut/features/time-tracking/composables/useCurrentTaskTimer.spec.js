@@ -4,12 +4,14 @@ import { effectScope, nextTick, reactive } from "vue";
 
 import { useCurrentTaskTimer } from "@/features/time-tracking/composables/useCurrentTaskTimer";
 import { useTaskTimerStore } from "@/features/time-tracking/stores/taskTimer";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 const mocks = vi.hoisted(() => ({
   userStore: null,
 }));
 
 vi.mock("@/app/router", () => ({ default: { push: vi.fn() } }));
+vi.mock("@/shared/utils/focus", () => ({ focusFirstEnabledElement: vi.fn() }));
 vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
@@ -46,6 +48,7 @@ describe("useCurrentTaskTimer", () => {
     vi.spyOn(timerStore, "resetForLogout");
     vi.spyOn(timerStore, "stopCurrentTimer").mockResolvedValue(true);
     vi.spyOn(timerStore, "clearMessages");
+    vi.mocked(focusFirstEnabledElement).mockClear();
   });
 
   afterEach(() => {
@@ -132,5 +135,32 @@ describe("useCurrentTaskTimer", () => {
     scope.stop();
 
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("停止できたら、消えた停止ボタンの代わりにTimer履歴ボタンへフォーカスを戻す（改善提案 1-7）", async () => {
+    const { currentTaskTimer, scope } = setUp();
+
+    await currentTaskTimer.stopTimer();
+    expect(focusFirstEnabledElement).toHaveBeenCalledWith(['[data-task-timer-control="history"]']);
+
+    vi.mocked(focusFirstEnabledElement).mockClear();
+    timerStore.stopCurrentTimer.mockResolvedValue(false);
+    await currentTaskTimer.stopTimer();
+    // 停止に失敗した場合は停止ボタンが残るので、フォーカスを動かさない。
+    expect(focusFirstEnabledElement).not.toHaveBeenCalled();
+    scope.stop();
+  });
+
+  it("取消確認が閉じた後、Timerがなくなっていれば履歴ボタンへ、残っていれば何もしない", async () => {
+    const { currentTaskTimer, scope } = setUp();
+
+    timerStore.currentTimer = timer;
+    await currentTaskTimer.restoreFocusAfterCancelDialog();
+    expect(focusFirstEnabledElement).not.toHaveBeenCalled();
+
+    timerStore.currentTimer = null;
+    await currentTaskTimer.restoreFocusAfterCancelDialog();
+    expect(focusFirstEnabledElement).toHaveBeenCalledWith(['[data-task-timer-control="history"]']);
+    scope.stop();
   });
 });

@@ -11,12 +11,12 @@ describe("Vue routes", () => {
     expect(findRoute("TodoDetail").path).toBe("/todo/detail/:id");
   });
 
-  it("未ログインでも会員新規登録画面を開ける", () => {
-    const route = findRoute("MemberRegister");
-
-    expect(route.path).toBe("/member/register");
-    expect(route.props).toEqual({ id: 0 });
-    expect(route.meta?.requiresAuth).not.toBe(true);
+  it("未ログインで開ける会員登録画面は置かず、会員の登録はログイン後の会員詳細（ID なし）で行う", () => {
+    // Backendの会員APIはログインが必要で、未ログインの登録画面は保存が必ず401になっていた
+    // （確認依頼「旧会員APIの認可」3、2026-10-28決定）。
+    expect(findRoute("MemberRegister")).toBeUndefined();
+    expect(routes.some((route) => route.path === "/member/register")).toBe(false);
+    expect(findRoute("MemberDetail").meta.requiresAuth).toBe(true);
   });
 
   it("Basic Dashboardを全認証利用者向けルートとして公開する", () => {

@@ -167,6 +167,30 @@ export const useAttendancePage = () => {
       !hasPendingCorrection.value &&
       ["APPROVED", "CLOSED"].includes(monthSummary.value?.statusCode ?? "")
   );
+  /**
+   * 選択日に修正申請できない理由（改善提案 1-22）。ボタンを出さないだけでは理由が分からないため、日の詳細に添える。
+   * 修正申請は承認済み・締め済みの月だけが対象（`docs/attendance-mvp-design.md`「修正申請」）。
+   * 勤怠の更新permissionがない利用者、申請できる日、月の情報を取得していない間は空文字。
+   */
+  const correctionUnavailableReason = computed<string>(() => {
+    const monthStatus = monthSummary.value?.statusCode;
+    if (!canWriteAttendance.value || monthStatus === undefined || canRequestCorrection.value) {
+      return "";
+    }
+    if (monthStatus === "DRAFT" || monthStatus === "REJECTED") {
+      return "提出前の月は、打刻で直してから提出してください。修正申請は承認・締めの後に使えます。";
+    }
+    if (monthStatus === "SUBMITTED") {
+      return "提出した月は審査中です。修正申請は承認の後に使えます。";
+    }
+    if (hasPendingCorrection.value) {
+      return "この日には審査待ちの修正申請があります。結果が出るまで新しい申請はできません。";
+    }
+    if (selectedDaySummary.value.incomplete) {
+      return "勤務・休憩が終わっていない日は修正申請できません。";
+    }
+    return "";
+  });
 
   /** 初期表示月と本日の詳細をBackendから取得する。 */
   const initialize = async (): Promise<void> => {
@@ -629,6 +653,7 @@ export const useAttendancePage = () => {
     cancelCorrectionRequest,
     cancellingCorrectionId,
     canRequestCorrection,
+    correctionUnavailableReason,
     canSubmitMonth,
     canClockIn,
     canClockOut,

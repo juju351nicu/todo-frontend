@@ -23,12 +23,14 @@ export const getTodoPriorityColor = (priority: number | string): string => {
   }
 };
 
-/** 残日数を一覧表示用の文字列へ変換する。 */
-export const formatRemainingDays = (value: number): string =>
-  `残り${value}日間`;
-
-/** My Tasksの符号付き残日数を期限超過、今日、残日の自然な表現へ変換する。 */
-export const formatMyTaskRemainingDays = (value: number): string => {
+/**
+ * 今日（業務日）から期限までの符号付き日数を、期限超過・今日・残り日数の表現へ変換する。
+ * My Tasks・Task検索・Dashboard・旧Todo一覧で同じ表現にする。
+ *
+ * @param value Backendが返す期限までの日数。期限当日は0、期限切れは負数
+ * @returns 例: `2日超過`、`今日`、`残り5日`
+ */
+export const formatRemainingDays = (value: number): string => {
   if (value < 0) {
     return `${Math.abs(value)}日超過`;
   }

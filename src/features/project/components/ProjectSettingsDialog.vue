@@ -7,6 +7,7 @@ import {
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
 import type { ProjectDetail } from "@/features/project/types/project";
+import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
 import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
@@ -32,6 +33,7 @@ const {
   activeSection,
   addMember,
   addMemberAccountId,
+  addMemberAccountIdError,
   addMemberRole,
   archiveProject,
   canAddMember,
@@ -178,7 +180,11 @@ const SECTION_TABS = [
             </template>
             <div class="-m-3 flex flex-wrap items-center">
               <div class="w-full p-3 md:w-5/12">
-                <UFormField label="アカウントID" help="存在し、ACTIVEなアカウントだけを追加できます。">
+                <UFormField
+                  label="アカウントID"
+                  help="存在し、ACTIVEなアカウントだけを追加できます。"
+                  :error="addMemberAccountIdError || undefined"
+                >
                   <UInput
                     :model-value="String(addMemberAccountId ?? '')"
                     type="number"
@@ -260,9 +266,8 @@ const SECTION_TABS = [
                   <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
                 </td>
                 <td>
-                  <div class="text-xs">割当者ID: {{ member.assignedBy }}</div>
+                  <div class="text-xs">割当者: {{ resolveProjectMemberDisplayName(project.members, member.assignedBy) }}</div>
                   <div class="text-xs">参加日時: {{ formatShortDateTime(member.joinedAt) }}</div>
-                  <div class="text-xs">version: {{ member.version }}</div>
                 </td>
                 <td class="text-end">
                   <div v-if="canManageMembers" class="flex justify-end gap-2">

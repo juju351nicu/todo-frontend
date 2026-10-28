@@ -30,6 +30,7 @@ const {
   cancelCorrectionRequest,
   cancellingCorrectionId,
   canRequestCorrection,
+  correctionUnavailableReason,
   canSubmitMonth,
   canClockIn,
   canClockOut,
@@ -254,6 +255,9 @@ onBeforeMount(initialize);
                 </UButton>
               </div>
               <div class="text-sm font-normal tracking-normal text-muted">選択日の確定済み勤務・休憩区間を表示します。</div>
+              <div v-if="selectedDay && correctionUnavailableReason" class="mt-1 text-sm font-normal tracking-normal text-muted">
+                {{ correctionUnavailableReason }}
+              </div>
             </template>
 
             <template v-if="selectedDay">

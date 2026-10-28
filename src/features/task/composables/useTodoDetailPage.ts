@@ -95,9 +95,15 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
       normalizedTodoId.value === 0 || todoForm.userId === userStore.memberId
     );
   });
-  const fullName = computed(() =>
-    todoForm.userId > 0 ? `ユーザーID: ${todoForm.userId}` : "対象ユーザーなし"
-  );
+  /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のない会員ではnull。 */
+  const ownerName = ref<string | null>(null);
+  /** 「対象ユーザー」欄の表示。担当者名を優先し、名前がなければユーザーIDで示す（改善提案 1-17）。 */
+  const fullName = computed(() => {
+    if (todoForm.userId <= 0) {
+      return "対象ユーザーなし";
+    }
+    return ownerName.value ?? `ユーザーID: ${todoForm.userId}`;
+  });
 
   /** 取得・保存処理が表示したメッセージを次の画面操作前に破棄する。 */
   const clearMessages = (): void => {
@@ -109,11 +115,13 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   /** Todoフォームを新規登録用の既定値へ戻す。 */
   const resetForm = (): void => {
     Object.assign(todoForm, createTodoDetailForm());
+    ownerName.value = null;
   };
 
   /** Backendの確定Responseを編集フォームへ置き換える。 */
   const applyTodoDetail = (detail: TodoDetailResponse): void => {
     Object.assign(todoForm, createTodoDetailForm(detail));
+    ownerName.value = detail.owner_name ?? null;
   };
 
   /** 認証・認可状態が変化した場合にServer由来のフォームとDialogを破棄する。 */

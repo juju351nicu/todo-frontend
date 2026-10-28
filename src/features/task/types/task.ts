@@ -60,10 +60,15 @@ export interface MyTaskListResponse {
   tasks: MyTaskItem[];
 }
 
-/** Todo詳細APIのsnake_caseレスポンス。 */
-export interface TodoDetailResponse {
+/**
+ * Todo登録・更新APIリクエスト（snake_case）。
+ * `user_id`は全件更新permission利用者の割当候補であり、本人更新permissionではBackendが無視する。
+ */
+export interface TodoUpsertRequest {
   todo_id: number;
+  /** 着手日。`YYYY-MM-DD`。 */
   date_from: string;
+  /** 期限日。`YYYY-MM-DD`。 */
   date_to: string;
   title: string;
   detail: string;
@@ -73,8 +78,8 @@ export interface TodoDetailResponse {
   version: number;
 }
 
-/**
- * Todo登録・更新APIリクエスト。
- * `user_id`は全件更新permission利用者の割当候補であり、本人更新permissionではBackendが無視する。
- */
-export type TodoUpsertRequest = TodoDetailResponse;
+/** Todo詳細APIのsnake_caseレスポンス。登録・更新リクエストの項目に、表示専用の担当者名を足したもの。 */
+export interface TodoDetailResponse extends TodoUpsertRequest {
+  /** 担当者の「姓 名」。会員情報に姓・名がない場合はnull（画面はユーザーIDで示す）。 */
+  owner_name: string | null;
+}

@@ -16,7 +16,6 @@ const {
   showPassword,
   submitForm,
   submitGithub,
-  submitRegister,
 } = useLoginPage();
 
 onMounted(initialize);
@@ -76,7 +75,6 @@ onMounted(initialize);
         <UButton type="submit" color="primary" size="lg" :disabled="isLoading">ログイン</UButton>
       </div>
     </form>
-    <button type="button" class="text-start" @click="submitRegister">新しいアカウントを作成</button>
     <UButton
       icon="i-mdi-github"
       class="mx-4 mt-6 mb-6 h-12 rounded-full bg-black text-white normal-case hover:bg-black/90"

@@ -32,7 +32,7 @@ const TODO_TABLE_HEADERS: DataTableHeader[] = [
   { title: "重要度", align: "start", key: "priority" },
   { title: "着手日", align: "start", key: "start" },
   { title: "期限日", align: "start", key: "end" },
-  { title: "残り日数", align: "start", key: "remainingDays" },
+  { title: "期限まで", align: "start", key: "remainingDays" },
   { title: "タイトル", align: "start", key: "title" },
   { title: "詳細情報", align: "start", key: "detail" },
   { title: "完了フラグ", align: "start", key: "doneFlag" },

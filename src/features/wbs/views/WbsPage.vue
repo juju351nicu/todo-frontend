@@ -190,7 +190,7 @@ const VIEW_OPTIONS = [
                     @click="page.openWorkLogDialog(row.taskId)"
                   />
                   <UButton
-                    v-if="page.canEditWbs"
+                    v-if="page.canEditTask(row)"
                     icon="i-mdi-pencil-outline"
                     size="sm"
                     variant="ghost"
@@ -228,6 +228,7 @@ const VIEW_OPTIONS = [
       :active-baseline-detail="page.activeBaselineDetail"
       :comparison-rows="page.baselineChangedRows"
       :can-manage="page.canManageBaselines"
+      :is-project-active="page.isProjectActive"
       :is-loading="page.isLoading"
       :is-mutating="page.isBaselineMutating"
       :activating-baseline-id="page.activatingBaselineId"
@@ -243,6 +244,8 @@ const VIEW_OPTIONS = [
       :metrics="page.earnedValue"
       :is-loading="page.isLoadingEarnedValue"
       :error-messages="page.earnedValueErrorMessages"
+      :has-active-baseline="page.activeBaseline !== null"
+      :can-manage-baselines="page.canManageBaselines"
       @load="page.submitEarnedValueMetrics"
     />
 

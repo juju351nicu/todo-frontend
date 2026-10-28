@@ -7,8 +7,17 @@ import {
   calculateDisplayedElapsedSeconds,
   formatElapsedSeconds,
 } from "@/features/time-tracking/utils/timeTracking";
+import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 const ELAPSED_REFRESH_MILLISECONDS = 1_000;
+
+/**
+ * ヘッダーのTimer履歴ボタン（`TaskTimerHistoryDialog.vue`）に付ける`data-task-timer-control`属性の値。
+ * 停止・取消の後は押したボタン自体が消えてフォーカスがbodyへ外れるため、残り続けるこのボタンへ戻す（改善提案 1-7）。
+ */
+export const TASK_TIMER_HISTORY_CONTROL = "history";
+
+const TIMER_HISTORY_SELECTOR = `[data-task-timer-control="${TASK_TIMER_HISTORY_CONTROL}"]`;
 
 /**
  * ヘッダーに表示する現在Timerの状態と操作を提供する。
@@ -41,10 +50,15 @@ export const useCurrentTaskTimer = () => {
         ),
   );
 
-  /** 現在Timerを停止して日別実績へ反映し、取消確認が開いていれば閉じる。 */
+  /**
+   * 現在Timerを停止して日別実績へ反映し、取消確認が開いていれば閉じる。
+   * 停止できた場合は停止ボタンが消えるため、Timer履歴ボタンへフォーカスを戻す。失敗した場合は停止ボタンが残るので動かさない。
+   */
   const stopTimer = async (): Promise<void> => {
     isCancelConfirmOpen.value = false;
-    await timerStore.stopCurrentTimer();
+    if (await timerStore.stopCurrentTimer()) {
+      await focusFirstEnabledElement([TIMER_HISTORY_SELECTOR]);
+    }
   };
 
   /** 確認済みの現在Timerを実績へ反映せず取消する。失敗した場合は確認dialogを開いたまま再操作できるようにする。 */
@@ -52,6 +66,17 @@ export const useCurrentTaskTimer = () => {
     const canceled = await timerStore.cancelCurrentTimer();
     if (canceled) {
       isCancelConfirmOpen.value = false;
+    }
+  };
+
+  /**
+   * 取消確認dialogが閉じ終わった後に呼ぶ。取消でTimerがなくなっていれば、Timer履歴ボタンへフォーカスを戻す。
+   * dialogは閉じるときに開いたボタン（取消ボタン）へフォーカスを戻そうとするが、取消後はそのボタンが消えているため、
+   * 閉じるアニメーションの後（`UModal`の`after:leave`）に呼ぶ必要がある。「戻る」で閉じた場合は何もしない。
+   */
+  const restoreFocusAfterCancelDialog = async (): Promise<void> => {
+    if (currentTimer.value === null) {
+      await focusFirstEnabledElement([TIMER_HISTORY_SELECTOR]);
     }
   };
 
@@ -88,6 +113,7 @@ export const useCurrentTaskTimer = () => {
     isCancelConfirmOpen,
     isLoading,
     pendingMutation,
+    restoreFocusAfterCancelDialog,
     stopTimer,
     successMessage,
   };

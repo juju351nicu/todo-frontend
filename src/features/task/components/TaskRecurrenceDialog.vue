@@ -64,6 +64,7 @@ const {
   selectRule,
   selectedRule,
   selectedRuleAssigneeDisplayName,
+  selectedRuleSourceLabel,
   startCreating,
   statusOptions,
   successMessage,
@@ -154,7 +155,6 @@ const CREATION_MODE_OPTIONS = [
           <form v-if="isFormOpen" @submit.prevent="isCreating ? createRule() : saveRule()">
             <div class="mb-3 flex items-center">
               <h2 class="text-xl font-medium">{{ isCreating ? "規則を作成" : "規則を編集" }}</h2>
-              <UBadge v-if="isEditing && selectedRule" size="sm" class="ms-auto">version {{ selectedRule.version }}</UBadge>
             </div>
 
             <UFieldGroup v-if="isCreating" class="mb-4" role="group" aria-label="作成元">
@@ -391,7 +391,6 @@ const CREATION_MODE_OPTIONS = [
               <UBadge :color="getRecurrenceStatusColor(selectedRule.status)" size="sm">
                 {{ getRecurrenceStatusLabel(selectedRule.status) }}
               </UBadge>
-              <UBadge size="sm">version {{ selectedRule.version }}</UBadge>
               <UButton
                 v-if="canEditSelected"
                 size="sm"
@@ -434,7 +433,7 @@ const CREATION_MODE_OPTIONS = [
               <div class="w-full p-1 sm:w-1/2"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</div>
               <div class="w-full p-1 sm:w-1/2">
                 <strong>作成元:</strong>
-                {{ selectedRule.sourceTaskTemplateId === null ? "直接入力" : `Task Template #${selectedRule.sourceTaskTemplateId}` }}
+                {{ selectedRuleSourceLabel }}
               </div>
             </div>
             <ul v-if="selectedRule.checklistItems.length" class="mb-4 rounded-sm border border-default py-2">

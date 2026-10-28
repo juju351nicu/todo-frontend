@@ -49,4 +49,4 @@
 
 - `docs/frontend-architecture.md` の「UI基盤（Nuxt UI）」
 - `AGENTS.md` の「UI（Nuxt UI）」（variant・size の対応表、breakpoint）
-- リポジトリ外の資料：`../nuxt-ui-migration-plan.md`（移行の計画・経緯・対応表）
+- リポジトリ外の資料：`../検討メモ/nuxt-ui-migration-plan.md`（移行の計画・経緯・対応表）

@@ -6,6 +6,7 @@ import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 
 const {
+  canDeleteMembers,
   deleteSelectedMembers,
   headers,
   initialize,
@@ -30,7 +31,7 @@ onBeforeMount(initialize);
     :items="memberList"
     item-value="memberId"
     :items-per-page-options="itemsPerPageOptions"
-    selectable
+    :selectable="canDeleteMembers"
     class="rounded-sm ring ring-default"
   >
     <template #registeredDate-cell="{ item }">{{ formatMemberDateTime(item.registeredDate) }}</template>
@@ -42,5 +43,7 @@ onBeforeMount(initialize);
       </button>
     </template>
   </AppDataTable>
-  <UButton icon="i-mdi-delete" color="success" class="me-4" @click="deleteSelectedMembers">削除確認する</UButton>
+  <UButton v-if="canDeleteMembers" icon="i-mdi-delete" color="success" class="me-4" @click="deleteSelectedMembers">
+    削除確認する
+  </UButton>
 </template>

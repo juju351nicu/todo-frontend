@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type { TaskWorkloadDateRange, TaskWorkloadResponse } from "@/features/wbs/types/wbs";
 import { formatEffortMinutes, formatSignedEffortMinutes } from "@/features/wbs/utils/effort";
 import {
+  findDuplicatedWorkloadDisplayNames,
   getWorkloadCapacityColor,
   getWorkloadCapacityLabel,
   getWorkloadVarianceColor,
@@ -27,6 +30,11 @@ const emit = defineEmits<{
 const form = useSyncedDraft(
   () => props.dateRange,
   (dateRange) => ({ ...dateRange }),
+);
+
+/** 同名の担当者が複数いる表示名。該当する行だけアカウントIDを添える。 */
+const duplicatedDisplayNames = computed<ReadonlySet<string>>(() =>
+  findDuplicatedWorkloadDisplayNames(props.workload?.workloads ?? []),
 );
 
 /** 入力中の期間を複製し、検証とAPI取得を担当する親composableへ渡す。 */
@@ -111,7 +119,9 @@ const submit = (): void => {
               <td class="whitespace-nowrap">{{ row.workDate }}</td>
               <td>
                 {{ row.accountDisplayName }}
-                <div class="text-xs text-muted">アカウントID: {{ row.accountId }}</div>
+                <div v-if="duplicatedDisplayNames.has(row.accountDisplayName)" class="text-xs text-muted">
+                  アカウントID: {{ row.accountId }}
+                </div>
               </td>
               <td class="whitespace-nowrap">{{ formatEffortMinutes(row.plannedEffortMinutes) }}</td>
               <td class="whitespace-nowrap">{{ formatEffortMinutes(row.availableMinutes) }}</td>

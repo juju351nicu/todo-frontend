@@ -8,6 +8,7 @@ import {
   getEarnedValueRatioColor,
   getEarnedValueVarianceColor,
   validateEarnedValueStatusDate,
+  resolveEarnedValueGuidance,
 } from "@/features/wbs/utils/earnedValue";
 
 describe("EVM表示utility", () => {
@@ -43,5 +44,22 @@ describe("EVM表示utility", () => {
     expect(getEarnedValueVarianceColor(Number.POSITIVE_INFINITY)).toBeUndefined();
     expect(getEarnedValueVarianceColor(-0.01)).toBe("error");
     expect(getEarnedValueVarianceColor(0)).toBe("success");
+  });
+});
+
+describe("resolveEarnedValueGuidance", () => {
+  it("有効なbaselineがあれば基準日の指定だけを案内する", () => {
+    expect(
+      resolveEarnedValueGuidance({ hasActiveBaseline: true, canManageBaselines: false })
+    ).toBe("基準日を指定して集計してください。");
+  });
+
+  it("baselineがなければ、保存できる人には保存を、できない人には依頼先を案内する", () => {
+    expect(
+      resolveEarnedValueGuidance({ hasActiveBaseline: false, canManageBaselines: true })
+    ).toContain("現在計画を保存してください");
+    expect(
+      resolveEarnedValueGuidance({ hasActiveBaseline: false, canManageBaselines: false })
+    ).toContain("OWNERまたはMANAGER");
   });
 });

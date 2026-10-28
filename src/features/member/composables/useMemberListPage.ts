@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useUserStore } from "@/features/auth/stores/user";
 import { useMemberStore } from "@/features/member/stores/member";
 import type { MemberListItem } from "@/features/member/types/member";
 import {
@@ -36,10 +37,17 @@ const MEMBER_TABLE_HEADERS: DataTableHeader[] = [
 export const formatMemberDateTime = (value: string | null): string =>
   value === null ? "" : formatShortDateTime(value);
 
-/** 会員一覧画面の状態と操作を提供する。 */
+/**
+ * 会員一覧画面の状態と操作を提供する。
+ *
+ * 削除（行の選択と「削除確認する」）は`ACCOUNT_UPDATE`を持つ利用者だけに出す（`canDeleteMembers`）。
+ * BackendはこのpermissionがないDELETEを403で拒否するため、押しても必ず失敗するボタンを出さない
+ * （確認依頼「会員一覧の見え方の変更」2、2026-10-28決定）。最終的な認可はBackendが行う。
+ */
 export const useMemberListPage = () => {
   const router = useRouter();
   const memberStore = useMemberStore();
+  const userStore = useUserStore();
 
   const headers = MEMBER_TABLE_HEADERS;
   const isLoading = computed<boolean>(() => memberStore.isLoading);
@@ -49,6 +57,10 @@ export const useMemberListPage = () => {
   );
   const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const selectedIds = ref<number[]>([]);
+  /** 会員を削除できるか（Backendの`MemberAccessLogic#canDeleteMembers`と同じ`ACCOUNT_UPDATE`）。 */
+  const canDeleteMembers = computed<boolean>(() =>
+    userStore.hasPermission("ACCOUNT_UPDATE")
+  );
 
   /** 会員一覧をBackendから取得する。 */
   const initialize = async (): Promise<void> => {
@@ -73,6 +85,7 @@ export const useMemberListPage = () => {
   };
 
   return {
+    canDeleteMembers,
     deleteSelectedMembers,
     headers,
     initialize,

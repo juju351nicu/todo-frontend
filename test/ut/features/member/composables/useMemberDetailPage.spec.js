@@ -49,6 +49,27 @@ describe("useMemberDetailPage", () => {
 
     expect(mocks.memberStore.findMemberDetail).not.toHaveBeenCalled();
     expect(page.memberForm).toMatchObject({ memberId: 0, role: 2 });
+    // 新規登録はユーザとしてだけ登録できる（ロールは会員画面では変えられない）。
+    expect(page.roleLabel.value).toBe("ユーザ");
+  });
+
+  it("既存会員の権限は表示名で示し、選択肢は出さない", async () => {
+    mocks.memberStore.findMemberDetail.mockResolvedValue({
+      memberId: 1,
+      lastName: "管理",
+      firstName: "一郎",
+      loginId: "admin",
+      email: "admin@example.com",
+      role: 0,
+      version: 1,
+    });
+
+    const page = useMemberDetailPage(ref(1));
+
+    await vi.waitFor(() => {
+      expect(page.roleLabel.value).toBe("管理者");
+    });
+    expect("roleItems" in page).toBe(false);
   });
 
   it("詳細取得失敗時は画面用メッセージを設定する", async () => {

@@ -8,6 +8,7 @@ import {
   formatBaselinePeriod,
   getBaselineComparisonStatusColor,
   getBaselineComparisonStatusLabel,
+  resolveEmptyBaselineGuidance,
 } from "@/features/wbs/utils/wbsBaseline";
 
 const buildCurrentTask = (overrides = {}) => ({
@@ -123,5 +124,22 @@ describe("baseline表示", () => {
     expect(formatBaselinePeriod("2026-10-01", null)).toBe("—");
     expect(formatBaselinePeriod("2026-10-01", "2026-10-05")).toBe("2026-10-01 ～ 2026-10-05");
     expect(formatBaselineCreatedAt("invalid")).toBe("invalid");
+  });
+});
+
+describe("resolveEmptyBaselineGuidance", () => {
+  it("archive済みProjectでは保存を促さない", () => {
+    expect(resolveEmptyBaselineGuidance({ canManage: true, isProjectActive: false })).toBe(
+      "baselineはありません。archive済みのProjectでは保存できません。"
+    );
+  });
+
+  it("利用中のProjectでは、保存できる人には保存を、できない人には保存する人を案内する", () => {
+    expect(resolveEmptyBaselineGuidance({ canManage: true, isProjectActive: true })).toContain(
+      "現在計画を保存してください"
+    );
+    expect(resolveEmptyBaselineGuidance({ canManage: false, isProjectActive: true })).toContain(
+      "OWNERまたはMANAGER"
+    );
   });
 });
