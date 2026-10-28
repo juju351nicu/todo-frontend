@@ -21,7 +21,7 @@ const {
 
 <template>
   <div class="page-surface p-4 sm:p-6">
-    <UCard class="mx-auto max-w-225 shadow-elevation-2" :ui="{ body: 'p-6 sm:p-6' }">
+    <UCard class="mx-auto max-w-225" :ui="{ body: 'p-6 sm:p-6' }">
       <template #header>
         <div class="flex flex-wrap items-center gap-3 px-2 pt-4">
           <UAvatar icon="i-mdi-bullhorn-outline" size="3xl" class="bg-secondary/12 text-secondary" />

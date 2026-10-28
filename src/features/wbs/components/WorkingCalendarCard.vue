@@ -93,7 +93,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
     </div>
 
     <form @submit.prevent="submit">
-      <div class="-m-3 flex flex-wrap items-center">
+      <div class="-m-3 flex flex-wrap items-end">
         <div class="w-full p-3 md:w-1/3">
           <UFormField label="表示対象" class="pb-0">
             <USelect

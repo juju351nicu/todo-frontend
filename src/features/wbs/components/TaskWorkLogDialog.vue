@@ -131,7 +131,7 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <h2 class="text-base">登録済み日別実績</h2>
-          <UBadge color="primary">合計 {{ formatTaskWorkLogEffort(workLogList?.totalActualEffortMinutes ?? 0) }}</UBadge>
+          <UBadge color="info">合計 {{ formatTaskWorkLogEffort(workLogList?.totalActualEffortMinutes ?? 0) }}</UBadge>
           <UBadge size="sm" variant="outline">{{ workLogList?.workLogs.length ?? 0 }}件</UBadge>
         </div>
 

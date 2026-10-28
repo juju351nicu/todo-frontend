@@ -71,7 +71,7 @@
 /*
  * 文字色・枠線はNuxt UIの既定（neutral paletteの濃淡）を使う。
  * semantic colorは白文字を載せるbuttonと色付きの文字が読めるよう、Nuxt UI既定の500ではなく、
- * 白とのコントラスト比が4.5以上になる濃さを使う（500ではprimary 3.5、success 2.3、info 2.8、warning 2.8、error 3.8、
+ * 白とのコントラスト比が4.5以上になる濃さを使う（500ではprimary 3.5、success 2.3、info 2.8、warning 1.9、error 3.8、
  * teal 3.7、amber 2.2）。
  */
 :root {

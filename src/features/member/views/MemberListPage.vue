@@ -31,7 +31,7 @@ onBeforeMount(initialize);
     item-value="memberId"
     :items-per-page-options="itemsPerPageOptions"
     selectable
-    class="shadow-elevation-1"
+    class="rounded-sm ring ring-default"
   >
     <template #registeredDate-cell="{ item }">{{ formatMemberDateTime(item.registeredDate) }}</template>
     <template #updatedDate-cell="{ item }">{{ formatMemberDateTime(item.updatedDate) }}</template>
