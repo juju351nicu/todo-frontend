@@ -268,6 +268,30 @@ describe("useProjectSettingsDialog", () => {
     ]);
   });
 
+  it("参加済みのアカウントIDを入れた時点で、追加できない理由を入力欄に出す", () => {
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+
+    dialog.addMemberAccountId.value = "4";
+    expect(dialog.canAddMember.value).toBe(false);
+    expect(dialog.addMemberAccountIdError.value).toBe(
+      "指定したアカウントは既にProjectへ参加しています。"
+    );
+
+    dialog.addMemberAccountId.value = "9";
+    expect(dialog.canAddMember.value).toBe(true);
+    expect(dialog.addMemberAccountIdError.value).toBe("");
+  });
+
+  it("入力途中（空欄・0）では理由を出さない", () => {
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+
+    for (const value of ["", "0", null]) {
+      dialog.addMemberAccountId.value = value;
+      expect(dialog.canAddMember.value).toBe(false);
+      expect(dialog.addMemberAccountIdError.value).toBe("");
+    }
+  });
+
   it("member取得時点のversionを使ってProject roleを更新する", async () => {
     const updated = {
       ...structuredClone(project),

@@ -51,6 +51,9 @@ const createEmptyProjectForm = (): ProjectSettingsForm => ({
   version: 0,
 });
 
+/** 参加済みのアカウントを追加しようとしたときの案内。入力欄の下と、押した後のエラーで同じ文言を使う。 */
+const ALREADY_JOINED_MESSAGE = "指定したアカウントは既にProjectへ参加しています。";
+
 /** number inputが返す文字列または数値を正の安全な整数へ変換する。 */
 const parseAccountId = (value: number | string | null): number | null => {
   if (value === null || value === "") {
@@ -198,15 +201,29 @@ export const useProjectSettingsDialog = (
       projectForm.value.name.trim().length <= 100 &&
       projectForm.value.description.trim().length <= 2000
   );
-  const canAddMember = computed(() => {
+  /** 入力中のアカウントIDが、すでにProjectへ参加しているアカウントか。 */
+  const isAddMemberAlreadyJoined = computed<boolean>(() => {
     const accountId = parseAccountId(addMemberAccountId.value);
     return (
-      canManageMembers.value &&
-      !isBusy.value &&
       accountId !== null &&
-      !project.value?.members.some((member) => member.accountId === accountId)
+      (project.value?.members.some((member) => member.accountId === accountId) ?? false)
     );
   });
+  /**
+   * 「追加」を押せない理由のうち、入力欄の下に出すもの（改善提案 1-11）。
+   * 黙ってbuttonが無効になると理由が分からないため、参加済みのアカウントIDを入れた時点で示す。
+   * 空欄・正の整数でない入力は、入力途中のことが多いため出さない（押せば`addMember`が案内する）。
+   */
+  const addMemberAccountIdError = computed<string>(() =>
+    isAddMemberAlreadyJoined.value ? ALREADY_JOINED_MESSAGE : ""
+  );
+  const canAddMember = computed(
+    () =>
+      canManageMembers.value &&
+      !isBusy.value &&
+      parseAccountId(addMemberAccountId.value) !== null &&
+      !isAddMemberAlreadyJoined.value
+  );
 
   /** Backend確定済みProjectから編集フォームとmember role draftを作り直す。 */
   const synchronizeProject = (current: ProjectDetail | null): void => {
@@ -372,7 +389,7 @@ export const useProjectSettingsDialog = (
       return;
     }
     if (current.members.some((member) => member.accountId === accountId)) {
-      errorMessages.value = ["指定したアカウントは既にProjectへ参加しています。"];
+      errorMessages.value = [ALREADY_JOINED_MESSAGE];
       return;
     }
     const request: ProjectMemberCreateRequest = {
@@ -671,6 +688,7 @@ export const useProjectSettingsDialog = (
     activeSection,
     addMember,
     addMemberAccountId,
+    addMemberAccountIdError,
     addMemberRole,
     archiveProject,
     canAddMember,
