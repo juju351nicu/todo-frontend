@@ -73,6 +73,20 @@ export interface ProjectMemberCreateRequest {
   projectRole: ProjectRole;
 }
 
+/**
+ * Project memberへ追加できるアカウント候補（有効で、まだ参加していないアカウント）。
+ * `GET /api/v1/projects/{projectId}/member-candidates`が名前・メールアドレス・ログインIDの前方一致で返す（改善提案 2-9）。
+ */
+export interface ProjectMemberCandidate {
+  accountId: number;
+  /** Backendが参加者名と同じ規則（「姓 名」→メールアドレス→「Account {ID}」）で必ず空でない値にする。 */
+  displayName: string;
+  /** 同名の候補を見分けるためのメールアドレス。 */
+  email: string;
+  /** 同名の候補を見分けるためのログインID。外部認証だけのアカウントはnull。 */
+  loginId: string | null;
+}
+
 /** Project memberのresource roleを現在version付きで変更するRequest。 */
 export interface ProjectMemberUpdateRequest {
   projectRole: ProjectRole;

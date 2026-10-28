@@ -108,6 +108,7 @@ export const DISPLAY_MESSAGES = {
       updateFailed: "Project情報を更新できませんでした。",
       archiveFailed: "Projectをアーカイブできませんでした。",
       memberAddFailed: "Project memberを追加できませんでした。",
+      memberCandidateSearchFailed: "メンバーの候補を検索できませんでした。",
       memberRoleUpdateFailed:
         "Project memberのroleを更新できませんでした。",
       memberRemoveFailed: "Project memberを除外できませんでした。",
