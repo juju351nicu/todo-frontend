@@ -19,7 +19,7 @@ const {
   loadError,
   memberForm,
   openConfirm,
-  roleItems,
+  roleLabel,
 } = useMemberDetailPage(toRef(props, "id"));
 </script>
 
@@ -73,10 +73,11 @@ const {
             <UInput v-model="memberForm.email" type="email" name="email" placeholder="emailを入力してください。" required class="w-full" />
           </UFormField>
         </div>
-        <div v-if="memberForm.role === 0" class="w-full p-3">
-          <UFormField label="管理者権限">
-            <USelect v-model="memberForm.role" name="role" :items="roleItems" value-key="role" label-key="roleLabel" class="w-full" />
-          </UFormField>
+        <div class="w-full p-3 text-sm">
+          <span class="font-medium">権限:</span> {{ roleLabel }}
+          <span class="block text-muted">
+            権限はこの画面では変えられません。変更は管理者が「アカウント・ロール管理」で行います。新規登録はユーザとして登録します。
+          </span>
         </div>
       </div>
       <div>
