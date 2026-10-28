@@ -22,7 +22,8 @@ const props = withDefaults(
     taskId: number;
     /**
      * 参照のみで開くときtrue（担当外のMEMBER、TASK_UPDATEのないaccount、archive済みProject等）。
-     * trueの間は全ての操作部品をdisabledにし、更新系APIを呼ばない。
+     * trueの間は追加欄と各行の操作（上下・編集・削除）を出さず、完了のチェックはdisabledで状態だけを示す。更新系APIは呼ばない。
+     * 押せない部品が並ぶと操作できない理由が分かりにくいため、出さない（改善提案 1-1）。
      */
     disabled?: boolean;
   }>(),
@@ -109,7 +110,7 @@ const {
       </div>
       <template v-else>
         <span class="flex-1 text-base" :class="{ 'line-through opacity-60': item.completed }">{{ item.content }}</span>
-        <div class="flex gap-1">
+        <div v-if="!disabled" class="flex gap-1">
           <UButton
             icon="i-mdi-arrow-up"
             size="xs"
@@ -158,7 +159,7 @@ const {
     </li>
   </ul>
   <div v-else-if="!isLoading" class="mb-3 text-sm text-muted">まだチェック項目はありません。</div>
-  <div class="flex items-start gap-2">
+  <div v-if="!disabled" class="flex items-start gap-2">
     <div class="relative flex-1">
       <UFormField label="チェック項目を追加">
         <UInput
@@ -174,7 +175,7 @@ const {
     </div>
     <UButton color="primary" :loading="isCreating" :disabled="!canAdd" @click="addItem">追加</UButton>
   </div>
-  <div v-if="items.length >= CHECKLIST_ITEM_MAX_COUNT" class="mt-1 text-xs text-warning">
+  <div v-if="!disabled && items.length >= CHECKLIST_ITEM_MAX_COUNT" class="mt-1 text-xs text-warning">
     チェック項目は最大{{ CHECKLIST_ITEM_MAX_COUNT }}件です。
   </div>
 
