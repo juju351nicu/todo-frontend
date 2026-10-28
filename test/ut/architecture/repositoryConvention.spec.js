@@ -4,6 +4,8 @@ import { extname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { INTERNAL_DOCUMENT_REFERENCE_BASELINE } from "./internalDocumentReferenceBaseline.js";
+
 const projectRoot = resolve(import.meta.dirname, "../../..");
 const textExtensions = new Set([
   ".css",
@@ -22,6 +24,41 @@ const textExtensions = new Set([
 ]);
 const excludedDirectories = new Set([".git", "dist", "node_modules"]);
 const documentedFunctionDirectories = ["/api/"];
+/**
+ * リポジトリの外の資料を番号で指すコメントの書き方（改善提案の番号、動作確認の項目のパス、Backendの動作確認資料の略称、
+ * 開発段階の名前、`§`と番号）。どの資料のどこかが読み手に分からず、資料が変わると意味を失うため、
+ * コメントは業務上の意味と理由の文で書く（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
+ */
+const internalDocumentReference =
+  /改善提案\s*\d|動作確認\s*\/|BE\s*資料|Stage\s*\d+[A-Z]|§\s*\d/g;
+/** 資料番号の書き方を探すディレクトリと拡張子。 */
+const internalDocumentReferenceSources = [
+  { directory: "src", extensions: [".ts", ".vue", ".js"] },
+  { directory: "test", extensions: [".ts", ".js"] },
+];
+
+/**
+ * 資料番号の書き方を、プロジェクトルートからの相対パス（`/`区切り）ごとに数える。
+ *
+ * @returns {Record<string, number>} 1件以上あるファイルと件数。パスの順に並べる
+ */
+const countInternalDocumentReferences = () => {
+  const counts = {};
+  for (const { directory, extensions } of internalDocumentReferenceSources) {
+    for (const file of collectProjectTextFiles(join(projectRoot, directory))) {
+      if (!extensions.includes(extname(file))) {
+        continue;
+      }
+      const matches = readFileSync(file, "utf8").match(internalDocumentReference);
+      if (matches) {
+        counts[relative(projectRoot, file).replaceAll("\\", "/")] = matches.length;
+      }
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(counts).sort(([left], [right]) => left.localeCompare(right))
+  );
+};
 
 /**
  * リポジトリ内で規約検査の対象とするテキストファイルを再帰的に収集する。
@@ -151,6 +188,30 @@ describe("Repository coding conventions", () => {
       .map((file) => relative(projectRoot, file));
 
     expect(violations).toEqual([]);
+  });
+
+  it("コメントに資料の番号（改善提案・動作確認・Backendの動作確認資料・開発段階名・§番号）を増やさない", () => {
+    const actual = countInternalDocumentReferences();
+    // 一致しないファイルだけを「ベースライン -> 実際」で示す（全件を並べると、どこが違うか読めないため）。
+    const paths = new Set([
+      ...Object.keys(INTERNAL_DOCUMENT_REFERENCE_BASELINE),
+      ...Object.keys(actual),
+    ]);
+    const differences = [...paths]
+      .sort()
+      .map((path) => [
+        path,
+        INTERNAL_DOCUMENT_REFERENCE_BASELINE[path] ?? 0,
+        actual[path] ?? 0,
+      ])
+      .filter(([, expectedCount, actualCount]) => expectedCount !== actualCount)
+      .map(
+        ([path, expectedCount, actualCount]) =>
+          `${path}: ${expectedCount} -> ${actualCount}`
+      );
+
+    // 減らした場合も、internalDocumentReferenceBaseline.js を同じ変更で減らす。
+    expect(differences).toEqual([]);
   });
 
   it("exportedな型・関数とAPI境界の関数へJSDocを記載する", () => {
