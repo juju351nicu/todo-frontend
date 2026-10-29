@@ -14,10 +14,11 @@ import { routes } from "@/app/router/routes";
  * （画面の遷移をテストする場合は、`options.global.plugins`へ自前のrouterを渡すか、`router.push`をspyする）。
  *
  * @param component テストする部品
- * @param options `@vue/test-utils`の`mount`へ渡す設定（props・slots等）。`global.plugins`は足される
+ * @param options `@vue/test-utils`の`mount`へ渡す設定（props・slots等）。`global.plugins`は足される。
+ *   `options.pinia`を渡すと、そのPiniaを使う（mountの前にStoreへ値を入れておくテスト向け。省略時は空のPinia）
  * @returns mountした部品のwrapper
  */
-export const mountWithUi = (component, options = {}) =>
+export const mountWithUi = (component, { pinia = createPinia(), ...options } = {}) =>
   mount(component, {
     ...options,
     attachTo: document.body,
@@ -26,7 +27,7 @@ export const mountWithUi = (component, options = {}) =>
       plugins: [
         ...(options.global?.plugins ?? []),
         ui,
-        createPinia(),
+        pinia,
         createRouter({ history: createMemoryHistory(), routes }),
       ],
     },
