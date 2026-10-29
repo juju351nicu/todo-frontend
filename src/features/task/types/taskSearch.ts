@@ -51,7 +51,8 @@ export interface TaskSearchItem {
   assigneeAccountId: number;
   assigneeLoginId: string | null;
   assigneeDisplayName: string;
-  priority: number;
+  /** 優先度（1:低、2:中、3:高）。BackendのTaskPriority。 */
+  priority: TaskPriority;
   progressPercent: number;
   version: number;
 }

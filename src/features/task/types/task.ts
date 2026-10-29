@@ -1,3 +1,5 @@
+import type { TaskPriority } from "@/features/project/types/project";
+
 /** Todo一覧・カレンダー検索APIリクエスト。Backendが認証主体から参照範囲を決定する。 */
 export interface TodoListRequest {
   search_title: string;
@@ -49,7 +51,8 @@ export interface MyTaskItem {
   dueDate: string;
   dueGroup: MyTaskDueGroup;
   remainingDays: number;
-  priority: number;
+  /** 優先度（1:低、2:中、3:高）。BackendのTaskPriority。 */
+  priority: TaskPriority;
   progressPercent: number;
   version: number;
 }
