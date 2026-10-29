@@ -138,7 +138,7 @@ export const useProjectSettingsDialog = (
   const activeSection = ref<ProjectSettingsSection>("project");
   const addMemberAccountId = ref<number | string | null>(null);
   const addMemberRole = ref<ProjectRole>("MEMBER");
-  /** member候補を探す語（名前・メールアドレス・ログインIDの先頭）。改善提案 2-9。 */
+  /** member候補を探す語（名前・メールアドレス・ログインIDの先頭）。 */
   const memberCandidateQuery = ref("");
   /** 直前の検索で見つかったmember候補（有効でまだ参加していないアカウント、最大20件）。 */
   const memberCandidates = ref<ProjectMemberCandidate[]>([]);
@@ -221,7 +221,7 @@ export const useProjectSettingsDialog = (
     );
   });
   /**
-   * 「追加」を押せない理由のうち、入力欄の下に出すもの（改善提案 1-11）。
+   * 「追加」を押せない理由のうち、入力欄の下に出すもの。
    * 黙ってbuttonが無効になると理由が分からないため、参加済みのアカウントIDを入れた時点で示す。
    * 空欄・正の整数でない入力は、入力途中のことが多いため出さない（押せば`addMember`が案内する）。
    */
@@ -277,7 +277,7 @@ export const useProjectSettingsDialog = (
   /**
    * 操作の後（失敗した場合も含む）、候補の部品へフォーカスを戻す。
    * 更新中はDialog内の入力欄とボタンをすべてdisabledにするため、押した部品からフォーカスが外れて
-   * bodyへ移り、キーボードだけでは続けて操作できなくなる（動作確認/12_Project設定 G-3・G-5）。
+   * bodyへ移り、キーボードだけでは続けて操作できなくなる。
    * 候補がすべて消えた・disabledのとき（自分を降格した後など）は「閉じる」へ戻す。
    * Dialogを閉じた後（401・自己除外）は何もしない。isSaving等をfalseへ戻した後に呼ぶ。
    *
@@ -389,8 +389,8 @@ export const useProjectSettingsDialog = (
   };
 
   /**
-   * member候補を名前・メールアドレス・ログインIDの先頭で探す（改善提案 2-9）。
-   * 以前はアカウントIDの数字を入力するしかなく、利用者は他人のIDを知らなかった。空白だけの語では探さず候補を消す。
+   * member候補を名前・メールアドレス・ログインIDの先頭で探す。利用者は他人のアカウントIDを知らないため。
+   * 空白だけの語では探さず候補を消す。
    */
   const searchMemberCandidates = async (): Promise<void> => {
     const current = project.value;
@@ -631,7 +631,7 @@ export const useProjectSettingsDialog = (
   /**
    * 409競合後にProject詳細を再取得し、古いProject／member versionを画面へ残さない。
    * version競合等（`RELOAD_GUIDANCE_ERROR_CODES`）で再取得できたときは、Backendの「最新状態を取得してください。」の後ろに、
-   * 画面側で取り直し済みであることの案内を添える（動作確認/12_Project設定 G-4。07・08の対応と同じ）。
+   * 画面側で取り直し済みであることの案内を添える（チェックリスト・コメントの409と同じ書き方）。
    *
    * @param conflict 操作APIが返した409
    */

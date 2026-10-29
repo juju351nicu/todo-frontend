@@ -49,8 +49,7 @@ export interface ProjectTemplateApplyForm {
 /**
  * 画面の部品に付ける`data-project-template-control`属性の値。
  * `ProjectTemplatePage.vue`はこの値で属性を付け、`useProjectTemplatePage`は操作の後に同じ値で部品を探してフォーカスを戻す。
- * 更新中は部品をdisabledにし、編集の開始・終了では部品自体が入れ替わるため、そのままではフォーカスがbodyへ外れる
- * （動作確認/13_Project一覧_Template G-7・G-10・G-12）。
+ * 更新中は部品をdisabledにし、編集の開始・終了では部品自体が入れ替わるため、そのままではフォーカスがbodyへ外れる。
  */
 export const PROJECT_TEMPLATE_CONTROL = {
   /** 詳細の「編集」ボタン。 */
@@ -76,7 +75,7 @@ const buildTemplateControlSelector = createDataAttributeSelector("data-project-t
 /**
  * Templateからの作成で、入力内容の誤りを表す409のerror code。Template自体は古くなっていないので、
  * 一覧・詳細を取り直さず、入力（Projectキー・Project名・slotの割当）を残したまま直してもらう。
- * 取り直すと入力がすべて消えていた（動作確認/13_Project一覧_Template G-10）。
+ * 取り直すと入力がすべて消えるため。
  */
 const APPLY_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
   "PROJECT_KEY_CONFLICT",
@@ -179,7 +178,7 @@ export const useProjectTemplatePage = () => {
   /**
    * 結果のmessageを「TemplateからProjectを作成」のボタンの上に出すか。
    * 作成フォームは画面の中ほどにあり、上部のmessageは作成ボタンを押した位置から見えないことがあるため
-   * （幅390pxでは画面の外へ出た。動作確認/13_Project一覧_Template G-8）。Templateが消えて作成フォームがないときは上部に出す。
+   * （幅390pxでは画面の外へ出る）。Templateが消えて作成フォームがないときは上部に出す。
    */
   const isApplyFeedback = computed(
     () => feedbackTarget.value === "apply" && selectedTemplate.value !== null
@@ -706,7 +705,7 @@ export const useProjectTemplatePage = () => {
               fallback
             );
       // version競合のBackendの文言は「再読み込みしてください。」だが、画面はこの後で取り直す。
-      // 取り直せたときは、取り直し済みであることを添える（動作確認/13_Project一覧_Template G-9。07・08・12の対応と同じ）。
+      // 取り直せたときは、取り直し済みであることを添える（チェックリスト・コメント・Project設定の409と同じ書き方）。
       const reloadedMessages =
         error.status === 409 && isVersionConflict(error)
           ? [DISPLAY_MESSAGES.project.template.conflictReloaded]

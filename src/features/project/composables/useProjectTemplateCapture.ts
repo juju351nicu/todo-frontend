@@ -19,8 +19,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 保存Dialogの「Template名」入力欄に付ける`data-project-template-capture`属性の値。
- * 保存に失敗したとき（保存中はdisabledになりフォーカスが外れる）に、名前を直せるようここへ戻す
- * （動作確認/13_Project一覧_Template G-5）。
+ * 保存に失敗したとき（保存中はdisabledになりフォーカスが外れる）に、名前を直せるようここへ戻す。
  */
 export const CAPTURE_NAME_CONTROL = "name";
 

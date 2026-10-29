@@ -5,15 +5,6 @@
  * 新しいファイル・行を足してはいけない（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
 export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
-  "src/features/project/api/projectApi.ts": 2,
-  "src/features/project/components/ProjectSettingsDialog.vue": 2,
-  "src/features/project/composables/useProjectListPage.ts": 3,
-  "src/features/project/composables/useProjectSettingsDialog.ts": 5,
-  "src/features/project/composables/useProjectTemplateCapture.ts": 1,
-  "src/features/project/composables/useProjectTemplatePage.ts": 4,
-  "src/features/project/types/project.ts": 2,
-  "src/features/project/utils/projectTemplateDisplay.ts": 3,
-  "src/features/project/views/ProjectListPage.vue": 1,
   "src/features/task/api/taskApi.ts": 1,
   "src/features/task/components/ProjectCommentsDialog.vue": 2,
   "src/features/task/components/TaskChecklistPanel.vue": 1,
@@ -27,7 +18,6 @@ export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
   "src/features/task/utils/taskRecurrenceDisplay.ts": 1,
   "src/features/task/views/MyTasksPage.vue": 1,
   "src/features/task/views/TaskSearchPage.vue": 1,
-  "src/features/time-tracking/composables/useCurrentTaskTimer.ts": 1,
   "src/features/wbs/components/WbsTaskEditDialog.vue": 1,
   "src/features/wbs/components/WorkingCalendarCard.vue": 1,
   "src/features/wbs/composables/useWbsBaselines.ts": 2,

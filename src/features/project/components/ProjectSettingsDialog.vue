@@ -103,7 +103,7 @@ const SECTION_TABS = [
     <template #body>
       <!--
         結果のmessageはDialog本文のスクロールに付いて上端へ固定する。メンバーが多いと下の行で「role保存」を押した位置から
-        本文の先頭が見えず、成功・失敗が分からなかったため（動作確認/12_Project設定 G-6）。
+        本文の先頭が見えず、成功・失敗が分からないため。
         負のtopとmarginでUModal本文の上余白（nuxtUiTheme.ts の modal.body の pt-4）まで覆い、上を流れる内容が透けないようにする。
       -->
       <div
@@ -188,7 +188,7 @@ const SECTION_TABS = [
             <template #header>
               <div class="text-base font-normal">メンバーを追加</div>
             </template>
-            <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（改善提案 2-9）。 -->
+            <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（他人のIDを知らなくても追加できる）。 -->
             <form class="-m-3 mb-0 flex flex-wrap items-end" @submit.prevent="searchMemberCandidates">
               <div class="w-full p-3 md:w-3/4">
                 <UFormField
@@ -390,7 +390,7 @@ const SECTION_TABS = [
     <template #body>
       <p class="mb-3">「{{ project.name }}」を履歴参照専用に変更します。</p>
       <StatusAlert type="warning" variant="soft">
-        MVPではアーカイブ解除できません。Project、メンバー、Taskの更新もできなくなります。
+        アーカイブは解除できません。Project、メンバー、Taskの更新もできなくなります。
       </StatusAlert>
     </template>
     <template #footer>

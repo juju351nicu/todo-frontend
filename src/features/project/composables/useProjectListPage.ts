@@ -29,7 +29,7 @@ const createEmptyCreateForm = (): ProjectCreateRequest => ({
   description: "",
 });
 
-/** Project一覧の検索、読込、Board遷移と、Templateを使わないProject作成（改善提案 2-13）を管理する。 */
+/** Project一覧の検索、読込、Board遷移と、Templateを使わないProject作成を管理する。 */
 export const useProjectListPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
@@ -46,8 +46,8 @@ export const useProjectListPage = () => {
   const createErrorMessages = ref<string[]>([]);
 
   /**
-   * Templateを使わずにProjectを作れるか。以前は画面がなくTemplateからしか作れず、Templateは既存Projectから保存するため、
-   * Projectがない利用者は最初のProjectを作れなかった（改善提案 2-13）。
+   * Templateを使わずにProjectを作れるか。Templateは既存のProjectから保存するため、
+   * Templateからしか作れないと、Projectがない利用者は最初のProjectを作れない。
    */
   const canCreateProject = computed(() => userStore.hasPermission("PROJECT_CREATE"));
 
@@ -85,8 +85,8 @@ export const useProjectListPage = () => {
   /**
    * 検索欄の語を含むProjectだけを返す（大文字小文字は区別しない）。
    * 照合する文字列はカードに出ている名前・Project key・状態の表示名・Project roleと、状態コード。
-   * 状態はカードに「利用中」「アーカイブ」と出るため表示名でも探せるようにする
-   * （コードだけで照合していたため「アーカイブ」で0件になった。動作確認/13_Project一覧_Template G-2）。
+   * 状態はカードに「利用中」「アーカイブ」と出るため、コード（`ARCHIVED`等）に加えて表示名でも照合する
+   * （画面に見えている「アーカイブ」で探して見つかるようにするため）。
    */
   const filteredProjects = computed(() => {
     const keyword = searchText.value.trim().toLocaleLowerCase();
