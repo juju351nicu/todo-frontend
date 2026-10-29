@@ -79,14 +79,12 @@ export const useTodoListPage = () => {
   /** 認証・認可状態が変化した場合にServer由来のTodo一覧を破棄する。 */
   const clearProtectedState = (): void => {
     todoList.value = [];
-    todoStore.setTodoList([]);
   };
 
-  /** Backendの確定Responseで画面とStoreのTodo一覧を同時に置き換える。 */
+  /** Backendの確定Responseで画面のTodo一覧を置き換える。 */
   const replaceTodoList = async (payload: TodoListRequest): Promise<void> => {
     const data = await todoStore.findTodoList(payload);
     todoList.value = data.todoList;
-    todoStore.setTodoList(data.todoList);
   };
 
   /** API statusと契約済みerror codeを旧Todo一覧向け表示へ変換する。 */

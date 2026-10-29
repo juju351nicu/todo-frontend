@@ -4,7 +4,6 @@ import TaskApi from "@/features/task/api/taskApi";
 import type {
   MyTaskListResponse,
   TodoDetailResponse,
-  TodoListItem,
   TodoListRequest,
   TodoListResponse,
   TodoUpsertRequest,
@@ -12,14 +11,12 @@ import type {
 
 interface TodoState {
   isLoading: boolean;
-  todoListInfo: TodoListItem[];
 }
 
-/** Todo画面間で共有する一覧と通信中状態を管理するPinia Store。 */
+/** Todo・My Tasksの画面が使うAPI呼出しと、通信中状態を管理するPinia Store。 */
 export const useTodoStore = defineStore("todo", {
   state: (): TodoState => ({
     isLoading: false,
-    todoListInfo: [],
   }),
   actions: {
     /**
@@ -35,15 +32,6 @@ export const useTodoStore = defineStore("todo", {
       } finally {
         this.isLoading = false;
       }
-    },
-
-    /**
-     * Todo一覧情報をStoreへ保持する。
-     *
-     * @param payload Backendが認可済みのTodo一覧
-     */
-    setTodoList(payload: TodoListItem[]): void {
-      this.todoListInfo = payload;
     },
 
     /**

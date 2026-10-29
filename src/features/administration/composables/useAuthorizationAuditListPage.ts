@@ -29,7 +29,7 @@ const AUDIT_TABLE_HEADERS: DataTableHeader[] = [
 ];
 
 /** Backend監査APIで許可されるページサイズ選択肢。 */
-export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
+const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
 
 /**
  * 権限変更監査ログ画面のページング取得と認証エラー処理を提供する。

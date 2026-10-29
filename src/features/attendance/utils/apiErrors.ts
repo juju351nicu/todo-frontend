@@ -54,7 +54,7 @@ export {
  * 本人勤怠・勤怠管理の画面は409の後に必ず取り直すため、取り直せたときだけ取り直し済みの案内を添える
  * （Project設定・WBSの409と同じ書き方）。月の状態・打刻の順序等の409は取り直しても同じなので添えない。
  */
-export const ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
+const ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
   "ATTENDANCE_VERSION_CONFLICT",
   "ATTENDANCE_PUNCH_CONFLICT",
   "ATTENDANCE_MONTH_VERSION_CONFLICT",

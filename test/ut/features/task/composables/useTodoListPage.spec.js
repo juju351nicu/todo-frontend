@@ -13,7 +13,6 @@ const mocks = vi.hoisted(() => ({
   todoStore: {
     completeTodo: vi.fn(),
     findTodoList: vi.fn(),
-    setTodoList: vi.fn(),
   },
   userStore: {
     clearSession: vi.fn(),
@@ -66,7 +65,6 @@ describe("useTodoListPage", () => {
       done_flag_values: [0, 1],
     });
     expect(page.todoList.value).toEqual([todo]);
-    expect(mocks.todoStore.setTodoList).toHaveBeenCalledWith([todo]);
   });
 
   it("入力されたタイトルと完了状態で検索する", async () => {

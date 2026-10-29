@@ -71,10 +71,10 @@ const buildAdminControlSelector = createDataAttributeSelector("data-attendance-a
  * 管理一覧で全状態を対象にする選択値。選択UI（Reka UI）は空文字の選択肢を扱えないため専用値にし、
  * API呼出時に状態条件なし（`null`）へ変換する。
  */
-export const ALL_ATTENDANCE_MONTH_STATUSES = "ALL";
+const ALL_ATTENDANCE_MONTH_STATUSES = "ALL";
 
 /** 管理一覧の状態絞込み選択肢。 */
-export const ATTENDANCE_MONTH_STATUS_OPTIONS = [
+const ATTENDANCE_MONTH_STATUS_OPTIONS = [
   { title: "すべて", value: ALL_ATTENDANCE_MONTH_STATUSES },
   { title: "下書き", value: "DRAFT" },
   { title: "提出済み", value: "SUBMITTED" },
@@ -87,7 +87,7 @@ type AttendanceMonthAction = "approve" | "reject" | "close";
 type AttendanceCorrectionAction = "approve-correction" | "reject-correction";
 
 /** 修正申請管理一覧の状態絞込み選択肢。 */
-export const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
+const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
   { title: "審査待ち", value: "PENDING" },
   { title: "承認済み", value: "APPROVED" },
   { title: "却下", value: "REJECTED" },
