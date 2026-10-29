@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import type { Ref } from "vue";
 
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -97,7 +98,7 @@ export const useWbsBaselines = (
   const canManageBaselines = computed(
     () =>
       context.canEditWbs.value &&
-      context.project.value?.status === "ACTIVE" &&
+      isActiveProject(context.project.value) &&
       context.canManageProject.value
   );
   const activeBaseline = computed(

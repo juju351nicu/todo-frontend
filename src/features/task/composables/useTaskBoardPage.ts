@@ -16,6 +16,8 @@ import type {
   TaskType,
   TaskUpdateRequest,
 } from "@/features/project/types/project";
+import { canManageProject, canManageProjectTasks, findProjectRole } from "@/features/project/utils/projectRole";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import ProjectTaskApi, {
   ProjectTaskApiError,
 } from "@/features/task/api/projectTaskApi";
@@ -144,7 +146,7 @@ export const useTaskBoardPage = () => {
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   });
 
-  const isProjectActive = computed(() => project.value?.status === "ACTIVE");
+  const isProjectActive = computed(() => isActiveProject(project.value));
   const canCreateTask = computed(
     () => userStore.hasPermission("TASK_CREATE") && isProjectActive.value
   );
@@ -157,17 +159,11 @@ export const useTaskBoardPage = () => {
    * TemplateはProjectに属さないため、Projectの状態は問わない。
    */
   const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
-  const currentProjectRole = computed(
-    () =>
-      project.value?.members.find(
-        (member) => member.accountId === userStore.memberId
-      )?.projectRole ?? null
+  const currentProjectRole = computed(() =>
+    findProjectRole(project.value, userStore.memberId)
   );
-  const canManageProjectTasks = computed(
-    () =>
-      userStore.hasRole("SYSTEM_ADMIN") ||
-      currentProjectRole.value === "OWNER" ||
-      currentProjectRole.value === "MANAGER"
+  const canManageTasks = computed(() =>
+    canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
   const isCurrentUserProjectMember = computed(() =>
     (project.value?.members ?? []).some(
@@ -195,31 +191,30 @@ export const useTaskBoardPage = () => {
   const canCreateTaskRecurrence = computed(
     () =>
       canCreateTask.value &&
-      canManageProjectTasks.value
+      canManageTasks.value
   );
   const canCaptureProjectTemplate = computed(
     () =>
       userStore.hasPermission("PROJECT_CREATE") &&
       isProjectActive.value &&
-      (userStore.hasRole("SYSTEM_ADMIN") ||
-        currentProjectRole.value === "OWNER")
+      canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
   const canUpdateTaskRecurrence = computed(
     () =>
       canUpdateTask.value &&
-      canManageProjectTasks.value
+      canManageTasks.value
   );
   const canMoveTask = computed(
     () =>
       userStore.hasPermission("TASK_MOVE") &&
       isProjectActive.value &&
-      canManageProjectTasks.value
+      canManageTasks.value
   );
   const canArchiveTask = computed(
     () =>
       userStore.hasPermission("TASK_ARCHIVE") &&
       isProjectActive.value &&
-      canManageProjectTasks.value
+      canManageTasks.value
   );
   const isEditing = computed(() => form.value.taskId !== null);
   /**
@@ -230,7 +225,7 @@ export const useTaskBoardPage = () => {
   const canUpdateEditingTask = computed(
     () =>
       canUpdateTask.value &&
-      (canManageProjectTasks.value ||
+      (canManageTasks.value ||
         editingTaskAssigneeAccountId.value === userStore.memberId)
   );
   const isReadonly = computed(
@@ -259,7 +254,7 @@ export const useTaskBoardPage = () => {
    * 既定担当が他人のTemplateをそのまま適用すると403になる。MEMBERには自分だけを候補にし、初期値も自分にする。
    */
   const taskTemplateAssigneeAccountId = computed<number | null>(() =>
-    canManageProjectTasks.value ? null : userStore.memberId
+    canManageTasks.value ? null : userStore.memberId
   );
   const canStartTaskTimer = computed(
     () =>
@@ -267,7 +262,7 @@ export const useTaskBoardPage = () => {
       form.value.taskId !== null &&
       canUpdateTask.value &&
       isCurrentUserProjectMember.value &&
-      (canManageProjectTasks.value ||
+      (canManageTasks.value ||
         form.value.assigneeAccountId === userStore.memberId)
   );
   const canSave = computed(
@@ -283,11 +278,7 @@ export const useTaskBoardPage = () => {
   );
 
   const memberOptions = computed<TaskSelectOption<number>[]>(() => {
-    const canAssignAnyMember =
-      isReadonly.value ||
-      userStore.hasRole("SYSTEM_ADMIN") ||
-      currentProjectRole.value === "OWNER" ||
-      currentProjectRole.value === "MANAGER";
+    const canAssignAnyMember = isReadonly.value || canManageTasks.value;
     // Board Taskは停止中アカウントを担当者のまま保存できる。既存Taskの担当者が選択肢から消えないよう、
     // 停止中の参加者も「（MEMBER・無効）」のように状態付きで候補へ残す。
     return buildProjectMemberOptions(

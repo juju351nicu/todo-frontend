@@ -24,6 +24,8 @@ import {
   PROJECT_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/project/utils/apiErrors";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
+import { canManageProject, findProjectRole } from "@/features/project/utils/projectRole";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
@@ -156,17 +158,13 @@ export const useProjectSettingsDialog = (
   const projectForm = ref<ProjectSettingsForm>(createEmptyProjectForm());
   const successMessage = ref("");
 
-  const currentProjectRole = computed(
-    () =>
-      project.value?.members.find(
-        (member) => member.accountId === userStore.memberId
-      )?.projectRole ?? null
+  const currentProjectRole = computed(() =>
+    findProjectRole(project.value, userStore.memberId)
   );
-  const canManageResource = computed(
-    () =>
-      userStore.hasRole("SYSTEM_ADMIN") || currentProjectRole.value === "OWNER"
+  const canManageResource = computed(() =>
+    canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
-  const isProjectActive = computed(() => project.value?.status === "ACTIVE");
+  const isProjectActive = computed(() => isActiveProject(project.value));
   const canUpdateProject = computed(
     () =>
       canManageResource.value &&

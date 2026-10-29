@@ -8,6 +8,8 @@ import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
+import { canManageProjectTasks, findProjectRole } from "@/features/project/utils/projectRole";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useTaskEffortPlans } from "@/features/wbs/composables/useTaskEffortPlans";
 import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
@@ -102,17 +104,12 @@ export const useWbsPage = () => {
     () => rows.value.filter((row) => row.taskType === "MILESTONE").length
   );
   const canEditWbs = computed(() => userStore.hasPermission("TASK_UPDATE"));
-  const currentProjectRole = computed(
-    () =>
-      project.value?.members.find(
-        (member) => member.accountId === userStore.memberId
-      )?.projectRole ?? null
+  const currentProjectRole = computed(() =>
+    findProjectRole(project.value, userStore.memberId)
   );
-  const canManageProject = computed(
-    () =>
-      userStore.hasRole("SYSTEM_ADMIN") ||
-      currentProjectRole.value === "OWNER" ||
-      currentProjectRole.value === "MANAGER"
+  /** WBSの管理操作（baseline等）へ進めるか。SYSTEM_ADMIN、またはProjectのOWNER・MANAGER。 */
+  const canManageProject = computed(() =>
+    canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
 
   /**
@@ -367,7 +364,7 @@ export const useWbsPage = () => {
     canEditWbs,
     currentAccountId: computed(() => userStore.memberId),
     /** Projectが利用中（ACTIVE）か。archive済み・未取得はfalse。 */
-    isProjectActive: computed(() => project.value?.status === "ACTIVE"),
+    isProjectActive: computed(() => isActiveProject(project.value)),
     errorMessages,
     initialize,
     isLoading,

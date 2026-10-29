@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { WbsTask, WbsTaskEditForm } from "@/features/wbs/types/wbs";
@@ -79,7 +80,7 @@ export const useWbsTaskEditor = (
    */
   const canEditTask = (task: Readonly<Pick<WbsTask, "assigneeAccountId">>): boolean =>
     context.canEditWbs.value &&
-    context.project.value?.status === "ACTIVE" &&
+    isActiveProject(context.project.value) &&
     (context.canManageProject.value || task.assigneeAccountId === userStore.memberId);
 
   /** 編集中Taskの取得時点の複製。Dialogを閉じている間はnull。 */
@@ -119,7 +120,7 @@ export const useWbsTaskEditor = (
     }
     if (!canEditTask(task)) {
       context.errorMessages.value = [
-        context.project.value?.status === "ACTIVE"
+        isActiveProject(context.project.value)
           ? "担当していないTaskのWBS情報は編集できません。"
           : "archive済みのProjectのTaskは編集できません。",
       ];

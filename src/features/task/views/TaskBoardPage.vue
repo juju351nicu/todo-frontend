@@ -4,7 +4,11 @@ import Draggable from "vuedraggable";
 
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
-import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
+import {
+  getProjectStatusColor,
+  getProjectStatusLabel,
+  isActiveProject,
+} from "@/features/project/utils/projectStatus";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
@@ -126,7 +130,7 @@ onBeforeMount(initialize);
         :can-apply="canCreateTask"
         :can-edit="canUpdateTask"
         :can-archive="canArchiveTaskTemplate"
-        :project-active="project.status === 'ACTIVE'"
+        :project-active="isActiveProject(project)"
         :restricted-assignee-account-id="taskTemplateAssigneeAccountId"
         @task-created="handleTemplateTaskCreated"
       />
@@ -137,7 +141,7 @@ onBeforeMount(initialize);
         :statuses="project.taskStatuses"
         :can-create="canCreateTaskRecurrence"
         :can-update="canUpdateTaskRecurrence"
-        :project-active="project.status === 'ACTIVE'"
+        :project-active="isActiveProject(project)"
       />
       <ProjectSettingsDialog v-if="project" :project="project" @project-updated="applyProjectDetail" />
       <UButton v-if="canCreateTask" color="primary" icon="i-mdi-plus" @click="openTaskCreator()">Taskを追加</UButton>
