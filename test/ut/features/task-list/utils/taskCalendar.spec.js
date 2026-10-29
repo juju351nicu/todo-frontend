@@ -13,7 +13,6 @@ describe("Taskカレンダーの変換", () => {
         color: "#ff0000",
         url: null,
         display: null,
-        description: "説明",
         detail: "詳細",
         doneFlag: false,
         userId: 5,

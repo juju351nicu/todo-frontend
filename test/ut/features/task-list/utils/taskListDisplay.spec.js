@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  formatTaskSearchDate,
+  formatTaskListSearchDate,
   getTaskListPriorityColor,
   getTaskListPriorityLabel,
-  truncateTaskDetail,
+  truncateTaskListDetail,
 } from "@/features/task-list/utils/taskListDisplay";
 
 describe("Task一覧の表示変換", () => {
@@ -24,13 +24,13 @@ describe("Task一覧の表示変換", () => {
   });
 
   it("詳細を一覧表示用の3文字へ省略する", () => {
-    expect(truncateTaskDetail("詳細情報")).toBe("詳細情");
+    expect(truncateTaskListDetail("詳細情報")).toBe("詳細情");
   });
 });
 
-describe("formatTaskSearchDate", () => {
+describe("formatTaskListSearchDate", () => {
   it("東京の日付で月日を表示する", () => {
     // UTC 15:30は東京では翌日0:30になる。
-    expect(formatTaskSearchDate(new Date("2026-11-07T15:30:00Z"))).toBe("11月8日");
+    expect(formatTaskListSearchDate(new Date("2026-11-07T15:30:00Z"))).toBe("11月8日");
   });
 });

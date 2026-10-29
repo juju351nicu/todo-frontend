@@ -1,7 +1,6 @@
 import type { CalendarOptions, EventInput } from "@fullcalendar/core";
 import jaLocale from "@fullcalendar/core/locales/ja";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 
 import type { TaskListItem } from "@/features/task-list/types/taskList";
@@ -18,7 +17,6 @@ export const buildTaskCalendarEvents = (taskList: TaskListItem[]): EventInput[] 
     display: (task.display ?? undefined) as EventInput["display"],
     extendedProps: {
       taskId: task.taskId,
-      description: task.description,
       detail: task.detail,
       doneFlag: task.doneFlag,
       userId: task.userId,
@@ -31,7 +29,7 @@ export const buildTaskCalendarEvents = (taskList: TaskListItem[]): EventInput[] 
 export const buildTaskCalendarOptions = (): CalendarOptions => ({
   locale: jaLocale,
   height: typeof window === "undefined" ? 700 : window.innerHeight - 100,
-  plugins: [dayGridPlugin, interactionPlugin, timeGridPlugin],
+  plugins: [dayGridPlugin, timeGridPlugin],
   headerToolbar: {
     left: "prev,next today",
     center: "title",
@@ -47,10 +45,5 @@ export const buildTaskCalendarOptions = (): CalendarOptions => ({
     list: "リスト",
   },
   initialView: "dayGridMonth",
-  dateClick: (arg: DateClickArg) => {
-    if (typeof window !== "undefined") {
-      window.alert(`date click! ${arg.dateStr}`);
-    }
-  },
   events: [],
 });

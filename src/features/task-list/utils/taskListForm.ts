@@ -40,7 +40,7 @@ export const createTaskListDetailForm = (
  * Task編集フォームを登録・更新APIのsnake_caseリクエストへ変換する。
  * 旧数値roleを送信せず、BackendがHttpSessionのAuthenticatedUserからpermissionを判定する。
  */
-export const buildTaskUpsertRequest = (form: TaskListDetailForm): TaskListUpsertRequest => ({
+export const buildTaskListUpsertRequest = (form: TaskListDetailForm): TaskListUpsertRequest => ({
   task_id: form.taskId,
   date_from: form.dateFrom,
   date_to: form.dateTo,
@@ -67,7 +67,7 @@ const TASK_LIST_PRIORITY_LABELS: Readonly<Record<number, string>> = { 1: "低", 
  * @param form 確認するTask編集フォーム
  * @returns 見出しと値の組（タイトル・着手日・期限日・重要度・完了フラグ・詳細の順）
  */
-export const buildTaskConfirmItems = (form: TaskListDetailForm): TaskListConfirmItem[] => [
+export const buildTaskListConfirmItems = (form: TaskListDetailForm): TaskListConfirmItem[] => [
   { label: "タイトル", value: form.title },
   { label: "着手日", value: form.dateFrom },
   { label: "期限日", value: form.dateTo },

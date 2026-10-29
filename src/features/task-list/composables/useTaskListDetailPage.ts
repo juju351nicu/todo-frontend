@@ -8,7 +8,7 @@ import { useTaskListStore } from "@/features/task-list/stores/taskList";
 import type { TaskListDetailResponse } from "@/features/task-list/types/taskList";
 import { TASK_LIST_ERROR_CODES } from "@/features/task-list/utils/apiErrors";
 import {
-  buildTaskUpsertRequest,
+  buildTaskListUpsertRequest,
   createTaskListDetailForm,
   type TaskListDetailForm,
 } from "@/features/task-list/utils/taskListForm";
@@ -201,7 +201,7 @@ export const useTaskListDetailPage = (taskId: Readonly<Ref<number | undefined>>)
       return;
     }
     const isUpdate = taskListForm.taskId > 0;
-    const payload = buildTaskUpsertRequest(taskListForm);
+    const payload = buildTaskListUpsertRequest(taskListForm);
 
     isSubmitting.value = true;
     try {

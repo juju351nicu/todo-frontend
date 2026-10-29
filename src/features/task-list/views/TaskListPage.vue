@@ -5,10 +5,10 @@ import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import TaskListPriorityBadge from "@/features/task-list/components/TaskListPriorityBadge.vue";
 import TaskListSearchCard from "@/features/task-list/components/TaskListSearchCard.vue";
 import {
-  buildTaskEditControlKey,
+  buildTaskListEditControlKey,
   useTaskListPage,
 } from "@/features/task-list/composables/useTaskListPage";
-import { truncateTaskDetail } from "@/features/task-list/utils/taskListDisplay";
+import { truncateTaskListDetail } from "@/features/task-list/utils/taskListDisplay";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -60,7 +60,7 @@ onBeforeMount(initialize);
       {{ formatRemainingDays(item.remainingDays) }}
     </template>
     <template #detail-cell="{ item }">
-      <span>{{ truncateTaskDetail(item.detail) }}</span>
+      <span>{{ truncateTaskListDetail(item.detail) }}</span>
     </template>
     <template #doneFlag-cell="{ item }">
       {{ item.doneFlag ? "完了" : "未完了" }}
@@ -73,7 +73,7 @@ onBeforeMount(initialize);
           square
           class="m-1 size-8"
           :aria-label="canWriteTask(item) ? `「${item.title}」を編集` : `「${item.title}」を表示`"
-          :data-task-list-control="buildTaskEditControlKey(item.taskId)"
+          :data-task-list-control="buildTaskListEditControlKey(item.taskId)"
           @click="showTaskDetail(item)"
         />
         <UButton

@@ -11,7 +11,6 @@ export interface TaskListSearchRequest {
 export interface TaskListItem {
   taskId: number;
   title: string;
-  description: string | null;
   start: string;
   end: string;
   color: string | null;
@@ -26,10 +25,8 @@ export interface TaskListItem {
   priority: number;
 }
 
-/** Task一覧・カレンダーAPIレスポンス。旧role・会員情報は認可判断へ使用しない。 */
+/** Task一覧・カレンダーAPIレスポンス。カレンダーでは祝日のEventも含む。 */
 export interface TaskListSearchResponse {
-  errorMessages: string[] | null;
-  message: string | null;
   taskList: TaskListItem[];
 }
 

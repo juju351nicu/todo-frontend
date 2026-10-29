@@ -2,7 +2,7 @@
 import { computed } from "vue";
 
 import {
-  buildTaskConfirmItems,
+  buildTaskListConfirmItems,
   type TaskListDetailForm,
 } from "@/features/task-list/utils/taskListForm";
 
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 }>();
 
 const isUpdate = computed(() => props.taskListForm.taskId > 0);
-const confirmItems = computed(() => buildTaskConfirmItems(props.taskListForm));
+const confirmItems = computed(() => buildTaskListConfirmItems(props.taskListForm));
 
 /**
  * Dialogを閉じる操作（戻る・Esc・背景のクリック）を親画面へ伝える。

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildTaskConfirmItems,
-  buildTaskUpsertRequest,
+  buildTaskListConfirmItems,
+  buildTaskListUpsertRequest,
   createTaskListDetailForm,
 } from "@/features/task-list/utils/taskListForm";
 
@@ -53,7 +53,7 @@ describe("Task一覧の詳細フォームの変換", () => {
       version: 4,
     });
 
-    expect(buildTaskUpsertRequest(form)).toEqual({
+    expect(buildTaskListUpsertRequest(form)).toEqual({
       task_id: 42,
       date_from: "2026-08-08",
       date_to: "2026-08-31",
@@ -67,7 +67,7 @@ describe("Task一覧の詳細フォームの変換", () => {
   });
 });
 
-describe("buildTaskConfirmItems", () => {
+describe("buildTaskListConfirmItems", () => {
   it("確認Dialogの項目を詳細画面と同じ見出しで、重要度・完了フラグは表示用の文言にして並べる", () => {
     const form = createTaskListDetailForm({
       task_id: 3,
@@ -81,7 +81,7 @@ describe("buildTaskConfirmItems", () => {
       user_id: 5,
     });
 
-    expect(buildTaskConfirmItems(form)).toEqual([
+    expect(buildTaskListConfirmItems(form)).toEqual([
       { label: "タイトル", value: "買い物" },
       { label: "着手日", value: "2026-10-27" },
       { label: "期限日", value: "2026-10-30" },
@@ -92,7 +92,9 @@ describe("buildTaskConfirmItems", () => {
   });
 
   it("未完了は「未完了」と表示する", () => {
-    const items = buildTaskConfirmItems(createTaskListDetailForm({ done_flag: "0", priority: 3 }));
+    const items = buildTaskListConfirmItems(
+      createTaskListDetailForm({ done_flag: "0", priority: 3 })
+    );
 
     expect(items.find((item) => item.label === "完了フラグ")?.value).toBe("未完了");
     expect(items.find((item) => item.label === "重要度")?.value).toBe("高");

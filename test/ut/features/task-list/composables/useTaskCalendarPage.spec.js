@@ -35,7 +35,6 @@ const task = {
   color: "#ff0000",
   url: null,
   display: null,
-  description: null,
   detail: "詳細",
   doneFlag: false,
   userId: 5,

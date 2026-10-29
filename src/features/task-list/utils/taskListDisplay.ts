@@ -23,7 +23,7 @@ export const getTaskListPriorityColor = (priority: number | string): string => {
 };
 
 /** Task詳細を一覧用の最大3文字へ省略する。 */
-export const truncateTaskDetail = (value: string): string => value.slice(0, 3);
+export const truncateTaskListDetail = (value: string): string => value.slice(0, 3);
 
 const MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   timeZone: BUSINESS_TIME_ZONE,
@@ -36,5 +36,5 @@ const MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
  *
  * @param date 表示する日時。省略時は現在時刻
  */
-export const formatTaskSearchDate = (date: Date = new Date()): string =>
+export const formatTaskListSearchDate = (date: Date = new Date()): string =>
   MONTH_DAY_FORMATTER.format(date);

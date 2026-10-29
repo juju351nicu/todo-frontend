@@ -23,7 +23,7 @@ import { toNumberList } from "@/shared/utils/number";
  * @param taskId Task ID
  * @returns `"edit:{taskId}"`形式の属性値
  */
-export const buildTaskEditControlKey = (taskId: number): string => `edit:${taskId}`;
+export const buildTaskListEditControlKey = (taskId: number): string => `edit:${taskId}`;
 
 const TASK_LIST_TABLE_HEADERS: DataTableHeader[] = [
   { title: "重要度", align: "start", key: "priority" },
@@ -151,7 +151,7 @@ export const useTaskListPage = () => {
     await submitComplete(task);
     // 401でLoginへ移った後や、一覧から消えた後は部品が見つからないので何もしない。
     await focusFirstEnabledElement([
-      `[data-task-list-control="${buildTaskEditControlKey(task.taskId)}"]`,
+      `[data-task-list-control="${buildTaskListEditControlKey(task.taskId)}"]`,
     ]);
   };
 

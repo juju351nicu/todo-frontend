@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskListApiError } from "@/features/task-list/api/taskListApi";
 import {
-  buildTaskEditControlKey,
+  buildTaskListEditControlKey,
   useTaskListPage,
 } from "@/features/task-list/composables/useTaskListPage";
 
@@ -158,7 +158,7 @@ describe("useTaskListPage", () => {
 
       await page.completeTask({ ...task });
 
-      expect(focused).toEqual([buildTaskEditControlKey(42)]);
+      expect(focused).toEqual([buildTaskListEditControlKey(42)]);
     });
   });
 

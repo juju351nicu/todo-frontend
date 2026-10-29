@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatTaskSearchDate } from "@/features/task-list/utils/taskListDisplay";
+import { formatTaskListSearchDate } from "@/features/task-list/utils/taskListDisplay";
 
 /**
  * Task一覧・Taskカレンダー共通の検索条件card。タイトルと完了状態（`"0"`:未完了、`"1"`:完了）を親composableの状態へ反映し、
@@ -23,7 +23,7 @@ const toggleDoneFlag = (value: string, checked: boolean): void => {
   selectedDoneFlag.value = checked ? [...others, value] : others;
 };
 
-const today = formatTaskSearchDate();
+const today = formatTaskListSearchDate();
 </script>
 
 <template>
