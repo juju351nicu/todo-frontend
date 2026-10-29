@@ -13,10 +13,10 @@ import {
   formatRoleNames,
   resolveRoleName,
 } from "@/features/administration/utils/authorizationAudit";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 const AUDIT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "操作日時", align: "start", key: "occurredAt", sortable: false },

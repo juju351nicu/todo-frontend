@@ -1,6 +1,7 @@
 import { ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskCommentApi, {
   TaskCommentApiError,
 } from "@/features/task/api/taskCommentApi";
@@ -8,7 +9,6 @@ import type { ProjectTaskComment } from "@/features/task/types/taskComment";
 import { TASK_COMMENT_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /**
  * Project BoardのTask横断コメントDialogを管理する。

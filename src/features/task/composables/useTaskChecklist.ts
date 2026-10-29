@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskChecklistApi, {
   TaskChecklistApiError,
 } from "@/features/task/api/taskChecklistApi";
@@ -13,7 +14,6 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_LENGTH = 255;

@@ -1,13 +1,13 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
 import { TASK_TEMPLATE_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,

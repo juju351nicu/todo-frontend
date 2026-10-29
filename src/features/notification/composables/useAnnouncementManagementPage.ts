@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import NotificationApi, {
   NotificationApiError,
 } from "@/features/notification/api/notificationApi";
@@ -8,7 +9,6 @@ import { NOTIFICATION_REFRESH_EVENT } from "@/features/notification/composables/
 import { ANNOUNCEMENT_ERROR_CODES } from "@/features/notification/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** 管理者お知らせ入力の最大文字数。Backend Bean Validationと同じ上限に保つ。 */
 export const ANNOUNCEMENT_TITLE_MAX_LENGTH = 100;

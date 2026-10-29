@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import DashboardApi, {
   DashboardApiError,
 } from "@/features/dashboard/api/dashboardApi";
@@ -12,7 +13,6 @@ import type {
   DashboardProject,
   DashboardTask,
 } from "@/features/dashboard/types/dashboard";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";

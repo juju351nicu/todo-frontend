@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
@@ -8,7 +9,6 @@ import type {
   ProjectCreateRequest,
   ProjectSummary,
 } from "@/features/project/types/project";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { PROJECT_ERROR_CODES } from "@/features/project/utils/apiErrors";
 import { getProjectStatusLabel } from "@/features/project/utils/projectStatus";

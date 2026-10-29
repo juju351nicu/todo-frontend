@@ -1,6 +1,7 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
 import TaskRecurrenceApi, {
   TaskRecurrenceApiError,
@@ -29,7 +30,6 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** 繰り返し規則の作成元。 */
 export type TaskRecurrenceCreationMode = "DIRECT" | "TEMPLATE";

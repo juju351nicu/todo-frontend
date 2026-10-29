@@ -1,6 +1,7 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
@@ -14,7 +15,6 @@ import {
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
-import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
 export const TEMPLATE_NAME_MAX_LENGTH = 100;
