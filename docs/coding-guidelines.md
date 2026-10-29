@@ -134,6 +134,12 @@ await authStore.restoreSession();
 
 ## 検証とレビュー
 
+### templateの型検査（`tsconfig.vue.json`）
+
+- `vueCompilerOptions`で`checkUnknownComponents`・`checkUnknownDirectives`を有効にし、登録していない部品・ディレクティブ（名前の書き間違い等）を`npm run typecheck`で検出する。
+- `strictTemplates`（`checkUnknownProps`・`checkUnknownEvents`を含む）は使わない。部品へ付けて根の要素へ渡す`data-*`・`aria-*`属性やネイティブのeventまで誤りになり、型の宣言で許そうとすると別の属性まで誤りになるため（vue-tsc 3.x・Nuxt UI 4で確認）。
+  部品へ渡すpropの名前の誤りは、部品のテストとE2Eで確かめる。
+
 ### Vitestの方針
 
 - 新規・変更したAPI、composable、Store、業務utilityには、振る舞いを固定するVitestを同じ変更で追加または更新する。

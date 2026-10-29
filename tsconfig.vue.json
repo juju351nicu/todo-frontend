@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
+  "vueCompilerOptions": {
+    "checkUnknownComponents": true,
+    "checkUnknownDirectives": true
+  },
   "include": [
     "src/**/*.vue",
     "src/**/*.d.ts",
