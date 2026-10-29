@@ -34,7 +34,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 /**
  * route queryの値を1件の文字列へ揃える。Vue Routerは同名queryの重複時に配列を返すため、先頭だけを採用する。
  */
-const firstRouteValue = (
+const getFirstRouteValue = (
   value: string | null | (string | null)[] | undefined
 ): string | null | undefined => (Array.isArray(value) ? value[0] : value);
 
@@ -46,7 +46,7 @@ const firstRouteValue = (
 const parsePositiveId = (
   value: string | null | (string | null)[] | undefined
 ): number | null => {
-  const parsed = Number(firstRouteValue(value));
+  const parsed = Number(getFirstRouteValue(value));
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
@@ -90,7 +90,7 @@ export const useWbsPage = () => {
   const projectId = computed(() => parsePositiveId(route.params.projectId));
   /** Boardの「日別実績」導線（`?panel=work-logs&taskId=…`）で初期表示後に開くTask ID。導線外ではnull。 */
   const requestedWorkLogTaskId = computed(() =>
-    firstRouteValue(route.query.panel) === "work-logs"
+    getFirstRouteValue(route.query.panel) === "work-logs"
       ? parsePositiveId(route.query.taskId)
       : null
   );
@@ -323,7 +323,7 @@ export const useWbsPage = () => {
    * 履歴を増やさないよう`replace`し、他のqueryは保持する。
    */
   const removeWorkLogPanelQuery = async (): Promise<void> => {
-    if (firstRouteValue(route.query.panel) !== "work-logs") {
+    if (getFirstRouteValue(route.query.panel) !== "work-logs") {
       return;
     }
     const { panel: _panel, taskId: _taskId, ...remainingQuery } = route.query;

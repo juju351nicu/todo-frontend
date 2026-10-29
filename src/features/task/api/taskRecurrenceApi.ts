@@ -25,12 +25,12 @@ const ensureSuccess = (response: Response): Promise<void> =>
   );
 
 /** Project配下の繰り返し規則API pathを組み立てる。 */
-const recurrencePath = (projectId: number): string =>
+const buildRecurrencePath = (projectId: number): string =>
   `${API_PATHS.PROJECTS}/${projectId}/task-recurrences`;
 
 /** 参照可能なProjectのarchive済みを含む繰り返し規則を取得する。 */
 const findRules = async (projectId: number): Promise<TaskRecurrence[]> => {
-  const response = await HttpClient.getRequest(recurrencePath(projectId));
+  const response = await HttpClient.getRequest(buildRecurrencePath(projectId));
   await ensureSuccess(response);
   return (await response.json()) as TaskRecurrence[];
 };
@@ -41,7 +41,7 @@ const create = async (
   payload: TaskRecurrenceCreateRequest
 ): Promise<TaskRecurrence> => {
   const response = await HttpClient.postRequest(
-    recurrencePath(projectId),
+    buildRecurrencePath(projectId),
     payload
   );
   await ensureSuccess(response);
@@ -54,7 +54,7 @@ const createFromTemplate = async (
   payload: TaskRecurrenceFromTemplateRequest
 ): Promise<TaskRecurrence> => {
   const response = await HttpClient.postRequest(
-    `${recurrencePath(projectId)}/from-template`,
+    `${buildRecurrencePath(projectId)}/from-template`,
     payload
   );
   await ensureSuccess(response);
@@ -68,7 +68,7 @@ const update = async (
   payload: TaskRecurrenceUpdateRequest
 ): Promise<TaskRecurrence> => {
   const response = await HttpClient.putRequest(
-    `${recurrencePath(projectId)}/${taskRecurrenceRuleId}`,
+    `${buildRecurrencePath(projectId)}/${taskRecurrenceRuleId}`,
     payload
   );
   await ensureSuccess(response);
@@ -83,7 +83,7 @@ const archive = async (
 ): Promise<void> => {
   const query = new URLSearchParams({ version: String(version) });
   const response = await HttpClient.deleteRequest(
-    `${recurrencePath(projectId)}/${taskRecurrenceRuleId}?${query}`
+    `${buildRecurrencePath(projectId)}/${taskRecurrenceRuleId}?${query}`
   );
   await ensureSuccess(response);
 };
@@ -94,7 +94,7 @@ const findGenerations = async (
   taskRecurrenceRuleId: number
 ): Promise<TaskRecurrenceGeneration[]> => {
   const response = await HttpClient.getRequest(
-    `${recurrencePath(projectId)}/${taskRecurrenceRuleId}/generations`
+    `${buildRecurrencePath(projectId)}/${taskRecurrenceRuleId}/generations`
   );
   await ensureSuccess(response);
   return (await response.json()) as TaskRecurrenceGeneration[];
@@ -108,7 +108,7 @@ const retryGeneration = async (
   version: number
 ): Promise<TaskRecurrenceGeneration> => {
   const response = await HttpClient.postRequest(
-    `${recurrencePath(projectId)}/${taskRecurrenceRuleId}/generations/${taskRecurrenceGenerationId}/retry`,
+    `${buildRecurrencePath(projectId)}/${taskRecurrenceRuleId}/generations/${taskRecurrenceGenerationId}/retry`,
     { version }
   );
   await ensureSuccess(response);
