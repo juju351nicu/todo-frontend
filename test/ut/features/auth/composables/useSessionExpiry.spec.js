@@ -31,9 +31,9 @@ describe("useSessionExpiry", () => {
   it("画面の片付け → Session破棄 → Login遷移の順に行う", async () => {
     const userStore = useUserStore();
     const order = [];
-    const cleanup = vi.fn(() => order.push(`cleanup:${userStore.memberId}`));
+    const cleanup = vi.fn(() => order.push(`cleanup:${userStore.accountId}`));
     mocks.router.push.mockImplementation(async () => {
-      order.push(`push:${userStore.memberId}`);
+      order.push(`push:${userStore.accountId}`);
     });
     const { expireSession } = useSessionExpiry();
 
@@ -49,7 +49,7 @@ describe("useSessionExpiry", () => {
 
     await expireSession();
 
-    expect(useUserStore().memberId).toBeNull();
+    expect(useUserStore().accountId).toBeNull();
     expect(mocks.router.push).toHaveBeenCalledTimes(1);
   });
 

@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   roles: new Set(),
   router: { push: vi.fn() },
   userStore: {
-    memberId: 2,
+    accountId: 2,
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
     hasRole: vi.fn((code) => mocks.roles.has(code)),

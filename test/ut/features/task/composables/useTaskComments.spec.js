@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
     updateComment: vi.fn(),
   },
   userStore: {
-    memberId: 7,
+    accountId: 7,
     clearSession: vi.fn(),
   },
 }));
@@ -65,7 +65,7 @@ const waitForInitialLoad = async () => {
 describe("useTaskComments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.userStore.memberId = 7;
+    mocks.userStore.accountId = 7;
     mocks.router.push.mockResolvedValue(undefined);
     mocks.taskCommentApi.findComments.mockResolvedValue([
       structuredClone(ownComment),

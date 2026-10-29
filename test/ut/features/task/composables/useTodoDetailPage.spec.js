@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
   userStore: {
     clearSession: vi.fn(),
     hasPermission: vi.fn(),
-    memberId: 5,
+    accountId: 5,
   },
 }));
 
@@ -40,7 +40,7 @@ describe("useTodoDetailPage", () => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.todoStore.isLoading = false;
-    mocks.userStore.memberId = 5;
+    mocks.userStore.accountId = 5;
     mocks.userStore.hasPermission.mockImplementation(
       (permissionCode) => permissionCode === "TASK_WRITE_ALL"
     );

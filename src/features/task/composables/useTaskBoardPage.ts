@@ -161,14 +161,14 @@ export const useTaskBoardPage = () => {
    */
   const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
   const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.memberId)
+    findProjectRole(project.value, userStore.accountId)
   );
   const canManageTasks = computed(() =>
     canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
   const isCurrentUserProjectMember = computed(() =>
     (project.value?.members ?? []).some(
-      (member) => member.accountId === userStore.memberId
+      (member) => member.accountId === userStore.accountId
     )
   );
   /**
@@ -227,7 +227,7 @@ export const useTaskBoardPage = () => {
     () =>
       canUpdateTask.value &&
       (canManageTasks.value ||
-        editingTaskAssigneeAccountId.value === userStore.memberId)
+        editingTaskAssigneeAccountId.value === userStore.accountId)
   );
   const isReadonly = computed(
     () => isEditing.value && !canUpdateEditingTask.value
@@ -255,7 +255,7 @@ export const useTaskBoardPage = () => {
    * 既定担当が他人のTemplateをそのまま適用すると403になる。MEMBERには自分だけを候補にし、初期値も自分にする。
    */
   const taskTemplateAssigneeAccountId = computed<number | null>(() =>
-    canManageTasks.value ? null : userStore.memberId
+    canManageTasks.value ? null : userStore.accountId
   );
   const canStartTaskTimer = computed(
     () =>
@@ -264,7 +264,7 @@ export const useTaskBoardPage = () => {
       canUpdateTask.value &&
       isCurrentUserProjectMember.value &&
       (canManageTasks.value ||
-        form.value.assigneeAccountId === userStore.memberId)
+        form.value.assigneeAccountId === userStore.accountId)
   );
   const canSave = computed(
     () =>
@@ -284,7 +284,7 @@ export const useTaskBoardPage = () => {
     // 停止中の参加者も「（MEMBER・無効）」のように状態付きで候補へ残す。
     return buildProjectMemberOptions(
       (project.value?.members ?? []).filter(
-        (member) => canAssignAnyMember || member.accountId === userStore.memberId
+        (member) => canAssignAnyMember || member.accountId === userStore.accountId
       ),
       { includeInactive: true }
     );
@@ -360,7 +360,7 @@ export const useTaskBoardPage = () => {
       taskStatusId:
         taskStatusId ?? project.value?.taskStatuses[0]?.taskStatusId ?? null,
       assigneeAccountId:
-        memberOptions.value.find((option) => option.value === userStore.memberId)
+        memberOptions.value.find((option) => option.value === userStore.accountId)
           ?.value ?? memberOptions.value[0]?.value ?? null,
       dateFrom: today,
       dateTo: today,

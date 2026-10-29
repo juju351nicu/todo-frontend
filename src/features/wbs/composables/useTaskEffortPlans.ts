@@ -72,7 +72,7 @@ export const useTaskEffortPlans = (
       context.canEditWbs.value &&
       effortPlanTask.value !== null &&
       (canManageAnyEffortPlan.value ||
-        effortPlanTask.value.assigneeAccountId === userStore.memberId)
+        effortPlanTask.value.assigneeAccountId === userStore.accountId)
   );
   /**
    * 予定担当者の候補。Project管理権限がなければ本人だけ。
@@ -84,7 +84,7 @@ export const useTaskEffortPlans = (
         (context.project.value?.members ?? []).filter(
           (member) =>
             canManageAnyEffortPlan.value ||
-            member.accountId === userStore.memberId
+            member.accountId === userStore.accountId
         )
       )
   );
@@ -187,7 +187,7 @@ export const useTaskEffortPlans = (
   const canMutateEffortPlan = (effortPlan: TaskEffortPlan): boolean =>
     canEditSelectedEffortPlanTask.value &&
     (canManageAnyEffortPlan.value ||
-      effortPlan.assigneeAccountId === userStore.memberId);
+      effortPlan.assigneeAccountId === userStore.accountId);
 
   /**
    * 取得済み日別予定を複製し、取得時点versionを保持した編集状態へ移す。

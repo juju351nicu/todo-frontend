@@ -8,19 +8,27 @@ import type {
 } from "@/features/auth/types/auth";
 import AuthApi from "@/features/auth/api/authApi";
 
+/** Session APIから復元したログイン中の利用者。画面の表示と操作の出し分けだけに使い、最終的な認可はBackendが行う。 */
 interface UserState {
-  memberId: number | null;
+  /** ログイン中のアカウントID（Project memberの`accountId`・Taskの担当者IDと同じ値）。未ログインはnull。 */
+  accountId: number | null;
+  /** ログインID。未ログインはnull。 */
   username: string | null;
+  /** 画面に出す表示名。未ログインはnull。 */
   displayName: string | null;
+  /** system role（SYSTEM_ADMIN等）。 */
   roleCodes: RoleCode[];
+  /** permission（TASK_READ等）。 */
   permissionCodes: PermissionCode[];
+  /** ログイン中ならtrue。 */
   authenticated: boolean;
+  /** Session APIで状態を確かめ終えたらtrue（確かめる前に保護画面を判定しないため）。 */
   sessionChecked: boolean;
 }
 
 export const useUserStore = defineStore("user", {
   state: (): UserState => ({
-    memberId: null,
+    accountId: null,
     username: null,
     displayName: null,
     roleCodes: [],
@@ -53,7 +61,7 @@ export const useUserStore = defineStore("user", {
   actions: {
     /** Session APIの利用者情報を、画面遷移をまたぐ認証状態へ保存する。 */
     setSessionUser(payload: SessionUserResponse): void {
-      this.memberId = payload.accountId;
+      this.accountId = payload.accountId;
       this.username = payload.username;
       this.displayName = payload.displayName;
       this.roleCodes = [...(payload.roleCodes ?? [])];
@@ -63,7 +71,7 @@ export const useUserStore = defineStore("user", {
     },
     /** Frontendが保持する認証表示情報を破棄する。HttpSessionの破棄はlogout APIが担当する。 */
     clearSession(): void {
-      this.memberId = null;
+      this.accountId = null;
       this.username = null;
       this.displayName = null;
       this.roleCodes = [];

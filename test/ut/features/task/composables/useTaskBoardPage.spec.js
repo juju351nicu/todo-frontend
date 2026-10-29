@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   route: null,
   router: { push: vi.fn(), replace: vi.fn() },
   userStore: {
-    memberId: 2,
+    accountId: 2,
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
     hasRole: vi.fn(() => false),
@@ -379,7 +379,7 @@ describe("useTaskBoardPage", () => {
   it("Task Template適用の担当者は、MEMBERなら本人だけに限定し、OWNERなら限定しない", async () => {
     const memberPage = useTaskBoardPage();
     await memberPage.initialize();
-    expect(memberPage.taskTemplateAssigneeAccountId.value).toBe(mocks.userStore.memberId);
+    expect(memberPage.taskTemplateAssigneeAccountId.value).toBe(mocks.userStore.accountId);
 
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(ownerProject));
     const ownerPage = useTaskBoardPage();
@@ -847,7 +847,7 @@ describe("useTaskBoardPage", () => {
   it("未参加ProjectではREAD_ONLY_ADMINもコメント投稿・Template保存を出さず、SYSTEM_ADMINは出す", async () => {
     mocks.permissions.clear();
     mocks.permissions.add("TASK_READ");
-    mocks.userStore.memberId = 99;
+    mocks.userStore.accountId = 99;
     try {
       const readOnlyPage = useTaskBoardPage();
       await readOnlyPage.initialize();
@@ -859,7 +859,7 @@ describe("useTaskBoardPage", () => {
       await adminPage.initialize();
       expect(adminPage.canPostTaskComment.value).toBe(true);
     } finally {
-      mocks.userStore.memberId = 2;
+      mocks.userStore.accountId = 2;
       mocks.userStore.hasRole.mockImplementation(() => false);
     }
   });

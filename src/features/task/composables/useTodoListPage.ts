@@ -68,7 +68,7 @@ export const useTodoListPage = () => {
   const canWriteTodo = (todo: TodoListItem): boolean =>
     userStore.hasPermission("TASK_WRITE_ALL") ||
     (userStore.hasPermission("TASK_WRITE_OWN") &&
-      userStore.memberId === todo.userId);
+      userStore.accountId === todo.userId);
 
   /** 画面の検索状態をBackendのsnake_case Requestへ変換する。 */
   const createSearchRequest = (): TodoListRequest => ({

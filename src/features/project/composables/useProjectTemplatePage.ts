@@ -240,7 +240,7 @@ export const useProjectTemplatePage = () => {
       memberMappings: Object.fromEntries(
         template.memberSlots.map((slot) => [
           slot.slotKey,
-          slot.slotKey === "OWNER_1" ? userStore.memberId : null,
+          slot.slotKey === "OWNER_1" ? userStore.accountId : null,
         ])
       ),
     };
@@ -483,13 +483,13 @@ export const useProjectTemplatePage = () => {
     for (const slot of template.memberSlots) {
       const rawAccountId = applyForm.value.memberMappings[slot.slotKey] ?? null;
       if ((rawAccountId === null || rawAccountId === "") && slot.slotKey === "OWNER_1") {
-        if (userStore.memberId === null) {
+        if (userStore.accountId === null) {
           errorMessages.value = ["SessionのアカウントIDを確認できません。"];
           return null;
         }
         actorIsOwner = true;
-        accountIds.add(userStore.memberId);
-        mappings.push({ slotKey: slot.slotKey, accountId: userStore.memberId });
+        accountIds.add(userStore.accountId);
+        mappings.push({ slotKey: slot.slotKey, accountId: userStore.accountId });
         continue;
       }
       const accountId = parseAccountId(rawAccountId);
@@ -506,7 +506,7 @@ export const useProjectTemplatePage = () => {
         return null;
       }
       accountIds.add(accountId);
-      if (slot.projectRole === "OWNER" && accountId === userStore.memberId) {
+      if (slot.projectRole === "OWNER" && accountId === userStore.accountId) {
         actorIsOwner = true;
       }
       mappings.push({ slotKey: slot.slotKey, accountId });

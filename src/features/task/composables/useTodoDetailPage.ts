@@ -94,7 +94,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
       return false;
     }
     return (
-      normalizedTodoId.value === 0 || todoForm.userId === userStore.memberId
+      normalizedTodoId.value === 0 || todoForm.userId === userStore.accountId
     );
   });
   /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のない会員ではnull。 */

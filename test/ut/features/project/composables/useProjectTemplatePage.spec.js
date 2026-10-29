@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   },
   router: { push: vi.fn() },
   userStore: {
-    memberId: 7,
+    accountId: 7,
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
   },
@@ -97,7 +97,7 @@ describe("useProjectTemplatePage", () => {
     mocks.permissions.add("PROJECT_READ");
     mocks.permissions.add("PROJECT_CREATE");
     mocks.permissions.add("PROJECT_UPDATE");
-    mocks.userStore.memberId = 7;
+    mocks.userStore.accountId = 7;
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([
       structuredClone(summary),

@@ -106,7 +106,7 @@ export const useWbsPage = () => {
   );
   const canEditWbs = computed(() => userStore.hasPermission("TASK_UPDATE"));
   const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.memberId)
+    findProjectRole(project.value, userStore.accountId)
   );
   /** WBSの管理操作（baseline等）へ進めるか。SYSTEM_ADMIN、またはProjectのOWNER・MANAGER。 */
   const canManageProject = computed(() =>
@@ -363,7 +363,7 @@ export const useWbsPage = () => {
     ...estimateAccuracyState,
     activeView,
     canEditWbs,
-    currentAccountId: computed(() => userStore.memberId),
+    currentAccountId: computed(() => userStore.accountId),
     /** Projectが利用中（ACTIVE）か。archive済み・未取得はfalse。 */
     isProjectActive: computed(() => isActiveProject(project.value)),
     errorMessages,

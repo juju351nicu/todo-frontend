@@ -122,7 +122,7 @@ export const useWbsWorkingCalendar = (
     const members = (context.project.value?.members ?? []).filter(
       (member) =>
         context.canManageProject.value ||
-        member.accountId === userStore.memberId
+        member.accountId === userStore.accountId
     );
     return targetOptions.concat(
       members.map((member) => ({
@@ -175,7 +175,7 @@ export const useWbsWorkingCalendar = (
     return target.kind === "PROJECT"
       ? context.canManageProject.value
       : context.canManageProject.value ||
-          target.accountId === userStore.memberId;
+          target.accountId === userStore.accountId;
   });
   const canEditSelectedWorkingCalendarTarget = computed(
     () =>

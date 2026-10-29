@@ -113,7 +113,7 @@ export const useAccountAdministrationPage = () => {
   });
 
   const isEditingCurrentAccount = computed(
-    () => selectedAccount.value?.accountId === userStore.memberId
+    () => selectedAccount.value?.accountId === userStore.accountId
   );
 
   /** 認証・認可・公開範囲が変化した場合に管理対象データと編集draftを破棄する。 */
@@ -236,7 +236,7 @@ export const useAccountAdministrationPage = () => {
       );
       closeRoleEditorAfterSaving();
 
-      if (account.accountId === userStore.memberId && rolesChanged) {
+      if (account.accountId === userStore.accountId && rolesChanged) {
         // Backendは権限変更commit後に対象者の全HttpSessionを削除するため、古い画面権限を保持しない。
         clearProtectedState();
         errorMessages.value = [];

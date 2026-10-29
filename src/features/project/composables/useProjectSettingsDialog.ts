@@ -160,7 +160,7 @@ export const useProjectSettingsDialog = (
   const successMessage = ref("");
 
   const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.memberId)
+    findProjectRole(project.value, userStore.accountId)
   );
   const canManageResource = computed(() =>
     canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
@@ -480,7 +480,7 @@ export const useProjectSettingsDialog = (
 
   /** 指定memberが現在のSession利用者自身か判定する。 */
   const isCurrentMember = (member: ProjectMember): boolean =>
-    member.accountId === userStore.memberId;
+    member.accountId === userStore.accountId;
 
   /** member role draftが変更され、最後のOWNER規則にも違反しないか判定する。 */
   const canSaveMemberRole = (member: ProjectMember): boolean => {
@@ -605,7 +605,7 @@ export const useProjectSettingsDialog = (
 
     isRemoveConfirmOpen.value = false;
     memberToRemove.value = null;
-    if (target.accountId === userStore.memberId) {
+    if (target.accountId === userStore.accountId) {
       isDialogOpen.value = false;
       isSavingMember.value = false;
       await router.push({ name: ROUTE_NAMES.projectList });

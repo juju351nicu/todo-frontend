@@ -81,7 +81,7 @@ export const useWbsTaskEditor = (
   const canEditTask = (task: Readonly<Pick<WbsTask, "assigneeAccountId">>): boolean =>
     context.canEditWbs.value &&
     isActiveProject(context.project.value) &&
-    (context.canManageProject.value || task.assigneeAccountId === userStore.memberId);
+    (context.canManageProject.value || task.assigneeAccountId === userStore.accountId);
 
   /** 編集中Taskの取得時点の複製。Dialogを閉じている間はnull。 */
   const editingTask = ref<WbsTask | null>(null);

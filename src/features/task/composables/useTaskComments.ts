@@ -327,8 +327,8 @@ export const useTaskComments = (
   /** 現在のSession利用者が対象コメントの投稿者本人で、参照専用でないか判定する。 */
   const canModifyComment = (comment: TaskComment): boolean =>
     !disabled.value &&
-    userStore.memberId !== null &&
-    comment.authorAccountId === userStore.memberId;
+    userStore.accountId !== null &&
+    comment.authorAccountId === userStore.accountId;
 
   /**
    * 本文をtrimして投稿し、Backendが返したコメントを一覧の末尾へ追加する。成功したら投稿欄を空にする。

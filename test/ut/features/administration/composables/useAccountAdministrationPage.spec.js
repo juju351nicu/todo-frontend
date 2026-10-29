@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
   userStore: {
     clearSession: vi.fn(),
     hasPermission: vi.fn(),
-    memberId: 1,
+    accountId: 1,
   },
 }));
 
@@ -82,7 +82,7 @@ describe("useAccountAdministrationPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     mocks.userStore.hasPermission.mockImplementation(
       (permissionCode) => permissionCode === "ACCOUNT_ROLE_UPDATE"
     );
