@@ -4,6 +4,9 @@ import { expect, test } from "./fixtures/test";
 import { runBrowserRegressionFixture } from "./support/databaseFixture";
 
 const PROJECT_KEY = "BROWSER-BOARD-E2E";
+const PROJECT_NAME = "Browser Board Playwright";
+const OTHER_PROJECT_KEY = "BROWSER-BOARD-OTHER-E2E";
+const OTHER_PROJECT_NAME = "Browser Board Other Playwright";
 const INITIAL_TITLE = "Browser Board Created";
 const INITIAL_DETAIL = "Playwrightから作成して列移動するTask";
 const WINNER_TITLE = "Browser Board Winner";
@@ -23,15 +26,27 @@ const getBoardColumn = (page: Page, name: string): Locator =>
 const getTaskCard = (column: Locator, title: string): Locator =>
   column.locator(".task-card").filter({ hasText: title });
 
-/** Project一覧から専用Projectを選択し、採番IDへ依存せずBoardを開く。 */
-const openDedicatedBoard = async (page: Page): Promise<void> => {
-  await page.goto("/projects");
+/**
+ * 表示中のProject一覧で、指定keyのProjectの「Boardを開く」を押し、そのBoardの見出しが出るまで待つ。
+ * Project IDは流すたびに変わるため、keyで探す。
+ */
+const clickBoardOnProjectList = async (
+  page: Page,
+  projectKey: string,
+  projectName: string
+): Promise<void> => {
   const projectCard = page.getByRole("article").filter({
-    has: page.getByText(PROJECT_KEY, { exact: true }),
+    has: page.getByText(projectKey, { exact: true }),
   });
   await projectCard.getByRole("button", { name: "Boardを開く" }).click();
   await expect(page).toHaveURL(/\/projects\/\d+\/board$/);
-  await expect(page.getByRole("heading", { name: "Browser Board Playwright" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: projectName, exact: true })).toBeVisible();
+};
+
+/** Project一覧から専用Projectを選択し、採番IDへ依存せずBoardを開く。 */
+const openDedicatedBoard = async (page: Page): Promise<void> => {
+  await page.goto("/projects");
+  await clickBoardOnProjectList(page, PROJECT_KEY, PROJECT_NAME);
 };
 
 test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復する", async ({
@@ -114,4 +129,21 @@ test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復
     expect(inspection).toContain("journey_task_count=1");
     expect(inspection).toContain("project_task_count=1");
   }
+});
+
+test("別ProjectのBoardから履歴で直接戻ると、戻った先のProjectのBoardを表示し直す", async ({
+  page,
+}) => {
+  await openDedicatedBoard(page);
+  const dedicatedBoardUrl = page.url();
+  await page.getByRole("link", { name: "Project一覧へ戻る" }).click();
+  await clickBoardOnProjectList(page, OTHER_PROJECT_KEY, OTHER_PROJECT_NAME);
+
+  // 同じrouteでProject IDだけが変わる遷移（通知から別ProjectのBoardを開く場合と同じ）。
+  // 画面を作り直さないと、URLだけが変わり別Projectの見出し・列が残る。
+  await page.evaluate(() => window.history.go(-2));
+
+  await expect(page).toHaveURL(dedicatedBoardUrl);
+  await expect(page.getByRole("heading", { name: PROJECT_NAME, exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: OTHER_PROJECT_NAME, exact: true })).toHaveCount(0);
 });
