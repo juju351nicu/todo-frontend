@@ -259,12 +259,16 @@ My TasksとProject BoardのTask詳細から同じStoreで開始・停止でき�
 ## 検証
 
 ```bash
+npm run format:check   # Prettierの整形に合っているか（直すときは npm run format）
+npm run lint           # ESLint（直せるものを直すときは npm run lint:fix）
 npm run typecheck
 npm run test
 npm run build
 ```
 
-CIでもNode.js 24を使い、同じ型検査、テスト、ビルドを実行します。
+CIでもNode.js 24を使い、同じ整形の確認、ESLint、型検査、テスト、ビルドを実行します。
+整形の規則は`prettier.config.js`、ESLintの規則は`eslint.config.js`にあります。
+Prettierで全体を整形したコミットは`.git-blame-ignore-revs`に登録してあるので、`git config blame.ignoreRevsFile .git-blame-ignore-revs`を一度実行すると、`git blame`でそのコミットを飛ばせます（GitHubの画面は自動で飛ばします）。
 
 Backendと同時に起動して確認する手順と実施記録は[ブラウザ回帰チェックリスト](docs/browser-regression-checklist.md)を参照してください。
 

@@ -134,6 +134,14 @@ await authStore.restoreSession();
 
 ## 検証とレビュー
 
+### 整形とESLint
+
+- 見た目（改行・字下げ・引用符・1行100文字）はPrettier（`prettier.config.js`）に任せ、`npm run format`で整形する。手で揃えない。
+- ESLint（`eslint.config.js`）はJavaScript・TypeScript・Vueの推奨規則で、使っていない変数・import等の不具合の芽を検出する。見た目の規則は止めてPrettierと衝突させない。
+- 使わないことを明示する値（分割代入で特定の項目を除く等）は、名前を`_`で始める。
+- 指摘は`eslint-disable`のコメントで隠さずに直す。規則そのものが合わない場合は、理由を書いて`eslint.config.js`で変える。
+- 設計書・手順書（`*.md`）は表や日本語の改行を手で整えているため、Prettierの対象から外している（`.prettierignore`）。
+
 ### templateの型検査（`tsconfig.vue.json`）
 
 - `vueCompilerOptions`で`checkUnknownComponents`・`checkUnknownDirectives`を有効にし、登録していない部品・ディレクティブ（名前の書き間違い等）を`npm run typecheck`で検出する。

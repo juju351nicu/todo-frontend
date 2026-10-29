@@ -1,0 +1,5 @@
+# git blameで飛ばすコミット（見た目だけを変えた一括の整形）。
+# 使い方：git config blame.ignoreRevsFile .git-blame-ignore-revs（GitHubの画面は自動で飛ばす）
+
+# style: Prettier で全体を整形する（見た目だけで、動きは変えない）
+18ffc240076165ac09e3cbc57a444c05bdf40825
