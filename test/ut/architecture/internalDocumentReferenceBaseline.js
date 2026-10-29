@@ -5,17 +5,6 @@
  * 新しいファイル・行を足してはいけない（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
 export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
-  "src/features/wbs/components/WbsTaskEditDialog.vue": 1,
-  "src/features/wbs/components/WorkingCalendarCard.vue": 1,
-  "src/features/wbs/composables/useWbsBaselines.ts": 2,
-  "src/features/wbs/composables/useWbsEarnedValue.ts": 1,
-  "src/features/wbs/composables/useWbsReportExport.ts": 1,
-  "src/features/wbs/composables/useWbsTaskEditor.ts": 3,
-  "src/features/wbs/composables/useWbsWorkingCalendar.ts": 5,
-  "src/features/wbs/composables/useWbsWorkload.ts": 1,
-  "src/features/wbs/utils/earnedValue.ts": 1,
-  "src/features/wbs/utils/taskWorkload.ts": 1,
-  "src/features/wbs/utils/wbsBaseline.ts": 1,
   "test/e2e/authorization-journey.spec.ts": 1,
   "test/e2e/task-recurrence-journey.spec.ts": 1,
   "test/ut/features/attendance/composables/useAttendancePage.spec.js": 1,

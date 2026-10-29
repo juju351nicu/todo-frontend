@@ -52,7 +52,7 @@ export const getWorkloadCapacityLabel = (workload: Readonly<TaskWorkloadRow>): s
 
 /**
  * 同じ表示名を持つ別々の担当者がいる表示名を集める。
- * workload表では担当者を表示名で示し、同名の人がいるときだけアカウントIDを添えて見分ける（改善提案 1-20）。
+ * workload表では担当者を表示名で示し、同名の人がいるときだけアカウントIDを添えて見分ける。
  *
  * @param workloads 担当者別workloadの行。同じ担当者が日付ごとに複数行あってもよい
  * @returns 2人以上のアカウントIDが使っている表示名。該当がなければ空集合

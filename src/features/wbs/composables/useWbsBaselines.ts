@@ -26,8 +26,7 @@ import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/
 /**
  * baseline cardの部品に付ける`data-wbs-baseline-control`属性の値。
  * 有効化すると押した「比較対象にする」が消えてフォーカスがbodyへ外れるため、
- * 有効化の後は直前まで比較中だったbaselineの「比較対象にする」（なければ「現在計画を保存」）へ戻す
- * （動作確認/20_baseline_EVM_Excel帳票 G-5）。
+ * 有効化の後は直前まで比較中だったbaselineの「比較対象にする」（なければ「現在計画を保存」）へ戻す。
  */
 export const WBS_BASELINE_CONTROL = {
   /** card見出しの「現在計画を保存」ボタン。 */
@@ -237,7 +236,7 @@ export const useWbsBaselines = (
       );
       const reloaded = await reloadWbsBaselines();
       // version競合等で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに取り直し済みの案内を添える
-      // （動作確認/20_baseline_EVM_Excel帳票 G-6。12・18・19の対応と同じ）。
+      // （Project設定・Project Templateの409と同じ書き方）。
       if (
         reloaded &&
         !context.isSessionInvalidated() &&

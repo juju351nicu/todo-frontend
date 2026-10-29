@@ -132,8 +132,8 @@ export const formatBaselinePeriod = (dateFrom: string | null, dateTo: string | n
   dateFrom === null || dateTo === null ? "—" : `${dateFrom} ～ ${dateTo}`;
 
 /**
- * baselineが1件もないときに出す案内を選ぶ（改善提案 1-21）。
- * 以前はarchive済みProjectや保存できない利用者にも「現在計画を保存してください」と出していた。
+ * baselineが1件もないときに出す案内を選ぶ。
+ * archive済みProjectや保存できない利用者には「現在計画を保存してください」と出さない（できない操作を促さないため）。
  *
  * @param state 利用者がbaselineを保存できるかと、Projectが利用中か
  * @returns 案内文

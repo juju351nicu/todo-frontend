@@ -16,8 +16,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 担当者別workload cardの部品に付ける`data-workload-control`属性の値。
- * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
- * （動作確認/19_workload_稼働日calendar G-12）。
+ * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す。
  */
 export const WORKLOAD_CONTROL = {
   /** 「集計」ボタン。 */

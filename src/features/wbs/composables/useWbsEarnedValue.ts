@@ -11,8 +11,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * EVM cardの「集計」ボタンに付ける`data-earned-value-control`属性の値。
- * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
- * （動作確認/20_baseline_EVM_Excel帳票 G-3）。
+ * 集計中は「集計」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す。
  */
 export const EARNED_VALUE_SUBMIT_CONTROL = "submit";
 

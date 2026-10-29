@@ -66,7 +66,7 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
       <template v-if="form">
         <!--
           失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。幅390pxでは本文がスクロールし、
-          下の「保存」を押した位置から本文の先頭のmessageが見えなかったため（動作確認/18_WBS本体 G-6。12と同じ対応）。
+          下の「保存」を押した位置から本文の先頭のmessageが見えないため（Project設定のDialogと同じ作り）。
           負のtopとmarginでUModal本文の上余白（nuxtUiTheme.ts の modal.body の pt-4）まで覆い、上を流れる内容が透けないようにする。
         -->
         <div v-if="errorMessages.length" class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4">
