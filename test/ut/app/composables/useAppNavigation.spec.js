@@ -66,8 +66,8 @@ describe("useAppNavigation", () => {
 
     expect(labelsOf(navigation)).toEqual([
       "Dashboard",
-      "Todoカレンダー",
-      "Todo一覧",
+      "Taskカレンダー",
+      "Task一覧",
       "My Tasks",
       "Task検索",
       "Project Board",
@@ -76,7 +76,7 @@ describe("useAppNavigation", () => {
       "勤怠",
       "アカウント",
       "退会",
-      "Todo新規登録",
+      "Task新規登録",
       "アカウント・ロール管理",
       "権限変更監査ログ",
       "お知らせ配信",

@@ -16,7 +16,7 @@ const members = [
   { accountId: 8, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "ACTIVE" },
 ];
 const statuses = [
-  { taskStatusId: 2, statusCode: "TODO", name: "Todo", completed: false },
+  { taskStatusId: 2, statusCode: "TODO", name: "未着手", completed: false },
   { taskStatusId: 3, statusCode: "DONE", name: "完了", completed: true },
 ];
 
@@ -93,10 +93,10 @@ describe("useTaskTemplateDialog", () => {
     ]);
     expect(dialog.applyAssigneeOptions.value).toEqual(dialog.memberOptions.value);
     // Backendは完了列への適用を409で拒否するため、適用の列候補に「完了」を出さない。
-    expect(dialog.applyStatusOptions.value).toEqual([{ title: "Todo", value: 2 }]);
+    expect(dialog.applyStatusOptions.value).toEqual([{ title: "未着手", value: 2 }]);
     // Template編集の既定列は、保存済みの値を表示できるよう全列を候補にする。
     expect(dialog.statusCodeOptions.value).toEqual([
-      { title: "Todo（TODO）", value: "TODO" },
+      { title: "未着手（TODO）", value: "TODO" },
       { title: "完了（DONE）", value: "DONE" },
     ]);
   });

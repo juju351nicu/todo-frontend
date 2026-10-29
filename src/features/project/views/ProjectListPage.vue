@@ -108,7 +108,7 @@ onBeforeMount(initialize);
     <UModal
       v-model:open="isCreateDialogOpen"
       title="Projectを作成"
-      description="作成するとあなたがOWNERになり、Board列（Todo・進行中・完了）が用意されます。"
+      description="作成するとあなたがOWNERになり、Board列（未着手・進行中・完了）が用意されます。"
       :dismissible="!isCreatingProject"
     >
       <template #body>

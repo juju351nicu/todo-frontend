@@ -3,7 +3,7 @@ import type { SemanticColor } from "@/shared/types/color";
 
 /**
  * 今日（業務日）から期限までの符号付き日数を、期限超過・今日・残り日数の表現へ変換する。
- * My Tasks・Task検索・Dashboard・旧Todo一覧で同じ表現にする。
+ * My Tasks・Task検索・Dashboard・Task一覧で同じ表現にする。
  *
  * @param value Backendが返す期限までの日数。期限当日は0、期限切れは負数
  * @returns 例: `2日超過`、`今日`、`残り5日`

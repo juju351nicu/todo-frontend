@@ -332,7 +332,7 @@ export interface EstimateAccuracyTask {
   taskId: number;
   /** 画面表示用WBSコード。未設定の場合はnull。 */
   wbsCode: string | null;
-  /** Taskタイトル。旧Todo由来のデータではnullの場合がある。 */
+  /** Taskタイトル。Board導入前から残るデータではnullの場合がある。 */
   title: string | null;
   /** 正式な予定工数（分）。1以上。 */
   plannedEffortMinutes: number;

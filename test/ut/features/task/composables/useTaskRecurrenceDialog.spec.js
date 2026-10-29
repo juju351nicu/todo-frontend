@@ -17,7 +17,7 @@ const members = [
 ];
 const statuses = [
   { taskStatusId: 1, statusCode: "DONE", name: "完了", completed: true },
-  { taskStatusId: 2, statusCode: "TODO", name: "Todo", completed: false },
+  { taskStatusId: 2, statusCode: "TODO", name: "未着手", completed: false },
 ];
 
 const createDialog = (overrides = {}) =>

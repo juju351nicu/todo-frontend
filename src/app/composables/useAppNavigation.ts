@@ -7,8 +7,8 @@ import { useUserStore } from "@/features/auth/stores/user";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
   ATTENDANCE_READ_PERMISSION_CODES,
-  TASK_READ_PERMISSION_CODES,
-  TASK_WRITE_PERMISSION_CODES,
+  TASK_LIST_READ_PERMISSION_CODES,
+  TASK_LIST_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
 
 /** サイドメニューの1項目。 */
@@ -48,10 +48,10 @@ export const useAppNavigation = (): AppNavigation => {
     const links: NavigationLink[] = [
       { icon: "i-mdi-view-dashboard", label: "Dashboard", to: "/dashboard" },
     ];
-    if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
+    if (userStore.hasAnyPermission(TASK_LIST_READ_PERMISSION_CODES)) {
       links.push(
-        { icon: "i-mdi-calendar", label: "Todoカレンダー", to: "/todo/calendar" },
-        { icon: "i-mdi-format-list-checks", label: "Todo一覧", to: "/todo/todoList" }
+        { icon: "i-mdi-calendar", label: "Taskカレンダー", to: "/tasks/calendar" },
+        { icon: "i-mdi-format-list-checks", label: "Task一覧", to: "/tasks/list" }
       );
     }
     if (userStore.hasPermission("TASK_READ")) {
@@ -89,8 +89,8 @@ export const useAppNavigation = (): AppNavigation => {
         { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` }
       );
     }
-    if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
-      links.push({ icon: "i-mdi-plus-box", label: "Todo新規登録", to: "/todo/register" });
+    if (userStore.hasAnyPermission(TASK_LIST_WRITE_PERMISSION_CODES)) {
+      links.push({ icon: "i-mdi-plus-box", label: "Task新規登録", to: "/tasks/register" });
     }
     if (userStore.hasPermission("ACCOUNT_READ")) {
       links.push({

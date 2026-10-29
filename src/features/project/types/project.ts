@@ -69,7 +69,7 @@ export interface ProjectUpdateRequest {
 
 /**
  * Templateを使わずにProjectを作るRequest（`POST /api/v1/projects`）。
- * 作成者はOWNERになり、標準のBoard列（Todo・進行中・完了）はBackendが作る。
+ * 作成者はOWNERになり、標準のBoard列（未着手・進行中・完了）はBackendが作る。
  */
 export interface ProjectCreateRequest {
   /** 大文字英数字をハイフンで区切る、作成後に変更しないProjectキー（30文字以内）。 */

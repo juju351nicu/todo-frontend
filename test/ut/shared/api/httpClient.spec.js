@@ -45,12 +45,12 @@ describe("REST client", () => {
       })
       .mockResolvedValueOnce({ ok: true, status: 200 });
 
-    await Fetcher.postRequest("/api/v1/todo/upsertConfirm", { title: "test" });
+    await Fetcher.postRequest("/api/v1/task-list/upsert", { title: "test" });
 
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(fetch.mock.calls[0][0]).toBe("http://localhost:8030/api/v1/csrf");
     const [url, options] = fetch.mock.calls[1];
-    expect(url).toBe("http://localhost:8030/api/v1/todo/upsertConfirm");
+    expect(url).toBe("http://localhost:8030/api/v1/task-list/upsert");
     expect(options.credentials).toBe("include");
     expect(options.headers.get("X-XSRF-TOKEN")).toBe("csrf-test-token");
     expect(options.headers.get("X-AUTH-TOKEN")).toBeNull();

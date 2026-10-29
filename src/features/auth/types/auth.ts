@@ -45,14 +45,14 @@ export const ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES = [
   "ATTENDANCE_READ_ALL",
 ] as const satisfies readonly PermissionCode[];
 
-/** Todo一覧・詳細・カレンダーのいずれかを参照できるpermission。 */
-export const TASK_READ_PERMISSION_CODES = [
+/** Task一覧・Task詳細・Taskカレンダー（担当者ごとのTaskの画面）のいずれかを参照できるpermission。 */
+export const TASK_LIST_READ_PERMISSION_CODES = [
   "TASK_READ_ALL",
   "TASK_READ_OWN",
 ] as const satisfies readonly PermissionCode[];
 
-/** Todo登録・更新・完了・カレンダー移動のいずれかを実行できるpermission。 */
-export const TASK_WRITE_PERMISSION_CODES = [
+/** Task一覧の画面からのTaskの登録・更新・完了・カレンダー移動のいずれかを実行できるpermission。 */
+export const TASK_LIST_WRITE_PERMISSION_CODES = [
   "TASK_WRITE_ALL",
   "TASK_WRITE_OWN",
 ] as const satisfies readonly PermissionCode[];

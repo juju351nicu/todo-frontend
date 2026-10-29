@@ -28,7 +28,7 @@ const buildCurrentTask = (overrides = {}) => ({
   priority: 2,
   taskStatusId: 1,
   taskStatusCode: "TODO",
-  taskStatusName: "Todo",
+  taskStatusName: "未着手",
   position: 1000,
   version: 0,
   ...overrides,

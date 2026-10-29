@@ -5,10 +5,10 @@ import { routes } from "@/app/router/routes";
 const findRoute = (name) => routes.find((route) => route.name === name);
 
 describe("Vue routes", () => {
-  it("会員とTodoのIDをパス区切り付きで受け取る", () => {
+  it("会員とTaskのIDをパス区切り付きで受け取る", () => {
     expect(findRoute("MemberDetail").path).toBe("/member/detail/:id?");
     expect(findRoute("MemberCancel").path).toBe("/member/cancel/:id");
-    expect(findRoute("TodoDetail").path).toBe("/todo/detail/:id");
+    expect(findRoute("TaskListDetail").path).toBe("/tasks/list/:id");
   });
 
   it("未ログインで開ける会員登録画面は置かず、会員の登録はログイン後の会員詳細（ID なし）で行う", () => {
@@ -27,12 +27,12 @@ describe("Vue routes", () => {
     expect(dashboard.meta.requiredAnyPermissions).toBeUndefined();
   });
 
-  it("Todo画面にBackendと一致するpermissionメタデータを設定する", () => {
-    expect(findRoute("TodoList").meta.requiredAnyPermissions).toEqual([
+  it("Task一覧の画面にBackendと一致するpermissionメタデータを設定する", () => {
+    expect(findRoute("TaskList").meta.requiredAnyPermissions).toEqual([
       "TASK_READ_ALL",
       "TASK_READ_OWN",
     ]);
-    expect(findRoute("TodoRegister").meta.requiredAnyPermissions).toEqual([
+    expect(findRoute("TaskRegister").meta.requiredAnyPermissions).toEqual([
       "TASK_WRITE_ALL",
       "TASK_WRITE_OWN",
     ]);

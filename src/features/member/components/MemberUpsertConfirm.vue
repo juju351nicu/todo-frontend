@@ -33,7 +33,7 @@ const handleOpenChange = (open: boolean): void => {
 <template>
   <!--
     UModalにして、幅の狭い画面（390px）でも切れず、Escで閉じられ、Dialogとして読み上げられるようにする
-    （Todoの確認画面と同じ作り）。権限は数値ではなく表示名で出す。
+    （Task一覧の確認画面と同じ作り）。権限は数値ではなく表示名で出す。
   -->
   <UModal
     :open="true"

@@ -4,8 +4,8 @@ import { ROUTE_NAMES } from "@/app/router/routeNames";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
   ATTENDANCE_READ_PERMISSION_CODES,
-  TASK_READ_PERMISSION_CODES,
-  TASK_WRITE_PERMISSION_CODES,
+  TASK_LIST_READ_PERMISSION_CODES,
+  TASK_LIST_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
 
 /**
@@ -145,41 +145,41 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: "/todo/calendar",
-    name: ROUTE_NAMES.todoCalendar,
-    component: () => import("@/features/todo/views/TodoCalendarPage.vue"),
+    path: "/tasks/calendar",
+    name: ROUTE_NAMES.taskCalendar,
+    component: () => import("@/features/task-list/views/TaskCalendarPage.vue"),
     meta: {
       requiresAuth: true,
-      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+      requiredAnyPermissions: TASK_LIST_READ_PERMISSION_CODES,
     },
   },
   {
-    path: "/todo/todoList",
-    name: ROUTE_NAMES.todoList,
-    component: () => import("@/features/todo/views/TodoListPage.vue"),
+    path: "/tasks/list",
+    name: ROUTE_NAMES.taskList,
+    component: () => import("@/features/task-list/views/TaskListPage.vue"),
     meta: {
       requiresAuth: true,
-      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+      requiredAnyPermissions: TASK_LIST_READ_PERMISSION_CODES,
     },
   },
   {
-    path: "/todo/detail/:id",
-    name: ROUTE_NAMES.todoDetail,
-    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
+    path: "/tasks/list/:id",
+    name: ROUTE_NAMES.taskListDetail,
+    component: () => import("@/features/task-list/views/TaskListDetailPage.vue"),
     props: (route) => ({ id: Number(route.params.id) }),
     meta: {
       requiresAuth: true,
-      requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
+      requiredAnyPermissions: TASK_LIST_READ_PERMISSION_CODES,
     },
   },
   {
-    path: "/todo/register",
-    name: ROUTE_NAMES.todoRegister,
-    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
+    path: "/tasks/register",
+    name: ROUTE_NAMES.taskRegister,
+    component: () => import("@/features/task-list/views/TaskListDetailPage.vue"),
     props: { id: 0 },
     meta: {
       requiresAuth: true,
-      requiredAnyPermissions: TASK_WRITE_PERMISSION_CODES,
+      requiredAnyPermissions: TASK_LIST_WRITE_PERMISSION_CODES,
     },
   },
   {
