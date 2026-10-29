@@ -11,7 +11,7 @@ import {
   buildTodoCalendarOptions,
 } from "@/features/task/utils/taskCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { toNumberList } from "@/shared/utils/number";
 
 /** Todoカレンダー画面の状態と操作を提供する。 */
@@ -46,17 +46,11 @@ export const useTodoCalendarPage = () => {
 
   /** API statusと契約済みerror codeをCalendar向け表示へ変換する。 */
   const getErrorMessages = (error: unknown): string[] => {
-    if (!(error instanceof TaskApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [DISPLAY_MESSAGES.task.todo.readForbidden];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      LEGACY_TODO_ERROR_CODES,
-      DISPLAY_MESSAGES.task.todo.calendarLoadFailed
-    );
+    return resolveStandardErrorMessages(error, TaskApiError, {
+      forbidden: DISPLAY_MESSAGES.task.todo.readForbidden,
+      knownErrorCodes: LEGACY_TODO_ERROR_CODES,
+      fallback: DISPLAY_MESSAGES.task.todo.calendarLoadFailed,
+    });
   };
 
   /**

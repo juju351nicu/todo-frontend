@@ -13,7 +13,7 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { SemanticColor } from "@/shared/types/color";
 
@@ -132,16 +132,12 @@ export const useMyTasksPage = () => {
     forbidden: string,
     knownCodes: ReadonlySet<string> = LEGACY_TODO_ERROR_CODES
   ): string[] => {
-    if (!(error instanceof TaskApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.myTasks.resourceNotFound];
-    }
-    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
+    return resolveStandardErrorMessages(error, TaskApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.myTasks.resourceNotFound,
+      knownErrorCodes: knownCodes,
+      fallback,
+    });
   };
 
   /** 401ではMy TasksとSession表示を破棄してLoginへ戻す。 */

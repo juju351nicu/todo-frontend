@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
 import { TaskApiError } from "@/features/task/api/taskApi";
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   API_RECOVERY_PRIORITY_STATUSES,
   ApiError,
@@ -10,6 +11,7 @@ import {
   hasApiFieldError,
   readErrorResponse,
   resolveApiErrorMessages,
+  resolveStandardErrorMessages,
 } from "@/shared/utils/apiError";
 
 const KNOWN_CODES = new Set(["KNOWN_ERROR", "VALIDATION_ERROR"]);
@@ -217,5 +219,51 @@ describe("API error表示utility", () => {
 
     expect(hasApiFieldError(response, "KNOWN_ERROR", "featureCode")).toBe(true);
     expect(hasApiFieldError(response, "KNOWN_ERROR", "otherField")).toBe(false);
+  });
+});
+
+describe("resolveStandardErrorMessages", () => {
+  const options = {
+    forbidden: "権限がありません。",
+    notFound: "対象がありません。",
+    knownErrorCodes: KNOWN_CODES,
+    fallback: "処理できませんでした。",
+  };
+
+  it("その画面のfeature API例外でなければ、通信できなかった文言にする", () => {
+    expect(resolveStandardErrorMessages(new Error("network"), ProjectApiError, options)).toEqual([
+      DISPLAY_MESSAGES.common.connectionFailed,
+    ]);
+    expect(resolveStandardErrorMessages(new TaskApiError(500, null), ProjectApiError, options)).toEqual([
+      DISPLAY_MESSAGES.common.connectionFailed,
+    ]);
+  });
+
+  it("403・404は画面の文言にし、それ以外は既知codeのBackendの文言、なければfallbackにする", () => {
+    expect(resolveStandardErrorMessages(new ProjectApiError(403, null), ProjectApiError, options)).toEqual([
+      "権限がありません。",
+    ]);
+    expect(resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, options)).toEqual([
+      "対象がありません。",
+    ]);
+    expect(
+      resolveStandardErrorMessages(
+        new ProjectApiError(400, {
+          fieldErrors: [{ errorCode: "KNOWN_ERROR", field: "name", message: "名前を入力してください。" }],
+        }),
+        ProjectApiError,
+        options
+      )
+    ).toEqual(["名前を入力してください。"]);
+    expect(resolveStandardErrorMessages(new ProjectApiError(500, null), ProjectApiError, options)).toEqual([
+      "処理できませんでした。",
+    ]);
+  });
+
+  it("404の文言を渡さなければ、404もBackendの本文から文言を選ぶ", () => {
+    const { notFound: _notFound, ...withoutNotFound } = options;
+    expect(resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, withoutNotFound)).toEqual([
+      "処理できませんでした。",
+    ]);
   });
 });

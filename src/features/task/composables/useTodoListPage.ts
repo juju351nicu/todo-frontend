@@ -17,7 +17,7 @@ import {
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { toNumberList } from "@/shared/utils/number";
 
@@ -94,20 +94,12 @@ export const useTodoListPage = () => {
     fallback: string,
     forbidden: string
   ): string[] => {
-    if (!(error instanceof TaskApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.todo.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      LEGACY_TODO_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
+      knownErrorCodes: LEGACY_TODO_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 401ではTodo一覧とSession表示を破棄してLoginへ戻す。 */

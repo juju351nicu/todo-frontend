@@ -15,7 +15,7 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
@@ -165,20 +165,12 @@ export const useTaskChecklist = (
     fallback: string,
     forbidden: string = DISPLAY_MESSAGES.task.checklist.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskChecklistApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.checklist.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_CHECKLIST_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskChecklistApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.checklist.resourceNotFound,
+      knownErrorCodes: TASK_CHECKLIST_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 編集・削除対象を破棄し、古いversionを再利用できない状態へ戻す。 */

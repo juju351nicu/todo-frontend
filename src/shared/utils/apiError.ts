@@ -1,3 +1,4 @@
+import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import type { ErrorResponse } from "@/shared/types/error";
 
 /**
@@ -147,4 +148,45 @@ export const resolveApiErrorMessages = (
     messages.push(fieldError.message.trim());
   }
   return messages;
+};
+
+/** `resolveStandardErrorMessages`へ渡す、画面ごとの文言とerror code。 */
+export interface StandardErrorMessageOptions {
+  /** 権限がない（403）ときの文言。 */
+  forbidden: string;
+  /** 対象がない（404）ときの文言。省略すると、404もBackendの本文から文言を選ぶ。 */
+  notFound?: string;
+  /** 画面が表示の約束を持つBackendのerror code。これ以外のcodeを含む本文は`fallback`にする。 */
+  knownErrorCodes: ReadonlySet<string>;
+  /** 本文がない・読めない・未知のcodeのときの文言。 */
+  fallback: string;
+}
+
+/**
+ * feature APIの失敗を、画面に出す文言にする。
+ *
+ * 判定の順は「feature APIの例外でない（通信できなかった）→ 403 → 404 → Backendの本文」。
+ * 401（Sessionが切れた）は、画面ごとに後始末が違うため、呼出側がこの前に`isUnauthorizedApiError`で扱う。
+ * 409で取り直す等、statusごとに回復の手順がある処理では使わず、statusを個別に判定する。
+ *
+ * @param error 画面が受け取った例外
+ * @param errorClass その画面が呼ぶfeature APIの例外クラス。ほかの例外は通信できなかったものとして扱う
+ * @param options statusごとの文言とerror code
+ * @returns 表示する文言（1件以上）
+ */
+export const resolveStandardErrorMessages = (
+  error: unknown,
+  errorClass: abstract new (...args: never[]) => ApiError,
+  options: Readonly<StandardErrorMessageOptions>
+): string[] => {
+  if (!(error instanceof errorClass)) {
+    return [DISPLAY_MESSAGES.common.connectionFailed];
+  }
+  if (error.status === 403) {
+    return [options.forbidden];
+  }
+  if (error.status === 404 && options.notFound !== undefined) {
+    return [options.notFound];
+  }
+  return resolveApiErrorMessages(error.errorResponse, options.knownErrorCodes, options.fallback);
 };

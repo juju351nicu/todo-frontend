@@ -27,7 +27,7 @@ import {
   TASK_SEARCH_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 
@@ -176,16 +176,12 @@ export const useTaskSearchPage = () => {
     knownCodes: ReadonlySet<string>,
     forbidden: string = DISPLAY_MESSAGES.task.search.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskSearchApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.search.resourceNotFound];
-    }
-    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
+    return resolveStandardErrorMessages(error, TaskSearchApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.search.resourceNotFound,
+      knownErrorCodes: knownCodes,
+      fallback,
+    });
   };
 
   /** 401ではServer由来の状態とSession表示を破棄してLoginへ戻す。 */

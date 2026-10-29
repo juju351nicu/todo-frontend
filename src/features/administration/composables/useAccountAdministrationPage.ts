@@ -20,7 +20,7 @@ import {
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
@@ -333,20 +333,12 @@ export const useAccountAdministrationPage = () => {
     fallbackMessage: string,
     forbiddenMessage: string
   ): string[] => {
-    if (!(error instanceof AdministrationApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbiddenMessage];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.administration.account.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      ACCOUNT_ADMINISTRATION_ERROR_CODES,
-      fallbackMessage
-    );
+    return resolveStandardErrorMessages(error, AdministrationApiError, {
+      forbidden: forbiddenMessage,
+      notFound: DISPLAY_MESSAGES.administration.account.resourceNotFound,
+      knownErrorCodes: ACCOUNT_ADMINISTRATION_ERROR_CODES,
+      fallback: fallbackMessage,
+    });
   };
 
   /** 401では管理対象データとSession表示を破棄してLoginへ戻す。 */

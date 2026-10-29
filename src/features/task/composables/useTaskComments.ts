@@ -17,7 +17,7 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
@@ -150,20 +150,12 @@ export const useTaskComments = (
     fallback: string,
     forbidden: string = DISPLAY_MESSAGES.task.comments.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskCommentApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.comments.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_COMMENT_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskCommentApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.comments.resourceNotFound,
+      knownErrorCodes: TASK_COMMENT_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 編集・削除対象を破棄し、取得前versionを再利用できない状態へ戻す。 */

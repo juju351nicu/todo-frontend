@@ -16,7 +16,7 @@ import {
   type TodoDetailForm,
 } from "@/features/task/utils/taskForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
@@ -138,20 +138,12 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     fallback: string,
     forbidden: string
   ): string[] => {
-    if (!(error instanceof TaskApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.todo.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      LEGACY_TODO_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
+      knownErrorCodes: LEGACY_TODO_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 401ではフォームとSession表示を破棄してLoginへ戻す。 */
