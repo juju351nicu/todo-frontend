@@ -2,8 +2,8 @@
 import FullCalendar from "@fullcalendar/vue3";
 import { onBeforeMount } from "vue";
 
-import TodoSearchCard from "@/features/task/components/TodoSearchCard.vue";
-import { useTodoCalendarPage } from "@/features/task/composables/useTodoCalendarPage";
+import TodoSearchCard from "@/features/todo/components/TodoSearchCard.vue";
+import { useTodoCalendarPage } from "@/features/todo/composables/useTodoCalendarPage";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 

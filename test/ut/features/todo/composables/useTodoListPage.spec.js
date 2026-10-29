@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TaskApiError } from "@/features/task/api/taskApi";
+import { TodoApiError } from "@/features/todo/api/todoApi";
 import {
   buildTodoEditControlKey,
   useTodoListPage,
-} from "@/features/task/composables/useTodoListPage";
+} from "@/features/todo/composables/useTodoListPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -25,7 +25,7 @@ vi.mock("vue-router", () => ({
   useRouter: () => mocks.router,
 }));
 
-vi.mock("@/features/task/stores/task", () => ({
+vi.mock("@/features/todo/stores/todo", () => ({
   useTodoStore: () => mocks.todoStore,
 }));
 
@@ -86,7 +86,7 @@ describe("useTodoListPage", () => {
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {
     mocks.todoStore.findTodoList.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: "INVALID_REQUEST_BODY",
@@ -162,7 +162,7 @@ describe("useTodoListPage", () => {
 
   it("既知codeの複数入力エラーをBackend順で表示する", async () => {
     mocks.todoStore.findTodoList.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: "INVALID_REQUEST_BODY",
@@ -186,7 +186,7 @@ describe("useTodoListPage", () => {
 
   it("未知codeを含むBackend本文は部分表示せず固定文言へ閉じる", async () => {
     mocks.todoStore.findTodoList.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: "INVALID_REQUEST_BODY",
@@ -214,7 +214,7 @@ describe("useTodoListPage", () => {
     const page = useTodoListPage();
     mocks.todoStore.findTodoList.mockResolvedValueOnce({ todoList: [todo] });
     await page.initialize();
-    mocks.todoStore.findTodoList.mockRejectedValue(new TaskApiError(403, null));
+    mocks.todoStore.findTodoList.mockRejectedValue(new TodoApiError(403, null));
 
     await page.search();
 
@@ -226,7 +226,7 @@ describe("useTodoListPage", () => {
   });
 
   it("401では一覧とSession表示を破棄してLoginへ戻す", async () => {
-    mocks.todoStore.findTodoList.mockRejectedValue(new TaskApiError(401, null));
+    mocks.todoStore.findTodoList.mockRejectedValue(new TodoApiError(401, null));
     const page = useTodoListPage();
 
     await page.search();
@@ -252,8 +252,8 @@ describe("useTodoListPage", () => {
   });
 
   it("完了404の回復中に401となった場合はSession失効を優先する", async () => {
-    mocks.todoStore.completeTodo.mockRejectedValue(new TaskApiError(404, null));
-    mocks.todoStore.findTodoList.mockRejectedValue(new TaskApiError(401, null));
+    mocks.todoStore.completeTodo.mockRejectedValue(new TodoApiError(404, null));
+    mocks.todoStore.findTodoList.mockRejectedValue(new TodoApiError(401, null));
     const page = useTodoListPage();
     const item = { ...todo };
 

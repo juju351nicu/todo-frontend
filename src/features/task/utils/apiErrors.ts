@@ -100,8 +100,8 @@ export const TASK_RECURRENCE_ERROR_CODES: ReadonlySet<string> = new Set([
   "RETRY_EXHAUSTED",
 ]);
 
-/** My Tasksと旧Todo互換APIが共通Validation handlerから返すerror code集合。 */
-export const LEGACY_TODO_ERROR_CODES: ReadonlySet<string> = new Set([
+/** My Tasksの一覧（`/api/v1/my-tasks`）が共通Validation handlerから返すerror code。 */
+export const MY_TASK_ERROR_CODES: ReadonlySet<string> = new Set([
   "INVALID_REQUEST_BODY",
 ]);
 

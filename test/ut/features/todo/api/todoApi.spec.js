@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import TaskApi from "@/features/task/api/taskApi";
+import TodoApi from "@/features/todo/api/todoApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -23,7 +23,7 @@ describe("Task API", () => {
       json: vi.fn().mockResolvedValue(payload),
     });
 
-    await expect(TaskApi.findDetail(42)).resolves.toEqual(payload);
+    await expect(TodoApi.findDetail(42)).resolves.toEqual(payload);
 
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       `${API_PATHS.TODO_DETAIL}/42`
@@ -37,8 +37,8 @@ describe("Task API", () => {
       json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
     });
 
-    await expect(TaskApi.findDetail(999)).rejects.toMatchObject({
-      name: "TaskApiError",
+    await expect(TodoApi.findDetail(999)).rejects.toMatchObject({
+      name: "TodoApiError",
       status: 404,
       errorResponse: null,
     });
@@ -56,7 +56,7 @@ describe("Task API", () => {
       json: vi.fn().mockResolvedValue(payload),
     });
 
-    await expect(TaskApi.findList(request)).resolves.toEqual(payload);
+    await expect(TodoApi.findList(request)).resolves.toEqual(payload);
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       API_PATHS.TODO_LIST,
@@ -81,13 +81,13 @@ describe("Task API", () => {
     });
 
     await expect(
-      TaskApi.findList({
+      TodoApi.findList({
         search_title: "x",
         date_range: "",
         done_flag_values: [0],
       })
     ).rejects.toMatchObject({
-      name: "TaskApiError",
+      name: "TodoApiError",
       status: 400,
       errorResponse,
     });
@@ -96,7 +96,7 @@ describe("Task API", () => {
   it("Todo IDをBackendと一致するparameter名で完了APIへ渡す", async () => {
     HttpClient.postRequest.mockResolvedValue({ ok: true });
 
-    await expect(TaskApi.complete(42)).resolves.toBeUndefined();
+    await expect(TodoApi.complete(42)).resolves.toBeUndefined();
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       `${API_PATHS.TODO_DONE}?todo_id=42`,
@@ -111,8 +111,8 @@ describe("Task API", () => {
       json: vi.fn().mockRejectedValue(new SyntaxError("empty")),
     });
 
-    await expect(TaskApi.complete(999)).rejects.toMatchObject({
-      name: "TaskApiError",
+    await expect(TodoApi.complete(999)).rejects.toMatchObject({
+      name: "TodoApiError",
       status: 404,
       errorResponse: null,
     });
@@ -125,8 +125,8 @@ describe("Task API", () => {
       json: vi.fn().mockRejectedValue(new SyntaxError("not json")),
     });
 
-    await expect(TaskApi.upsert({ todo_id: 42 })).rejects.toMatchObject({
-      name: "TaskApiError",
+    await expect(TodoApi.upsert({ todo_id: 42 })).rejects.toMatchObject({
+      name: "TodoApiError",
       status: 409,
       errorResponse: null,
     });

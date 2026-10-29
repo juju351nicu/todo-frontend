@@ -5,10 +5,10 @@ import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import MyTaskApi, { MyTaskApiError } from "@/features/task/api/myTaskApi";
-import type { MyTaskItem } from "@/features/task/types/task";
+import type { MyTaskItem } from "@/features/task/types/myTask";
 import {
-  LEGACY_TODO_ERROR_CODES,
   MY_TASK_COMPLETE_ERROR_CODES,
+  MY_TASK_ERROR_CODES,
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -128,7 +128,7 @@ export const useMyTasksPage = () => {
     error: unknown,
     fallback: string,
     forbidden: string,
-    knownCodes: ReadonlySet<string> = LEGACY_TODO_ERROR_CODES
+    knownCodes: ReadonlySet<string> = MY_TASK_ERROR_CODES
   ): string[] => {
     return resolveStandardErrorMessages(error, MyTaskApiError, {
       forbidden,

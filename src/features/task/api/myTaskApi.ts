@@ -1,4 +1,4 @@
-import type { MyTaskListResponse } from "@/features/task/types/task";
+import type { MyTaskListResponse } from "@/features/task/types/myTask";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";

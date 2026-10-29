@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoCalendarPage } from "@/features/task/composables/useTodoCalendarPage";
+import { TodoApiError } from "@/features/todo/api/todoApi";
+import { useTodoCalendarPage } from "@/features/todo/composables/useTodoCalendarPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -19,7 +19,7 @@ vi.mock("vue-router", () => ({
   useRouter: () => mocks.router,
 }));
 
-vi.mock("@/features/task/stores/task", () => ({
+vi.mock("@/features/todo/stores/todo", () => ({
   useTodoStore: () => mocks.todoStore,
 }));
 
@@ -88,7 +88,7 @@ describe("useTodoCalendarPage", () => {
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {
     mocks.todoStore.findCalendarList.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: "INVALID_REQUEST_BODY",
@@ -116,7 +116,7 @@ describe("useTodoCalendarPage", () => {
 
   it("未知codeのBackend本文を表示せず固定文言へ閉じる", async () => {
     mocks.todoStore.findCalendarList.mockRejectedValue(
-      new TaskApiError(500, {
+      new TodoApiError(500, {
         fieldErrors: [
           {
             errorCode: "UNKNOWN_INTERNAL_ERROR",
@@ -138,7 +138,7 @@ describe("useTodoCalendarPage", () => {
   it("本文なし403ではSessionを維持して古いEventを破棄する", async () => {
     mocks.todoStore.findCalendarList
       .mockResolvedValueOnce({ todoList: [todo] })
-      .mockRejectedValueOnce(new TaskApiError(403, null));
+      .mockRejectedValueOnce(new TodoApiError(403, null));
     const page = useTodoCalendarPage();
     await page.initialize();
 
@@ -153,7 +153,7 @@ describe("useTodoCalendarPage", () => {
 
   it("401ではEventとSession表示を破棄してLoginへ戻す", async () => {
     mocks.todoStore.findCalendarList.mockRejectedValue(
-      new TaskApiError(401, null)
+      new TodoApiError(401, null)
     );
     const page = useTodoCalendarPage();
 

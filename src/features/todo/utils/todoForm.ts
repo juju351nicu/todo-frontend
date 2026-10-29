@@ -1,7 +1,5 @@
-import type {
-  TodoDetailResponse,
-  TodoUpsertRequest,
-} from "@/features/task/types/task";
+import type { TodoDetailResponse, TodoUpsertRequest } from "@/features/todo/types/todo";
+
 
 /** Todo詳細Responseと登録・更新Requestの間で使用する画面編集フォーム。 */
 export interface TodoDetailForm {

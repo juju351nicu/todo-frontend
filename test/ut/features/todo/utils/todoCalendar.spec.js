@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildTodoCalendarEvents } from "@/features/task/utils/taskCalendar";
+import { buildTodoCalendarEvents } from "@/features/todo/utils/todoCalendar";
 
 describe("Todo calendar mapper", () => {
   it("Todo一覧をFullCalendarイベントへ変換する", () => {

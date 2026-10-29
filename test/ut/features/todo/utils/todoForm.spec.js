@@ -4,7 +4,7 @@ import {
   buildTodoConfirmItems,
   buildTodoUpsertRequest,
   createTodoDetailForm,
-} from "@/features/task/utils/taskForm";
+} from "@/features/todo/utils/todoForm";
 
 describe("Todo detail form mapper", () => {
   it("Todo詳細のsnake_caseと文字列フラグを画面用へ変換する", () => {

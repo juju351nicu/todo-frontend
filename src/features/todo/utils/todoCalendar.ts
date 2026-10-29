@@ -4,7 +4,8 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin, { type DateClickArg } from "@fullcalendar/interaction";
 import timeGridPlugin from "@fullcalendar/timegrid";
 
-import type { TodoListItem } from "@/features/task/types/task";
+import type { TodoListItem } from "@/features/todo/types/todo";
+
 
 /** Todo一覧APIのデータをFullCalendarのイベントへ変換する。 */
 export const buildTodoCalendarEvents = (

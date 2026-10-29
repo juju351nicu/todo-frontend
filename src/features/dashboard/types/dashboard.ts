@@ -4,7 +4,7 @@ import type {
   ProjectRole,
   TaskPriority,
 } from "@/features/project/types/project";
-import type { MyTaskDueGroup } from "@/features/task/types/task";
+import type { MyTaskDueGroup } from "@/features/task/types/myTask";
 
 /** DashboardのMy Tasks previewへ表示する本人担当Task。 */
 export interface DashboardTask {

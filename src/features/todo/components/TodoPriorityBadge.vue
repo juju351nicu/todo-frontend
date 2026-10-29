@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getTodoPriorityColor, getTodoPriorityLabel } from "@/features/task/utils/taskDisplay";
+import { getTodoPriorityColor, getTodoPriorityLabel } from "@/features/todo/utils/todoDisplay";
 
 /**
  * 旧Todo一覧の重要度（1:低、2:中、3以上:高）を色付きbadgeで表示する。

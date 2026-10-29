@@ -2,14 +2,14 @@ import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
-import type { TodoListRequest } from "@/features/task/types/task";
-import { LEGACY_TODO_ERROR_CODES } from "@/features/task/utils/apiErrors";
+import { TodoApiError } from "@/features/todo/api/todoApi";
+import { useTodoStore } from "@/features/todo/stores/todo";
+import type { TodoListRequest } from "@/features/todo/types/todo";
+import { LEGACY_TODO_ERROR_CODES } from "@/features/todo/utils/apiErrors";
 import {
   buildTodoCalendarEvents,
   buildTodoCalendarOptions,
-} from "@/features/task/utils/taskCalendar";
+} from "@/features/todo/utils/todoCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { toNumberList } from "@/shared/utils/number";
@@ -35,7 +35,7 @@ export const useTodoCalendarPage = () => {
 
   /** 401ではCalendar eventとSession表示を破棄してLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskApiError) || error.status !== 401) {
+    if (!(error instanceof TodoApiError) || error.status !== 401) {
       return false;
     }
     calendarOptions.events = [];
@@ -46,7 +46,7 @@ export const useTodoCalendarPage = () => {
 
   /** API statusと契約済みerror codeをCalendar向け表示へ変換する。 */
   const getErrorMessages = (error: unknown): string[] => {
-    return resolveStandardErrorMessages(error, TaskApiError, {
+    return resolveStandardErrorMessages(error, TodoApiError, {
       forbidden: DISPLAY_MESSAGES.task.todo.readForbidden,
       knownErrorCodes: LEGACY_TODO_ERROR_CODES,
       fallback: DISPLAY_MESSAGES.task.todo.calendarLoadFailed,
@@ -65,7 +65,7 @@ export const useTodoCalendarPage = () => {
       calendarOptions.events = buildTodoCalendarEvents(data.todoList);
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        if (error instanceof TaskApiError && error.status === 403) {
+        if (error instanceof TodoApiError && error.status === 403) {
           calendarOptions.events = [];
         }
         errorMessages.value = getErrorMessages(error);

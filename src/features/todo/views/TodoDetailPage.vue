@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import TodoUpsertConfirm from "@/features/task/components/TodoUpsertConfirm.vue";
-import { TODO_SUBMIT_CONTROL, useTodoDetailPage } from "@/features/task/composables/useTodoDetailPage";
+import TodoUpsertConfirm from "@/features/todo/components/TodoUpsertConfirm.vue";
+import { TODO_SUBMIT_CONTROL, useTodoDetailPage } from "@/features/todo/composables/useTodoDetailPage";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 

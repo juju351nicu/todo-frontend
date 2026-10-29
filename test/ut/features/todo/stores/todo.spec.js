@@ -1,10 +1,10 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import TaskApi from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
+import TodoApi from "@/features/todo/api/todoApi";
+import { useTodoStore } from "@/features/todo/stores/todo";
 
-vi.mock("@/features/task/api/taskApi", () => ({
+vi.mock("@/features/todo/api/todoApi", () => ({
   default: {
     complete: vi.fn(),
     findCalendar: vi.fn(),
@@ -21,12 +21,12 @@ describe("Todo store", () => {
   });
 
   it("Backendと一致するURLとパラメータ名でTodoを完了にする", async () => {
-    TaskApi.complete.mockResolvedValue(undefined);
+    TodoApi.complete.mockResolvedValue(undefined);
     const store = useTodoStore();
 
     await expect(store.completeTodo(42)).resolves.toBeUndefined();
 
-    expect(TaskApi.complete).toHaveBeenCalledWith(42);
+    expect(TodoApi.complete).toHaveBeenCalledWith(42);
   });
 
   it("ID指定でTodo詳細を取得し、処理中フラグを解除する", async () => {
@@ -41,19 +41,19 @@ describe("Todo store", () => {
       priority: 2,
       version: 4,
     };
-    TaskApi.findDetail.mockResolvedValue(todoDetail);
+    TodoApi.findDetail.mockResolvedValue(todoDetail);
     const store = useTodoStore();
 
     const request = store.findTodoDetail(42);
 
     expect(store.isLoading).toBe(true);
     await expect(request).resolves.toEqual(todoDetail);
-    expect(TaskApi.findDetail).toHaveBeenCalledWith(42);
+    expect(TodoApi.findDetail).toHaveBeenCalledWith(42);
     expect(store.isLoading).toBe(false);
   });
 
   it("Todo詳細APIが失敗しても処理中フラグを解除する", async () => {
-    TaskApi.findDetail.mockRejectedValue(
+    TodoApi.findDetail.mockRejectedValue(
       new Error("Task APIの実行に失敗しました。status=404")
     );
     const store = useTodoStore();

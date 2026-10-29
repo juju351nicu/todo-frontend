@@ -158,7 +158,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/calendar",
     name: ROUTE_NAMES.todoCalendar,
-    component: () => import("@/features/task/views/TodoCalendarPage.vue"),
+    component: () => import("@/features/todo/views/TodoCalendarPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
@@ -167,7 +167,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/todoList",
     name: ROUTE_NAMES.todoList,
-    component: () => import("@/features/task/views/TodoListPage.vue"),
+    component: () => import("@/features/todo/views/TodoListPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
@@ -176,7 +176,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/detail/:id",
     name: ROUTE_NAMES.todoDetail,
-    component: () => import("@/features/task/views/TodoDetailPage.vue"),
+    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
     props: (route) => ({ id: Number(route.params.id) }),
     meta: {
       requiresAuth: true,
@@ -186,7 +186,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/todo/register",
     name: ROUTE_NAMES.todoRegister,
-    component: () => import("@/features/task/views/TodoDetailPage.vue"),
+    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
     props: { id: 0 },
     meta: {
       requiresAuth: true,

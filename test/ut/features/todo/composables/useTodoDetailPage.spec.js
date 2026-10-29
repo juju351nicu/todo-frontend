@@ -1,11 +1,11 @@
 import { ref } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TaskApiError } from "@/features/task/api/taskApi";
+import { TodoApiError } from "@/features/todo/api/todoApi";
 import {
   TODO_SUBMIT_CONTROL,
   useTodoDetailPage,
-} from "@/features/task/composables/useTodoDetailPage";
+} from "@/features/todo/composables/useTodoDetailPage";
 
 const mocks = vi.hoisted(() => ({
   router: {
@@ -27,7 +27,7 @@ vi.mock("vue-router", () => ({
   useRouter: () => mocks.router,
 }));
 
-vi.mock("@/features/task/stores/task", () => ({
+vi.mock("@/features/todo/stores/todo", () => ({
   useTodoStore: () => mocks.todoStore,
 }));
 
@@ -102,7 +102,7 @@ describe("useTodoDetailPage", () => {
 
   it("詳細取得失敗時は画面用メッセージを設定する", async () => {
     mocks.todoStore.findTodoDetail.mockRejectedValue(
-      new TaskApiError(404, null)
+      new TodoApiError(404, null)
     );
 
     const page = useTodoDetailPage(ref(999));
@@ -114,7 +114,7 @@ describe("useTodoDetailPage", () => {
 
   it("詳細取得の401ではフォームとSession表示を破棄してLoginへ戻す", async () => {
     mocks.todoStore.findTodoDetail.mockRejectedValue(
-      new TaskApiError(401, null)
+      new TodoApiError(401, null)
     );
 
     const page = useTodoDetailPage(ref(42));
@@ -219,7 +219,7 @@ describe("useTodoDetailPage", () => {
 
   it("入力エラーResponseを画面メッセージへ変換する", async () => {
     mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: "INVALID_REQUEST_BODY",
@@ -238,7 +238,7 @@ describe("useTodoDetailPage", () => {
 
   it("codeなしの旧日付エラー本文を表示せず固定文言へ閉じる", async () => {
     mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TaskApiError(400, {
+      new TodoApiError(400, {
         fieldErrors: [
           {
             errorCode: null,
@@ -344,7 +344,7 @@ describe("useTodoDetailPage", () => {
         version: 5,
       });
     mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TaskApiError(409, null)
+      new TodoApiError(409, null)
     );
     const page = useTodoDetailPage(ref(42));
     await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
@@ -372,9 +372,9 @@ describe("useTodoDetailPage", () => {
         priority: 2,
         version: 4,
       })
-      .mockRejectedValueOnce(new TaskApiError(401, null));
+      .mockRejectedValueOnce(new TodoApiError(401, null));
     mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TaskApiError(409, null)
+      new TodoApiError(409, null)
     );
     const page = useTodoDetailPage(ref(42));
     await vi.waitFor(() => expect(page.todoForm.version).toBe(4));

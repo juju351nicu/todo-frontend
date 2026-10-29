@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { buildTodoConfirmItems, type TodoDetailForm } from "@/features/task/utils/taskForm";
+import { buildTodoConfirmItems, type TodoDetailForm } from "@/features/todo/utils/todoForm";
 
 /** 登録・更新前に表示するTodoフォーム。 */
 const props = defineProps<{

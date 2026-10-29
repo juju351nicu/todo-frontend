@@ -3,18 +3,16 @@ import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
-import type { TodoDetailResponse } from "@/features/task/types/task";
-import {
-  LEGACY_TODO_ERROR_CODES,
-  TASK_RECOVERY_PRIORITY_STATUSES,
-} from "@/features/task/utils/apiErrors";
+import { TASK_RECOVERY_PRIORITY_STATUSES } from "@/features/task/utils/apiErrors";
+import { TodoApiError } from "@/features/todo/api/todoApi";
+import { useTodoStore } from "@/features/todo/stores/todo";
+import type { TodoDetailResponse } from "@/features/todo/types/todo";
+import { LEGACY_TODO_ERROR_CODES } from "@/features/todo/utils/apiErrors";
 import {
   buildTodoUpsertRequest,
   createTodoDetailForm,
   type TodoDetailForm,
-} from "@/features/task/utils/taskForm";
+} from "@/features/todo/utils/todoForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
@@ -138,7 +136,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     fallback: string,
     forbidden: string
   ): string[] => {
-    return resolveStandardErrorMessages(error, TaskApiError, {
+    return resolveStandardErrorMessages(error, TodoApiError, {
       forbidden,
       notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
       knownErrorCodes: LEGACY_TODO_ERROR_CODES,
@@ -148,7 +146,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
 
   /** 401ではフォームとSession表示を破棄してLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskApiError) || error.status !== 401) {
+    if (!(error instanceof TodoApiError) || error.status !== 401) {
       return false;
     }
     clearProtectedState();
@@ -231,7 +229,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof TodoApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();
@@ -248,7 +246,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
       if (await handleUnauthorized(error)) return;
       if (
         isUpdate &&
-        error instanceof TaskApiError &&
+        error instanceof TodoApiError &&
         error.status === 409
       ) {
         const conflictMessages = getErrorMessages(
@@ -263,7 +261,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
         } catch (reloadError: unknown) {
           if (await handleUnauthorized(reloadError)) return;
           if (
-            reloadError instanceof TaskApiError &&
+            reloadError instanceof TodoApiError &&
             TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
           ) {
             clearProtectedState();

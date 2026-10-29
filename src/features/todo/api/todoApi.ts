@@ -3,16 +3,16 @@ import type {
   TodoListRequest,
   TodoListResponse,
   TodoUpsertRequest,
-} from "@/features/task/types/task";
+} from "@/features/todo/types/todo";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
 import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
-/** Task APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class TaskApiError extends ApiError {
+/** 旧Todo APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
+export class TodoApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super("TaskApiError", "Task API", status, errorResponse);
+    super("TodoApiError", "Todo API", status, errorResponse);
   }
 }
 
@@ -20,7 +20,7 @@ export class TaskApiError extends ApiError {
 const ensureSuccess = (response: Response): Promise<void> =>
   ensureApiSuccess(
     response,
-    (status, errorResponse) => new TaskApiError(status, errorResponse)
+    (status, errorResponse) => new TodoApiError(status, errorResponse)
   );
 
 /**
@@ -28,7 +28,7 @@ const ensureSuccess = (response: Response): Promise<void> =>
  *
  * @param todoId Todo ID
  * @returns 認可済みTodoの詳細Response
- * @throws TaskApiError 未検出、認証・認可失敗またはBackendエラーの場合
+ * @throws TodoApiError 未検出、認証・認可失敗またはBackendエラーの場合
  */
 const findDetail = async (todoId: number): Promise<TodoDetailResponse> => {
   const response = await HttpClient.getRequest(
@@ -43,7 +43,7 @@ const findDetail = async (todoId: number): Promise<TodoDetailResponse> => {
  *
  * @param payload タイトル、日付範囲、完了状態の検索条件
  * @returns 認可・Validation確認済みのTodo一覧
- * @throws TaskApiError 入力不正、認証・認可失敗またはBackendエラーの場合
+ * @throws TodoApiError 入力不正、認証・認可失敗またはBackendエラーの場合
  */
 const findList = async (payload: TodoListRequest): Promise<TodoListResponse> => {
   const response = await HttpClient.postRequest(API_PATHS.TODO_LIST, payload);
@@ -56,7 +56,7 @@ const findList = async (payload: TodoListRequest): Promise<TodoListResponse> => 
  *
  * @param payload タイトルと完了状態の検索条件
  * @returns カレンダー用Todoを含む認可済み一覧
- * @throws TaskApiError 入力不正、認証・認可失敗またはBackendエラーの場合
+ * @throws TodoApiError 入力不正、認証・認可失敗またはBackendエラーの場合
  */
 const findCalendar = async (
   payload: TodoListRequest
@@ -70,7 +70,7 @@ const findCalendar = async (
  * 認可対象のTodoを完了状態にする。
  *
  * @param todoId 完了させるTodo ID
- * @throws TaskApiError 認証・認可失敗または対象未検出の場合
+ * @throws TodoApiError 認証・認可失敗または対象未検出の場合
  */
 const complete = async (todoId: number): Promise<void> => {
   const query = new URLSearchParams({ todo_id: String(todoId) });
@@ -85,7 +85,7 @@ const complete = async (todoId: number): Promise<void> => {
  * Todoを登録または更新する。
  *
  * @param payload snake_case形式のTodo入力。所有者はBackendがpermissionに応じて確定する
- * @throws TaskApiError 入力不正、認証・認可失敗または競合の場合
+ * @throws TodoApiError 入力不正、認証・認可失敗または競合の場合
  */
 const upsert = async (payload: TodoUpsertRequest): Promise<void> => {
   const response = await HttpClient.postRequest(API_PATHS.TODO_UPSERT, payload);

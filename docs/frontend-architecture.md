@@ -115,26 +115,24 @@ src/
 - `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
 - `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
-- `src/features/task/api/taskApi.ts`: 旧Todoの一覧・詳細・カレンダー・完了・登録更新API
 - `src/features/task/api/myTaskApi.ts`: My Tasks（本人担当のProject Task）の一覧・完了API
 - `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
-- `src/features/task/stores/task.ts`: 旧Todoの画面のAPI呼び出しと通信中状態
-- `src/features/task/types/task.ts`: TodoとMy Tasks APIのRequest / Response型
+- `src/features/task/types/myTask.ts`: My Tasks APIのResponse型
 - `src/features/task/types/taskSearch.ts`: Task検索・候補・Saved ViewのRequest / Response型
-- `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移
-- `src/features/task/composables/useTodoDetailPage.ts`: Todo詳細取得、登録更新フォーム、確認モーダル、エラー表示
-- `src/features/task/composables/useTodoCalendarPage.ts`: Todoカレンダー検索、イベント設定、エラー表示
 - `src/features/task/composables/useMyTasksPage.ts`: Backend認可済み本人Taskの期限グループ・今週表示、完了、Board詳細遷移
 - `src/features/task/composables/useTaskSearchPage.ts`: 横断検索、候補、表示列、本人Saved View、競合回復
-- `src/features/task/components/TodoUpsertConfirm.vue`: Todo登録更新の確認部品
-- `src/features/task/utils/taskForm.ts`: Todo詳細Responseからフォーム、フォームから登録更新Requestへの変換
-- `src/features/task/utils/taskCalendar.ts`: Todo一覧からFullCalendarイベント・設定への変換
-- `src/features/task/utils/taskDisplay.ts`: 重要度・色・残日数・詳細省略の表示変換
-- `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
-- `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
-- `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
+- `src/features/task/components/TaskPriorityBadge.vue`: Project Task（My Tasks・Task検索・Dashboard）の優先度badge（Boardと同じ色）
+- `src/features/task/utils/taskDisplay.ts`: Project Taskの優先度の表示名・色、残り日数の表示変換
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
+- `src/features/todo/`: 旧Todo（`/api/v1/todo/*`）の画面。Project Taskと混ざらないよう分けて置き、旧Todo APIを廃止するときに丸ごと消す
+  - `api/todoApi.ts`（`TodoApi`・`TodoApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
+  - `stores/todo.ts`: 画面のAPI呼び出しと通信中状態
+  - `types/todo.ts`: Request / Response型（snake_caseの項目を含む）
+  - `composables/useTodoListPage.ts`・`useTodoDetailPage.ts`・`useTodoCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
+  - `components/TodoSearchCard.vue`・`TodoUpsertConfirm.vue`・`TodoPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
+  - `utils/todoForm.ts`・`todoCalendar.ts`・`todoDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
+  - `views/TodoListPage.vue`・`TodoDetailPage.vue`・`TodoCalendarPage.vue`: 一覧・登録更新・カレンダー画面
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/api/projectTemplateApi.ts`: 本人所有Project Templateのcapture・一覧・詳細・更新・archive・適用API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型

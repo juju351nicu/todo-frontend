@@ -4,13 +4,11 @@ import { useRouter } from "vue-router";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
-import type { TodoListItem, TodoListRequest } from "@/features/task/types/task";
-import {
-  LEGACY_TODO_ERROR_CODES,
-  TASK_RECOVERY_PRIORITY_STATUSES,
-} from "@/features/task/utils/apiErrors";
+import { TASK_RECOVERY_PRIORITY_STATUSES } from "@/features/task/utils/apiErrors";
+import { TodoApiError } from "@/features/todo/api/todoApi";
+import { useTodoStore } from "@/features/todo/stores/todo";
+import type { TodoListItem, TodoListRequest } from "@/features/todo/types/todo";
+import { LEGACY_TODO_ERROR_CODES } from "@/features/todo/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   DATA_TABLE_PAGE_OPTIONS,
@@ -94,7 +92,7 @@ export const useTodoListPage = () => {
     fallback: string,
     forbidden: string
   ): string[] => {
-    return resolveStandardErrorMessages(error, TaskApiError, {
+    return resolveStandardErrorMessages(error, TodoApiError, {
       forbidden,
       notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
       knownErrorCodes: LEGACY_TODO_ERROR_CODES,
@@ -104,7 +102,7 @@ export const useTodoListPage = () => {
 
   /** 401ではTodo一覧とSession表示を破棄してLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskApiError) || error.status !== 401) {
+    if (!(error instanceof TodoApiError) || error.status !== 401) {
       return false;
     }
     clearProtectedState();
@@ -125,7 +123,7 @@ export const useTodoListPage = () => {
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
         if (
-          error instanceof TaskApiError &&
+          error instanceof TodoApiError &&
           (error.status === 403 || error.status === 404)
         ) {
           clearProtectedState();
@@ -186,7 +184,7 @@ export const useTodoListPage = () => {
         // 再取得の失敗を伝える文言が「完了しましたが…」を含むため、成功の案内は並べない。
         successMessage.value = "";
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof TodoApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();
@@ -208,7 +206,7 @@ export const useTodoListPage = () => {
         DISPLAY_MESSAGES.task.todo.completeFailed,
         DISPLAY_MESSAGES.task.todo.operationForbidden
       );
-      if (!(error instanceof TaskApiError) || error.status !== 404) {
+      if (!(error instanceof TodoApiError) || error.status !== 404) {
         errorMessages.value = operationMessages;
         return;
       }
@@ -219,7 +217,7 @@ export const useTodoListPage = () => {
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof TodoApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();

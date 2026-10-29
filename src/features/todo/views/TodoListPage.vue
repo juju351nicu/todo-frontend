@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
-import TodoSearchCard from "@/features/task/components/TodoSearchCard.vue";
-import { buildTodoEditControlKey, useTodoListPage } from "@/features/task/composables/useTodoListPage";
-import { formatRemainingDays, truncateTodoDetail } from "@/features/task/utils/taskDisplay";
+import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
+import TodoPriorityBadge from "@/features/todo/components/TodoPriorityBadge.vue";
+import TodoSearchCard from "@/features/todo/components/TodoSearchCard.vue";
+import { buildTodoEditControlKey, useTodoListPage } from "@/features/todo/composables/useTodoListPage";
+import { truncateTodoDetail } from "@/features/todo/utils/todoDisplay";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";

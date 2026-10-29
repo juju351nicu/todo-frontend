@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatTodoSearchDate } from "@/features/task/utils/taskDisplay";
+import { formatTodoSearchDate } from "@/features/todo/utils/todoDisplay";
 
 /**
  * Todo一覧・Todoカレンダー共通の検索条件card。タイトルと完了状態（`"0"`:未完了、`"1"`:完了）を親composableの状態へ反映し、

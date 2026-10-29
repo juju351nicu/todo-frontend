@@ -1,12 +1,12 @@
 import { defineStore } from "pinia";
 
-import TaskApi from "@/features/task/api/taskApi";
+import TodoApi from "@/features/todo/api/todoApi";
 import type {
   TodoDetailResponse,
   TodoListRequest,
   TodoListResponse,
   TodoUpsertRequest,
-} from "@/features/task/types/task";
+} from "@/features/todo/types/todo";
 
 interface TodoState {
   isLoading: boolean;
@@ -27,7 +27,7 @@ export const useTodoStore = defineStore("todo", {
     async findTodoDetail(todoId: number): Promise<TodoDetailResponse> {
       this.isLoading = true;
       try {
-        return await TaskApi.findDetail(todoId);
+        return await TodoApi.findDetail(todoId);
       } finally {
         this.isLoading = false;
       }
@@ -40,7 +40,7 @@ export const useTodoStore = defineStore("todo", {
      * @returns 認可・Validation確認済みのTodo一覧
      */
     findTodoList(payload: TodoListRequest): Promise<TodoListResponse> {
-      return TaskApi.findList(payload);
+      return TodoApi.findList(payload);
     },
 
     /**
@@ -50,7 +50,7 @@ export const useTodoStore = defineStore("todo", {
      * @returns Todoと休日を含む認可済み一覧
      */
     findCalendarList(payload: TodoListRequest): Promise<TodoListResponse> {
-      return TaskApi.findCalendar(payload);
+      return TodoApi.findCalendar(payload);
     },
 
     /**
@@ -59,7 +59,7 @@ export const useTodoStore = defineStore("todo", {
      * @param todoId 完了させるTodo ID
      */
     completeTodo(todoId: number): Promise<void> {
-      return TaskApi.complete(todoId);
+      return TodoApi.complete(todoId);
     },
 
     /**
@@ -68,7 +68,7 @@ export const useTodoStore = defineStore("todo", {
      * @param payload snake_case形式のTodo入力
      */
     upsertTodoInfo(payload: TodoUpsertRequest): Promise<void> {
-      return TaskApi.upsert(payload);
+      return TodoApi.upsert(payload);
     },
   },
 });
