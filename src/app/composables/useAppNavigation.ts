@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import type { ComputedRef, Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useUserStore } from "@/features/auth/stores/user";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
@@ -111,7 +112,7 @@ export const useAppNavigation = (): AppNavigation => {
       // Logout APIが失敗しても、端末上の認証表示を残さずログイン画面へ戻す。
     } finally {
       isDrawerOpen.value = false;
-      await router.push({ name: "Login" });
+      await router.push({ name: ROUTE_NAMES.login });
     }
   };
 

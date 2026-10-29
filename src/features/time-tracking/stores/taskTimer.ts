@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 
 import router from "@/app/router";
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useUserStore } from "@/features/auth/stores/user";
 import TimeTrackingApi, {
   TimeTrackingApiError,
@@ -291,7 +292,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.resetForLogout();
         const userStore = useUserStore();
         userStore.clearSession();
-        await router.push({ name: "Login" });
+        await router.push({ name: ROUTE_NAMES.login });
         return;
       }
       if (error.status === 409) {

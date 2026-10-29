@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
@@ -607,7 +608,7 @@ export const useProjectSettingsDialog = (
     if (target.accountId === userStore.memberId) {
       isDialogOpen.value = false;
       isSavingMember.value = false;
-      await router.push({ name: "ProjectList" });
+      await router.push({ name: ROUTE_NAMES.projectList });
       return;
     }
 

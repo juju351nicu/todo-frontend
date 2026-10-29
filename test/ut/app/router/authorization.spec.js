@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   hasAnyPermission,
-  resolveAuthenticatedHomeRouteName,
+  AUTHENTICATED_HOME_ROUTE_NAME,
 } from "@/app/router/authorization";
 
 describe("Router authorization", () => {
@@ -16,13 +16,6 @@ describe("Router authorization", () => {
   });
 
   it("全認証利用者の既定画面をBasic Dashboardにする", () => {
-    expect(resolveAuthenticatedHomeRouteName(["TASK_READ"])).toBe("Dashboard");
-    expect(resolveAuthenticatedHomeRouteName(["TASK_READ_OWN"])).toBe(
-      "Dashboard"
-    );
-    expect(resolveAuthenticatedHomeRouteName(["ACCOUNT_READ"])).toBe(
-      "Dashboard"
-    );
-    expect(resolveAuthenticatedHomeRouteName([])).toBe("Dashboard");
+    expect(AUTHENTICATED_HOME_ROUTE_NAME).toBe("Dashboard");
   });
 });

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import {
   PROJECT_TEMPLATE_CONTROL,
   templateItemControlKey,
@@ -65,7 +66,7 @@ onBeforeMount(initialize);
         <div class="flex flex-wrap items-center gap-3">
           <UIcon name="i-mdi-folder-multiple-outline" class="size-6" />
           Project Template
-          <UButton :to="{ name: 'ProjectList' }" variant="ghost" icon="i-mdi-view-dashboard-outline" class="ms-auto">
+          <UButton :to="{ name: ROUTE_NAMES.projectList }" variant="ghost" icon="i-mdi-view-dashboard-outline" class="ms-auto">
             Project一覧
           </UButton>
         </div>

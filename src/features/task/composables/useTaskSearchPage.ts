@@ -1,6 +1,7 @@
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import {
   createTaskSavedView,
@@ -578,7 +579,7 @@ export const useTaskSearchPage = () => {
   /** 検索結果のTaskを既存Board詳細deep linkで開く。 */
   const showTask = async (task: TaskSearchItem): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: task.projectId },
       query: { taskId: String(task.taskId) },
     });

@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
@@ -1021,7 +1022,7 @@ export const useTaskBoardPage = () => {
       return;
     }
     await router.push({
-      name: "Wbs",
+      name: ROUTE_NAMES.wbs,
       params: { projectId: projectId.value },
       query: { taskId: String(form.value.taskId), panel: "work-logs" },
     });

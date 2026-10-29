@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { TaskApiError } from "@/features/task/api/taskApi";
@@ -160,7 +161,7 @@ export const useTodoListPage = () => {
 
   /** Todo詳細画面へ移動する。 */
   const showTodoDetail = (todo: TodoListItem): void => {
-    void router.push({ name: "TodoDetail", params: { id: todo.todoId } });
+    void router.push({ name: ROUTE_NAMES.todoDetail, params: { id: todo.todoId } });
   };
 
   /**

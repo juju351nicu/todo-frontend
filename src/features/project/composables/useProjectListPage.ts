@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectApi, {
   ProjectApiError,
@@ -125,7 +126,7 @@ export const useProjectListPage = () => {
 
   /** 選択したProjectのBoardへ遷移する。 */
   const openBoard = async (projectId: number): Promise<void> => {
-    await router.push({ name: "TaskBoard", params: { projectId } });
+    await router.push({ name: ROUTE_NAMES.taskBoard, params: { projectId } });
   };
 
   /** 空のフォームでProject作成Dialogを開く。 */

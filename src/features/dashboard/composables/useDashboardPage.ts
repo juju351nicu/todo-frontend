@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import DashboardApi, {
   DashboardApiError,
@@ -190,7 +191,7 @@ export const useDashboardPage = () => {
   /** DashboardのTask previewから既存Board詳細へ遷移する。 */
   const openTask = async (task: DashboardTask): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: task.projectId },
       query: { taskId: String(task.taskId) },
     });
@@ -199,7 +200,7 @@ export const useDashboardPage = () => {
   /** DashboardのProject cardから既存Boardへ遷移する。 */
   const openProject = async (project: DashboardProject): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: project.projectId },
     });
   };
@@ -209,7 +210,7 @@ export const useDashboardPage = () => {
     project: AdvancedDashboardProject
   ): Promise<void> => {
     await router.push({
-      name: "Wbs",
+      name: ROUTE_NAMES.wbs,
       params: { projectId: project.projectId },
     });
   };
@@ -231,7 +232,7 @@ export const useDashboardPage = () => {
 
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
   const openAdvancedAccessInquiry = async (): Promise<void> => {
-    await router.push({ name: "InquiryForm" });
+    await router.push({ name: ROUTE_NAMES.inquiryForm });
   };
 
   /**
@@ -250,17 +251,17 @@ export const useDashboardPage = () => {
 
   /** My Tasksの全件画面へ遷移する。 */
   const openMyTasks = async (): Promise<void> => {
-    await router.push({ name: "MyTasks" });
+    await router.push({ name: ROUTE_NAMES.myTasks });
   };
 
   /** 参照可能Projectの一覧画面へ遷移する。 */
   const openProjects = async (): Promise<void> => {
-    await router.push({ name: "ProjectList" });
+    await router.push({ name: ROUTE_NAMES.projectList });
   };
 
   /** 本人勤怠画面へ遷移する。 */
   const openAttendance = async (): Promise<void> => {
-    await router.push({ name: "Attendance" });
+    await router.push({ name: ROUTE_NAMES.attendance });
   };
 
   return {

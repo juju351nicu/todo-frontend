@@ -2,6 +2,7 @@
 import { onBeforeMount } from "vue";
 import Draggable from "vuedraggable";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
 import {
@@ -89,7 +90,7 @@ onBeforeMount(initialize);
   <div class="page-surface p-6">
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
-        :to="{ name: 'ProjectList' }"
+        :to="{ name: ROUTE_NAMES.projectList }"
         icon="i-mdi-arrow-left"
         variant="ghost"
         square
@@ -110,7 +111,7 @@ onBeforeMount(initialize);
       </UBadge>
       <UButton
         v-if="board"
-        :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
+        :to="{ name: ROUTE_NAMES.wbs, params: { projectId: board.projectId } }"
         icon="i-mdi-file-tree-outline"
         variant="soft"
       >

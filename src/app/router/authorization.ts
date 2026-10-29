@@ -1,3 +1,4 @@
+import { ROUTE_NAMES, type RouteName } from "@/app/router/routeNames";
 import type { PermissionCode } from "@/features/auth/types/auth";
 
 /**
@@ -23,12 +24,7 @@ export const hasAnyPermission = (
 export const LOGIN_REQUIRED_QUERY = { reason: "login_required" } as const;
 
 /**
- * ログイン後またはNot Found画面から戻る既定ルートを決定する。
- * Basic Dashboardはpermission別にavailable=falseを返すため、全認証利用者が同じ入口を使用する。
- *
- * @param _permissionCodes Session APIから復元した利用者permission。呼出契約維持のため受け取る
- * @returns Vue Routerへ渡すルート名
+ * ログイン後、またはNot Found画面から戻るときの既定の画面。
+ * Basic Dashboardはpermissionごとに欄を`available=false`で返すため、permissionによらず全認証利用者が同じ入口を使う。
  */
-export const resolveAuthenticatedHomeRouteName = (
-  _permissionCodes: readonly PermissionCode[]
-): "Dashboard" => "Dashboard";
+export const AUTHENTICATED_HOME_ROUTE_NAME: RouteName = ROUTE_NAMES.dashboard;

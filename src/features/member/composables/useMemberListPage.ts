@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { MemberApiError } from "@/features/member/api/memberApi";
@@ -130,7 +131,7 @@ export const useMemberListPage = () => {
    */
   const showMemberDetail = (member: MemberListItem): void => {
     void router.push({
-      name: "MemberDetail",
+      name: ROUTE_NAMES.memberDetail,
       params: { id: member.memberId },
     });
   };

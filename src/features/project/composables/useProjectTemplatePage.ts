@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectTemplateApi, {
@@ -560,7 +561,7 @@ export const useProjectTemplatePage = () => {
         }
       );
       await router.push({
-        name: "TaskBoard",
+        name: ROUTE_NAMES.taskBoard,
         params: { projectId: created.projectId },
       });
       return;

@@ -1,5 +1,6 @@
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useUserStore } from "@/features/auth/stores/user";
 
 /**
@@ -29,7 +30,7 @@ export const useSessionExpiry = () => {
   const expireSession = async (cleanup?: () => void): Promise<void> => {
     cleanup?.();
     userStore.clearSession();
-    await router.push({ name: "Login" });
+    await router.push({ name: ROUTE_NAMES.login });
   };
 
   return { expireSession };

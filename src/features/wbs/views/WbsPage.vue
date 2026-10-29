@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onBeforeMount, reactive } from "vue";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
@@ -50,7 +51,7 @@ const VIEW_OPTIONS = [
   <div class="page-surface p-6">
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
-        :to="{ name: 'ProjectList' }"
+        :to="{ name: ROUTE_NAMES.projectList }"
         icon="i-mdi-arrow-left"
         variant="ghost"
         square

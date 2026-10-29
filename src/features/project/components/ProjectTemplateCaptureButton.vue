@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { CAPTURE_NAME_CONTROL, useProjectTemplateCapture } from "@/features/project/composables/useProjectTemplateCapture";
 import { PROJECT_TEMPLATE_NAME_MAX_LENGTH } from "@/features/project/constants/projectLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
@@ -23,7 +24,7 @@ const { baseDate, canCapture, capture, close, errorMessages, isOpen, isSaving, n
     <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
       <div class="flex flex-wrap items-center gap-2">
         <span class="flex-1">{{ successMessage }}</span>
-        <UButton :to="{ name: 'ProjectTemplates' }" size="sm" variant="ghost" class="text-inherit">Templateを確認</UButton>
+        <UButton :to="{ name: ROUTE_NAMES.projectTemplates }" size="sm" variant="ghost" class="text-inherit">Templateを確認</UButton>
       </div>
     </StatusAlert>
     <UButton variant="soft" icon="i-mdi-content-save-all-outline" :disabled="disabled" @click="open">

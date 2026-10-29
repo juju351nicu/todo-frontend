@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
@@ -344,7 +345,7 @@ export const useWbsPage = () => {
       return;
     }
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: projectId.value },
     });
   };
