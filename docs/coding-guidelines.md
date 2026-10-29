@@ -150,6 +150,10 @@ await authStore.restoreSession();
 - テストを通すために実装の型を弱めたり、実際には発生しない保証をmockへ追加したりしない。失敗したテストが仕様誤認や実装不備を示す場合は、原因を修正して回帰テストとして残す。
 - 時刻、乱数、通信、Router、Store等の外部要因はテスト境界で固定し、テストの実行順へ依存させない。`beforeEach`でmockと共有状態を初期化する。
 - DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。
+- Componentテストは、templateの式にしかない表示制御（参照のみで操作を出さない、ボタンの有効・無効、上限の案内）と、props・emitのつなぎを確かめる。
+  ファイルの先頭に`// @vitest-environment happy-dom`を書き、`test/ut/support/mountWithUi`でmountする（Nuxt UI・Pinia・Routerはアプリと同じ）。
+  APIはmoduleをmockし、`vue-router`はmockしない（Nuxt UIの部品が`useRoute`を使うため）。画面全体（Board・WBS等）はmountせず、composableのテストとE2Eに任せる。
+- フォーカスの戻し先の`data-*`属性は、`test/ut/architecture/focusControlContract.spec.js`がcomposableの`…_CONTROL`とtemplateの一致を確かめる。新しい`…_CONTROL`を作ったら、このテストへ足す。
 - Backend変更を伴う場合はFrontendのVitestだけで完了せず、Backendの該当JUnitと`./mvnw verify`も成功させる。
 - repository conventionのVitestでexportedな型・関数とAPI境界の関数にJSDocがあることを構文解析する。composable内部の非同期副作用、認証、CSRF、変換等は自動検査だけに依存せずレビューする。
 - 境界値、状態遷移、API Request mapping、競合回復等の高リスクな変更では、変更単位ごとに代表条件を1件以上選び、比較演算子、上限値、code mapping、guard等を一時的に誤らせる手動mutation probeを行う。対象のVitestまたはPlaywrightが意図したassertionで失敗することを確認し、故意変更を復元して同じtestの成功まで確認する。
