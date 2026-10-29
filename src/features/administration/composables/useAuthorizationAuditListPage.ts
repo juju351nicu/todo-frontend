@@ -1,5 +1,4 @@
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import AdministrationApi, {
   AdministrationApiError,
@@ -39,7 +38,6 @@ const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
  * `formatRole`・`formatRoles`で表示名へ変換する。ロール一覧を取得できない場合はコードのまま表示する。
  */
 export const useAuthorizationAuditListPage = () => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const auditLogs = ref<AuthorizationAuditLog[]>([]);

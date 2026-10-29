@@ -1,6 +1,5 @@
 import { computed, ref } from "vue";
 import type { Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import AttendanceApi, {
   AttendanceApiError,
@@ -80,7 +79,6 @@ const buildPunchButtonSelector = (action: AttendancePunchAction): string =>
  * 月一覧は1回の期間APIで取得し、日ごとのN+1 Requestを発生させない。
  */
 export const useAttendancePage = () => {
-  const router = useRouter();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
   const today = getBusinessToday();

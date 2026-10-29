@@ -35,9 +35,11 @@ const globalSetup = (): void => {
     }
     removeAuthStates();
     if (cleanupErrors.length > 0) {
+      // 準備の失敗を`cause`にも付け、ログの最初に準備の失敗の原因が出るようにする。
       throw new AggregateError(
         [setupError, ...cleanupErrors],
-        "E2E fixtureの準備とrollback cleanupに失敗しました。"
+        "E2E fixtureの準備とrollback cleanupに失敗しました。",
+        { cause: setupError }
       );
     }
     throw setupError;

@@ -1,5 +1,4 @@
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import AdministrationApi, {
   AdministrationApiError,
@@ -61,7 +60,6 @@ const hasSameRoleCodes = (
  * 画面の表示可否はpermissionで案内し、最終認可と楽観ロックはBackendへ委ねる。
  */
 export const useAccountAdministrationPage = () => {
-  const router = useRouter();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
 

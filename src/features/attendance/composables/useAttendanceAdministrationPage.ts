@@ -1,5 +1,4 @@
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 
 import AttendanceApi, {
   AttendanceApiError,
@@ -99,7 +98,6 @@ const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
  * 一覧と選択詳細を1 composableに置き、画面に業務遷移判断を分散させない。
  */
 export const useAttendanceAdministrationPage = () => {
-  const router = useRouter();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
 

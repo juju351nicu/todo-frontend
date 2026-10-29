@@ -1,5 +1,4 @@
 import { ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskCommentApi, {
@@ -22,7 +21,6 @@ export const useProjectComments = (
   projectId: Readonly<Ref<number | null>>,
   onTaskSelected: (taskId: number) => void = () => undefined
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const comments = ref<ProjectTaskComment[]>([]);

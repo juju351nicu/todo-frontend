@@ -1,5 +1,4 @@
 import { computed, ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskChecklistApi, {
@@ -76,7 +75,6 @@ export const useTaskChecklist = (
   taskId: Readonly<Ref<number | null>>,
   disabled: Readonly<Ref<boolean>>
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   /** Backendのposition順のチェック項目。更新APIの確定Responseで置き換える。 */

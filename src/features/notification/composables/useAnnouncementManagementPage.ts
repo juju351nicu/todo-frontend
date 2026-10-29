@@ -1,5 +1,4 @@
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import NotificationApi, {
@@ -18,7 +17,6 @@ export const ANNOUNCEMENT_MESSAGE_MAX_LENGTH = 2000;
 
 /** 全利用者向けお知らせ画面の入力、送信状態、認証・入力エラー処理を提供する。 */
 export const useAnnouncementManagementPage = () => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);

@@ -293,12 +293,12 @@ onBeforeMount(initialize);
               <UFormField label="担当者">
                 <USelect
                   :model-value="form.assigneeAccountId ?? undefined"
-                  @update:model-value="form.assigneeAccountId = $event"
                   :items="memberOptions"
                   label-key="title"
                   value-key="value"
                   :disabled="isSaving || isReadonly"
                   class="w-full"
+                  @update:model-value="form.assigneeAccountId = $event"
                 />
               </UFormField>
             </div>
@@ -318,12 +318,12 @@ onBeforeMount(initialize);
           <UFormField label="配置先の列" help="登録後の列変更はBoard上の移動操作で行います。">
             <USelect
               :model-value="form.taskStatusId ?? undefined"
-              @update:model-value="form.taskStatusId = $event"
               :items="statusOptions"
               label-key="title"
               value-key="value"
               :disabled="isSaving || isReadonly || form.taskId !== null"
               class="w-full"
+              @update:model-value="form.taskStatusId = $event"
             />
           </UFormField>
           <div v-if="form.taskId !== null && board" class="my-4 flex flex-wrap items-center gap-2">

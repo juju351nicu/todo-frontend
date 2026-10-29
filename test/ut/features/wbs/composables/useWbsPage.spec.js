@@ -3,26 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 
-import {
-  mocks,
-  wbs,
-  project,
-  inactiveBaselineSummary,
-  baselineList,
-  earnedValueResponse,
-  updatedWbs,
-  dependencyList,
-  updatedDependencyList,
-  workLogList,
-  updatedWorkLogList,
-  effortPlanList,
-  updatedEffortPlanList,
-  workloadResponse,
-  workingCalendarResponse,
-  memberWorkingCalendarResponse,
-  buildEditForm,
-  resetWbsPageMocks,
-} from "./wbsPageTestSupport";
+import { mocks, wbs, resetWbsPageMocks } from "./wbsPageTestSupport";
 
 vi.mock("vue-router", async () => {
   const { mocks } = await import("./wbsPageTestSupport");

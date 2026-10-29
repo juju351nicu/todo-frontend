@@ -1,5 +1,4 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
@@ -64,7 +63,6 @@ const USER_ITEMS: UserItem[] = [
  * `TASK_WRITE_ALL`だけが所有者指定UIを利用でき、本人更新permissionではBackendが所有者を固定する。
  */
 export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => {
-  const router = useRouter();
   const todoStore = useTodoStore();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();

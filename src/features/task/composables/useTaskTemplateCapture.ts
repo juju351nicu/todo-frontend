@@ -1,5 +1,4 @@
 import { computed, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskTemplateApi, {
@@ -20,7 +19,6 @@ export const useTaskTemplateCapture = (
   taskId: Readonly<Ref<number>>,
   disabled: Readonly<Ref<boolean>>
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
   const isOpen = ref(false);
   const name = ref("");

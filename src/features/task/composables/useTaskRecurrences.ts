@@ -1,5 +1,4 @@
 import { computed, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
@@ -112,7 +111,6 @@ const buildForm = (rule: TaskRecurrence): TaskRecurrenceForm => ({
 export const useTaskRecurrences = (
   projectId: Readonly<Ref<number | null>>
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const rules = ref<TaskRecurrence[]>([]);

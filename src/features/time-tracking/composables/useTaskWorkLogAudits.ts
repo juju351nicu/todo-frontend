@@ -1,5 +1,4 @@
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
@@ -14,7 +13,6 @@ const PAGE_SIZE = 20;
 
 /** 指定Taskの工数監査Dialogについて、読込、paging、認証・認可エラーを管理する。 */
 export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
   const audits = ref<TaskWorkLogAuditListResponse | null>(null);
   const errorMessages = ref<string[]>([]);

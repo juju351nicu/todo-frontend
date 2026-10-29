@@ -1,5 +1,4 @@
 import { computed, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
@@ -59,7 +58,6 @@ const createEmptyEditForm = (): TaskTemplateEditForm => ({
 export const useTaskTemplates = (
   projectId: Readonly<Ref<number | null>>
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const templates = ref<TaskTemplate[]>([]);
@@ -223,7 +221,7 @@ export const useTaskTemplates = (
   const validateEditForm = (): boolean => {
     const form = editForm.value;
     const name = form.name.trim();
-    let message = "";
+    let message: string;
     if (!name || name.length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
       message = `Template名を1〜${TASK_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`;
     } else {

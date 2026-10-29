@@ -6,13 +6,7 @@ import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import { useWbsReportExport } from "@/features/wbs/composables/useWbsReportExport";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
-import {
-  buildWbsPageContext,
-  mocks,
-  wbs,
-  project,
-  resetWbsPageMocks,
-} from "./wbsPageTestSupport";
+import { buildWbsPageContext, mocks, resetWbsPageMocks } from "./wbsPageTestSupport";
 
 vi.mock("vue-router", async () => {
   const { mocks } = await import("./wbsPageTestSupport");

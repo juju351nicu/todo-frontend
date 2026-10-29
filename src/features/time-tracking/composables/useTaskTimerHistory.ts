@@ -1,5 +1,4 @@
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
@@ -38,7 +37,6 @@ const validateDateRange = (dateFrom: string, dateTo: string): string[] => {
 
 /** 本人Timer Session履歴Dialogの期間、paging、認証エラーを管理する。 */
 export const useTaskTimerHistory = () => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
   const defaultRange = buildDefaultTimerHistoryRange();
   const dateFrom = ref(defaultRange.dateFrom);

@@ -1,5 +1,4 @@
 import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { TodoApiError } from "@/features/todo/api/todoApi";
@@ -16,7 +15,6 @@ import { toNumberList } from "@/shared/utils/number";
 
 /** Todoカレンダー画面の状態と操作を提供する。 */
 export const useTodoCalendarPage = () => {
-  const router = useRouter();
   const todoStore = useTodoStore();
   const { expireSession } = useSessionExpiry();
 
