@@ -16,12 +16,22 @@ const emit = defineEmits<{
   taskSelected: [taskId: number];
 }>();
 
-const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments, openComments, selectTask } =
-  useProjectComments(toRef(props, "projectId"), (taskId) => emit("taskSelected", taskId));
+const {
+  closeComments,
+  comments,
+  errorMessages,
+  isLoading,
+  isOpen,
+  loadComments,
+  openComments,
+  selectTask,
+} = useProjectComments(toRef(props, "projectId"), (taskId) => emit("taskSelected", taskId));
 </script>
 
 <template>
-  <UButton icon="i-mdi-comment-multiple-outline" variant="soft" @click="openComments">コメント一覧</UButton>
+  <UButton icon="i-mdi-comment-multiple-outline" variant="soft" @click="openComments"
+    >コメント一覧</UButton
+  >
 
   <UModal
     :open="isOpen"
@@ -59,12 +69,18 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
             :disabled="comment.taskArchived"
             @click="selectTask(comment)"
           >
-            <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="lg" class="bg-primary text-xs text-white" />
+            <UAvatar
+              :text="comment.authorDisplayName.slice(0, 1)"
+              size="lg"
+              class="bg-primary text-xs text-white"
+            />
             <span class="min-w-0 flex-1">
               <span class="flex flex-wrap items-center gap-2 text-base">
                 <span>{{ comment.taskTitle }}</span>
                 <!-- archive済みTaskの行は開けないが、会話の履歴として読めるよう薄くせず、ラベル（neutral）だけで示す。 -->
-                <UBadge v-if="comment.taskArchived" size="xs" color="neutral" variant="outline">アーカイブ済み</UBadge>
+                <UBadge v-if="comment.taskArchived" size="xs" color="neutral" variant="outline"
+                  >アーカイブ済み</UBadge
+                >
               </span>
               <span class="block text-sm text-muted">
                 {{ comment.authorDisplayName }}
@@ -75,17 +91,24 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
                   :color="getAccountStatusColor(comment.authorAccountStatus)"
                   class="me-1"
                 >
-                  {{ getAccountStatusLabel(comment.authorAccountStatus) }}
-                </UBadge>・{{ formatShortDateTime(comment.updatedAt) }}
+                  {{ getAccountStatusLabel(comment.authorAccountStatus) }} </UBadge
+                >・{{ formatShortDateTime(comment.updatedAt) }}
                 <span v-if="comment.updatedAt !== comment.createdAt">（編集済み）</span>
               </span>
               <span class="mt-2 block text-sm whitespace-pre-wrap">{{ comment.body }}</span>
             </span>
-            <UIcon v-if="!comment.taskArchived" name="i-mdi-chevron-right" class="size-6 text-muted" aria-hidden="true" />
+            <UIcon
+              v-if="!comment.taskArchived"
+              name="i-mdi-chevron-right"
+              class="size-6 text-muted"
+              aria-hidden="true"
+            />
           </button>
         </li>
       </ul>
-      <div v-else-if="!isLoading" class="py-6 text-center text-sm text-muted">Project内にコメントはありません。</div>
+      <div v-else-if="!isLoading" class="py-6 text-center text-sm text-muted">
+        Project内にコメントはありません。
+      </div>
     </template>
     <template #footer>
       <UButton variant="ghost" @click="closeComments">閉じる</UButton>

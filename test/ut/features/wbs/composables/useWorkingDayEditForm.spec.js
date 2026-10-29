@@ -47,7 +47,11 @@ describe("useWorkingDayEditForm", () => {
 
     expect(form.dialogTitle.value).toBe("稼働日例外を編集");
     expect(form.targetLabel.value).toBe("Project共通例外");
-    expect(form.form.value).toEqual({ workDate: "2026-08-22", dayType: "HOLIDAY", availableMinutes: 0 });
+    expect(form.form.value).toEqual({
+      workDate: "2026-08-22",
+      dayType: "HOLIDAY",
+      availableMinutes: 0,
+    });
   });
 
   it("個人例外がなければ登録として、有効値でFormを作り、対象の参加者名を示す", () => {
@@ -92,7 +96,11 @@ describe("useWorkingDayEditForm", () => {
     const { form, onClose, onSave } = setup();
 
     form.submitForm();
-    expect(onSave).toHaveBeenCalledWith({ workDate: "2026-08-22", dayType: "HOLIDAY", availableMinutes: 0 });
+    expect(onSave).toHaveBeenCalledWith({
+      workDate: "2026-08-22",
+      dayType: "HOLIDAY",
+      availableMinutes: 0,
+    });
     form.closeDialog();
     expect(onClose).toHaveBeenCalledOnce();
   });

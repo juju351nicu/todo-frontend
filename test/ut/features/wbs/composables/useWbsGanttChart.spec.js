@@ -50,7 +50,11 @@ describe("useWbsGanttChart", () => {
 
   it("mount時にinstanceを初期化し、前後に余白を付けた期間でWBS行を描画する", async () => {
     const container = ref({});
-    useWbsGanttChart(container, () => [{ taskId: 1 }], () => []);
+    useWbsGanttChart(
+      container,
+      () => [{ taskId: 1 }],
+      () => []
+    );
 
     await mocks.mountedHooks[0]();
 
@@ -61,7 +65,11 @@ describe("useWbsGanttChart", () => {
   });
 
   it("描画先要素がない場合はinstanceを作らない", async () => {
-    useWbsGanttChart(ref(null), () => [{ taskId: 1 }], () => []);
+    useWbsGanttChart(
+      ref(null),
+      () => [{ taskId: 1 }],
+      () => []
+    );
 
     await mocks.mountedHooks[0]();
 
@@ -70,7 +78,11 @@ describe("useWbsGanttChart", () => {
 
   it("WBS行が変わると既存instanceへ全データを再投入する", async () => {
     const rows = ref([{ taskId: 1 }]);
-    useWbsGanttChart(ref({}), () => rows.value, () => []);
+    useWbsGanttChart(
+      ref({}),
+      () => rows.value,
+      () => []
+    );
     await mocks.mountedHooks[0]();
 
     rows.value = [{ taskId: 1 }, { taskId: 2 }];
@@ -79,11 +91,18 @@ describe("useWbsGanttChart", () => {
 
     expect(mocks.instance.init).toHaveBeenCalledTimes(1);
     expect(mocks.instance.clearAll).toHaveBeenCalledTimes(2);
-    expect(mocks.instance.parse).toHaveBeenLastCalledWith({ data: [{ id: 1 }, { id: 2 }], links: [] });
+    expect(mocks.instance.parse).toHaveBeenLastCalledWith({
+      data: [{ id: 1 }, { id: 2 }],
+      links: [],
+    });
   });
 
   it("unmount時にinstanceを破棄する", async () => {
-    useWbsGanttChart(ref({}), () => [{ taskId: 1 }], () => []);
+    useWbsGanttChart(
+      ref({}),
+      () => [{ taskId: 1 }],
+      () => []
+    );
     await mocks.mountedHooks[0]();
 
     mocks.unmountHooks[0]();

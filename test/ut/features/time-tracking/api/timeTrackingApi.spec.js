@@ -41,12 +41,8 @@ describe("TimeTrackingApi", () => {
       new Response(JSON.stringify(currentResponse), { status: 200 })
     );
 
-    await expect(TimeTrackingApi.getCurrentTimer()).resolves.toEqual(
-      currentResponse
-    );
-    expect(mocks.getRequest).toHaveBeenCalledWith(
-      "/api/v1/time-tracking/current"
-    );
+    await expect(TimeTrackingApi.getCurrentTimer()).resolves.toEqual(currentResponse);
+    expect(mocks.getRequest).toHaveBeenCalledWith("/api/v1/time-tracking/current");
   });
 
   it("指定Project Taskへbodyなしの開始Requestを送る", async () => {
@@ -69,30 +65,21 @@ describe("TimeTrackingApi", () => {
       allocations: undefined,
     };
     mocks.postRequest
+      .mockResolvedValueOnce(new Response(JSON.stringify(stopResponse), { status: 200 }))
       .mockResolvedValueOnce(
-        new Response(JSON.stringify(stopResponse), { status: 200 })
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ ...currentResponse, timer: null }),
-          { status: 200 }
-        )
+        new Response(JSON.stringify({ ...currentResponse, timer: null }), { status: 200 })
       );
 
     const stopped = await TimeTrackingApi.stopCurrentTimer({ version: 3 });
     await TimeTrackingApi.cancelCurrentTimer({ version: 4 });
 
     expect(stopped.allocations).toEqual([]);
-    expect(mocks.postRequest).toHaveBeenNthCalledWith(
-      1,
-      "/api/v1/time-tracking/current/stop",
-      { version: 3 }
-    );
-    expect(mocks.postRequest).toHaveBeenNthCalledWith(
-      2,
-      "/api/v1/time-tracking/current/cancel",
-      { version: 4 }
-    );
+    expect(mocks.postRequest).toHaveBeenNthCalledWith(1, "/api/v1/time-tracking/current/stop", {
+      version: 3,
+    });
+    expect(mocks.postRequest).toHaveBeenNthCalledWith(2, "/api/v1/time-tracking/current/cancel", {
+      version: 4,
+    });
   });
 
   it("本人履歴の期間とpagingをqueryへ設定して欠落配列を正規化する", async () => {
@@ -165,14 +152,10 @@ describe("TimeTrackingApi", () => {
     await expect(TimeTrackingApi.startTimer(12, 345)).rejects.toMatchObject({
       status: 409,
       errorResponse: {
-        fieldErrors: [
-          expect.objectContaining({ errorCode: "TASK_TIMER_ALREADY_RUNNING" }),
-        ],
+        fieldErrors: [expect.objectContaining({ errorCode: "TASK_TIMER_ALREADY_RUNNING" })],
       },
     });
-    await expect(TimeTrackingApi.startTimer(12, 345)).rejects.toBeInstanceOf(
-      TimeTrackingApiError
-    );
+    await expect(TimeTrackingApi.startTimer(12, 345)).rejects.toBeInstanceOf(TimeTrackingApiError);
   });
 
   it.each([

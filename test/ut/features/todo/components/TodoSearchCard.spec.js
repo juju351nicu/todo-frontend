@@ -11,7 +11,7 @@ describe("TodoSearchCard", () => {
     wrapper?.unmount();
   });
 
-  it("完了状態のcheckboxで、選択値の配列（\"0\"・\"1\"）を親へ返す", async () => {
+  it('完了状態のcheckboxで、選択値の配列（"0"・"1"）を親へ返す', async () => {
     wrapper = mountWithUi(TodoSearchCard, {
       props: {
         searchTitle: "",
@@ -30,7 +30,10 @@ describe("TodoSearchCard", () => {
   it("「検索」で search を通知する", async () => {
     wrapper = mountWithUi(TodoSearchCard, { props: { searchTitle: "", selectedDoneFlag: [] } });
 
-    await wrapper.findAll("button").find((button) => button.text() === "検索").trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "検索")
+      .trigger("click");
 
     expect(wrapper.emitted("search")).toHaveLength(1);
   });

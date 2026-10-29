@@ -1,8 +1,5 @@
 import { removeAuthStates } from "./authState";
-import {
-  runBrowserRegressionFixture,
-  type BrowserRegressionFixture,
-} from "./databaseFixture";
+import { runBrowserRegressionFixture, type BrowserRegressionFixture } from "./databaseFixture";
 
 const FIXTURES: readonly BrowserRegressionFixture[] = [
   "wbs-journey",
@@ -30,10 +27,7 @@ const globalTeardown = (): void => {
     removeAuthStates();
   }
   if (cleanupErrors.length > 0) {
-    throw new AggregateError(
-      cleanupErrors,
-      "一部のE2E fixtureをcleanupできませんでした。"
-    );
+    throw new AggregateError(cleanupErrors, "一部のE2E fixtureをcleanupできませんでした。");
   }
 };
 

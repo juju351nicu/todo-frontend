@@ -24,6 +24,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 整形とESLintは型情報を使わないため、build・型検査の前に流して早く失敗させる。
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run lint
+        run: npm run lint
+
       # Nuxt UIのVite pluginはbuild時にComponent型宣言とtheme型を生成するため、型検査より先にbuildする。
       - name: Build
         run: npm run build

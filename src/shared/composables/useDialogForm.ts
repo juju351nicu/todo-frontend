@@ -40,11 +40,13 @@ export const useDialogForm = <TForm>(options: DialogFormOptions<TForm>) => {
         form.value = nextForm;
       }
     },
-    { immediate: true },
+    { immediate: true }
   );
 
   /** 送信できる場合はtrue。処理中は常にfalse。 */
-  const canSubmit = computed<boolean>(() => !toValue(options.isBusy) && (options.canSubmit?.(form.value) ?? true));
+  const canSubmit = computed<boolean>(
+    () => !toValue(options.isBusy) && (options.canSubmit?.(form.value) ?? true)
+  );
 
   /** 処理中でなければ、未確定入力を破棄してDialogを閉じるよう親へ通知する。 */
   const closeDialog = (): void => {

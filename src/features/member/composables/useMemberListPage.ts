@@ -8,10 +8,7 @@ import { MemberApiError } from "@/features/member/api/memberApi";
 import { MEMBER_MESSAGES } from "@/features/member/constants/memberMessages";
 import { useMemberStore } from "@/features/member/stores/member";
 import type { MemberListItem } from "@/features/member/types/member";
-import {
-  DATA_TABLE_PAGE_OPTIONS,
-  DEFAULT_ITEMS_PER_PAGE,
-} from "@/shared/constants/ui";
+import { DATA_TABLE_PAGE_OPTIONS, DEFAULT_ITEMS_PER_PAGE } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { isUnauthorizedApiError } from "@/shared/utils/apiError";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
@@ -58,17 +55,13 @@ export const useMemberListPage = () => {
   const headers = MEMBER_TABLE_HEADERS;
   const isLoading = computed<boolean>(() => memberStore.isLoading);
   const itemsPerPage = ref<number>(DEFAULT_ITEMS_PER_PAGE);
-  const memberList = computed<MemberListItem[]>(
-    () => memberStore.memberListInfo
-  );
+  const memberList = computed<MemberListItem[]>(() => memberStore.memberListInfo);
   const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const selectedIds = ref<number[]>([]);
   /** 一覧の取得・削除に失敗したときの理由。次の操作を始めたときに消す。 */
   const errorMessages = ref<string[]>([]);
   /** 会員を削除できるか（Backendの`MemberAccessLogic#canDeleteMembers`と同じ`ACCOUNT_UPDATE`）。 */
-  const canDeleteMembers = computed<boolean>(() =>
-    userStore.hasPermission("ACCOUNT_UPDATE")
-  );
+  const canDeleteMembers = computed<boolean>(() => userStore.hasPermission("ACCOUNT_UPDATE"));
 
   /**
    * 会員APIの失敗を画面の文言にする。Sessionが切れていた（401）場合は、選択を捨ててログイン画面へ戻す。
@@ -90,9 +83,7 @@ export const useMemberListPage = () => {
       return;
     }
     errorMessages.value = [
-      error instanceof MemberApiError && error.status === 403
-        ? forbiddenMessage
-        : fallbackMessage,
+      error instanceof MemberApiError && error.status === 403 ? forbiddenMessage : fallbackMessage,
     ];
   };
 
@@ -116,11 +107,7 @@ export const useMemberListPage = () => {
       await memberStore.deleteMemberList(selectedIds.value);
       selectedIds.value = [];
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        MEMBER_MESSAGES.deleteFailed,
-        MEMBER_MESSAGES.deleteForbidden
-      );
+      await handleApiError(error, MEMBER_MESSAGES.deleteFailed, MEMBER_MESSAGES.deleteForbidden);
     }
   };
 

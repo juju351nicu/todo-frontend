@@ -27,9 +27,7 @@ describe("Administration API", () => {
 
     await expect(AdministrationApi.getAccounts()).resolves.toEqual(accounts);
 
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      API_PATHS.ADMINISTRATION_ACCOUNTS
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.ADMINISTRATION_ACCOUNTS);
   });
 
   it("一覧Responseの配列がない場合は空配列として扱う", async () => {
@@ -50,9 +48,7 @@ describe("Administration API", () => {
 
     await expect(AdministrationApi.getRoles()).resolves.toEqual(roles);
 
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      API_PATHS.ADMINISTRATION_ROLES
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.ADMINISTRATION_ROLES);
   });
 
   it("ロール集合と楽観ロックversionを更新APIへ渡す", async () => {
@@ -74,10 +70,10 @@ describe("Administration API", () => {
       })
     ).resolves.toEqual(updated);
 
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/administration/accounts/2/roles",
-      { roleCodes: ["READ_ONLY_ADMIN"], version: 3 }
-    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/administration/accounts/2/roles", {
+      roleCodes: ["READ_ONLY_ADMIN"],
+      version: 3,
+    });
   });
 
   it("Backendの409項目エラーをstatus付き例外へ保持する", async () => {
@@ -106,9 +102,7 @@ describe("Administration API", () => {
       status: 409,
       errorResponse,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(AdministrationApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(AdministrationApiError));
   });
 
   it("JSON本文がない403もstatus付き例外へ変換する", async () => {
@@ -137,9 +131,7 @@ describe("Administration API", () => {
       json: vi.fn().mockResolvedValue(payload),
     });
 
-    await expect(
-      AdministrationApi.getAuthorizationAuditLogs(1, 20)
-    ).resolves.toEqual(payload);
+    await expect(AdministrationApi.getAuthorizationAuditLogs(1, 20)).resolves.toEqual(payload);
 
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/administration/authorization-audit-logs?page=1&size=20"

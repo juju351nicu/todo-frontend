@@ -58,10 +58,7 @@ export interface UseWbsDependenciesOptions {
  * @param context Project ID、階層表の行、権限、Session失効処理を提供する画面共通context
  * @param options 依存関係一覧の正本と、競合時の画面全体再取得
  */
-export const useWbsDependencies = (
-  context: WbsPageContext,
-  options: UseWbsDependenciesOptions
-) => {
+export const useWbsDependencies = (context: WbsPageContext, options: UseWbsDependenciesOptions) => {
   const { dependencyList } = options;
   const userStore = useUserStore();
   const dependencyEditorErrorMessages = ref<string[]>([]);
@@ -77,12 +74,8 @@ export const useWbsDependencies = (
 
   const dependencies = computed(() => dependencyList.value?.dependencies ?? []);
   /** WBSに表示している全Task。依存関係一覧の端点の表示名を引き当てるために使う。 */
-  const allTaskOptions = computed(() =>
-    buildDependencyTaskOptions(context.rows.value)
-  );
-  const taskById = computed(
-    () => new Map(context.rows.value.map((row) => [row.taskId, row]))
-  );
+  const allTaskOptions = computed(() => buildDependencyTaskOptions(context.rows.value));
+  const taskById = computed(() => new Map(context.rows.value.map((row) => [row.taskId, row])));
 
   /**
    * 現在の利用者が、このTaskを依存関係の端点として追加・削除に使えるか。
@@ -104,19 +97,14 @@ export const useWbsDependencies = (
     allTaskOptions.value.filter((option) => canChangeTaskId(option.value))
   );
   const dependencyRows = computed(() =>
-    buildDependencyRows(
-      dependencies.value,
-      allTaskOptions.value,
-      canChangeTaskId
-    )
+    buildDependencyRows(dependencies.value, allTaskOptions.value, canChangeTaskId)
   );
   /** 削除確認Dialogへ表示する、表示名付きの削除対象行。確認中でなければnull。 */
   const dependencyPendingDeleteRow = computed(() => {
     const pendingId = dependencyPendingDelete.value?.dependencyId;
     return pendingId === undefined
       ? null
-      : dependencyRows.value.find((row) => row.dependencyId === pendingId) ??
-          null;
+      : (dependencyRows.value.find((row) => row.dependencyId === pendingId) ?? null);
   });
   const isDependencyMutating = computed(
     () => isSavingDependency.value || isDeletingDependency.value
@@ -127,15 +115,11 @@ export const useWbsDependencies = (
     dependencyErrorMessages.value = [];
     dependencySuccessMessage.value = "";
     if (!context.canEditWbs.value) {
-      dependencyErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
-      ];
+      dependencyErrorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
       return;
     }
     if (dependencyTaskOptions.value.length < 2) {
-      dependencyErrorMessages.value = [
-        "依存関係を追加するには、変更できるTaskが2件以上必要です。",
-      ];
+      dependencyErrorMessages.value = ["依存関係を追加するには、変更できるTaskが2件以上必要です。"];
       return;
     }
     dependencyEditorErrorMessages.value = [];
@@ -161,17 +145,13 @@ export const useWbsDependencies = (
    *
    * @param form 先行Task、後続Task、分単位待ち時間
    */
-  const saveDependency = async (
-    form: TaskDependencyCreateForm
-  ): Promise<void> => {
+  const saveDependency = async (form: TaskDependencyCreateForm): Promise<void> => {
     const projectId = context.projectId.value;
     if (isSavingDependency.value || projectId === null) {
       return;
     }
     if (!context.canEditWbs.value) {
-      dependencyEditorErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
-      ];
+      dependencyEditorErrorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
       return;
     }
     const built = buildTaskDependencyCreateRequest(
@@ -189,10 +169,7 @@ export const useWbsDependencies = (
     dependencyErrorMessages.value = [];
     dependencySuccessMessage.value = "";
     try {
-      dependencyList.value = await WbsApi.createTaskDependency(
-        projectId,
-        built.request
-      );
+      dependencyList.value = await WbsApi.createTaskDependency(projectId, built.request);
       closeDependencyEditorAfterSaving();
       dependencySuccessMessage.value = "Task依存関係を追加しました。";
     } catch (error: unknown) {
@@ -205,9 +182,7 @@ export const useWbsDependencies = (
   /** Task依存関係作成APIのstatusをDialog、競合再読込またはSession動作へ変換する。 */
   const handleDependencyCreateError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
+      dependencyEditorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -215,15 +190,11 @@ export const useWbsDependencies = (
       return;
     }
     if (error.status === 403) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.dependency.forbidden,
-      ];
+      dependencyEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.forbidden];
       return;
     }
     if (error.status === 404) {
-      dependencyEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.dependency.resourceNotFound,
-      ];
+      dependencyEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.dependency.resourceNotFound];
       return;
     }
     if (error.status === 409) {
@@ -250,17 +221,13 @@ export const useWbsDependencies = (
     dependencyErrorMessages.value = [];
     dependencySuccessMessage.value = "";
     if (!context.canEditWbs.value) {
-      dependencyErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
-      ];
+      dependencyErrorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
       return;
     }
     const dependency = dependencies.value.find(
       (candidate) => candidate.dependencyId === dependencyId
     );
-    const row = dependencyRows.value.find(
-      (candidate) => candidate.dependencyId === dependencyId
-    );
+    const row = dependencyRows.value.find((candidate) => candidate.dependencyId === dependencyId);
     if (dependency === undefined || row === undefined) {
       dependencyErrorMessages.value = ["削除対象のTask依存関係が見つかりません。"];
       return;
@@ -283,17 +250,11 @@ export const useWbsDependencies = (
   const confirmDependencyDelete = async (): Promise<void> => {
     const dependency = dependencyPendingDelete.value;
     const projectId = context.projectId.value;
-    if (
-      dependency === null ||
-      projectId === null ||
-      isDeletingDependency.value
-    ) {
+    if (dependency === null || projectId === null || isDeletingDependency.value) {
       return;
     }
     if (!context.canEditWbs.value) {
-      dependencyErrorMessages.value = [
-        "Task依存関係を更新するpermissionがありません。",
-      ];
+      dependencyErrorMessages.value = ["Task依存関係を更新するpermissionがありません。"];
       return;
     }
 
@@ -301,11 +262,7 @@ export const useWbsDependencies = (
     dependencyErrorMessages.value = [];
     dependencySuccessMessage.value = "";
     try {
-      await WbsApi.deleteTaskDependency(
-        projectId,
-        dependency.dependencyId,
-        dependency.version
-      );
+      await WbsApi.deleteTaskDependency(projectId, dependency.dependencyId, dependency.version);
       if (dependencyList.value !== null) {
         dependencyList.value = {
           ...dependencyList.value,
@@ -358,17 +315,14 @@ export const useWbsDependencies = (
       await options.reloadPageSnapshot();
     } catch (refreshError: unknown) {
       if (
-        (refreshError instanceof WbsApiError ||
-          refreshError instanceof ProjectApiError) &&
+        (refreshError instanceof WbsApiError || refreshError instanceof ProjectApiError) &&
         WBS_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
       ) {
         // 認証・認可・公開範囲の変化は、操作時点の競合理由より新しい取得結果を優先する。
         await options.handleReadApiError(refreshError);
         return;
       }
-      dependencyErrorMessages.value.push(
-        DISPLAY_MESSAGES.wbs.dependency.reloadFailed
-      );
+      dependencyErrorMessages.value.push(DISPLAY_MESSAGES.wbs.dependency.reloadFailed);
     }
   };
 

@@ -127,9 +127,7 @@ describe("useProjectListPage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "Projectを参照するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Projectを参照するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
@@ -150,9 +148,7 @@ describe("useProjectListPage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "Project一覧を取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Project一覧を取得できませんでした。"]);
   });
 
   describe("Templateを使わないProject作成", () => {
@@ -202,7 +198,10 @@ describe("useProjectListPage", () => {
         description: "",
       });
       expect(page.isCreateDialogOpen.value).toBe(false);
-      expect(mocks.router.push).toHaveBeenCalledWith({ name: "TaskBoard", params: { projectId: 42 } });
+      expect(mocks.router.push).toHaveBeenCalledWith({
+        name: "TaskBoard",
+        params: { projectId: 42 },
+      });
     });
 
     it("Projectキーが重複した場合はDialogを開いたまま、Backendの理由を出す", async () => {

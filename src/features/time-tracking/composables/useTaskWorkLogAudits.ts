@@ -1,5 +1,4 @@
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
@@ -14,7 +13,6 @@ const PAGE_SIZE = 20;
 
 /** 指定Taskの工数監査Dialogについて、読込、paging、認証・認可エラーを管理する。 */
 export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
   const audits = ref<TaskWorkLogAuditListResponse | null>(null);
   const errorMessages = ref<string[]>([]);
@@ -29,12 +27,7 @@ export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      audits.value = await TimeTrackingApi.getWorkLogAudits(
-        projectId,
-        taskId,
-        page,
-        PAGE_SIZE
-      );
+      audits.value = await TimeTrackingApi.getWorkLogAudits(projectId, taskId, page, PAGE_SIZE);
     } catch (error: unknown) {
       if (!(error instanceof TimeTrackingApiError)) {
         errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
@@ -91,10 +84,7 @@ export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
 
   /** 現在pageより後が存在する場合だけ次ページを取得する。 */
   const loadNextPage = async (): Promise<void> => {
-    if (
-      audits.value !== null &&
-      audits.value.page + 1 < audits.value.totalPages
-    ) {
+    if (audits.value !== null && audits.value.page + 1 < audits.value.totalPages) {
       await loadAudits(audits.value.page + 1);
     }
   };

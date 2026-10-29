@@ -2,7 +2,10 @@
 import { toRef } from "vue";
 
 import TodoUpsertConfirm from "@/features/todo/components/TodoUpsertConfirm.vue";
-import { TODO_SUBMIT_CONTROL, useTodoDetailPage } from "@/features/todo/composables/useTodoDetailPage";
+import {
+  TODO_SUBMIT_CONTROL,
+  useTodoDetailPage,
+} from "@/features/todo/composables/useTodoDetailPage";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -32,14 +35,23 @@ const {
 
 <template>
   <LoadingIndicator v-if="isLoading" />
-  <TodoUpsertConfirm v-if="isShowConfirm" :todo-form="todoForm" @close-modal="closeConfirm" @confirm-submit="confirmSubmit" />
+  <TodoUpsertConfirm
+    v-if="isShowConfirm"
+    :todo-form="todoForm"
+    @close-modal="closeConfirm"
+    @confirm-submit="confirmSubmit"
+  />
   <div class="page-container">
     <StatusAlert v-if="loadError" type="error" class="mb-4">{{ loadError }}</StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+      successMessage
+    }}</StatusAlert>
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="!canWriteTodo" type="info" class="mb-4">このTodoは参照専用です。</StatusAlert>
+    <StatusAlert v-if="!canWriteTodo" type="info" class="mb-4"
+      >このTodoは参照専用です。</StatusAlert
+    >
     <UCard class="w-full max-w-200">
       <template #header>
         <span>{{ todoForm.todoId > 0 ? todoForm.todoId : " (新規)" }}</span>
@@ -64,12 +76,26 @@ const {
         </div>
         <div class="w-full p-3">
           <UFormField label="着手日">
-            <UInput v-model="todoForm.dateFrom" type="date" name="dateFrom" :readonly="!canWriteTodo" required class="w-full" />
+            <UInput
+              v-model="todoForm.dateFrom"
+              type="date"
+              name="dateFrom"
+              :readonly="!canWriteTodo"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3">
           <UFormField label="期限日">
-            <UInput v-model="todoForm.dateTo" type="date" name="dateTo" :readonly="!canWriteTodo" required class="w-full" />
+            <UInput
+              v-model="todoForm.dateTo"
+              type="date"
+              name="dateTo"
+              :readonly="!canWriteTodo"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3">
@@ -100,12 +126,25 @@ const {
         </div>
         <div class="w-full p-3">
           <UFormField label="タイトル">
-            <UInput v-model="todoForm.title" name="title" :readonly="!canWriteTodo" required class="w-full" />
+            <UInput
+              v-model="todoForm.title"
+              name="title"
+              :readonly="!canWriteTodo"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3">
           <UFormField label="詳細">
-            <UTextarea v-model="todoForm.detail" name="detail" :rows="5" :readonly="!canWriteTodo" required class="w-full" />
+            <UTextarea
+              v-model="todoForm.detail"
+              name="detail"
+              :rows="5"
+              :readonly="!canWriteTodo"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="p-3 pt-0">

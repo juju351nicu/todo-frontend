@@ -47,9 +47,7 @@ describe("useWbsBaselines", () => {
       structuredClone({
         ...project,
         members: project.members.map((member) =>
-          member.accountId === 2
-            ? { ...member, projectRole: "MANAGER" }
-            : member
+          member.accountId === 2 ? { ...member, projectRole: "MANAGER" } : member
         ),
       })
     );
@@ -67,9 +65,7 @@ describe("useWbsBaselines", () => {
       description: "仕様確定後",
     });
     expect(page.isBaselineCreateDialogOpen.value).toBe(false);
-    expect(page.baselineSuccessMessage.value).toContain(
-      "Task 3件、依存関係 1件、日別予定 2件"
-    );
+    expect(page.baselineSuccessMessage.value).toContain("Task 3件、依存関係 1件、日別予定 2件");
     expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
   });
 
@@ -115,9 +111,7 @@ describe("useWbsBaselines", () => {
     expect(mocks.wbsApi.activateWbsBaseline).toHaveBeenCalledWith(7, 20, {
       version: 2,
     });
-    expect(page.baselineSuccessMessage.value).toBe(
-      "baseline「初期計画」を有効化しました。"
-    );
+    expect(page.baselineSuccessMessage.value).toBe("baseline「初期計画」を有効化しました。");
     expect(mocks.wbsApi.getWbsBaselines).toHaveBeenCalledTimes(2);
   });
 
@@ -228,7 +222,11 @@ describe("useWbsBaselines", () => {
 
     it.each([
       ["ACTIVE・更新権限・Project管理権限あり", {}, true],
-      ["Projectがarchive済み", { project: ref({ ...structuredClone(project), status: "ARCHIVED" }) }, false],
+      [
+        "Projectがarchive済み",
+        { project: ref({ ...structuredClone(project), status: "ARCHIVED" }) },
+        false,
+      ],
       ["TASK_UPDATEなし", { canEditWbs: computed(() => false) }, false],
       ["Project管理権限なし", { canManageProject: computed(() => false) }, false],
     ])("%sの場合のbaseline管理可否は%s", (_label, overrides, expected) => {
@@ -285,9 +283,7 @@ describe("useWbsBaselines", () => {
       expect(state.isBaselineCreateDialogOpen.value).toBe(true);
 
       await state.activateWbsBaseline(baselineList.baselines[1]);
-      expect(state.baselineErrorMessages.value).toEqual([
-        DISPLAY_MESSAGES.wbs.baseline.forbidden,
-      ]);
+      expect(state.baselineErrorMessages.value).toEqual([DISPLAY_MESSAGES.wbs.baseline.forbidden]);
       expect(onActiveBaselineChanged).not.toHaveBeenCalled();
     });
 

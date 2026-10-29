@@ -26,7 +26,9 @@ const {
         class="max-w-30 min-w-19 leading-[1.15] sm:max-w-80 sm:min-w-35"
         :title="`${currentTimer.projectName} / ${currentTimer.taskTitle}`"
       >
-        <div class="hidden truncate text-xs sm:block">{{ currentTimer.projectKey }} / {{ currentTimer.taskTitle }}</div>
+        <div class="hidden truncate text-xs sm:block">
+          {{ currentTimer.projectKey }} / {{ currentTimer.taskTitle }}
+        </div>
         <div class="font-bold tabular-nums">{{ displayedElapsed }}</div>
       </div>
       <UButton
@@ -63,17 +65,40 @@ const {
     :ui="{ content: 'max-w-130' }"
     @after:leave="restoreFocusAfterCancelDialog"
   >
-    <template #body>「{{ currentTimer?.taskTitle }}」の計測時間は日別実績へ反映されません。</template>
+    <template #body
+      >「{{ currentTimer?.taskTitle }}」の計測時間は日別実績へ反映されません。</template
+    >
     <template #footer>
-      <UButton variant="ghost" :disabled="pendingMutation === 'CANCEL'" @click="isCancelConfirmOpen = false">戻る</UButton>
-      <UButton color="error" variant="ghost" :loading="pendingMutation === 'CANCEL'" @click="cancelTimer">取消する</UButton>
+      <UButton
+        variant="ghost"
+        :disabled="pendingMutation === 'CANCEL'"
+        @click="isCancelConfirmOpen = false"
+        >戻る</UButton
+      >
+      <UButton
+        color="error"
+        variant="ghost"
+        :loading="pendingMutation === 'CANCEL'"
+        @click="cancelTimer"
+        >取消する</UButton
+      >
     </template>
   </UModal>
 
-  <AppSnackbar :open="errorMessages.length > 0" color="error" :timeout="8000" @update:open="handleMessageVisibility">
+  <AppSnackbar
+    :open="errorMessages.length > 0"
+    color="error"
+    :timeout="8000"
+    @update:open="handleMessageVisibility"
+  >
     {{ errorMessages.join(" ") }}
   </AppSnackbar>
-  <AppSnackbar :open="successMessage.length > 0" color="success" :timeout="5000" @update:open="handleMessageVisibility">
+  <AppSnackbar
+    :open="successMessage.length > 0"
+    color="success"
+    :timeout="5000"
+    @update:open="handleMessageVisibility"
+  >
     {{ successMessage }}
   </AppSnackbar>
 </template>

@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import TaskChecklistApi, {
-  TaskChecklistApiError,
-} from "@/features/task/api/taskChecklistApi";
+import TaskChecklistApi, { TaskChecklistApiError } from "@/features/task/api/taskChecklistApi";
 import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
@@ -139,8 +137,6 @@ describe("Task checklist API", () => {
       status: 502,
       errorResponse: null,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(TaskChecklistApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(TaskChecklistApiError));
   });
 });

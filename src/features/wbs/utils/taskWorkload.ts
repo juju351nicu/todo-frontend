@@ -2,10 +2,7 @@ import type { TaskWorkloadRow } from "@/features/wbs/types/wbs";
 import type { SemanticColor } from "@/shared/types/color";
 
 /** workload行の稼働可能時間に対する予定配賦状態。 */
-export type WorkloadCapacityStatus =
-  | "WITHIN_CAPACITY"
-  | "OVER_ALLOCATED"
-  | "HOLIDAY_ALLOCATION";
+export type WorkloadCapacityStatus = "WITHIN_CAPACITY" | "OVER_ALLOCATED" | "HOLIDAY_ALLOCATION";
 
 /**
  * Backendが解決した稼働可能時間と予定工数から、画面に表示する容量状態を決定する。

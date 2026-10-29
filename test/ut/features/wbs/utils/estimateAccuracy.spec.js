@@ -67,7 +67,9 @@ describe("見積もり精度の散布図", () => {
   });
 
   it("候補の間隔で収まらない極端な工数でも目盛りを6本以下にする", () => {
-    const chart = buildEstimateAccuracyChart(buildResponse({ tasks: [buildTask(1, 100000, 200000)] }));
+    const chart = buildEstimateAccuracyChart(
+      buildResponse({ tasks: [buildTask(1, 100000, 200000)] })
+    );
 
     expect(chart.ticks.length).toBeLessThanOrEqual(7);
     expect(chart.axisMaxMinutes).toBeGreaterThanOrEqual(220000);
@@ -94,9 +96,9 @@ describe("見積もり精度の表示", () => {
   });
 
   it("見積もりどおりの件数と割合を四捨五入して表示し、対象0件は—にする", () => {
-    expect(formatWithinToleranceRate(buildResponse({ sampleCount: 3, withinToleranceTaskCount: 2 }))).toBe(
-      "2 / 3件（67%）"
-    );
+    expect(
+      formatWithinToleranceRate(buildResponse({ sampleCount: 3, withinToleranceTaskCount: 2 }))
+    ).toBe("2 / 3件（67%）");
     expect(formatWithinToleranceRate(buildResponse())).toBe("—");
   });
 
@@ -116,9 +118,15 @@ describe("見積もり精度の表示", () => {
   });
 
   it("Task名はWBSコードを前置し、タイトルがなければTask IDで示す", () => {
-    expect(formatEstimateAccuracyTaskLabel(buildTask(2, 1, 1, { wbsCode: "1.1", title: "実装" }))).toBe("1.1 実装");
-    expect(formatEstimateAccuracyTaskLabel(buildTask(2, 1, 1, { wbsCode: " ", title: "実装" }))).toBe("実装");
-    expect(formatEstimateAccuracyTaskLabel(buildTask(15, 1, 1, { title: null }))).toBe("Task ID: 15");
+    expect(
+      formatEstimateAccuracyTaskLabel(buildTask(2, 1, 1, { wbsCode: "1.1", title: "実装" }))
+    ).toBe("1.1 実装");
+    expect(
+      formatEstimateAccuracyTaskLabel(buildTask(2, 1, 1, { wbsCode: " ", title: "実装" }))
+    ).toBe("実装");
+    expect(formatEstimateAccuracyTaskLabel(buildTask(15, 1, 1, { title: null }))).toBe(
+      "Task ID: 15"
+    );
   });
 
   it("一覧は誤差の大きい順、同じ誤差はTask ID順にし元の配列を変えない", () => {

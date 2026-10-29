@@ -49,13 +49,25 @@ const { canSubmit, closeDialog, form, handleDialogVisibility, submitForm } = use
       <form @submit.prevent="submitForm">
         <div class="relative">
           <UFormField label="baseline名">
-            <UInput v-model="form.name" :maxlength="100" :disabled="isSaving" autofocus class="w-full" />
+            <UInput
+              v-model="form.name"
+              :maxlength="100"
+              :disabled="isSaving"
+              autofocus
+              class="w-full"
+            />
           </UFormField>
           <FieldCounter :value="form.name" :max="100" />
         </div>
         <div class="relative">
           <UFormField label="説明（任意）">
-            <UTextarea v-model="form.description" :maxlength="1000" :rows="4" :disabled="isSaving" class="w-full" />
+            <UTextarea
+              v-model="form.description"
+              :maxlength="1000"
+              :rows="4"
+              :disabled="isSaving"
+              class="w-full"
+            />
           </UFormField>
           <FieldCounter :value="form.description" :max="1000" />
         </div>
@@ -63,7 +75,14 @@ const { canSubmit, closeDialog, form, handleDialogVisibility, submitForm } = use
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="closeDialog">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="isSaving" :disabled="!canSubmit" @click="submitForm">作成</UButton>
+      <UButton
+        color="primary"
+        variant="ghost"
+        :loading="isSaving"
+        :disabled="!canSubmit"
+        @click="submitForm"
+        >作成</UButton
+      >
     </template>
   </UModal>
 </template>

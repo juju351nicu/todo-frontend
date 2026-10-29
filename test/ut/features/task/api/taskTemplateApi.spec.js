@@ -41,12 +41,8 @@ describe("Task Template API", () => {
       json: vi.fn().mockResolvedValue([template]),
     });
 
-    await expect(TaskTemplateApi.findOwnTemplates()).resolves.toEqual([
-      template,
-    ]);
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/task-templates"
-    );
+    await expect(TaskTemplateApi.findOwnTemplates()).resolves.toEqual([template]);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/task-templates");
   });
 
   it("既存Taskを名称付きでTemplateへcaptureする", async () => {
@@ -57,10 +53,9 @@ describe("Task Template API", () => {
 
     await TaskTemplateApi.capture(5, 31, { name: "API実装" });
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31/templates",
-      { name: "API実装" }
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31/templates", {
+      name: "API実装",
+    });
   });
 
   it("Template snapshotとversionを更新APIへ送信する", async () => {
@@ -83,10 +78,7 @@ describe("Task Template API", () => {
 
     await TaskTemplateApi.update(81, request);
 
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/task-templates/81",
-      request
-    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/task-templates/81", request);
   });
 
   it("取得時点versionをqueryへ指定してTemplateをarchiveする", async () => {
@@ -94,9 +86,7 @@ describe("Task Template API", () => {
 
     await TaskTemplateApi.archive(81, 2);
 
-    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
-      "/api/v1/task-templates/81?version=2"
-    );
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith("/api/v1/task-templates/81?version=2");
   });
 
   it("Template IDと任意上書き値をProject適用APIへ送信する", async () => {
@@ -135,9 +125,10 @@ describe("Task Template API", () => {
       json: vi.fn().mockResolvedValue(errorResponse),
     });
 
-    await expect(
-      TaskTemplateApi.capture(5, 31, { name: "API実装" })
-    ).rejects.toMatchObject({ status: 403, errorResponse });
+    await expect(TaskTemplateApi.capture(5, 31, { name: "API実装" })).rejects.toMatchObject({
+      status: 403,
+      errorResponse,
+    });
   });
 
   it("Securityの非JSONエラー本文はnullとして安全に保持する", async () => {

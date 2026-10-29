@@ -12,28 +12,47 @@ const props = withDefaults(
     taskId: number;
     disabled?: boolean;
   }>(),
-  { disabled: false },
+  { disabled: false }
 );
 
-const { canCapture, capture, close, errorMessage, isOpen, isSaving, name, open, successMessage } = useTaskTemplateCapture(
-  toRef(props, "projectId"),
-  toRef(props, "taskId"),
-  toRef(props, "disabled"),
-);
+const { canCapture, capture, close, errorMessage, isOpen, isSaving, name, open, successMessage } =
+  useTaskTemplateCapture(
+    toRef(props, "projectId"),
+    toRef(props, "taskId"),
+    toRef(props, "disabled")
+  );
 </script>
 
 <template>
   <div class="mt-4">
-    <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+    <StatusAlert
+      v-if="successMessage"
+      type="success"
+      density="compact"
+      closable
+      class="mb-3"
+      @close="successMessage = ''"
+    >
       {{ successMessage }}
     </StatusAlert>
-    <UButton variant="soft" icon="i-mdi-content-save-outline" :disabled="disabled" @click="open">Templateとして保存</UButton>
+    <UButton variant="soft" icon="i-mdi-content-save-outline" :disabled="disabled" @click="open"
+      >Templateとして保存</UButton
+    >
   </div>
 
-  <UModal v-model:open="isOpen" :dismissible="!isSaving" title="TaskをTemplateとして保存" :ui="{ content: 'max-w-130' }">
+  <UModal
+    v-model:open="isOpen"
+    :dismissible="!isSaving"
+    title="TaskをTemplateとして保存"
+    :ui="{ content: 'max-w-130' }"
+  >
     <template #body>
-      <p class="mb-4 text-sm text-muted">Taskの初期値と、未完了のチェック項目を本人専用Templateへ保存します。</p>
-      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
+      <p class="mb-4 text-sm text-muted">
+        Taskの初期値と、未完了のチェック項目を本人専用Templateへ保存します。
+      </p>
+      <StatusAlert v-if="errorMessage" type="error" density="compact" class="mb-3">{{
+        errorMessage
+      }}</StatusAlert>
       <div class="relative">
         <UFormField label="Template名">
           <UInput
@@ -50,7 +69,14 @@ const { canCapture, capture, close, errorMessage, isOpen, isSaving, name, open, 
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="close">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="isSaving" :disabled="!canCapture" @click="capture">保存</UButton>
+      <UButton
+        color="primary"
+        variant="ghost"
+        :loading="isSaving"
+        :disabled="!canCapture"
+        @click="capture"
+        >保存</UButton
+      >
     </template>
   </UModal>
 </template>

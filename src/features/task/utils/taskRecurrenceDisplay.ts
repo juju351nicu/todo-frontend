@@ -79,10 +79,12 @@ const BLOCKED_REASON_LABELS: Readonly<Record<string, string>> = {
 };
 
 /** 繰り返し規則の状態コードを表示名へ変換する。 */
-export const getRecurrenceStatusLabel = (status: TaskRecurrenceStatus): string => STATUS_LABELS[status];
+export const getRecurrenceStatusLabel = (status: TaskRecurrenceStatus): string =>
+  STATUS_LABELS[status];
 
 /** 繰り返し規則の状態コードを表示色へ変換する。 */
-export const getRecurrenceStatusColor = (status: TaskRecurrenceStatus): SemanticColor => STATUS_COLORS[status];
+export const getRecurrenceStatusColor = (status: TaskRecurrenceStatus): SemanticColor =>
+  STATUS_COLORS[status];
 
 /** 生成履歴の状態コードを表示名へ変換する。 */
 export const getGenerationStatusLabel = (status: TaskRecurrenceGenerationStatus): string =>
@@ -102,7 +104,7 @@ export const formatRecurrenceSchedule = (
   frequency: TaskRecurrenceFrequency,
   intervalCount: number,
   weekdays: readonly TaskRecurrenceWeekday[],
-  monthlyDay: number | null,
+  monthlyDay: number | null
 ): string => {
   if (frequency === "DAILY") {
     return `${intervalCount}日ごと`;
@@ -118,7 +120,8 @@ export const formatRecurrenceSchedule = (
 };
 
 /** ISO時刻を利用者のlocaleで読める日時へ変換する。未設定は`-`。 */
-export const formatRecurrenceDateTime = (value: string | null): string => (value ? new Date(value).toLocaleString() : "-");
+export const formatRecurrenceDateTime = (value: string | null): string =>
+  value ? new Date(value).toLocaleString() : "-";
 
 /** 安定error codeを運用者向け説明へ変換する。未知のcodeは隠さずそのまま表示し、未設定は`-`。 */
 export const formatRecurrenceErrorCode = (value: string | null): string =>

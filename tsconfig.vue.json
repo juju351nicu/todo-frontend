@@ -4,14 +4,6 @@
     "checkUnknownComponents": true,
     "checkUnknownDirectives": true
   },
-  "include": [
-    "src/**/*.vue",
-    "src/**/*.d.ts",
-    "auto-imports.d.ts",
-    "components.d.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src/**/*.vue", "src/**/*.d.ts", "auto-imports.d.ts", "components.d.ts"],
+  "exclude": ["dist", "node_modules"]
 }

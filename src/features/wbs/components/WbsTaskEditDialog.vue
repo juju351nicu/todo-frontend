@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import type { WbsParentOption, WbsTask, WbsTaskEditForm, WbsTaskType } from "@/features/wbs/types/wbs";
+import type {
+  WbsParentOption,
+  WbsTask,
+  WbsTaskEditForm,
+  WbsTaskType,
+} from "@/features/wbs/types/wbs";
 import { WBS_TASK_EDITOR_CONTROL } from "@/features/wbs/composables/useWbsTaskEditor";
 import { formatWbsTaskDialogTitle } from "@/features/wbs/utils/wbsDialog";
 import { buildWbsTaskEditForm } from "@/features/wbs/utils/wbsForm";
@@ -33,25 +38,29 @@ const TASK_TYPE_OPTIONS: { title: string; value: WbsTaskType }[] = [
 // 選択UI（Reka UI）はnullを未選択として扱うため、最上位（親なし）はTask IDに使われない0で表し、保存前にnullへ戻す。
 const ROOT_PARENT_VALUE = 0;
 const parentSelectOptions = computed(() =>
-  props.parentOptions.map((option) => ({ title: option.title, value: option.value ?? ROOT_PARENT_VALUE })),
+  props.parentOptions.map((option) => ({
+    title: option.title,
+    value: option.value ?? ROOT_PARENT_VALUE,
+  }))
 );
 
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("WBS Taskを編集", props.task, false));
 
 // Dialogを開くたび、または編集対象が変わるたびに、Backend取得済みTaskから独立した入力フォームを作る。
-const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<WbsTaskEditForm | null>({
-  initialForm: null,
-  syncSources: [() => props.open, () => props.task],
-  buildForm: () => (props.task === null ? null : buildWbsTaskEditForm(props.task)),
-  isBusy: () => props.isSaving,
-  canSubmit: (value) => value !== null,
-  onClose: () => emit("close"),
-  onSave: (value) => {
-    if (value !== null) {
-      emit("save", value);
-    }
-  },
-});
+const { closeDialog, form, handleDialogVisibility, submitForm } =
+  useDialogForm<WbsTaskEditForm | null>({
+    initialForm: null,
+    syncSources: [() => props.open, () => props.task],
+    buildForm: () => (props.task === null ? null : buildWbsTaskEditForm(props.task)),
+    isBusy: () => props.isSaving,
+    canSubmit: (value) => value !== null,
+    onClose: () => emit("close"),
+    onSave: (value) => {
+      if (value !== null) {
+        emit("save", value);
+      }
+    },
+  });
 </script>
 
 <template>
@@ -86,7 +95,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
                   value-key="value"
                   :disabled="isSaving"
                   class="w-full"
-                  @update:model-value="form.parentTaskId = $event === ROOT_PARENT_VALUE ? null : $event"
+                  @update:model-value="
+                    form.parentTaskId = $event === ROOT_PARENT_VALUE ? null : $event
+                  "
                 />
               </UFormField>
             </div>
@@ -106,7 +117,13 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
 
           <div class="relative">
             <UFormField label="WBSコード">
-              <UInput v-model="form.wbsCode" :maxlength="100" :disabled="isSaving" placeholder="例: 1.2.1" class="w-full" />
+              <UInput
+                v-model="form.wbsCode"
+                :maxlength="100"
+                :disabled="isSaving"
+                placeholder="例: 1.2.1"
+                class="w-full"
+              />
             </UFormField>
             <FieldCounter :value="form.wbsCode" :max="100" />
           </div>
@@ -114,17 +131,34 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="予定開始日">
-                <UInput v-model="form.plannedStartDate" type="date" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.plannedStartDate"
+                  type="date"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="予定終了日">
-                <UInput v-model="form.plannedEndDate" type="date" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.plannedEndDate"
+                  type="date"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="予定工数（分）">
-                <UInput v-model.nullable="form.plannedEffortMinutes" type="number" min="0" step="1" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model.nullable="form.plannedEffortMinutes"
+                  type="number"
+                  min="0"
+                  step="1"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
@@ -147,12 +181,22 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm<
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="実績開始日">
-                <UInput v-model="form.actualStartDate" type="date" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.actualStartDate"
+                  type="date"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="実績終了日">
-                <UInput v-model="form.actualEndDate" type="date" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.actualEndDate"
+                  type="date"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
           </div>

@@ -35,7 +35,7 @@ const props = withDefaults(
     hideFooter: false,
     loading: false,
     noDataText: "表示するデータはありません。",
-  },
+  }
 );
 
 /** 選択済み行の`itemValue`。`selectable`がfalseの場合は変更しない。 */
@@ -45,7 +45,9 @@ const itemsPerPage = defineModel<number>("itemsPerPage", { default: 10 });
 
 const slots = useSlots();
 /** 親が渡した`<key>-cell`slotの名前。`UTable`の同名slotへそのまま中継する。 */
-const cellSlotNames = computed<string[]>(() => Object.keys(slots).filter((name) => name.endsWith("-cell")));
+const cellSlotNames = computed<string[]>(() =>
+  Object.keys(slots).filter((name) => name.endsWith("-cell"))
+);
 
 const {
   columns,
@@ -84,21 +86,35 @@ const {
     >
       <template #select-header="{ table }">
         <UCheckbox
-          :model-value="table.getIsSomePageRowsSelected() ? 'indeterminate' : table.getIsAllPageRowsSelected()"
+          :model-value="
+            table.getIsSomePageRowsSelected() ? 'indeterminate' : table.getIsAllPageRowsSelected()
+          "
           aria-label="表示中の行をすべて選択"
-          @update:model-value="(value: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(value === true)"
+          @update:model-value="
+            (value: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(value === true)
+          "
         />
       </template>
       <template #select-cell="{ row }">
         <UCheckbox
           :model-value="row.getIsSelected()"
           aria-label="行を選択"
-          @update:model-value="(value: boolean | 'indeterminate') => row.toggleSelected(value === true)"
+          @update:model-value="
+            (value: boolean | 'indeterminate') => row.toggleSelected(value === true)
+          "
         />
       </template>
       <!-- 未ソートの列の矢印は、hover中だけ薄く表示する。 -->
-      <template v-for="header in sortableHeaders" #[`${header.key}-header`]="{ column }" :key="header.key">
-        <button type="button" class="group inline-flex items-center gap-1 font-medium" @click="column.getToggleSortingHandler()?.($event)">
+      <template
+        v-for="header in sortableHeaders"
+        #[`${header.key}-header`]="{ column }"
+        :key="header.key"
+      >
+        <button
+          type="button"
+          class="group inline-flex items-center gap-1 font-medium"
+          @click="column.getToggleSortingHandler()?.($event)"
+        >
           {{ header.title }}
           <UIcon
             :name="column.getIsSorted() === 'desc' ? 'i-mdi-arrow-down' : 'i-mdi-arrow-up'"

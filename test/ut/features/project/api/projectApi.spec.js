@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import ProjectApi, {
-  ProjectApiError,
-} from "@/features/project/api/projectApi";
+import ProjectApi, { ProjectApiError } from "@/features/project/api/projectApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -49,35 +47,27 @@ describe("Project API", () => {
     await expect(ProjectApi.getTaskBoard(7)).resolves.toEqual(board);
 
     expect(HttpClient.getRequest).toHaveBeenNthCalledWith(1, "/api/v1/projects/7");
-    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(
-      2,
-      "/api/v1/projects/7/board"
-    );
+    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(2, "/api/v1/projects/7/board");
   });
 
   it.each([
     [401, new SyntaxError("empty")],
     [403, new SyntaxError("not json")],
-  ])(
-    "本文を解析できない%dをstatus付きProjectApiErrorへ変換する",
-    async (status, parseError) => {
-      HttpClient.getRequest.mockResolvedValue({
-        ok: false,
-        status,
-        json: vi.fn().mockRejectedValue(parseError),
-      });
+  ])("本文を解析できない%dをstatus付きProjectApiErrorへ変換する", async (status, parseError) => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: false,
+      status,
+      json: vi.fn().mockRejectedValue(parseError),
+    });
 
-      const promise = ProjectApi.getProjects();
+    const promise = ProjectApi.getProjects();
 
-      await expect(promise).rejects.toMatchObject({
-        status,
-        errorResponse: null,
-      });
-      await promise.catch((error) =>
-        expect(error).toBeInstanceOf(ProjectApiError)
-      );
-    }
-  );
+    await expect(promise).rejects.toMatchObject({
+      status,
+      errorResponse: null,
+    });
+    await promise.catch((error) => expect(error).toBeInstanceOf(ProjectApiError));
+  });
 
   it("Project表示情報とarchive状態をPUT契約で更新する", async () => {
     const request = {
@@ -92,11 +82,11 @@ describe("Project API", () => {
       json: vi.fn().mockResolvedValue(updated),
     });
 
-    await expect(ProjectApi.updateProject(7, request)).resolves.toEqual({ ...updated, members: [] });
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7",
-      request
-    );
+    await expect(ProjectApi.updateProject(7, request)).resolves.toEqual({
+      ...updated,
+      members: [],
+    });
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/projects/7", request);
   });
 
   it("参加者に表示名・状態がない応答（Backendの項目追加前）は、IDの表示名とACTIVEを補い、ある値は変えない", async () => {
@@ -104,7 +94,12 @@ describe("Project API", () => {
       projectId: 7,
       members: [
         { accountId: 3, projectRole: "OWNER" },
-        { accountId: 4, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "DISABLED" },
+        {
+          accountId: 4,
+          projectRole: "MEMBER",
+          displayName: "佐藤 花子",
+          accountStatus: "DISABLED",
+        },
       ],
     };
     HttpClient.getRequest.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(detail) });
@@ -112,7 +107,12 @@ describe("Project API", () => {
     const actual = await ProjectApi.getProject(7);
 
     expect(actual.members).toEqual([
-      { accountId: 3, projectRole: "OWNER", displayName: "アカウントID: 3", accountStatus: "ACTIVE" },
+      {
+        accountId: 3,
+        projectRole: "OWNER",
+        displayName: "アカウントID: 3",
+        accountStatus: "ACTIVE",
+      },
       { accountId: 4, projectRole: "MEMBER", displayName: "佐藤 花子", accountStatus: "DISABLED" },
     ]);
   });
@@ -137,19 +137,24 @@ describe("Project API", () => {
       version: 2,
     });
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/members",
-      { accountId: 21, projectRole: "MEMBER" }
-    );
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/members/21",
-      { projectRole: "MANAGER", version: 2 }
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/projects/7/members", {
+      accountId: 21,
+      projectRole: "MEMBER",
+    });
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/projects/7/members/21", {
+      projectRole: "MANAGER",
+      version: 2,
+    });
   });
 
   it("member候補の検索語をURLエンコードしてquery parameterへ設定し、候補配列を返す", async () => {
-    const candidates = [{ accountId: 9, displayName: "山田 太郎", email: "y@example.com", loginId: null }];
-    HttpClient.getRequest.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ candidates }) });
+    const candidates = [
+      { accountId: 9, displayName: "山田 太郎", email: "y@example.com", loginId: null },
+    ];
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ candidates }),
+    });
 
     await expect(ProjectApi.findMemberCandidates(5, "山田&a")).resolves.toEqual(candidates);
 

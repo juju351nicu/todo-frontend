@@ -36,9 +36,7 @@ export const formatAttendanceClockTime = (now = new Date()): string =>
  * @returns 本人勤怠一覧APIへ渡す日付範囲
  * @throws Error yyyy-MM形式でないか実在しない月の場合
  */
-export const buildAttendanceMonthDateRange = (
-  yearMonth: string
-): AttendanceMonthDateRange => {
+export const buildAttendanceMonthDateRange = (yearMonth: string): AttendanceMonthDateRange => {
   const match = yearMonth.match(ISO_YEAR_MONTH_PATTERN);
   if (!match) {
     throw new Error("表示月はyyyy-MM形式で指定してください。");
@@ -62,28 +60,20 @@ export const buildAttendanceMonthDateRange = (
  * @param day 集計する本人勤怠日
  * @returns 総勤務・休憩・差引勤務時間と未完了区間の有無
  */
-export const summarizeAttendanceDay = (
-  day: AttendanceDayResponse | null
-): AttendanceDaySummary => {
+export const summarizeAttendanceDay = (day: AttendanceDayResponse | null): AttendanceDaySummary => {
   let grossWorkMinutes = 0;
   let breakMinutes = 0;
   let incomplete = false;
 
   for (const workPeriod of day?.workPeriods ?? []) {
-    const workDuration = calculateCompletedMinutes(
-      workPeriod.startedAt,
-      workPeriod.endedAt
-    );
+    const workDuration = calculateCompletedMinutes(workPeriod.startedAt, workPeriod.endedAt);
     if (workDuration === null) {
       incomplete = true;
     } else {
       grossWorkMinutes += workDuration;
     }
     for (const breakPeriod of workPeriod.breakPeriods ?? []) {
-      const breakDuration = calculateCompletedMinutes(
-        breakPeriod.startedAt,
-        breakPeriod.endedAt
-      );
+      const breakDuration = calculateCompletedMinutes(breakPeriod.startedAt, breakPeriod.endedAt);
       if (breakDuration === null) {
         incomplete = true;
       } else {
@@ -136,21 +126,20 @@ export const buildAttendanceMonthRows = (
 };
 
 /** 勤怠状態を本人画面の日本語表示へ変換する。 */
-export const getAttendancePunchStateLabel = (
-  state: AttendancePunchState
-): string =>
+export const getAttendancePunchStateLabel = (state: AttendancePunchState): string =>
   ({ OFF_DUTY: "退勤中", WORKING: "勤務中", ON_BREAK: "休憩中" })[state];
 
 /** 勤怠状態を表示色へ変換する。 */
-export const getAttendancePunchStateColor = (
-  state: AttendancePunchState
-): SemanticColor =>
-  ({ OFF_DUTY: "neutral", WORKING: "success", ON_BREAK: "warning" } satisfies Record<string, SemanticColor>)[state];
+export const getAttendancePunchStateColor = (state: AttendancePunchState): SemanticColor =>
+  (
+    ({ OFF_DUTY: "neutral", WORKING: "success", ON_BREAK: "warning" }) satisfies Record<
+      string,
+      SemanticColor
+    >
+  )[state];
 
 /** Task実績と実勤務の照合状態を本人画面の日本語表示へ変換する。 */
-export const getAttendanceAllocationStatusLabel = (
-  status: AttendanceAllocationStatus
-): string =>
+export const getAttendanceAllocationStatusLabel = (status: AttendanceAllocationStatus): string =>
   ({
     BALANCED: "一致",
     UNALLOCATED: "未配賦あり",
@@ -162,17 +151,17 @@ export const getAttendanceAllocationStatusLabel = (
 export const getAttendanceAllocationStatusColor = (
   status: AttendanceAllocationStatus
 ): SemanticColor =>
-  ({
-    BALANCED: "success",
-    UNALLOCATED: "warning",
-    OVER_ALLOCATED: "error",
-    INCOMPLETE: "info",
-  } satisfies Record<string, SemanticColor>)[status];
+  (
+    ({
+      BALANCED: "success",
+      UNALLOCATED: "warning",
+      OVER_ALLOCATED: "error",
+      INCOMPLETE: "info",
+    }) satisfies Record<string, SemanticColor>
+  )[status];
 
 /** 月次workflow状態を本人・管理画面共通の日本語へ変換する。 */
-export const getAttendanceMonthStatusLabel = (
-  status: AttendanceMonthStatus
-): string =>
+export const getAttendanceMonthStatusLabel = (status: AttendanceMonthStatus): string =>
   ({
     DRAFT: "下書き",
     SUBMITTED: "提出済み",
@@ -182,16 +171,16 @@ export const getAttendanceMonthStatusLabel = (
   })[status];
 
 /** 月次workflow状態を表示色へ変換する。 */
-export const getAttendanceMonthStatusColor = (
-  status: AttendanceMonthStatus
-): SemanticColor =>
-  ({
-    DRAFT: "neutral",
-    SUBMITTED: "info",
-    APPROVED: "success",
-    REJECTED: "warning",
-    CLOSED: "secondary",
-  } satisfies Record<string, SemanticColor>)[status];
+export const getAttendanceMonthStatusColor = (status: AttendanceMonthStatus): SemanticColor =>
+  (
+    ({
+      DRAFT: "neutral",
+      SUBMITTED: "info",
+      APPROVED: "success",
+      REJECTED: "warning",
+      CLOSED: "secondary",
+    }) satisfies Record<string, SemanticColor>
+  )[status];
 
 /** APIのISO時刻をAsia/Tokyoの年月日時分へ変換する。 */
 export const formatAttendanceInstant = (instant: string | null): string => {
@@ -252,29 +241,20 @@ export const formatAttendanceMinutes = (minutes: number): string => {
   if (hours === 0) {
     return `${remainingMinutes}分`;
   }
-  return remainingMinutes === 0
-    ? `${hours}時間`
-    : `${hours}時間${remainingMinutes}分`;
+  return remainingMinutes === 0 ? `${hours}時間` : `${hours}時間${remainingMinutes}分`;
 };
 
 /** 未配賦分数を、一致・未配賦・過配賦の向きを失わない表示へ整形する。 */
-export const formatAttendanceAllocationDifference = (
-  unallocatedMinutes: number
-): string => {
+export const formatAttendanceAllocationDifference = (unallocatedMinutes: number): string => {
   if (!Number.isFinite(unallocatedMinutes) || unallocatedMinutes === 0) {
     return "差分なし";
   }
   const formatted = formatAttendanceMinutes(Math.abs(unallocatedMinutes));
-  return unallocatedMinutes > 0
-    ? `未配賦 ${formatted}`
-    : `超過 ${formatted}`;
+  return unallocatedMinutes > 0 ? `未配賦 ${formatted}` : `超過 ${formatted}`;
 };
 
 /** 開始・終了時刻が確定した区間を切り捨て分数へ変換する。 */
-const calculateCompletedMinutes = (
-  startedAt: string,
-  endedAt: string | null
-): number | null => {
+const calculateCompletedMinutes = (startedAt: string, endedAt: string | null): number | null => {
   if (endedAt === null) {
     return null;
   }

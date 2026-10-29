@@ -30,15 +30,13 @@ const buildSearchQuery = (filters: TaskSearchFilters): URLSearchParams => {
   const query = new URLSearchParams();
   const keyword = filters.keyword.trim();
   if (keyword) query.set("keyword", keyword);
-  if (filters.projectId !== null)
-    query.set("projectId", String(filters.projectId));
+  if (filters.projectId !== null) query.set("projectId", String(filters.projectId));
   if (filters.assigneeAccountId !== null)
     query.set("assigneeAccountId", String(filters.assigneeAccountId));
   if (filters.statusCode) query.set("statusCode", filters.statusCode);
   if (filters.dueFrom) query.set("dueFrom", filters.dueFrom);
   if (filters.dueTo) query.set("dueTo", filters.dueTo);
-  if (filters.priority !== null)
-    query.set("priority", String(filters.priority));
+  if (filters.priority !== null) query.set("priority", String(filters.priority));
   return query;
 };
 
@@ -49,9 +47,7 @@ const buildSearchQuery = (filters: TaskSearchFilters): URLSearchParams => {
  * @returns Backendで全条件を適用した最大100件
  * @throws TaskSearchApiError 未認証、permission不足、入力不正またはBackendエラーの場合
  */
-export const searchTasks = async (
-  filters: TaskSearchFilters
-): Promise<TaskSearchListResponse> => {
+export const searchTasks = async (filters: TaskSearchFilters): Promise<TaskSearchListResponse> => {
   const query = buildSearchQuery(filters);
   const suffix = query.size > 0 ? `?${query.toString()}` : "";
   const response = await HttpClient.getRequest(`${API_PATHS.TASK_SEARCH}${suffix}`);
@@ -70,9 +66,7 @@ export const getTaskSearchOptions = async (
   projectId: number | null
 ): Promise<TaskSearchOptionsResponse> => {
   const suffix = projectId === null ? "" : `?projectId=${projectId}`;
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.TASK_SEARCH_OPTIONS}${suffix}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.TASK_SEARCH_OPTIONS}${suffix}`);
   await ensureSuccess(response);
   return (await response.json()) as TaskSearchOptionsResponse;
 };
@@ -88,10 +82,7 @@ export const getTaskSavedViews = async (): Promise<TaskSavedView[]> => {
 export const createTaskSavedView = async (
   request: TaskSavedViewCreateRequest
 ): Promise<TaskSavedView> => {
-  const response = await HttpClient.postRequest(
-    API_PATHS.TASK_SAVED_VIEWS,
-    request
-  );
+  const response = await HttpClient.postRequest(API_PATHS.TASK_SAVED_VIEWS, request);
   await ensureSuccess(response);
   return (await response.json()) as TaskSavedView;
 };
@@ -110,10 +101,7 @@ export const updateTaskSavedView = async (
 };
 
 /** CSRF・version付きで本人所有Task Saved Viewを削除する。 */
-export const deleteTaskSavedView = async (
-  savedViewId: number,
-  version: number
-): Promise<void> => {
+export const deleteTaskSavedView = async (savedViewId: number, version: number): Promise<void> => {
   const response = await HttpClient.deleteRequest(
     `${API_PATHS.TASK_SAVED_VIEWS}/${savedViewId}?version=${version}`
   );

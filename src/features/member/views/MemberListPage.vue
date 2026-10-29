@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { formatMemberDateTime, useMemberListPage } from "@/features/member/composables/useMemberListPage";
+import {
+  formatMemberDateTime,
+  useMemberListPage,
+} from "@/features/member/composables/useMemberListPage";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -39,16 +42,29 @@ onBeforeMount(initialize);
     :selectable="canDeleteMembers"
     class="rounded-sm ring ring-default"
   >
-    <template #registeredDate-cell="{ item }">{{ formatMemberDateTime(item.registeredDate) }}</template>
+    <template #registeredDate-cell="{ item }">{{
+      formatMemberDateTime(item.registeredDate)
+    }}</template>
     <template #updatedDate-cell="{ item }">{{ formatMemberDateTime(item.updatedDate) }}</template>
     <template #lastLogin-cell="{ item }">{{ formatMemberDateTime(item.lastLogin) }}</template>
     <template #actions-cell="{ item }">
-      <button type="button" class="me-2 align-middle" aria-label="会員を編集" @click="showMemberDetail(item)">
+      <button
+        type="button"
+        class="me-2 align-middle"
+        aria-label="会員を編集"
+        @click="showMemberDetail(item)"
+      >
         <UIcon name="i-mdi-pencil" class="size-4" />
       </button>
     </template>
   </AppDataTable>
-  <UButton v-if="canDeleteMembers" icon="i-mdi-delete" color="success" class="me-4" @click="deleteSelectedMembers">
+  <UButton
+    v-if="canDeleteMembers"
+    icon="i-mdi-delete"
+    color="success"
+    class="me-4"
+    @click="deleteSelectedMembers"
+  >
     削除確認する
   </UButton>
 </template>

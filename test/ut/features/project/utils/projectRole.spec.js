@@ -40,8 +40,11 @@ describe("Projectの管理権限", () => {
     [false, "MANAGER", false, true],
     [false, "MEMBER", false, false],
     [false, null, false, false],
-  ])("SYSTEM_ADMIN=%s・role=%sなら、Project管理=%s・Task管理=%s", (isSystemAdmin, role, project, tasks) => {
-    expect(canManageProject(isSystemAdmin, role)).toBe(project);
-    expect(canManageProjectTasks(isSystemAdmin, role)).toBe(tasks);
-  });
+  ])(
+    "SYSTEM_ADMIN=%s・role=%sなら、Project管理=%s・Task管理=%s",
+    (isSystemAdmin, role, project, tasks) => {
+      expect(canManageProject(isSystemAdmin, role)).toBe(project);
+      expect(canManageProjectTasks(isSystemAdmin, role)).toBe(tasks);
+    }
+  );
 });

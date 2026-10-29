@@ -13,9 +13,7 @@ export const hasAnyPermission = (
   requiredPermissionCodes: readonly PermissionCode[]
 ): boolean =>
   requiredPermissionCodes.length === 0 ||
-  requiredPermissionCodes.some((permissionCode) =>
-    permissionCodes.includes(permissionCode)
-  );
+  requiredPermissionCodes.some((permissionCode) => permissionCodes.includes(permissionCode));
 
 /**
  * 未ログインで保護画面へ入ったときにLogin画面へ渡すquery。

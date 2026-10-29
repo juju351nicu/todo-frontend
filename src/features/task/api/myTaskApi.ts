@@ -13,10 +13,7 @@ export class MyTaskApiError extends ApiError {
 
 /** 非2xx ResponseをMyTaskApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
-  ensureApiSuccess(
-    response,
-    (status, errorResponse) => new MyTaskApiError(status, errorResponse)
-  );
+  ensureApiSuccess(response, (status, errorResponse) => new MyTaskApiError(status, errorResponse));
 
 /**
  * 認証利用者本人が担当する未完了Project Taskを取得する。

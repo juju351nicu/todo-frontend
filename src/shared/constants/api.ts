@@ -1,9 +1,10 @@
 const DEFAULT_API_BASE_URL = "http://localhost:8030";
 
 /** Backend APIの接続先。末尾のスラッシュは除去する。 */
-export const API_BASE_URL = (
-  import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
-).replace(/\/+$/, "");
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(
+  /\/+$/,
+  ""
+);
 
 /** BackendのREST APIパス。 */
 export const API_PATHS = {
@@ -35,10 +36,8 @@ export const API_PATHS = {
   INQUIRY_SEND_MAIL: "/inquiryForm/sendmail",
   ADMINISTRATION_ACCOUNTS: "/api/v1/administration/accounts",
   ADMINISTRATION_ROLES: "/api/v1/administration/roles",
-  AUTHORIZATION_AUDIT_LOGS:
-    "/api/v1/administration/authorization-audit-logs",
+  AUTHORIZATION_AUDIT_LOGS: "/api/v1/administration/authorization-audit-logs",
   ATTENDANCE: "/api/v1/attendance",
   NOTIFICATIONS: "/api/v1/notifications",
-  ADMINISTRATION_NOTIFICATION_ANNOUNCEMENTS:
-    "/api/v1/administration/notifications/announcements",
+  ADMINISTRATION_NOTIFICATION_ANNOUNCEMENTS: "/api/v1/administration/notifications/announcements",
 } as const;

@@ -1,11 +1,8 @@
 import { computed, ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import TaskCommentApi, {
-  TaskCommentApiError,
-} from "@/features/task/api/taskCommentApi";
+import TaskCommentApi, { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import { TASK_COMMENT_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskComment,
@@ -34,8 +31,7 @@ export const COMMENT_COMPOSER_CONTROL = "composer";
  * @param commentId コメントID
  * @returns `"{commentId}:edit"`形式の属性値
  */
-export const buildCommentEditControlKey = (commentId: number): string =>
-  `${commentId}:edit`;
+export const buildCommentEditControlKey = (commentId: number): string => `${commentId}:edit`;
 
 /** `data-comment-control`属性の値から、その要素を探すselectorを作る。 */
 const buildCommentControlSelector = createDataAttributeSelector("data-comment-control");
@@ -76,7 +72,6 @@ export const useTaskComments = (
   taskId: Readonly<Ref<number | null>>,
   disabled: Readonly<Ref<boolean>>
 ) => {
-  const router = useRouter();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
 
@@ -104,15 +99,15 @@ export const useTaskComments = (
   const isUpdating = ref(false);
   const isDeleting = ref(false);
   /** いずれかの更新系APIを実行中か。実行中は投稿欄・各ボタンをdisabledにして二重送信を防ぐ。 */
-  const isMutating = computed(
-    () => isSubmitting.value || isUpdating.value || isDeleting.value
-  );
+  const isMutating = computed(() => isSubmitting.value || isUpdating.value || isDeleting.value);
   /** 参照専用でなく、入力中の本文が有効で、他の更新中でない場合だけ投稿できる。 */
   const canSubmit = computed<boolean>(
     () => !disabled.value && isValidCommentBody(commentBody.value) && !isMutating.value
   );
   /** 編集中の本文が有効で、他の更新中でない場合だけ更新できる。 */
-  const canSaveEdit = computed<boolean>(() => isValidCommentBody(editBody.value) && !isMutating.value);
+  const canSaveEdit = computed<boolean>(
+    () => isValidCommentBody(editBody.value) && !isMutating.value
+  );
 
   /** 前回の操作結果の文言を消す。新しい操作・取得を始めるときに呼ぶ。 */
   const clearFeedback = (): void => {
@@ -126,12 +121,7 @@ export const useTaskComments = (
    * @returns 参照専用・他の更新中・ID未確定のいずれかならnull
    */
   const resolveMutationTarget = (): CommentMutationTarget | null => {
-    if (
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null
-    ) {
+    if (disabled.value || isMutating.value || projectId.value === null || taskId.value === null) {
       return null;
     }
     return { projectId: projectId.value, taskId: taskId.value };
@@ -196,10 +186,7 @@ export const useTaskComments = (
     isLoading.value = true;
     clearFeedback();
     try {
-      const loadedComments = await TaskCommentApi.findComments(
-        projectId.value,
-        taskId.value
-      );
+      const loadedComments = await TaskCommentApi.findComments(projectId.value, taskId.value);
       if (!isLatestRequest()) {
         return false;
       }
@@ -257,18 +244,12 @@ export const useTaskComments = (
     isLoading.value = true;
     clearFeedback();
     try {
-      const loadedComments = await TaskCommentApi.findComments(
-        currentProjectId,
-        currentTaskId
-      );
+      const loadedComments = await TaskCommentApi.findComments(currentProjectId, currentTaskId);
       if (!isLatestRequest()) {
         return;
       }
       comments.value = loadedComments;
-      errorMessages.value = [
-        ...mutationMessages,
-        DISPLAY_MESSAGES.task.comments.conflictReloaded,
-      ];
+      errorMessages.value = [...mutationMessages, DISPLAY_MESSAGES.task.comments.conflictReloaded];
     } catch (reloadError: unknown) {
       if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
@@ -287,10 +268,7 @@ export const useTaskComments = (
         );
         return;
       }
-      errorMessages.value = [
-        ...mutationMessages,
-        DISPLAY_MESSAGES.task.comments.reloadFailed,
-      ];
+      errorMessages.value = [...mutationMessages, DISPLAY_MESSAGES.task.comments.reloadFailed];
     } finally {
       if (isLatestRequest()) {
         isLoading.value = false;
@@ -304,21 +282,12 @@ export const useTaskComments = (
    * @param error 編集・削除APIまたは通信で発生した例外
    * @param fallback 契約外のerror codeや本文なしのときに出す文言
    */
-  const handleMutationError = async (
-    error: unknown,
-    fallback: string
-  ): Promise<void> => {
+  const handleMutationError = async (error: unknown, fallback: string): Promise<void> => {
     if (await handleUnauthorized(error)) {
       return;
     }
-    if (
-      error instanceof TaskCommentApiError &&
-      (error.status === 404 || error.status === 409)
-    ) {
-      await recoverLatestComments(
-        error,
-        DISPLAY_MESSAGES.task.comments.conflictFallback
-      );
+    if (error instanceof TaskCommentApiError && (error.status === 404 || error.status === 409)) {
+      await recoverLatestComments(error, DISPLAY_MESSAGES.task.comments.conflictFallback);
       return;
     }
     errorMessages.value = getErrorMessages(error, fallback);
@@ -355,10 +324,7 @@ export const useTaskComments = (
       successMessage.value = DISPLAY_MESSAGES.task.comments.created;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        errorMessages.value = getErrorMessages(
-          error,
-          DISPLAY_MESSAGES.task.comments.createFailed
-        );
+        errorMessages.value = getErrorMessages(error, DISPLAY_MESSAGES.task.comments.createFailed);
       }
     } finally {
       isSubmitting.value = false;
@@ -392,7 +358,9 @@ export const useTaskComments = (
     const commentId = editingCommentId.value;
     cancelEditing();
     if (commentId !== null) {
-      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(commentId))]);
+      await focusFirstEnabledElement([
+        buildCommentControlSelector(buildCommentEditControlKey(commentId)),
+      ]);
     }
   };
 
@@ -442,7 +410,9 @@ export const useTaskComments = (
     }
     // 更新に成功して編集欄が閉じたときだけ編集ボタンへ戻す。失敗して編集欄が残る場合は編集欄のフォーカスを奪わない。
     if (editingCommentId.value === null) {
-      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(comment.commentId))]);
+      await focusFirstEnabledElement([
+        buildCommentControlSelector(buildCommentEditControlKey(comment.commentId)),
+      ]);
     }
   };
 
@@ -484,9 +454,7 @@ export const useTaskComments = (
         deleting.commentId,
         deleting.version
       );
-      comments.value = comments.value.filter(
-        (comment) => comment.commentId !== deleting.commentId
-      );
+      comments.value = comments.value.filter((comment) => comment.commentId !== deleting.commentId);
       cancelDelete();
       successMessage.value = DISPLAY_MESSAGES.task.comments.deleted;
     } catch (error: unknown) {

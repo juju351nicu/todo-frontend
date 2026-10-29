@@ -42,18 +42,14 @@ describe("Vue routes", () => {
     const route = findRoute("Attendance");
 
     expect(route.path).toBe("/attendance");
-    expect(route.meta.requiredAnyPermissions).toEqual([
-      "ATTENDANCE_READ_OWN",
-    ]);
+    expect(route.meta.requiredAnyPermissions).toEqual(["ATTENDANCE_READ_OWN"]);
   });
 
   it("管理者勤怠月画面をATTENDANCE_READ_ALLで保護する", () => {
     const route = findRoute("AttendanceAdministration");
 
     expect(route.path).toBe("/attendance/administration");
-    expect(route.meta.requiredAnyPermissions).toEqual([
-      "ATTENDANCE_READ_ALL",
-    ]);
+    expect(route.meta.requiredAnyPermissions).toEqual(["ATTENDANCE_READ_ALL"]);
   });
 
   it("Project一覧・Template・My Tasks・Task検索・Board・WBSをBackendの専用permissionで保護する", () => {
@@ -89,18 +85,14 @@ describe("Vue routes", () => {
     const route = findRoute("AuthorizationAuditList");
 
     expect(route.path).toBe("/administration/authorization-audit-logs");
-    expect(route.meta.requiredAnyPermissions).toEqual([
-      "AUTHORIZATION_AUDIT_READ",
-    ]);
+    expect(route.meta.requiredAnyPermissions).toEqual(["AUTHORIZATION_AUDIT_READ"]);
   });
 
   it("お知らせ配信画面を専用permissionで保護する", () => {
     const route = findRoute("NotificationAdministration");
 
     expect(route.path).toBe("/administration/notifications");
-    expect(route.meta.requiredAnyPermissions).toEqual([
-      "NOTIFICATION_ANNOUNCEMENT_CREATE",
-    ]);
+    expect(route.meta.requiredAnyPermissions).toEqual(["NOTIFICATION_ANNOUNCEMENT_CREATE"]);
   });
 
   it("各画面をルート単位で遅延読み込みする", () => {

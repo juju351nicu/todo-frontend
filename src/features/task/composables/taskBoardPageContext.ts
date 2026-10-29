@@ -42,7 +42,10 @@ export interface TaskBoardPageContext {
     messageTarget?: Ref<string[]>
   ) => Promise<void>;
   /** 確定済みのTask操作の後のBoard再取得の失敗を、操作の失敗と区別して表示する。 */
-  readonly handleConfirmedBoardRefreshError: (error: unknown, fallbackMessage: string) => Promise<void>;
+  readonly handleConfirmedBoardRefreshError: (
+    error: unknown,
+    fallbackMessage: string
+  ) => Promise<void>;
   /** 409競合の後に最新Boardを取り直し、取り直し済みであることを案内に添える。 */
   readonly reloadBoardAfterConflict: () => Promise<void>;
 }

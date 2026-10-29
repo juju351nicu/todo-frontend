@@ -17,7 +17,11 @@ const emit = defineEmits<{
   save: [form: TaskDependencyCreateForm];
 }>();
 
-const createEmptyForm = (): TaskDependencyCreateForm => ({ predecessorTaskId: null, successorTaskId: null, lagMinutes: 0 });
+const createEmptyForm = (): TaskDependencyCreateForm => ({
+  predecessorTaskId: null,
+  successorTaskId: null,
+  lagMinutes: 0,
+});
 
 // Dialogを開くたびに、前回確定または破棄した入力を残さず初期値へ戻す。先行・後続の組合せ検証は親composableが行う。
 const { canSubmit, closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
@@ -71,13 +75,27 @@ const { canSubmit, closeDialog, form, handleDialogVisibility, submitForm } = use
         </UFormField>
         <UFormField label="待ち時間（分）" help="先行Task終了から後続Task開始までの待ち時間です。">
           <!-- 空欄は0ではなく未入力（null）として親composableの検証へ渡す。 -->
-          <UInput v-model.nullable="form.lagMinutes" type="number" min="0" step="1" :disabled="isSaving" class="w-full" />
+          <UInput
+            v-model.nullable="form.lagMinutes"
+            type="number"
+            min="0"
+            step="1"
+            :disabled="isSaving"
+            class="w-full"
+          />
         </UFormField>
       </form>
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="closeDialog">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="isSaving" :disabled="!canSubmit" @click="submitForm">追加</UButton>
+      <UButton
+        color="primary"
+        variant="ghost"
+        :loading="isSaving"
+        :disabled="!canSubmit"
+        @click="submitForm"
+        >追加</UButton
+      >
     </template>
   </UModal>
 </template>

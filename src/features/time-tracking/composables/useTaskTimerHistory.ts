@@ -1,5 +1,4 @@
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
@@ -38,7 +37,6 @@ const validateDateRange = (dateFrom: string, dateTo: string): string[] => {
 
 /** 本人Timer Session履歴Dialogの期間、paging、認証エラーを管理する。 */
 export const useTaskTimerHistory = () => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
   const defaultRange = buildDefaultTimerHistoryRange();
   const dateFrom = ref(defaultRange.dateFrom);
@@ -116,10 +114,7 @@ export const useTaskTimerHistory = () => {
 
   /** 現在pageより後が存在する場合だけ次ページを取得する。 */
   const loadNextPage = async (): Promise<void> => {
-    if (
-      history.value !== null &&
-      history.value.page + 1 < history.value.totalPages
-    ) {
+    if (history.value !== null && history.value.page + 1 < history.value.totalPages) {
       await loadHistory(history.value.page + 1);
     }
   };

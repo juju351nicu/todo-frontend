@@ -44,10 +44,7 @@ describe("useWbsEarnedValue", () => {
     expect(mocks.wbsApi.getEarnedValueMetrics).not.toHaveBeenCalled();
     await page.loadEarnedValueMetrics("2026-08-30");
 
-    expect(mocks.wbsApi.getEarnedValueMetrics).toHaveBeenCalledWith(
-      7,
-      "2026-08-30"
-    );
+    expect(mocks.wbsApi.getEarnedValueMetrics).toHaveBeenCalledWith(7, "2026-08-30");
     expect(page.earnedValueStatusDate.value).toBe("2026-08-30");
     expect(page.earnedValue.value).toEqual(earnedValueResponse);
     expect(page.earnedValueErrorMessages.value).toEqual([]);
@@ -60,18 +57,14 @@ describe("useWbsEarnedValue", () => {
     await page.loadEarnedValueMetrics("2026-02-29");
 
     expect(mocks.wbsApi.getEarnedValueMetrics).not.toHaveBeenCalled();
-    expect(page.earnedValueErrorMessages.value).toEqual([
-      "EVM基準日を入力してください。",
-    ]);
+    expect(page.earnedValueErrorMessages.value).toEqual(["EVM基準日を入力してください。"]);
   });
 
   it("active baselineがない409では古いEVMを破棄して作成案内を表示する", async () => {
     const page = useWbsPage();
     await page.initialize();
     await page.loadEarnedValueMetrics("2026-08-30");
-    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValueOnce(
-      new WbsApiError(409, null)
-    );
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValueOnce(new WbsApiError(409, null));
 
     await page.loadEarnedValueMetrics("2026-08-31");
 
@@ -82,9 +75,7 @@ describe("useWbsEarnedValue", () => {
   });
 
   it("EVM取得の401ではSessionを破棄してログイン画面へ遷移する", async () => {
-    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValue(
-      new WbsApiError(401, null)
-    );
+    mocks.wbsApi.getEarnedValueMetrics.mockRejectedValue(new WbsApiError(401, null));
     const page = useWbsPage();
     await page.initialize();
 
@@ -115,9 +106,7 @@ describe("useWbsEarnedValue", () => {
 
   describe("contextを直接渡した場合", () => {
     it("Project IDがなければEVM APIを呼ばない", async () => {
-      const state = useWbsEarnedValue(
-        buildWbsPageContext({ projectId: { value: null } })
-      );
+      const state = useWbsEarnedValue(buildWbsPageContext({ projectId: { value: null } }));
 
       await state.loadEarnedValueMetrics("2026-08-30");
 

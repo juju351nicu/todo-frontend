@@ -12,7 +12,7 @@ withDefaults(
     priority: TaskPriority;
     size?: "xs" | "sm" | "md";
   }>(),
-  { size: "sm" },
+  { size: "sm" }
 );
 </script>
 

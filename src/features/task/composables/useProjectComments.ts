@@ -1,10 +1,7 @@
 import { ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import TaskCommentApi, {
-  TaskCommentApiError,
-} from "@/features/task/api/taskCommentApi";
+import TaskCommentApi, { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import type { ProjectTaskComment } from "@/features/task/types/taskComment";
 import { TASK_COMMENT_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -22,7 +19,6 @@ export const useProjectComments = (
   projectId: Readonly<Ref<number | null>>,
   onTaskSelected: (taskId: number) => void = () => undefined
 ) => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const comments = ref<ProjectTaskComment[]>([]);
@@ -51,9 +47,7 @@ export const useProjectComments = (
     isLoading.value = true;
     errorMessages.value = [];
     try {
-      comments.value = await TaskCommentApi.findProjectComments(
-        projectId.value
-      );
+      comments.value = await TaskCommentApi.findProjectComments(projectId.value);
     } catch (error: unknown) {
       comments.value = [];
       if (error instanceof TaskCommentApiError && error.status === 401) {

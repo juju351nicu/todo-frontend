@@ -3,12 +3,9 @@ import { runBrowserRegressionFixture } from "./support/databaseFixture";
 
 const INITIAL_TITLE = "Browser My Tasks Today";
 const UPDATED_TITLE = "Browser My Tasks Today Updated";
-const UPDATED_DETAIL =
-  "Playwrightから更新し、Board再読込とWBS反映を確認するTask";
+const UPDATED_DETAIL = "Playwrightから更新し、Board再読込とWBS反映を確認するTask";
 
-test("My Tasksから同じTaskをBoardで更新し再読込後もWBSへ反映する", async ({
-  page,
-}) => {
+test("My Tasksから同じTaskをBoardで更新し再読込後もWBSへ反映する", async ({ page }) => {
   await page.goto("/my-tasks");
 
   await expect(page.getByRole("heading", { name: "My Tasks" })).toBeVisible();
@@ -36,34 +33,21 @@ test("My Tasksから同じTaskをBoardで更新し再読込後もWBSへ反映す
   await page.getByText(UPDATED_TITLE, { exact: true }).click();
 
   const reloadedTaskDialog = page.getByRole("dialog");
-  await expect(reloadedTaskDialog.getByLabel("タイトル")).toHaveValue(
-    UPDATED_TITLE
-  );
-  await expect(reloadedTaskDialog.getByLabel("詳細")).toHaveValue(
-    UPDATED_DETAIL
-  );
+  await expect(reloadedTaskDialog.getByLabel("タイトル")).toHaveValue(UPDATED_TITLE);
+  await expect(reloadedTaskDialog.getByLabel("詳細")).toHaveValue(UPDATED_DETAIL);
 
-  await reloadedTaskDialog
-    .getByRole("button", { name: "日別実績を入力", exact: true })
-    .click();
+  await reloadedTaskDialog.getByRole("button", { name: "日別実績を入力", exact: true }).click();
 
-  await expect(page).toHaveURL(
-    /\/projects\/\d+\/wbs\?taskId=\d+&panel=work-logs$/
+  await expect(page).toHaveURL(/\/projects\/\d+\/wbs\?taskId=\d+&panel=work-logs$/);
+  await expect(page.locator(".wbs-table tbody tr").filter({ hasText: UPDATED_TITLE })).toHaveCount(
+    1
   );
-  await expect(
-    page
-      .locator(".wbs-table tbody tr")
-      .filter({ hasText: UPDATED_TITLE })
-  ).toHaveCount(1);
   await expect(
     page.getByText(`Task日別実績工数: 2 ${UPDATED_TITLE}`, { exact: true })
   ).toBeVisible();
 
   if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
-    const inspection = runBrowserRegressionFixture(
-      "my-tasks",
-      "inspect-stage10d2"
-    );
+    const inspection = runBrowserRegressionFixture("my-tasks", "inspect-stage10d2");
     expect(inspection).toContain("updated_task_count=1");
   }
 });

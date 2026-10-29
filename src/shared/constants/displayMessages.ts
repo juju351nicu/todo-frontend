@@ -5,45 +5,38 @@
 export const DISPLAY_MESSAGES = {
   common: {
     connectionFailed: "Backendへ接続できませんでした。",
-    requestFailed:
-      "処理を完了できませんでした。しばらくしてから再度お試しください。",
+    requestFailed: "処理を完了できませんでした。しばらくしてから再度お試しください。",
   },
   auth: {
     credentialsRejected: "ログインIDまたはパスワードが正しくありません。",
     invalidInput: "ログイン情報を確認してください。",
-    requestForbidden:
-      "ログインの準備を更新できませんでした。画面を再読み込みしてお試しください。",
+    requestForbidden: "ログインの準備を更新できませんでした。画面を再読み込みしてお試しください。",
     loginFailed: "ログインできませんでした。",
     loginRequired: "この画面を開くにはログインが必要です。ログインしてください。",
-    sessionRestoreFailed:
-      "ログイン後の利用者情報を確認できませんでした。もう一度お試しください。",
+    sessionRestoreFailed: "ログイン後の利用者情報を確認できませんでした。もう一度お試しください。",
     oauth: {
       emailRequired:
         "GitHubからメールアドレスを取得できませんでした。GitHubのメール設定を確認してください。",
       accountUnavailable: "このアカウントは現在利用できません。",
       unsupportedProvider: "対応していないOAuth2プロバイダーです。",
-      loginFailed:
-        "GitHubでログインできませんでした。もう一度お試しください。",
+      loginFailed: "GitHubでログインできませんでした。もう一度お試しください。",
     },
   },
   inquiry: {
     invalidInput: "お問い合わせ内容を確認してください。",
-    sendFailed:
-      "お問い合わせを送信できませんでした。時間を置いて再度お試しください。",
+    sendFailed: "お問い合わせを送信できませんでした。時間を置いて再度お試しください。",
     sent: "お問い合わせを送信しました。",
   },
   administration: {
     account: {
       readForbidden: "アカウントとロールを参照するpermissionがありません。",
-      operationForbidden:
-        "アカウントのロールを変更するpermissionがありません。",
+      operationForbidden: "アカウントのロールを変更するpermissionがありません。",
       resourceNotFound: "対象のアカウントが見つかりません。",
       targetRequired: "変更対象のアカウントを選択してください。",
       roleSelectionRequired: "ロールを1件以上選択してください。",
       loadFailed: "アカウントとロールを取得できませんでした。",
       updateFailed: "アカウントのロールを更新できませんでした。",
-      reloadFailed:
-        "最新のアカウント情報を再取得できませんでした。再読込してください。",
+      reloadFailed: "最新のアカウント情報を再取得できませんでした。再読込してください。",
       /** version競合（409）の後に、画面側で一覧を取り直せたときにBackendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のアカウント情報を再取得しました。内容を確認してから、もう一度変更してください。",
@@ -58,8 +51,7 @@ export const DISPLAY_MESSAGES = {
       invalidInput: "件名と本文を入力上限内で入力してください。",
       invalidExpiration: "表示終了日時を正しく入力してください。",
       operationForbidden: "お知らせを配信するpermissionがありません。",
-      publishFailed:
-        "お知らせを配信できませんでした。入力内容を確認してください。",
+      publishFailed: "お知らせを配信できませんでした。入力内容を確認してください。",
       published: "お知らせを全利用者へ配信しました。",
     },
   },
@@ -70,8 +62,7 @@ export const DISPLAY_MESSAGES = {
   },
   attendance: {
     /** version競合等（409）の後に、画面側で勤怠を取り直せたときにBackendの文言の後ろへ添える案内。 */
-    conflictReloaded:
-      "最新の勤怠を再取得しました。内容を確認してから、もう一度操作してください。",
+    conflictReloaded: "最新の勤怠を再取得しました。内容を確認してから、もう一度操作してください。",
     self: {
       forbidden: "本人勤怠を操作するpermissionがありません。",
       accountNotFound: "勤怠対象のアカウントが見つかりません。",
@@ -86,8 +77,7 @@ export const DISPLAY_MESSAGES = {
     administration: {
       forbidden: "勤怠月を参照または更新するpermissionがありません。",
       resourceNotFound: "対象のアカウントまたは勤怠月が見つかりません。",
-      correctionCurrentLoadFailed:
-        "修正対象の現在勤怠を取得できませんでした。",
+      correctionCurrentLoadFailed: "修正対象の現在勤怠を取得できませんでした。",
       monthListLoadFailed: "勤怠月一覧を取得できませんでした。",
       correctionListLoadFailed: "勤怠修正申請一覧を取得できませんでした。",
       monthDetailLoadFailed: "勤怠月詳細を取得できませんでした。",
@@ -99,8 +89,7 @@ export const DISPLAY_MESSAGES = {
   },
   project: {
     readForbidden: "Projectを参照するpermissionがありません。",
-    projectNotFound:
-      "Projectが見つからないか、このProjectへ参加していません。",
+    projectNotFound: "Projectが見つからないか、このProjectへ参加していません。",
     listLoadFailed: "Project一覧を取得できませんでした。",
     create: {
       forbidden: "Projectを作成するpermissionがありません。",
@@ -113,8 +102,7 @@ export const DISPLAY_MESSAGES = {
       archiveFailed: "Projectをアーカイブできませんでした。",
       memberAddFailed: "Project memberを追加できませんでした。",
       memberCandidateSearchFailed: "メンバーの候補を検索できませんでした。",
-      memberRoleUpdateFailed:
-        "Project memberのroleを更新できませんでした。",
+      memberRoleUpdateFailed: "Project memberのroleを更新できませんでした。",
       memberRemoveFailed: "Project memberを除外できませんでした。",
       reloadFailed: "最新のProject情報を再取得できませんでした。",
       /** 409の後に画面側でProject詳細を取り直せたときに、Backendの文言の後ろへ添える案内。 */
@@ -124,20 +112,16 @@ export const DISPLAY_MESSAGES = {
         "Project memberは除外されましたが、最新のProject情報を取得できませんでした。",
     },
     template: {
-      readForbidden:
-        "Project Templateを参照するpermissionがありません。",
-      operationForbidden:
-        "Project Templateを操作するpermissionがありません。",
-      resourceNotFound:
-        "対象のProjectまたはProject Templateが見つかりません。",
+      readForbidden: "Project Templateを参照するpermissionがありません。",
+      operationForbidden: "Project Templateを操作するpermissionがありません。",
+      resourceNotFound: "対象のProjectまたはProject Templateが見つかりません。",
       listLoadFailed: "Project Template一覧を取得できませんでした。",
       detailLoadFailed: "Project Template詳細を取得できませんでした。",
       captureFailed: "ProjectをTemplateとして保存できませんでした。",
       updateFailed: "Project Templateを更新できませんでした。",
       archiveFailed: "Project Templateをアーカイブできませんでした。",
       applyFailed: "Project TemplateからProjectを作成できませんでした。",
-      reloadFailed:
-        "最新のProject Templateを再取得できませんでした。再読込してください。",
+      reloadFailed: "最新のProject Templateを再取得できませんでした。再読込してください。",
       /** version競合の409の後に画面側でTemplateを取り直せたときに、Backendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のProject Templateを再取得しました。内容を確認してから、もう一度操作してください。",
@@ -152,8 +136,7 @@ export const DISPLAY_MESSAGES = {
       completeFailed: "Taskを完了状態へ更新できませんでした。",
       completedRefreshFailed:
         "Taskは完了しましたが、最新のMy Tasksを取得できませんでした。再読込してください。",
-      reloadFailed:
-        "最新のMy Tasksを取得できませんでした。再読込してください。",
+      reloadFailed: "最新のMy Tasksを取得できませんでした。再読込してください。",
       /** 完了したTaskは一覧から消えるため、何が完了したかを示す。 */
       completed: (title: string): string => `「${title}」を完了しました。`,
     },
@@ -163,31 +146,26 @@ export const DISPLAY_MESSAGES = {
       resourceNotFound: "対象のTodoが見つかりません。",
       listLoadFailed: "Todo情報を取得できませんでした。",
       calendarLoadFailed: "Todoカレンダーを取得できませんでした。",
-      detailLoadFailed:
-        "Todo情報を取得できませんでした。Todo一覧から開き直してください。",
+      detailLoadFailed: "Todo情報を取得できませんでした。Todo一覧から開き直してください。",
       saveFailed: "Todo情報を保存できませんでした。",
-      conflict:
-        "Todoが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
+      conflict: "Todoが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
       savedRefreshFailed:
         "Todoは保存されましたが、最新情報を取得できませんでした。Todo一覧から開き直してください。",
       completeFailed: "Todoを完了状態へ更新できませんでした。",
       completedRefreshFailed:
         "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
-      reloadFailed:
-        "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
+      reloadFailed: "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
       /** 一覧の「完了」の後に、どのTodoを完了したかを示す。 */
       completed: (title: string): string => `「${title}」を完了しました。`,
     },
     board: {
-      readForbidden:
-        "Project BoardまたはTaskを参照するpermissionがありません。",
+      readForbidden: "Project BoardまたはTaskを参照するpermissionがありません。",
       operationForbidden: "このTask操作を実行するpermissionがありません。",
       resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
       loadFailed: "Project Boardを取得できませんでした。",
       detailLoadFailed: "Task詳細を取得できませんでした。",
       saveFailed: "Taskを保存できませんでした。",
-      savedRefreshFailed:
-        "Taskは保存されましたが、最新のProject Boardを取得できませんでした。",
+      savedRefreshFailed: "Taskは保存されましたが、最新のProject Boardを取得できませんでした。",
       archiveFailed: "Taskをアーカイブできませんでした。",
       archivedRefreshFailed:
         "Taskはアーカイブされましたが、最新のProject Boardを取得できませんでした。",
@@ -199,8 +177,7 @@ export const DISPLAY_MESSAGES = {
     comments: {
       readForbidden: "Taskコメントを参照するpermissionがありません。",
       operationForbidden: "このコメント操作を実行するpermissionがありません。",
-      resourceNotFound:
-        "対象のProject、Taskまたはコメントが見つかりません。",
+      resourceNotFound: "対象のProject、Taskまたはコメントが見つかりません。",
       loadFailed: "コメントを取得できませんでした。",
       projectLoadFailed: "Projectのコメントを取得できませんでした。",
       created: "コメントを投稿しました。",
@@ -211,8 +188,7 @@ export const DISPLAY_MESSAGES = {
       createFailed: "コメントを投稿できませんでした。",
       updateFailed: "コメントを更新できませんでした。",
       deleteFailed: "コメントを削除できませんでした。",
-      reloadFailed:
-        "最新のコメント一覧を取得できませんでした。再読込してください。",
+      reloadFailed: "最新のコメント一覧を取得できませんでした。再読込してください。",
       /** 404・409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のコメント一覧を再取得しました。内容を確認してから、もう一度操作してください。",
@@ -221,10 +197,8 @@ export const DISPLAY_MESSAGES = {
     },
     checklist: {
       readForbidden: "Task checklistを参照するpermissionがありません。",
-      operationForbidden:
-        "このchecklist操作を実行するpermissionがありません。",
-      resourceNotFound:
-        "対象のProject、Taskまたはchecklist itemが見つかりません。",
+      operationForbidden: "このchecklist操作を実行するpermissionがありません。",
+      resourceNotFound: "対象のProject、Taskまたはchecklist itemが見つかりません。",
       loadFailed: "チェックリストを取得できませんでした。",
       created: "チェック項目を追加しました。",
       updated: "チェック項目を更新しました。",
@@ -236,14 +210,12 @@ export const DISPLAY_MESSAGES = {
       toggleFailed: "完了状態を更新できませんでした。",
       reorderFailed: "チェック項目を並び替えできませんでした。",
       deleteFailed: "チェック項目を削除できませんでした。",
-      reloadFailed:
-        "最新のチェックリストを取得できませんでした。再読込してください。",
+      reloadFailed: "最新のチェックリストを取得できませんでした。再読込してください。",
       /** 404・409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のチェックリストを再取得しました。内容を確認してから、もう一度操作してください。",
       /** 404・409でBackendの文言を表示できない（未知のerror code等）ときの代わりの文言。 */
-      conflictFallback:
-        "チェックリストが変更されています。最新の一覧を表示しました。",
+      conflictFallback: "チェックリストが変更されています。最新の一覧を表示しました。",
     },
     search: {
       readForbidden: "Task検索を参照するpermissionがありません。",
@@ -255,8 +227,7 @@ export const DISPLAY_MESSAGES = {
       createFailed: "Saved Viewを登録できませんでした。",
       updateFailed: "Saved Viewを更新できませんでした。",
       deleteFailed: "Saved Viewを削除できませんでした。",
-      reloadFailed:
-        "最新のSaved View一覧を取得できませんでした。再読込してください。",
+      reloadFailed: "最新のSaved View一覧を取得できませんでした。再読込してください。",
       savedRefreshFailed:
         "Saved Viewの変更は完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
       /** version競合の409の後に画面側で一覧を取り直せたときに、Backendの文言の後ろへ添える案内。 */
@@ -268,15 +239,13 @@ export const DISPLAY_MESSAGES = {
     template: {
       readForbidden: "Task Templateを参照するpermissionがありません。",
       operationForbidden: "このTask Template操作を実行するpermissionがありません。",
-      resourceNotFound:
-        "対象のProject、TaskまたはTask Templateが見つかりません。",
+      resourceNotFound: "対象のProject、TaskまたはTask Templateが見つかりません。",
       listLoadFailed: "Task Templateを取得できませんでした。",
       captureFailed: "TaskをTemplateとして保存できませんでした。",
       updateFailed: "Task Templateを更新できませんでした。",
       archiveFailed: "Task Templateをアーカイブできませんでした。",
       applyFailed: "Task TemplateをProjectへ適用できませんでした。",
-      reloadFailed:
-        "最新のTask Template一覧を取得できませんでした。再読込してください。",
+      reloadFailed: "最新のTask Template一覧を取得できませんでした。再読込してください。",
     },
     recurrence: {
       readForbidden: "繰り返しTask規則を参照するpermissionがありません。",
@@ -289,8 +258,7 @@ export const DISPLAY_MESSAGES = {
       updateFailed: "繰り返しTask規則を更新できませんでした。",
       archiveFailed: "繰り返しTask規則をアーカイブできませんでした。",
       retryFailed: "生成を再試行できませんでした。",
-      reloadFailed:
-        "最新の繰り返しTask規則と生成履歴を取得できませんでした。再読込してください。",
+      reloadFailed: "最新の繰り返しTask規則と生成履歴を取得できませんでした。再読込してください。",
       completedRefreshFailed:
         "操作は完了しましたが、最新の繰り返しTask規則と生成履歴を取得できませんでした。再読込してください。",
     },
@@ -304,26 +272,20 @@ export const DISPLAY_MESSAGES = {
     resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
     historyLoadFailed: "Timer履歴を取得できませんでした。",
     auditLoadFailed: "Task実績工数の変更履歴を取得できませんでした。",
-    auditForbidden:
-      "Task実績工数の変更履歴を参照する権限がありません。",
+    auditForbidden: "Task実績工数の変更履歴を参照する権限がありません。",
     conflict: {
-      alreadyRunning:
-        "別の画面またはタブでTimerが開始されています。現在Timerを再取得しました。",
-      notRunning:
-        "Timerはすでに停止または取消されています。現在状態を再取得しました。",
-      version:
-        "Timerが別の操作で更新されました。現在状態を再取得しました。",
+      alreadyRunning: "別の画面またはタブでTimerが開始されています。現在Timerを再取得しました。",
+      notRunning: "Timerはすでに停止または取消されています。現在状態を再取得しました。",
+      version: "Timerが別の操作で更新されました。現在状態を再取得しました。",
       durationExceeded:
         "連続24時間を超えているため停止できません。Timerを取消し、正しい工数を手入力してください。",
       dailyLimitExceeded:
         "日別実績が1440分を超えるため停止できません。Timerを取消し、正しい工数を手入力してください。",
-      changed:
-        "Timerの状態が別の操作で変更されました。現在状態を再取得しました。",
+      changed: "Timerの状態が別の操作で変更されました。現在状態を再取得しました。",
     },
   },
   wbs: {
-    projectNotFound:
-      "Projectが見つからないか、このProjectへ参加していません。",
+    projectNotFound: "Projectが見つからないか、このProjectへ参加していません。",
     readForbidden: "WBSを参照するpermissionがありません。",
     readFailed: "WBSを取得できませんでした。",
     updateForbidden: "WBSを更新するpermissionがありません。",
@@ -332,31 +294,25 @@ export const DISPLAY_MESSAGES = {
     conflict: "WBSが他の操作で更新されました。最新情報を確認してください。",
     reloadFailed: "最新のWBSを再取得できませんでした。再読込してください。",
     /** Task更新のversion競合（409）の後に、画面側で最新WBSを取り直せたときにBackendの文言の後ろへ添える案内。 */
-    conflictReloaded:
-      "最新のWBSを再取得しました。内容を確認してから、もう一度編集してください。",
+    conflictReloaded: "最新のWBSを再取得しました。内容を確認してから、もう一度編集してください。",
     earnedValue: {
       forbidden: "EVMを参照するpermissionがありません。",
-      activeBaselineRequired:
-        "EVMを集計するにはactive baselineが必要です。",
+      activeBaselineRequired: "EVMを集計するにはactive baselineが必要です。",
       loadFailed: "EVMを取得できませんでした。",
     },
     report: {
       forbidden: "Excel帳票を出力するpermissionがありません。",
-      activeBaselineRequired:
-        "Excel帳票を出力するにはactive baselineが必要です。",
+      activeBaselineRequired: "Excel帳票を出力するにはactive baselineが必要です。",
       downloadFailed: "Excel帳票をダウンロードできませんでした。",
     },
     dependency: {
       forbidden: "Task依存関係を更新するpermissionがありません。",
       resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
-      createConflict:
-        "Task依存関係が他の操作と競合しました。最新情報を確認してください。",
+      createConflict: "Task依存関係が他の操作と競合しました。最新情報を確認してください。",
       createFailed: "Task依存関係を追加できませんでした。",
-      stale:
-        "Task依存関係が更新または削除されています。最新情報を確認してください。",
+      stale: "Task依存関係が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "Task依存関係を削除できませんでした。",
-      reloadFailed:
-        "最新のWBSとTask依存関係を再取得できませんでした。再読込してください。",
+      reloadFailed: "最新のWBSとTask依存関係を再取得できませんでした。再読込してください。",
     },
     workload: {
       forbidden: "workloadを参照するpermissionがありません。",
@@ -371,13 +327,10 @@ export const DISPLAY_MESSAGES = {
       loadFailed: "稼働日calendarを取得できませんでした。",
       updateForbidden: "このcalendar設定を更新する権限がありません。",
       deleteForbidden: "このcalendar設定を削除する権限がありません。",
-      resourceNotFound:
-        "対象のProject、memberまたは稼働日例外が見つかりません。",
-      conflict:
-        "稼働日例外が他の操作と競合しました。最新情報を確認してください。",
+      resourceNotFound: "対象のProject、memberまたは稼働日例外が見つかりません。",
+      conflict: "稼働日例外が他の操作と競合しました。最新情報を確認してください。",
       saveFailed: "稼働日例外を保存できませんでした。",
-      stale:
-        "稼働日例外が更新または削除されています。最新情報を確認してください。",
+      stale: "稼働日例外が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "稼働日例外を削除できませんでした。",
       /** 表示対象を変更する権限がない場合に、calendarの上へ出す案内。 */
       readOnly:
@@ -385,13 +338,11 @@ export const DISPLAY_MESSAGES = {
       /** archive済みProjectのcalendarを表示している場合の案内。Backendは変更を409にする。 */
       archivedReadOnly: "archive済みProjectのcalendarは参照だけできます。",
       /** 無効化・ロックされた参加者の個人例外を表示している場合の案内。Backendは個人例外の登録・更新を400にする。 */
-      inactiveMemberReadOnly:
-        "無効化またはロックされたアカウントの個人例外は参照だけできます。",
+      inactiveMemberReadOnly: "無効化またはロックされたアカウントの個人例外は参照だけできます。",
       /** version競合（409）の後に、画面側でcalendarを取り直せたときにBackendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のcalendarを再取得しました。内容を確認してから、もう一度操作してください。",
-      reloadFailed:
-        "最新の稼働日calendarを再取得できませんでした。再読込してください。",
+      reloadFailed: "最新の稼働日calendarを再取得できませんでした。再読込してください。",
     },
     effortPlan: {
       readForbidden: "Task日別予定を参照するpermissionがありません。",
@@ -399,16 +350,12 @@ export const DISPLAY_MESSAGES = {
       loadFailed: "Task日別予定を取得できませんでした。",
       updateForbidden: "Task日別予定を更新する権限がありません。",
       deleteForbidden: "Task日別予定を削除する権限がありません。",
-      resourceNotFound:
-        "対象のProject、Taskまたは日別予定が見つかりません。",
-      conflict:
-        "日別予定が他の操作と競合しました。最新情報を確認してください。",
+      resourceNotFound: "対象のProject、Taskまたは日別予定が見つかりません。",
+      conflict: "日別予定が他の操作と競合しました。最新情報を確認してください。",
       saveFailed: "Task日別予定を保存できませんでした。",
-      stale:
-        "日別予定が更新または削除されています。最新情報を確認してください。",
+      stale: "日別予定が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "Task日別予定を削除できませんでした。",
-      reloadFailed:
-        "最新の日別予定を再取得できませんでした。Dialogを閉じて再読込してください。",
+      reloadFailed: "最新の日別予定を再取得できませんでした。Dialogを閉じて再読込してください。",
     },
     workLog: {
       readForbidden: "Task日別実績を参照するpermissionがありません。",
@@ -416,25 +363,18 @@ export const DISPLAY_MESSAGES = {
       loadFailed: "Task日別実績を取得できませんでした。",
       updateForbidden: "Task日別実績を更新する権限がありません。",
       deleteForbidden: "Task日別実績を削除する権限がありません。",
-      resourceNotFound:
-        "対象のProject、Taskまたは日別実績が見つかりません。",
-      conflict:
-        "日別実績が他の操作と競合しました。最新情報を確認してください。",
+      resourceNotFound: "対象のProject、Taskまたは日別実績が見つかりません。",
+      conflict: "日別実績が他の操作と競合しました。最新情報を確認してください。",
       saveFailed: "Task日別実績を保存できませんでした。",
-      stale:
-        "日別実績が更新または削除されています。最新情報を確認してください。",
+      stale: "日別実績が更新または削除されています。最新情報を確認してください。",
       deleteFailed: "Task日別実績を削除できませんでした。",
-      reloadFailed:
-        "最新の日別実績を再取得できませんでした。Dialogを閉じて再読込してください。",
+      reloadFailed: "最新の日別実績を再取得できませんでした。Dialogを閉じて再読込してください。",
     },
     baseline: {
-      forbidden:
-        "baselineを更新するにはProjectのOWNERまたはMANAGER権限が必要です。",
+      forbidden: "baselineを更新するにはProjectのOWNERまたはMANAGER権限が必要です。",
       resourceNotFound: "対象のProjectまたはbaselineが見つかりません。",
-      conflict:
-        "baselineが他の操作で更新されました。最新情報を確認してください。",
-      reloadFailed:
-        "最新のbaselineを再取得できませんでした。画面を再読込してください。",
+      conflict: "baselineが他の操作で更新されました。最新情報を確認してください。",
+      reloadFailed: "最新のbaselineを再取得できませんでした。画面を再読込してください。",
       /** 409（version競合・作成競合）の後に、画面側でbaselineを取り直せたときにBackendの文言の後ろへ添える案内。 */
       conflictReloaded:
         "最新のbaselineを再取得しました。内容を確認してから、もう一度操作してください。",

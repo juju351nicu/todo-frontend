@@ -28,7 +28,13 @@ export interface TaskTemplateDialogSource {
  */
 export const useTaskTemplateDialog = (source: TaskTemplateDialogSource) => {
   const templates = useTaskTemplates(source.projectId);
-  const { applyAssigneeAccountId, applyTemplate, archiveTemplate, loadTemplates, selectedTemplate } = templates;
+  const {
+    applyAssigneeAccountId,
+    applyTemplate,
+    archiveTemplate,
+    loadTemplates,
+    selectedTemplate,
+  } = templates;
   const restrictedAssigneeAccountId = computed<number | null>(() =>
     toValue(source.restrictedAssigneeAccountId ?? null)
   );
@@ -47,7 +53,9 @@ export const useTaskTemplateDialog = (source: TaskTemplateDialogSource) => {
       : memberOptions.value.filter((option) => option.value === restrictedAssigneeAccountId.value)
   );
   // Backendは完了列へのTemplate適用を409（TASK_TEMPLATE_NOT_APPLICABLE）で拒否するため、未完了の列だけを候補にする。
-  const applyStatusOptions = computed(() => buildTaskStatusIdOptions(toValue(source.statuses), true));
+  const applyStatusOptions = computed(() =>
+    buildTaskStatusIdOptions(toValue(source.statuses), true)
+  );
   const statusCodeOptions = computed(() => buildTaskStatusCodeOptions(toValue(source.statuses)));
 
   // Templateを選び直すと`useTaskTemplates#selectTemplate`が担当者をnull（Template既定値）へ戻す。

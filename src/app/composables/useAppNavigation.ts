@@ -45,27 +45,37 @@ export const useAppNavigation = (): AppNavigation => {
   const isDrawerOpen = ref<boolean>(false);
 
   const navigationLinks = computed<NavigationLink[]>(() => {
-    const links: NavigationLink[] = [{ icon: "i-mdi-view-dashboard", label: "Dashboard", to: "/dashboard" }];
+    const links: NavigationLink[] = [
+      { icon: "i-mdi-view-dashboard", label: "Dashboard", to: "/dashboard" },
+    ];
     if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
       links.push(
         { icon: "i-mdi-calendar", label: "Todoカレンダー", to: "/todo/calendar" },
-        { icon: "i-mdi-format-list-checks", label: "Todo一覧", to: "/todo/todoList" },
+        { icon: "i-mdi-format-list-checks", label: "Todo一覧", to: "/todo/todoList" }
       );
     }
     if (userStore.hasPermission("TASK_READ")) {
       links.push(
         { icon: "i-mdi-format-list-checks", label: "My Tasks", to: "/my-tasks" },
-        { icon: "i-mdi-magnify", label: "Task検索", to: "/tasks/search" },
+        { icon: "i-mdi-magnify", label: "Task検索", to: "/tasks/search" }
       );
     }
     if (userStore.hasPermission("PROJECT_READ")) {
       links.push(
         { icon: "i-mdi-view-dashboard-outline", label: "Project Board", to: "/projects" },
-        { icon: "i-mdi-folder-multiple-outline", label: "Project Template", to: "/project-templates" },
+        {
+          icon: "i-mdi-folder-multiple-outline",
+          label: "Project Template",
+          to: "/project-templates",
+        }
       );
     }
     if (userStore.hasAnyPermission(ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES)) {
-      links.push({ icon: "i-mdi-calendar-account-outline", label: "勤怠月次確認", to: "/attendance/administration" });
+      links.push({
+        icon: "i-mdi-calendar-account-outline",
+        label: "勤怠月次確認",
+        to: "/attendance/administration",
+      });
     }
     if (userStore.hasAnyPermission(ATTENDANCE_READ_PERMISSION_CODES)) {
       links.push({ icon: "i-mdi-clock-outline", label: "勤怠", to: "/attendance" });
@@ -76,20 +86,32 @@ export const useAppNavigation = (): AppNavigation => {
     if (userStore.accountId !== null) {
       links.push(
         { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.accountId}` },
-        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` },
+        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` }
       );
     }
     if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
       links.push({ icon: "i-mdi-plus-box", label: "Todo新規登録", to: "/todo/register" });
     }
     if (userStore.hasPermission("ACCOUNT_READ")) {
-      links.push({ icon: "i-mdi-account-key", label: "アカウント・ロール管理", to: "/administration/accounts" });
+      links.push({
+        icon: "i-mdi-account-key",
+        label: "アカウント・ロール管理",
+        to: "/administration/accounts",
+      });
     }
     if (userStore.hasPermission("AUTHORIZATION_AUDIT_READ")) {
-      links.push({ icon: "i-mdi-history", label: "権限変更監査ログ", to: "/administration/authorization-audit-logs" });
+      links.push({
+        icon: "i-mdi-history",
+        label: "権限変更監査ログ",
+        to: "/administration/authorization-audit-logs",
+      });
     }
     if (userStore.hasPermission("NOTIFICATION_ANNOUNCEMENT_CREATE")) {
-      links.push({ icon: "i-mdi-bullhorn-outline", label: "お知らせ配信", to: "/administration/notifications" });
+      links.push({
+        icon: "i-mdi-bullhorn-outline",
+        label: "お知らせ配信",
+        to: "/administration/notifications",
+      });
     }
     // 会員の登録・一覧はBackend（MemberAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
     if (userStore.hasPermission("ACCOUNT_UPDATE")) {

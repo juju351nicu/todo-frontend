@@ -3,11 +3,7 @@
     "target": "ES2022",
     "useDefineForClassFields": true,
     "module": "ESNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "moduleResolution": "Bundler",
     "allowJs": false,
     "resolveJsonModule": true,
@@ -18,27 +14,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "#build/ui": [
-        "./node_modules/.nuxt-ui/ui"
-      ],
-      "#build/ui/*": [
-        "./node_modules/.nuxt-ui/ui/*"
-      ]
+      "@/*": ["./src/*"],
+      "#build/ui": ["./node_modules/.nuxt-ui/ui"],
+      "#build/ui/*": ["./node_modules/.nuxt-ui/ui/*"]
     },
-    "types": [
-      "vite/client"
-    ]
+    "types": ["vite/client"]
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "auto-imports.d.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "auto-imports.d.ts"],
+  "exclude": ["dist", "node_modules"]
 }

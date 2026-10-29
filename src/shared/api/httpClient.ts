@@ -12,11 +12,7 @@ type HttpMethod = (typeof METHOD)[keyof typeof METHOD];
 const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
 const JSON_MEDIA_TYPE = "application/json";
-const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
-  METHOD.POST,
-  METHOD.PUT,
-  METHOD.DELETE,
-]);
+const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([METHOD.POST, METHOD.PUT, METHOD.DELETE]);
 
 let csrfToken: string | null = null;
 
@@ -128,14 +124,11 @@ const postRequest = <TRequest = unknown>(
 ): Promise<Response> => request(uri, METHOD.POST, requestData);
 
 /** Session Cookie・CSRF token付きPUT Requestを送信する。 */
-const putRequest = <TRequest = unknown>(
-  uri: string,
-  requestData: TRequest
-): Promise<Response> => request(uri, METHOD.PUT, requestData);
+const putRequest = <TRequest = unknown>(uri: string, requestData: TRequest): Promise<Response> =>
+  request(uri, METHOD.PUT, requestData);
 
 /** Session Cookie・CSRF token付きDELETE Requestを送信する。 */
-const deleteRequest = (uri: string): Promise<Response> =>
-  request(uri, METHOD.DELETE);
+const deleteRequest = (uri: string): Promise<Response> => request(uri, METHOD.DELETE);
 
 export default {
   getRequest,

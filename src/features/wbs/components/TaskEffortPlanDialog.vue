@@ -47,7 +47,9 @@ const emit = defineEmits<{
 
 const isMutating = computed<boolean>(() => props.isSaving || props.isDeleting);
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task日別予定工数", props.task));
-const allocationStatus = computed(() => getEffortAllocationStatus(props.effortPlanList?.unallocatedEffortMinutes ?? 0));
+const allocationStatus = computed(() =>
+  getEffortAllocationStatus(props.effortPlanList?.unallocatedEffortMinutes ?? 0)
+);
 
 // Dialogを開く、編集対象を変える、保存結果を受け取るたびに確定値からFormを作り直す。閉じている間は入力を保持する。
 const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
@@ -55,7 +57,10 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
   syncSources: [() => props.open, () => props.editingEffortPlan, () => props.effortPlanList],
   buildForm: () =>
     props.open
-      ? buildTaskEffortPlanForm(resolveDefaultAccountId(props.task, props.assigneeOptions), props.editingEffortPlan)
+      ? buildTaskEffortPlanForm(
+          resolveDefaultAccountId(props.task, props.assigneeOptions),
+          props.editingEffortPlan
+        )
       : undefined,
   isBusy: isMutating,
   canSubmit: () => props.canEdit,
@@ -76,7 +81,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
       <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+        successMessage
+      }}</StatusAlert>
 
       <div v-if="isLoading" class="flex flex-col gap-3">
         <USkeleton class="h-6 w-1/3" />
@@ -86,17 +93,27 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
       <template v-else-if="task">
         <UCard v-if="canEdit" variant="outline" class="mb-5">
           <template #header>
-            <div class="text-base font-normal">{{ editingEffortPlan ? "日別予定を編集" : "日別予定を登録" }}</div>
+            <div class="text-base font-normal">
+              {{ editingEffortPlan ? "日別予定を編集" : "日別予定を登録" }}
+            </div>
           </template>
           <form @submit.prevent="submitForm">
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 md:w-1/3">
                 <UFormField label="予定日">
-                  <UInput v-model="form.planDate" type="date" :disabled="isMutating" class="w-full" />
+                  <UInput
+                    v-model="form.planDate"
+                    type="date"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 md:w-1/3">
-                <UFormField label="予定工数（分）" help="1日・1予定担当者につき1分以上1440分以下です。">
+                <UFormField
+                  label="予定工数（分）"
+                  help="1日・1予定担当者につき1分以上1440分以下です。"
+                >
                   <UInput
                     v-model.nullable="form.plannedEffortMinutes"
                     type="number"
@@ -124,7 +141,13 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
             </div>
           </form>
           <template #footer>
-            <UButton v-if="editingEffortPlan" variant="ghost" :disabled="isMutating" @click="emit('cancelEdit')">新規登録へ戻る</UButton>
+            <UButton
+              v-if="editingEffortPlan"
+              variant="ghost"
+              :disabled="isMutating"
+              @click="emit('cancelEdit')"
+              >新規登録へ戻る</UButton
+            >
             <UButton
               color="primary"
               variant="ghost"
@@ -140,13 +163,26 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <h2 class="text-base">登録済み日別予定</h2>
-          <UBadge>Task全体 {{ formatEffortMinutes(effortPlanList?.taskPlannedEffortMinutes ?? 0) }}</UBadge>
-          <UBadge color="info">日別合計 {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}</UBadge>
+          <UBadge
+            >Task全体
+            {{ formatEffortMinutes(effortPlanList?.taskPlannedEffortMinutes ?? 0) }}</UBadge
+          >
+          <UBadge color="info"
+            >日別合計
+            {{ formatEffortMinutes(effortPlanList?.totalDailyPlannedEffortMinutes ?? 0) }}</UBadge
+          >
           <UBadge :color="allocationStatus.color">{{ allocationStatus.label }}</UBadge>
-          <UBadge size="sm" variant="outline">{{ effortPlanList?.effortPlans.length ?? 0 }}件</UBadge>
+          <UBadge size="sm" variant="outline"
+            >{{ effortPlanList?.effortPlans.length ?? 0 }}件</UBadge
+          >
         </div>
 
-        <StatusAlert v-if="(effortPlanList?.unallocatedEffortMinutes ?? 0) < 0" type="warning" variant="soft" class="mb-3">
+        <StatusAlert
+          v-if="(effortPlanList?.unallocatedEffortMinutes ?? 0) < 0"
+          type="warning"
+          variant="soft"
+          class="mb-3"
+        >
           日別予定合計がTask全体予定を超えています。必要に応じて配賦を調整してください。
         </StatusAlert>
 
@@ -166,13 +202,24 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
                 <td class="whitespace-nowrap">{{ effortPlan.planDate }}</td>
                 <td>
                   {{ effortPlan.assigneeDisplayName }}
-                  <div class="text-xs text-muted">アカウントID: {{ effortPlan.assigneeAccountId }}</div>
+                  <div class="text-xs text-muted">
+                    アカウントID: {{ effortPlan.assigneeAccountId }}
+                  </div>
                 </td>
-                <td class="whitespace-nowrap">{{ formatEffortMinutes(effortPlan.plannedEffortMinutes) }}</td>
+                <td class="whitespace-nowrap">
+                  {{ formatEffortMinutes(effortPlan.plannedEffortMinutes) }}
+                </td>
                 <td>{{ effortPlan.version }}</td>
                 <td v-if="canEdit">
                   <div
-                    v-if="canMutateOwnedEntry(canEdit, canManageAnyEffortPlan, effortPlan.assigneeAccountId, currentAccountId)"
+                    v-if="
+                      canMutateOwnedEntry(
+                        canEdit,
+                        canManageAnyEffortPlan,
+                        effortPlan.assigneeAccountId,
+                        currentAccountId
+                      )
+                    "
                     class="flex gap-1"
                   >
                     <UButton
@@ -201,7 +248,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
             </tbody>
           </table>
         </div>
-        <StatusAlert v-else type="info" variant="soft">このTaskの日別予定工数はまだ登録されていません。</StatusAlert>
+        <StatusAlert v-else type="info" variant="soft"
+          >このTaskの日別予定工数はまだ登録されていません。</StatusAlert
+        >
       </template>
     </template>
     <template #footer>

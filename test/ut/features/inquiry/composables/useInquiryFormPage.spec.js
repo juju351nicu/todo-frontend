@@ -78,8 +78,7 @@ describe("useInquiryFormPage", () => {
           {
             errorCode: "INQUIRY_DELIVERY_FAILED",
             field: "inquiry",
-            message:
-              "お問い合わせを送信できませんでした。時間を置いて再度お試しください。",
+            message: "お問い合わせを送信できませんでした。時間を置いて再度お試しください。",
           },
         ],
       })

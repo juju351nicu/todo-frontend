@@ -5,7 +5,11 @@ import type {
   WbsBaselineListResponse,
   WbsBaselineSummary,
 } from "@/features/wbs/types/wbs";
-import { formatEffortMinutes, formatOptionalEffortMinutes, formatSignedEffortMinutes } from "@/features/wbs/utils/effort";
+import {
+  formatEffortMinutes,
+  formatOptionalEffortMinutes,
+  formatSignedEffortMinutes,
+} from "@/features/wbs/utils/effort";
 import {
   formatBaselineCreatedAt,
   formatBaselinePeriod,
@@ -47,7 +51,9 @@ const emit = defineEmits<{
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-camera-timer-outline" class="size-6" />
         WBS baseline
-        <UBadge size="sm" variant="outline" class="ms-auto">{{ baselineList?.baselines.length ?? 0 }}件</UBadge>
+        <UBadge size="sm" variant="outline" class="ms-auto"
+          >{{ baselineList?.baselines.length ?? 0 }}件</UBadge
+        >
         <UButton
           v-if="canManage"
           color="primary"
@@ -68,7 +74,9 @@ const emit = defineEmits<{
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+      successMessage
+    }}</StatusAlert>
 
     <div v-if="isLoading" class="flex flex-col gap-3">
       <USkeleton v-for="row in 5" :key="row" class="h-8 w-full" />
@@ -89,7 +97,9 @@ const emit = defineEmits<{
             <tr v-for="baseline in baselineList.baselines" :key="baseline.baselineId">
               <td>
                 <div class="font-medium">#{{ baseline.baselineNumber }} {{ baseline.name }}</div>
-                <div class="text-xs text-muted">ID: {{ baseline.baselineId }} / version: {{ baseline.version }}</div>
+                <div class="text-xs text-muted">
+                  ID: {{ baseline.baselineId }} / version: {{ baseline.version }}
+                </div>
               </td>
               <td>{{ baseline.description || "—" }}</td>
               <td class="whitespace-nowrap">{{ formatBaselineCreatedAt(baseline.createdAt) }}</td>
@@ -122,11 +132,21 @@ const emit = defineEmits<{
       <template v-if="activeBaselineDetail">
         <div class="mb-4 flex flex-wrap gap-2">
           <UBadge variant="outline">Task {{ activeBaselineDetail.tasks.length }}件</UBadge>
-          <UBadge variant="outline">依存関係 {{ activeBaselineDetail.dependencies.length }}件</UBadge>
-          <UBadge variant="outline">日別予定 {{ activeBaselineDetail.effortPlans.length }}件</UBadge>
-          <UBadge color="info">予定 {{ formatEffortMinutes(activeBaselineDetail.plannedEffortMinutes) }}</UBadge>
-          <UBadge color="secondary">配賦済み {{ formatEffortMinutes(activeBaselineDetail.allocatedEffortMinutes) }}</UBadge>
-          <UBadge :color="activeBaselineDetail.unallocatedEffortMinutes === 0 ? 'success' : 'warning'">
+          <UBadge variant="outline"
+            >依存関係 {{ activeBaselineDetail.dependencies.length }}件</UBadge
+          >
+          <UBadge variant="outline"
+            >日別予定 {{ activeBaselineDetail.effortPlans.length }}件</UBadge
+          >
+          <UBadge color="info"
+            >予定 {{ formatEffortMinutes(activeBaselineDetail.plannedEffortMinutes) }}</UBadge
+          >
+          <UBadge color="secondary"
+            >配賦済み {{ formatEffortMinutes(activeBaselineDetail.allocatedEffortMinutes) }}</UBadge
+          >
+          <UBadge
+            :color="activeBaselineDetail.unallocatedEffortMinutes === 0 ? 'success' : 'warning'"
+          >
             未配賦 {{ formatSignedEffortMinutes(activeBaselineDetail.unallocatedEffortMinutes) }}
           </UBadge>
           <UBadge color="warning">変更 {{ comparisonRows.length }}件</UBadge>
@@ -156,16 +176,30 @@ const emit = defineEmits<{
                     {{ getBaselineComparisonStatusLabel(row.status) }}
                   </UBadge>
                 </td>
-                <td class="whitespace-nowrap">{{ formatBaselinePeriod(row.baselinePlannedStartDate, row.baselinePlannedEndDate) }}</td>
-                <td class="whitespace-nowrap">{{ formatBaselinePeriod(row.currentPlannedStartDate, row.currentPlannedEndDate) }}</td>
-                <td class="whitespace-nowrap">{{ formatOptionalEffortMinutes(row.baselinePlannedEffortMinutes) }}</td>
-                <td class="whitespace-nowrap">{{ formatOptionalEffortMinutes(row.currentPlannedEffortMinutes) }}</td>
-                <td class="whitespace-nowrap">{{ formatSignedEffortMinutes(row.plannedEffortDifferenceMinutes) }}</td>
+                <td class="whitespace-nowrap">
+                  {{
+                    formatBaselinePeriod(row.baselinePlannedStartDate, row.baselinePlannedEndDate)
+                  }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatBaselinePeriod(row.currentPlannedStartDate, row.currentPlannedEndDate) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatOptionalEffortMinutes(row.baselinePlannedEffortMinutes) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatOptionalEffortMinutes(row.currentPlannedEffortMinutes) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatSignedEffortMinutes(row.plannedEffortDifferenceMinutes) }}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <StatusAlert v-else type="success" variant="soft">active baselineからTask予定の変更はありません。</StatusAlert>
+        <StatusAlert v-else type="success" variant="soft"
+          >active baselineからTask予定の変更はありません。</StatusAlert
+        >
       </template>
     </template>
     <StatusAlert v-else type="info" variant="soft">

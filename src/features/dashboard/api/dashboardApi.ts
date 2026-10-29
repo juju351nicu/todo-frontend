@@ -57,9 +57,7 @@ const getBasicDashboard = async (): Promise<BasicDashboardResponse> => {
  * @returns 参照可能ProjectのEVM・本人負荷summaryとactive baselineなし件数
  * @throws DashboardApiError 未認証、資格・permission不足、入力不正またはBackendエラーの場合
  */
-const getAdvancedDashboard = async (
-  statusDate: string
-): Promise<AdvancedDashboardResponse> => {
+const getAdvancedDashboard = async (statusDate: string): Promise<AdvancedDashboardResponse> => {
   const query = new URLSearchParams({ statusDate });
   const response = await HttpClient.getRequest(
     `${API_PATHS.DASHBOARD_ADVANCED}?${query.toString()}`

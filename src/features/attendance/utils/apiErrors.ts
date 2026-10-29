@@ -43,9 +43,7 @@ export const ATTENDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 409回復中に古い競合案内より優先する認証・認可・公開範囲のHTTP status。 */
-export {
-  API_RECOVERY_PRIORITY_STATUSES as ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
-} from "@/shared/utils/apiError";
+export { API_RECOVERY_PRIORITY_STATUSES as ATTENDANCE_RECOVERY_PRIORITY_STATUSES } from "@/shared/utils/apiError";
 
 /**
  * Backendの文言が「最新状態を読み直してください。」「最新状態から申請し直してください。」となる409のerror code
@@ -70,9 +68,7 @@ const ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES: ReadonlySet<string> = new Set([
  * @param errorResponse 勤怠APIの409が持つBackend共通エラー
  * @returns `ATTENDANCE_RELOAD_GUIDANCE_ERROR_CODES`のcodeがあればtrue
  */
-export const needsAttendanceReloadGuidance = (
-  errorResponse: ErrorResponse | null
-): boolean =>
+export const needsAttendanceReloadGuidance = (errorResponse: ErrorResponse | null): boolean =>
   Array.isArray(errorResponse?.fieldErrors) &&
   errorResponse.fieldErrors.some(
     (fieldError) =>

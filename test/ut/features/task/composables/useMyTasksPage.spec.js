@@ -96,8 +96,11 @@ describe("useMyTasksPage", () => {
 
     expect(mocks.myTaskApi.findMyTasks).toHaveBeenCalledOnce();
     expect(page.myTasks.value).toEqual(tasks);
-    expect(page.groups.value.map((group) => group.items.map((task) => task.taskId)))
-      .toEqual([[15], [16], [17]]);
+    expect(page.groups.value.map((group) => group.items.map((task) => task.taskId))).toEqual([
+      [15],
+      [16],
+      [17],
+    ]);
   });
 
   it("今週では業務日から日曜までが期限のTaskだけを表示する", async () => {
@@ -108,8 +111,11 @@ describe("useMyTasksPage", () => {
 
     expect(page.businessDate.value).toBe("2026-09-20");
     expect(page.visibleTasks.value.map((task) => task.taskId)).toEqual([16]);
-    expect(page.groups.value.map((group) => group.items.map((task) => task.taskId)))
-      .toEqual([[], [16], []]);
+    expect(page.groups.value.map((group) => group.items.map((task) => task.taskId))).toEqual([
+      [],
+      [16],
+      [],
+    ]);
   });
 
   it("Taskの所属Project BoardへTask ID付きで移動する", () => {
@@ -185,9 +191,7 @@ describe("useMyTasksPage", () => {
 
     expect(page.myTasks.value).toEqual([]);
     expect(page.businessDate.value).toBe("");
-    expect(page.errorMessages.value).toEqual([
-      "My Tasksを参照するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["My Tasksを参照するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -207,9 +211,7 @@ describe("useMyTasksPage", () => {
 
     await page.loadTasks();
 
-    expect(page.errorMessages.value).toEqual([
-      "My Tasksを取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["My Tasksを取得できませんでした。"]);
   });
 
   it("完了確定後の再取得失敗は完了操作失敗と区別する", async () => {
@@ -241,9 +243,7 @@ describe("useMyTasksPage", () => {
   });
 
   it("TASK_UPDATEがない場合は完了操作を表示しない", () => {
-    mocks.userStore.hasPermission.mockImplementation(
-      (code) => code !== "TASK_UPDATE"
-    );
+    mocks.userStore.hasPermission.mockImplementation((code) => code !== "TASK_UPDATE");
 
     const page = useMyTasksPage();
 
@@ -252,17 +252,13 @@ describe("useMyTasksPage", () => {
   });
 
   it("TASK_UPDATEがない場合は完了APIを呼ばない", async () => {
-    mocks.userStore.hasPermission.mockImplementation(
-      (code) => code !== "TASK_UPDATE"
-    );
+    mocks.userStore.hasPermission.mockImplementation((code) => code !== "TASK_UPDATE");
     const page = useMyTasksPage();
 
     await page.completeTask(tasks[0]);
 
     expect(mocks.myTaskApi.completeMyTask).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "Taskを完了するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Taskを完了するpermissionがありません。"]);
   });
 
   it("完了が409で競合した場合は一覧を取り直し、Backendの理由を表示する", async () => {
@@ -288,9 +284,7 @@ describe("useMyTasksPage", () => {
 
     expect(mocks.myTaskApi.findMyTasks).toHaveBeenCalledTimes(2);
     expect(page.myTasks.value.map((task) => task.taskId)).toEqual([16, 17]);
-    expect(page.errorMessages.value).toEqual([
-      "他の利用者がTaskを更新しました。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["他の利用者がTaskを更新しました。"]);
   });
 
   it("TASK_UPDATEがある場合だけTimer開始操作を表示する", () => {
@@ -311,7 +305,9 @@ describe("useMyTasksPage", () => {
       vi.stubGlobal("document", {
         querySelector: (selector) => {
           const key = selector.match(/data-my-task-control="([^"]+)"/)?.[1];
-          return present.includes(key) ? { focus: () => focused.push(key), matches: () => false } : null;
+          return present.includes(key)
+            ? { focus: () => focused.push(key), matches: () => false }
+            : null;
         },
       });
       return focused;
@@ -325,8 +321,15 @@ describe("useMyTasksPage", () => {
       mocks.myTaskApi.completeMyTask.mockResolvedValue(undefined);
       const page = useMyTasksPage();
       await page.loadTasks();
-      mocks.myTaskApi.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [tasks[0], tasks[2]] });
-      const focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(17), MY_TASKS_RELOAD_CONTROL]);
+      mocks.myTaskApi.findMyTasks.mockResolvedValue({
+        businessDate: "2026-09-20",
+        tasks: [tasks[0], tasks[2]],
+      });
+      const focused = stubDocument([
+        buildMyTaskCompleteControlKey(15),
+        buildMyTaskCompleteControlKey(17),
+        MY_TASKS_RELOAD_CONTROL,
+      ]);
 
       await page.completeTask(tasks[1]);
 
@@ -337,8 +340,15 @@ describe("useMyTasksPage", () => {
       mocks.myTaskApi.completeMyTask.mockResolvedValue(undefined);
       const page = useMyTasksPage();
       await page.loadTasks();
-      mocks.myTaskApi.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: tasks.slice(0, 2) });
-      let focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(16), MY_TASKS_RELOAD_CONTROL]);
+      mocks.myTaskApi.findMyTasks.mockResolvedValue({
+        businessDate: "2026-09-20",
+        tasks: tasks.slice(0, 2),
+      });
+      let focused = stubDocument([
+        buildMyTaskCompleteControlKey(15),
+        buildMyTaskCompleteControlKey(16),
+        MY_TASKS_RELOAD_CONTROL,
+      ]);
 
       await page.completeTask(tasks[2]);
       expect(focused).toEqual([buildMyTaskCompleteControlKey(16)]);
@@ -353,7 +363,11 @@ describe("useMyTasksPage", () => {
       mocks.myTaskApi.completeMyTask.mockRejectedValue(new TypeError("Failed to fetch"));
       const page = useMyTasksPage();
       await page.loadTasks();
-      const focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(16), buildMyTaskCompleteControlKey(17)]);
+      const focused = stubDocument([
+        buildMyTaskCompleteControlKey(15),
+        buildMyTaskCompleteControlKey(16),
+        buildMyTaskCompleteControlKey(17),
+      ]);
 
       await page.completeTask(tasks[1]);
 

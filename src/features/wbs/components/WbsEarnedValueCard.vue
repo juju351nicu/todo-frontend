@@ -47,7 +47,9 @@ const submit = (): void => {
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-chart-timeline-variant-shimmer" class="size-6" />
         EVM（出来高管理）
-        <UBadge v-if="metrics" size="sm" variant="outline" class="ms-auto">基準日 {{ metrics.statusDate }}</UBadge>
+        <UBadge v-if="metrics" size="sm" variant="outline" class="ms-auto"
+          >基準日 {{ metrics.statusDate }}</UBadge
+        >
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">
@@ -88,7 +90,9 @@ const submit = (): void => {
     </div>
     <template v-else-if="metrics">
       <div class="mt-5 mb-3 flex flex-wrap items-center gap-2">
-        <UBadge color="neutral">baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge>
+        <UBadge color="neutral"
+          >baseline #{{ metrics.baselineNumber }} {{ metrics.baselineName }}</UBadge
+        >
         <UBadge variant="outline">作成日 {{ metrics.baselineDate }}</UBadge>
         <UBadge variant="outline">timezone {{ metrics.businessZoneId }}</UBadge>
       </div>
@@ -104,14 +108,18 @@ const submit = (): void => {
           <div class="h-full rounded-sm border border-default p-4">
             <div class="text-xs text-muted">PV（計画価値）</div>
             <div class="text-xl font-medium">{{ formatEarnedValueMinutes(metrics.pv) }}</div>
-            <div class="text-xs">計画進捗 {{ formatEarnedValuePercent(metrics.plannedProgressPercent) }}</div>
+            <div class="text-xs">
+              計画進捗 {{ formatEarnedValuePercent(metrics.plannedProgressPercent) }}
+            </div>
           </div>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
           <div class="h-full rounded-sm border border-default p-4">
             <div class="text-xs text-muted">EV（出来高）</div>
             <div class="text-xl font-medium">{{ formatEarnedValueMinutes(metrics.ev) }}</div>
-            <div class="text-xs">出来高進捗 {{ formatEarnedValuePercent(metrics.earnedProgressPercent) }}</div>
+            <div class="text-xs">
+              出来高進捗 {{ formatEarnedValuePercent(metrics.earnedProgressPercent) }}
+            </div>
           </div>
         </div>
         <div class="w-full p-3 sm:w-1/2 md:w-1/4">
@@ -123,12 +131,21 @@ const submit = (): void => {
       </div>
 
       <div class="mb-4 flex flex-wrap gap-2">
-        <UBadge :color="getEarnedValueVarianceColor(metrics.sv)">SV {{ formatSignedEarnedValueMinutes(metrics.sv) }}</UBadge>
-        <UBadge :color="getEarnedValueVarianceColor(metrics.cv)">CV {{ formatSignedEarnedValueMinutes(metrics.cv) }}</UBadge>
-        <UBadge :color="getEarnedValueRatioColor(metrics.spi)">SPI {{ formatEarnedValueRatio(metrics.spi) }}</UBadge>
-        <UBadge :color="getEarnedValueRatioColor(metrics.cpi)">CPI {{ formatEarnedValueRatio(metrics.cpi) }}</UBadge>
+        <UBadge :color="getEarnedValueVarianceColor(metrics.sv)"
+          >SV {{ formatSignedEarnedValueMinutes(metrics.sv) }}</UBadge
+        >
+        <UBadge :color="getEarnedValueVarianceColor(metrics.cv)"
+          >CV {{ formatSignedEarnedValueMinutes(metrics.cv) }}</UBadge
+        >
+        <UBadge :color="getEarnedValueRatioColor(metrics.spi)"
+          >SPI {{ formatEarnedValueRatio(metrics.spi) }}</UBadge
+        >
+        <UBadge :color="getEarnedValueRatioColor(metrics.cpi)"
+          >CPI {{ formatEarnedValueRatio(metrics.cpi) }}</UBadge
+        >
         <UBadge :color="metrics.baselineAllocationVarianceMinutes === 0 ? 'success' : 'warning'">
-          baseline配賦差 {{ formatSignedEarnedValueMinutes(metrics.baselineAllocationVarianceMinutes) }}
+          baseline配賦差
+          {{ formatSignedEarnedValueMinutes(metrics.baselineAllocationVarianceMinutes) }}
         </UBadge>
         <UBadge v-if="metrics.excludedActualEffortMinutes > 0" color="warning">
           AC除外 {{ formatEarnedValueMinutes(metrics.excludedActualEffortMinutes) }}
@@ -138,9 +155,14 @@ const submit = (): void => {
       <StatusAlert v-if="metrics.warnings.length" type="warning" variant="soft" class="mb-4">
         <div class="mb-1 font-medium">集計上の注意</div>
         <ul class="list-disc ps-5">
-          <li v-for="warning in metrics.warnings" :key="`${warning.code}-${warning.taskId ?? 'project'}`">
+          <li
+            v-for="warning in metrics.warnings"
+            :key="`${warning.code}-${warning.taskId ?? 'project'}`"
+          >
             {{ warning.message }}
-            <span v-if="warning.minutes !== null">（{{ formatEarnedValueMinutes(warning.minutes) }}）</span>
+            <span v-if="warning.minutes !== null"
+              >（{{ formatEarnedValueMinutes(warning.minutes) }}）</span
+            >
           </li>
         </ul>
       </StatusAlert>
@@ -166,11 +188,16 @@ const submit = (): void => {
                 <div class="font-medium">{{ task.wbsCode || "—" }} {{ task.title }}</div>
                 <div class="text-xs text-muted">Task ID: {{ task.sourceTaskId }}</div>
               </td>
-              <td class="whitespace-nowrap">{{ task.plannedStartDate }} ～ {{ task.plannedEndDate }}</td>
-              <td class="whitespace-nowrap">{{ formatEarnedValueMinutes(task.plannedEffortMinutes) }}</td>
+              <td class="whitespace-nowrap">
+                {{ task.plannedStartDate }} ～ {{ task.plannedEndDate }}
+              </td>
+              <td class="whitespace-nowrap">
+                {{ formatEarnedValueMinutes(task.plannedEffortMinutes) }}
+              </td>
               <td class="whitespace-nowrap">
                 <template v-if="task.progressSnapshotDate !== null">
-                  {{ task.progressSnapshotDate }} / {{ formatEarnedValuePercent(task.progressPercent) }}
+                  {{ task.progressSnapshotDate }} /
+                  {{ formatEarnedValuePercent(task.progressPercent) }}
                 </template>
                 <template v-else>履歴なし</template>
               </td>
@@ -178,16 +205,22 @@ const submit = (): void => {
               <td class="whitespace-nowrap">{{ formatEarnedValueMinutes(task.ev) }}</td>
               <td class="whitespace-nowrap">{{ formatEarnedValueMinutes(task.ac) }}</td>
               <td class="whitespace-nowrap">
-                <UBadge :color="getEarnedValueVarianceColor(task.sv)" size="sm">{{ formatSignedEarnedValueMinutes(task.sv) }}</UBadge>
+                <UBadge :color="getEarnedValueVarianceColor(task.sv)" size="sm">{{
+                  formatSignedEarnedValueMinutes(task.sv)
+                }}</UBadge>
               </td>
               <td class="whitespace-nowrap">
-                <UBadge :color="getEarnedValueVarianceColor(task.cv)" size="sm">{{ formatSignedEarnedValueMinutes(task.cv) }}</UBadge>
+                <UBadge :color="getEarnedValueVarianceColor(task.cv)" size="sm">{{
+                  formatSignedEarnedValueMinutes(task.cv)
+                }}</UBadge>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <StatusAlert v-else type="info" variant="soft">active baselineにEVM対象の通常Taskはありません。</StatusAlert>
+      <StatusAlert v-else type="info" variant="soft"
+        >active baselineにEVM対象の通常Taskはありません。</StatusAlert
+      >
     </template>
     <!-- 集計の失敗（baselineがない409等）を表示している間は、同じ内容の案内を重ねない。 -->
     <StatusAlert v-else-if="errorMessages.length === 0" type="info" variant="soft" class="mt-4">

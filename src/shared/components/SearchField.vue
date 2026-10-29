@@ -8,7 +8,7 @@ withDefaults(
     label: string;
     placeholder?: string;
   }>(),
-  { placeholder: undefined },
+  { placeholder: undefined }
 );
 
 const searchText = defineModel<string>({ required: true });
@@ -16,7 +16,13 @@ const searchText = defineModel<string>({ required: true });
 
 <template>
   <UFormField :label="label" class="pb-0 text-base font-normal tracking-normal">
-    <UInput v-model="searchText" :placeholder="placeholder" icon="i-mdi-magnify" size="sm" class="w-full">
+    <UInput
+      v-model="searchText"
+      :placeholder="placeholder"
+      icon="i-mdi-magnify"
+      size="sm"
+      class="w-full"
+    >
       <template v-if="searchText" #trailing>
         <UButton
           icon="i-mdi-close-circle"

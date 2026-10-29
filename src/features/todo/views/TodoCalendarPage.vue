@@ -7,8 +7,15 @@ import { useTodoCalendarPage } from "@/features/todo/composables/useTodoCalendar
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
-const { calendarOptions, errorMessages, initialize, isLoading, search, searchTitle, selectedDoneFlag } =
-  useTodoCalendarPage();
+const {
+  calendarOptions,
+  errorMessages,
+  initialize,
+  isLoading,
+  search,
+  searchTitle,
+  selectedDoneFlag,
+} = useTodoCalendarPage();
 
 onBeforeMount(() => {
   void initialize();
@@ -20,7 +27,11 @@ onBeforeMount(() => {
   <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </StatusAlert>
-  <TodoSearchCard v-model:search-title="searchTitle" v-model:selected-done-flag="selectedDoneFlag" @search="search" />
+  <TodoSearchCard
+    v-model:search-title="searchTitle"
+    v-model:selected-done-flag="selectedDoneFlag"
+    @search="search"
+  />
   <br />
   <FullCalendar :options="calendarOptions" />
 </template>

@@ -66,7 +66,12 @@ onBeforeMount(initialize);
         <div class="flex flex-wrap items-center gap-3">
           <UIcon name="i-mdi-folder-multiple-outline" class="size-6" />
           Project Template
-          <UButton :to="{ name: ROUTE_NAMES.projectList }" variant="ghost" icon="i-mdi-view-dashboard-outline" class="ms-auto">
+          <UButton
+            :to="{ name: ROUTE_NAMES.projectList }"
+            variant="ghost"
+            icon="i-mdi-view-dashboard-outline"
+            class="ms-auto"
+          >
             Project一覧
           </UButton>
         </div>
@@ -79,7 +84,13 @@ onBeforeMount(initialize);
       <StatusAlert v-if="errorMessages.length && !isApplyFeedback" type="error" class="mb-4">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" closable class="mb-4" @close="successMessage = ''">
+      <StatusAlert
+        v-if="successMessage"
+        type="success"
+        closable
+        class="mb-4"
+        @close="successMessage = ''"
+      >
         {{ successMessage }}
       </StatusAlert>
 
@@ -97,7 +108,9 @@ onBeforeMount(initialize);
                     : 'hover:bg-elevated'
                 "
                 :disabled="isMutating || isLoadingDetail"
-                :data-project-template-control="buildTemplateItemControlKey(template.projectTemplateId)"
+                :data-project-template-control="
+                  buildTemplateItemControlKey(template.projectTemplateId)
+                "
                 @click="selectTemplate(template)"
               >
                 <UIcon name="i-mdi-folder-star-outline" class="size-6 shrink-0 opacity-60" />
@@ -108,7 +121,10 @@ onBeforeMount(initialize);
               </button>
             </li>
           </ul>
-          <div v-else-if="!isLoadingList" class="rounded-sm border border-default p-5 text-center text-muted">
+          <div
+            v-else-if="!isLoadingList"
+            class="rounded-sm border border-default p-5 text-center text-muted"
+          >
             保存済みTemplateはありません。OWNERはProject Boardから現在の構造を保存できます。
           </div>
         </div>
@@ -120,9 +136,7 @@ onBeforeMount(initialize);
             <div v-if="!isEditing" class="mb-4 flex flex-wrap items-start gap-2">
               <div>
                 <h1 class="text-2xl">{{ selectedTemplate.name }}</h1>
-                <div class="text-sm text-muted">
-                  基準日 {{ selectedTemplate.baseDate }}
-                </div>
+                <div class="text-sm text-muted">基準日 {{ selectedTemplate.baseDate }}</div>
               </div>
               <UButton
                 v-if="canEditTemplate"
@@ -166,16 +180,33 @@ onBeforeMount(initialize);
                 </div>
                 <div class="relative">
                   <UFormField label="生成Projectへ複製する説明">
-                    <UTextarea v-model="editForm.description" :maxlength="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH" :rows="4" :disabled="isSaving" class="w-full" />
+                    <UTextarea
+                      v-model="editForm.description"
+                      :maxlength="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH"
+                      :rows="4"
+                      :disabled="isSaving"
+                      class="w-full"
+                    />
                   </UFormField>
-                  <FieldCounter :value="editForm.description" :max="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH" />
+                  <FieldCounter
+                    :value="editForm.description"
+                    :max="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH"
+                  />
                 </div>
                 <StatusAlert type="info" variant="soft" density="compact">
                   member slot、Board列、Task、checklist、依存関係のsnapshotは編集されません。
                 </StatusAlert>
                 <template #footer>
-                  <UButton variant="ghost" class="ms-auto" :disabled="isSaving" @click="cancelEditing">キャンセル</UButton>
-                  <UButton type="submit" color="primary" variant="ghost" :loading="isSaving">保存</UButton>
+                  <UButton
+                    variant="ghost"
+                    class="ms-auto"
+                    :disabled="isSaving"
+                    @click="cancelEditing"
+                    >キャンセル</UButton
+                  >
+                  <UButton type="submit" color="primary" variant="ghost" :loading="isSaving"
+                    >保存</UButton
+                  >
                 </template>
               </UCard>
             </form>
@@ -189,10 +220,18 @@ onBeforeMount(initialize);
                 <div class="flex flex-wrap items-center gap-2 text-base font-normal">
                   <UIcon name="i-mdi-playlist-plus" class="size-6" />
                   TemplateからProjectを作成
-                  <UBadge size="sm" class="ms-auto">{{ selectedTemplate.memberSlots.length }} member slot</UBadge>
+                  <UBadge size="sm" class="ms-auto"
+                    >{{ selectedTemplate.memberSlots.length }} member slot</UBadge
+                  >
                 </div>
               </template>
-              <StatusAlert v-if="!canApplyTemplate" type="info" variant="soft" density="compact" class="mb-4">
+              <StatusAlert
+                v-if="!canApplyTemplate"
+                type="info"
+                variant="soft"
+                density="compact"
+                class="mb-4"
+              >
                 Project作成にはPROJECT_CREATE permissionが必要です。
               </StatusAlert>
               <div class="-m-3 flex flex-wrap">
@@ -205,13 +244,26 @@ onBeforeMount(initialize);
                       class="w-full"
                     />
                   </UFormField>
-                  <FieldCounter :value="applyForm.projectKey" :max="PROJECT_KEY_MAX_LENGTH" class="end-7 bottom-3.5" />
+                  <FieldCounter
+                    :value="applyForm.projectKey"
+                    :max="PROJECT_KEY_MAX_LENGTH"
+                    class="end-7 bottom-3.5"
+                  />
                 </div>
                 <div class="relative w-full p-3 md:w-1/3">
                   <UFormField label="Project名">
-                    <UInput v-model="applyForm.name" :maxlength="PROJECT_NAME_MAX_LENGTH" :disabled="!canApplyTemplate || isMutating" class="w-full" />
+                    <UInput
+                      v-model="applyForm.name"
+                      :maxlength="PROJECT_NAME_MAX_LENGTH"
+                      :disabled="!canApplyTemplate || isMutating"
+                      class="w-full"
+                    />
                   </UFormField>
-                  <FieldCounter :value="applyForm.name" :max="PROJECT_NAME_MAX_LENGTH" class="end-7 bottom-3.5" />
+                  <FieldCounter
+                    :value="applyForm.name"
+                    :max="PROJECT_NAME_MAX_LENGTH"
+                    class="end-7 bottom-3.5"
+                  />
                 </div>
                 <div class="w-full p-3 md:w-1/3">
                   <UFormField label="Project開始日">
@@ -227,10 +279,18 @@ onBeforeMount(initialize);
 
               <div class="mt-2 mb-2 text-sm font-medium">member slot mapping</div>
               <div class="-m-3 flex flex-wrap">
-                <div v-for="slot in selectedTemplate.memberSlots" :key="slot.slotKey" class="w-full p-3 md:w-1/2">
+                <div
+                  v-for="slot in selectedTemplate.memberSlots"
+                  :key="slot.slotKey"
+                  class="w-full p-3 md:w-1/2"
+                >
                   <UFormField
                     :label="`${slot.displayName}（${slot.projectRole}）`"
-                    :help="slot.slotKey === 'OWNER_1' ? '未指定時は自分を割り当てます。' : '割り当てるアカウントIDを入力します。'"
+                    :help="
+                      slot.slotKey === 'OWNER_1'
+                        ? '未指定時は自分を割り当てます。'
+                        : '割り当てるアカウントIDを入力します。'
+                    "
                   >
                     <UInput
                       :model-value="applyForm.memberMappings[slot.slotKey] ?? undefined"
@@ -267,10 +327,16 @@ onBeforeMount(initialize);
               <div class="w-full p-3 md:w-1/2">
                 <UCard variant="outline" class="h-full" :ui="{ body: 'px-0 sm:px-0' }">
                   <template #header>
-                    <div class="text-base font-normal">member slot（{{ selectedTemplate.memberSlots.length }}）</div>
+                    <div class="text-base font-normal">
+                      member slot（{{ selectedTemplate.memberSlots.length }}）
+                    </div>
                   </template>
                   <ul class="py-2">
-                    <li v-for="slot in selectedTemplate.memberSlots" :key="slot.slotKey" class="px-4 py-1.5">
+                    <li
+                      v-for="slot in selectedTemplate.memberSlots"
+                      :key="slot.slotKey"
+                      class="px-4 py-1.5"
+                    >
                       <div class="text-base">{{ slot.displayName }}</div>
                       <div class="text-sm text-muted">{{ slot.projectRole }}</div>
                     </li>
@@ -280,10 +346,16 @@ onBeforeMount(initialize);
               <div class="w-full p-3 md:w-1/2">
                 <UCard variant="outline" class="h-full" :ui="{ body: 'px-0 sm:px-0' }">
                   <template #header>
-                    <div class="text-base font-normal">Board列（{{ selectedTemplate.statuses.length }}）</div>
+                    <div class="text-base font-normal">
+                      Board列（{{ selectedTemplate.statuses.length }}）
+                    </div>
                   </template>
                   <ul class="py-2">
-                    <li v-for="status in selectedTemplate.statuses" :key="status.statusCode" class="flex items-center px-4 py-1.5">
+                    <li
+                      v-for="status in selectedTemplate.statuses"
+                      :key="status.statusCode"
+                      class="flex items-center px-4 py-1.5"
+                    >
                       <span class="flex-1 text-base">{{ status.name }}</span>
                       <UBadge v-if="status.completed" size="xs" color="success">完了列</UBadge>
                     </li>
@@ -294,7 +366,9 @@ onBeforeMount(initialize);
 
             <UCard variant="outline" class="mb-5" :ui="{ body: 'px-0 sm:px-0' }">
               <template #header>
-                <div class="text-base font-normal">WBS Task snapshot（{{ selectedTemplate.tasks.length }}）</div>
+                <div class="text-base font-normal">
+                  WBS Task snapshot（{{ selectedTemplate.tasks.length }}）
+                </div>
               </template>
               <div class="overflow-x-auto">
                 <table class="app-table [&_td]:py-2">
@@ -313,22 +387,53 @@ onBeforeMount(initialize);
                     <tr v-for="task in selectedTemplate.tasks" :key="task.projectTemplateTaskId">
                       <td>
                         <div class="font-medium">{{ task.wbsCode || "-" }} {{ task.title }}</div>
-                        <div v-if="task.detail" class="max-w-md text-xs whitespace-pre-wrap">{{ task.detail }}</div>
-                        <div v-if="task.parentProjectTemplateTaskId !== null" class="text-xs text-muted">
-                          {{ formatProjectTemplateParent(task.parentProjectTemplateTaskId, selectedTemplate.tasks) }}
+                        <div v-if="task.detail" class="max-w-md text-xs whitespace-pre-wrap">
+                          {{ task.detail }}
+                        </div>
+                        <div
+                          v-if="task.parentProjectTemplateTaskId !== null"
+                          class="text-xs text-muted"
+                        >
+                          {{
+                            formatProjectTemplateParent(
+                              task.parentProjectTemplateTaskId,
+                              selectedTemplate.tasks
+                            )
+                          }}
                         </div>
                       </td>
                       <td>{{ getProjectTemplateTaskTypeLabel(task.taskType) }}</td>
-                      <td>{{ resolveProjectTemplateStatusName(task.statusCode, selectedTemplate.statuses) }}</td>
-                      <td>{{ resolveProjectTemplateSlotName(task.assigneeSlotKey, selectedTemplate.memberSlots) }}</td>
+                      <td>
+                        {{
+                          resolveProjectTemplateStatusName(
+                            task.statusCode,
+                            selectedTemplate.statuses
+                          )
+                        }}
+                      </td>
+                      <td>
+                        {{
+                          resolveProjectTemplateSlotName(
+                            task.assigneeSlotKey,
+                            selectedTemplate.memberSlots
+                          )
+                        }}
+                      </td>
                       <td>
                         {{ formatProjectTemplateOffset(task.startOffsetDays) }} ～
                         {{ formatProjectTemplateOffset(task.dueOffsetDays) }}
                       </td>
-                      <td>{{ task.plannedEffortMinutes }}分・{{ getProjectTemplatePriorityLabel(task.priority) }}</td>
+                      <td>
+                        {{ task.plannedEffortMinutes }}分・{{
+                          getProjectTemplatePriorityLabel(task.priority)
+                        }}
+                      </td>
                       <td>
                         <ul v-if="task.checklistItems.length" class="min-w-48 list-disc ps-5">
-                          <li v-for="item in task.checklistItems" :key="`${item.position}-${item.content}`">
+                          <li
+                            v-for="item in task.checklistItems"
+                            :key="`${item.position}-${item.content}`"
+                          >
                             {{ item.content }}
                           </li>
                         </ul>
@@ -342,7 +447,9 @@ onBeforeMount(initialize);
 
             <UCard variant="outline" :ui="{ body: 'px-0 sm:px-0' }">
               <template #header>
-                <div class="text-base font-normal">Finish-to-Start依存（{{ selectedTemplate.dependencies.length }}）</div>
+                <div class="text-base font-normal">
+                  Finish-to-Start依存（{{ selectedTemplate.dependencies.length }}）
+                </div>
               </template>
               <ul v-if="selectedTemplate.dependencies.length" class="py-2">
                 <li
@@ -351,9 +458,19 @@ onBeforeMount(initialize);
                   class="px-4 py-1.5"
                 >
                   <div class="text-base">
-                    {{ formatProjectTemplateTaskTitle(selectedTemplate.tasks, dependency.predecessorProjectTemplateTaskId) }}
+                    {{
+                      formatProjectTemplateTaskTitle(
+                        selectedTemplate.tasks,
+                        dependency.predecessorProjectTemplateTaskId
+                      )
+                    }}
                     →
-                    {{ formatProjectTemplateTaskTitle(selectedTemplate.tasks, dependency.successorProjectTemplateTaskId) }}
+                    {{
+                      formatProjectTemplateTaskTitle(
+                        selectedTemplate.tasks,
+                        dependency.successorProjectTemplateTaskId
+                      )
+                    }}
                   </div>
                   <div class="text-sm text-muted">待ち時間 {{ dependency.lagMinutes }}分</div>
                 </li>
@@ -384,8 +501,12 @@ onBeforeMount(initialize);
       同じ名前で新しいTemplateをcaptureできるようになります。
     </template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isArchiving" @click="closeArchiveConfirm">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isArchiving" @click="archiveTemplate">アーカイブ</UButton>
+      <UButton variant="ghost" :disabled="isArchiving" @click="closeArchiveConfirm"
+        >キャンセル</UButton
+      >
+      <UButton color="error" variant="ghost" :loading="isArchiving" @click="archiveTemplate"
+        >アーカイブ</UButton
+      >
     </template>
   </UModal>
 </template>

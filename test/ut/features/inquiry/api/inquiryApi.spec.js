@@ -29,10 +29,7 @@ describe("Inquiry API", () => {
     HttpClient.postRequest.mockResolvedValue(response);
 
     await expect(InquiryApi.send(payload)).resolves.toEqual(inquiryResponse);
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.INQUIRY_SEND_MAIL,
-      payload
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.INQUIRY_SEND_MAIL, payload);
   });
 
   it("送信基盤停止のJSON Responseをstatus付き例外へ変換する", async () => {

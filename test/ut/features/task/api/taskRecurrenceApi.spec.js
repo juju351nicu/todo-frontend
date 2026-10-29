@@ -31,9 +31,7 @@ describe("Task Recurrence API", () => {
     });
 
     await expect(TaskRecurrenceApi.findRules(5)).resolves.toEqual([rule]);
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/task-recurrences"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/5/task-recurrences");
   });
 
   it("Task snapshotとscheduleを直接作成APIへ送信する", async () => {
@@ -142,9 +140,7 @@ describe("Task Recurrence API", () => {
       json: vi.fn().mockResolvedValue(generations),
     });
 
-    await expect(TaskRecurrenceApi.findGenerations(5, 71)).resolves.toEqual(
-      generations
-    );
+    await expect(TaskRecurrenceApi.findGenerations(5, 71)).resolves.toEqual(generations);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/task-recurrences/71/generations"
     );
@@ -157,9 +153,7 @@ describe("Task Recurrence API", () => {
       json: vi.fn().mockResolvedValue(generation),
     });
 
-    await expect(
-      TaskRecurrenceApi.retryGeneration(5, 71, 91, 3)
-    ).resolves.toEqual(generation);
+    await expect(TaskRecurrenceApi.retryGeneration(5, 71, 91, 3)).resolves.toEqual(generation);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/task-recurrences/71/generations/91/retry",
       { version: 3 }
@@ -182,9 +176,10 @@ describe("Task Recurrence API", () => {
       json: vi.fn().mockResolvedValue(errorResponse),
     });
 
-    await expect(
-      TaskRecurrenceApi.retryGeneration(5, 71, 91, 3)
-    ).rejects.toMatchObject({ status: 403, errorResponse });
+    await expect(TaskRecurrenceApi.retryGeneration(5, 71, 91, 3)).rejects.toMatchObject({
+      status: 403,
+      errorResponse,
+    });
   });
 
   it("Securityの本文なしエラーはnullとして安全に保持する", async () => {

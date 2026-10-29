@@ -18,10 +18,7 @@ export class TodoApiError extends ApiError {
 
 /** 非2xx Responseを本文形式に依存しないTaskApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
-  ensureApiSuccess(
-    response,
-    (status, errorResponse) => new TodoApiError(status, errorResponse)
-  );
+  ensureApiSuccess(response, (status, errorResponse) => new TodoApiError(status, errorResponse));
 
 /**
  * Todo詳細を取得する。
@@ -31,9 +28,7 @@ const ensureSuccess = (response: Response): Promise<void> =>
  * @throws TodoApiError 未検出、認証・認可失敗またはBackendエラーの場合
  */
 const findDetail = async (todoId: number): Promise<TodoDetailResponse> => {
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.TODO_DETAIL}/${todoId}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.TODO_DETAIL}/${todoId}`);
   await ensureSuccess(response);
   return (await response.json()) as TodoDetailResponse;
 };
@@ -58,9 +53,7 @@ const findList = async (payload: TodoListRequest): Promise<TodoListResponse> => 
  * @returns カレンダー用Todoを含む認可済み一覧
  * @throws TodoApiError 入力不正、認証・認可失敗またはBackendエラーの場合
  */
-const findCalendar = async (
-  payload: TodoListRequest
-): Promise<TodoListResponse> => {
+const findCalendar = async (payload: TodoListRequest): Promise<TodoListResponse> => {
   const response = await HttpClient.postRequest(API_PATHS.TODO_CALENDAR, payload);
   await ensureSuccess(response);
   return (await response.json()) as TodoListResponse;
@@ -74,10 +67,7 @@ const findCalendar = async (
  */
 const complete = async (todoId: number): Promise<void> => {
   const query = new URLSearchParams({ todo_id: String(todoId) });
-  const response = await HttpClient.postRequest(
-    `${API_PATHS.TODO_DONE}?${query}`,
-    null
-  );
+  const response = await HttpClient.postRequest(`${API_PATHS.TODO_DONE}?${query}`, null);
   await ensureSuccess(response);
 };
 

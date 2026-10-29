@@ -71,10 +71,7 @@ describe("useWbsWorkingCalendar", () => {
     const page = useWbsPage();
     await page.initialize();
 
-    await page.loadWorkingCalendar(
-      page.workingCalendarDateRange.value,
-      "MEMBER:2"
-    );
+    await page.loadWorkingCalendar(page.workingCalendarDateRange.value, "MEMBER:2");
     page.openWorkingDayEditor("2026-08-23");
     await page.saveWorkingDay({
       workDate: "2026-08-23",
@@ -89,9 +86,7 @@ describe("useWbsWorkingCalendar", () => {
       availableMinutes: 420,
     });
     expect(page.isWorkingDayEditorOpen.value).toBe(false);
-    expect(page.workingCalendarSuccessMessage.value).toBe(
-      "稼働日例外を登録しました。"
-    );
+    expect(page.workingCalendarSuccessMessage.value).toBe("稼働日例外を登録しました。");
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
   });
 
@@ -107,9 +102,11 @@ describe("useWbsWorkingCalendar", () => {
       availableMinutes: 480,
     });
 
-    expect(
-      page.workingCalendarTargetOptions.value.map((option) => option.value)
-    ).toEqual(["PROJECT", "MEMBER:1", "MEMBER:2"]);
+    expect(page.workingCalendarTargetOptions.value.map((option) => option.value)).toEqual([
+      "PROJECT",
+      "MEMBER:1",
+      "MEMBER:2",
+    ]);
     expect(mocks.wbsApi.updateProjectWorkingDay).toHaveBeenCalledWith(7, 11, {
       workDate: "2026-08-22",
       dayType: "WORKING_DAY",
@@ -238,9 +235,7 @@ describe("useWbsWorkingCalendar", () => {
       dayType: "WORKING_DAY",
       availableMinutes: 480,
     });
-    await vi.waitFor(() =>
-      expect(mocks.userStore.clearSession).toHaveBeenCalledOnce()
-    );
+    await vi.waitFor(() => expect(mocks.userStore.clearSession).toHaveBeenCalledOnce());
     resolveCalendarReload(structuredClone(workingCalendarResponse));
     await savePromise;
 
@@ -254,24 +249,14 @@ describe("useWbsWorkingCalendar", () => {
       .mockResolvedValue(structuredClone(memberWorkingCalendarResponse));
     const page = useWbsPage();
     await page.initialize();
-    await page.loadWorkingCalendar(
-      page.workingCalendarDateRange.value,
-      "MEMBER:2"
-    );
+    await page.loadWorkingCalendar(page.workingCalendarDateRange.value, "MEMBER:2");
 
     page.requestWorkingDayDelete("2026-08-22");
     await page.confirmWorkingDayDelete();
 
-    expect(mocks.wbsApi.deleteMemberWorkingDay).toHaveBeenCalledWith(
-      7,
-      2,
-      21,
-      4
-    );
+    expect(mocks.wbsApi.deleteMemberWorkingDay).toHaveBeenCalledWith(7, 2, 21, 4);
     expect(page.workingDayPendingDelete.value).toBeNull();
-    expect(page.workingCalendarSuccessMessage.value).toBe(
-      "稼働日例外を削除しました。"
-    );
+    expect(page.workingCalendarSuccessMessage.value).toBe("稼働日例外を削除しました。");
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
     // 削除ボタンは消えるので、同じ行の「登録・編集」へフォーカスを戻す。
     expect(mocks.focusedControls).toEqual([buildWorkingDayEditControlKey("2026-08-22")]);
@@ -292,10 +277,20 @@ describe("useWbsWorkingCalendar", () => {
     };
 
     it.each([
-      ["Project共通・Project管理権限あり", "PROJECT", { canManageProject: computed(() => true) }, true],
+      [
+        "Project共通・Project管理権限あり",
+        "PROJECT",
+        { canManageProject: computed(() => true) },
+        true,
+      ],
       ["Project共通・通常member", "PROJECT", {}, false],
       ["本人の個人例外・通常member", "__OWN__", {}, true],
-      ["他memberの個人例外・Project管理権限あり", "__OTHER__", { canManageProject: computed(() => true) }, true],
+      [
+        "他memberの個人例外・Project管理権限あり",
+        "__OTHER__",
+        { canManageProject: computed(() => true) },
+        true,
+      ],
       ["本人の個人例外・TASK_UPDATEなし", "__OWN__", { canEditWbs: computed(() => false) }, false],
       [
         "本人の個人例外・archive済みProject",
@@ -304,7 +299,8 @@ describe("useWbsWorkingCalendar", () => {
         false,
       ],
     ])("%s（対象key %s）で編集可否を判定する", async (_label, key, overrides, expected) => {
-      const targetKey = key === "__OWN__" ? ownMemberKey : key === "__OTHER__" ? otherMemberKey : key;
+      const targetKey =
+        key === "__OWN__" ? ownMemberKey : key === "__OTHER__" ? otherMemberKey : key;
       const { state } = await buildCalendar(overrides, targetKey);
 
       expect(state.workingCalendarSelectedTargetKey.value).toBe(targetKey);
@@ -371,7 +367,11 @@ describe("useWbsWorkingCalendar", () => {
       const { state } = await buildCalendar({ canManageProject: computed(() => true) });
       state.openWorkingDayEditor("2026-08-23");
 
-      await state.saveWorkingDay({ workDate: "2026-08-23", dayType: "HOLIDAY", availableMinutes: 0 });
+      await state.saveWorkingDay({
+        workDate: "2026-08-23",
+        dayType: "HOLIDAY",
+        availableMinutes: 0,
+      });
 
       expect(state.workingCalendarErrorMessages.value).toEqual([
         "同じ日付に稼働日設定が既に存在します。",
@@ -431,7 +431,12 @@ describe("useWbsWorkingCalendar", () => {
       resolveCalendar(structuredClone(memberWorkingCalendarResponse));
       await loading;
 
-      expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenLastCalledWith(7, "2026-08-01", "2026-08-31", 2);
+      expect(mocks.wbsApi.getWorkingCalendar).toHaveBeenLastCalledWith(
+        7,
+        "2026-08-01",
+        "2026-08-31",
+        2
+      );
       expect(state.workingCalendar.value).toEqual(memberWorkingCalendarResponse);
     });
 

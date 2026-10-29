@@ -29,7 +29,9 @@ export const WBS_TASK_EDITOR_CONTROL = {
 } as const;
 
 /** `data-wbs-task-editor-control`属性の値から、その要素を探すselectorを作る。 */
-const buildWbsTaskEditorControlSelector = createDataAttributeSelector("data-wbs-task-editor-control");
+const buildWbsTaskEditorControlSelector = createDataAttributeSelector(
+  "data-wbs-task-editor-control"
+);
 
 /**
  * Backendの文言が「WBSを再読み込みしてください。」で終わる409のerror code
@@ -65,10 +67,7 @@ export interface UseWbsTaskEditorOptions {
  * @param context Project ID、WBS Task、権限、画面上部message、Session失効処理を提供する画面共通context
  * @param options 競合時のWBS再取得と画面全体の参照エラー処理
  */
-export const useWbsTaskEditor = (
-  context: WbsPageContext,
-  options: UseWbsTaskEditorOptions
-) => {
+export const useWbsTaskEditor = (context: WbsPageContext, options: UseWbsTaskEditorOptions) => {
   const userStore = useUserStore();
 
   /**
@@ -93,10 +92,7 @@ export const useWbsTaskEditor = (
   const parentOptions = computed(() =>
     editingTask.value === null
       ? []
-      : buildWbsParentOptions(
-          context.wbs.value?.tasks ?? [],
-          editingTask.value.taskId
-        )
+      : buildWbsParentOptions(context.wbs.value?.tasks ?? [], editingTask.value.taskId)
   );
 
   /**
@@ -111,9 +107,7 @@ export const useWbsTaskEditor = (
       context.errorMessages.value = ["WBSを更新するpermissionがありません。"];
       return;
     }
-    const task = context.wbs.value?.tasks.find(
-      (candidate) => candidate.taskId === taskId
-    );
+    const task = context.wbs.value?.tasks.find((candidate) => candidate.taskId === taskId);
     if (task === undefined) {
       context.errorMessages.value = ["編集対象のTaskが見つかりません。"];
       return;
@@ -187,10 +181,7 @@ export const useWbsTaskEditor = (
     } catch (error: unknown) {
       if (error instanceof WbsApiError && error.status === 409) {
         closeTaskEditorAfterSaving();
-        context.errorMessages.value = resolveWbsErrorMessages(
-          error,
-          DISPLAY_MESSAGES.wbs.conflict
-        );
+        context.errorMessages.value = resolveWbsErrorMessages(error, DISPLAY_MESSAGES.wbs.conflict);
         await reloadWbsAfterConflict(error);
       } else {
         await handleUpdateApiError(error);

@@ -54,13 +54,15 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
   // 繰り返しで生成するTaskは未完了として作るため、完了列は選べない。
   const statusOptions = computed(() => buildTaskStatusIdOptions(toValue(source.statuses), true));
 
-  const canChangeRules = computed<boolean>(() => toValue(source.canUpdate) && toValue(source.projectActive));
+  const canChangeRules = computed<boolean>(
+    () => toValue(source.canUpdate) && toValue(source.projectActive)
+  );
   /** 選択規則を編集できる場合はtrue。終了・archive済みの規則は編集できない。 */
   const canEditSelected = computed<boolean>(
     () =>
       canChangeRules.value &&
       selectedRule.value !== null &&
-      (EDITABLE_RULE_STATUSES as readonly string[]).includes(selectedRule.value.status),
+      (EDITABLE_RULE_STATUSES as readonly string[]).includes(selectedRule.value.status)
   );
   /**
    * 規則の作成・編集フォームを開いている場合はtrue。
@@ -69,7 +71,10 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
   const isFormOpen = computed<boolean>(() => isCreating.value || isEditing.value);
   /** 選択規則をarchiveできる場合はtrue。 */
   const canArchiveSelected = computed<boolean>(
-    () => canChangeRules.value && selectedRule.value !== null && selectedRule.value.status !== "ARCHIVED",
+    () =>
+      canChangeRules.value &&
+      selectedRule.value !== null &&
+      selectedRule.value.status !== "ARCHIVED"
   );
 
   /** Dialogを開き、archive済みを含む最新規則一覧を取得する。 */
@@ -116,7 +121,10 @@ export const useTaskRecurrenceDialog = (source: TaskRecurrenceDialogSource) => {
   const selectedRuleAssigneeDisplayName = computed(() =>
     selectedRule.value === null
       ? ""
-      : resolveProjectMemberDisplayName(toValue(source.members), selectedRule.value.assigneeAccountId)
+      : resolveProjectMemberDisplayName(
+          toValue(source.members),
+          selectedRule.value.assigneeAccountId
+        )
   );
 
   /**

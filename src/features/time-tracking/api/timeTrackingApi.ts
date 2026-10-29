@@ -26,9 +26,7 @@ const ensureSuccess = (response: Response): Promise<void> =>
   );
 
 /** 欠落した配列を画面へ伝播させないTimer停止Responseへ正規化する。 */
-const normalizeStopResponse = (
-  payload: TaskTimerStopResponse
-): TaskTimerStopResponse => ({
+const normalizeStopResponse = (payload: TaskTimerStopResponse): TaskTimerStopResponse => ({
   ...payload,
   allocations: payload.allocations ?? [],
 });
@@ -69,10 +67,7 @@ const getCurrentTimer = async (): Promise<CurrentTaskTimerResponse> => {
  * @returns Backendが確定した現在Timer
  * @throws TimeTrackingApiError 認可不足、対象なし、既存Timer競合またはBackendエラーの場合
  */
-const startTimer = async (
-  projectId: number,
-  taskId: number
-): Promise<CurrentTaskTimerResponse> => {
+const startTimer = async (projectId: number, taskId: number): Promise<CurrentTaskTimerResponse> => {
   const response = await HttpClient.postRequest(
     `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}/timer/start`,
     null
@@ -91,10 +86,7 @@ const startTimer = async (
 const stopCurrentTimer = async (
   request: TaskTimerVersionRequest
 ): Promise<TaskTimerStopResponse> => {
-  const response = await HttpClient.postRequest(
-    `${API_PATHS.TIME_TRACKING_CURRENT}/stop`,
-    request
-  );
+  const response = await HttpClient.postRequest(`${API_PATHS.TIME_TRACKING_CURRENT}/stop`, request);
   await ensureSuccess(response);
   return normalizeStopResponse((await response.json()) as TaskTimerStopResponse);
 };
@@ -133,13 +125,9 @@ const getSessions = async (
     page: String(search.page),
     size: String(search.size),
   });
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.TIME_TRACKING_SESSIONS}?${query}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.TIME_TRACKING_SESSIONS}?${query}`);
   await ensureSuccess(response);
-  return normalizeSessionListResponse(
-    (await response.json()) as TaskTimerSessionListResponse
-  );
+  return normalizeSessionListResponse((await response.json()) as TaskTimerSessionListResponse);
 };
 
 /**
@@ -163,9 +151,7 @@ const getWorkLogAudits = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-log-audits?${query}`
   );
   await ensureSuccess(response);
-  return normalizeAuditListResponse(
-    (await response.json()) as TaskWorkLogAuditListResponse
-  );
+  return normalizeAuditListResponse((await response.json()) as TaskWorkLogAuditListResponse);
 };
 
 export default {

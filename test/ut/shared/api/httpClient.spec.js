@@ -67,14 +67,10 @@ describe("REST client", () => {
     });
 
     const [url, options] = fetch.mock.calls[0];
-    expect(url).toBe(
-      "http://localhost:8030/api/v1/administration/accounts/2/roles"
-    );
+    expect(url).toBe("http://localhost:8030/api/v1/administration/accounts/2/roles");
     expect(options.method).toBe("PUT");
     expect(options.credentials).toBe("include");
     expect(options.headers.get("X-XSRF-TOKEN")).toBe("csrf-put-token");
-    expect(options.body).toBe(
-      JSON.stringify({ roleCodes: ["USER"], version: 3 })
-    );
+    expect(options.body).toBe(JSON.stringify({ roleCodes: ["USER"], version: 3 }));
   });
 });

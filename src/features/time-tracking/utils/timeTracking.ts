@@ -17,10 +17,7 @@ export const calculateDisplayedElapsedSeconds = (
   Math.max(
     0,
     Math.trunc(backendElapsedSeconds) +
-      Math.max(
-        0,
-        Math.floor((nowMilliseconds - receivedAtMilliseconds) / 1000)
-      )
+      Math.max(0, Math.floor((nowMilliseconds - receivedAtMilliseconds) / 1000))
   );
 
 /** 経過秒数を24時間を超えても桁を失わないHH:mm:ss形式へ変換する。 */
@@ -29,9 +26,7 @@ export const formatElapsedSeconds = (elapsedSeconds: number): string => {
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
   const seconds = safeSeconds % 60;
-  return [hours, minutes, seconds]
-    .map((value) => String(value).padStart(2, "0"))
-    .join(":");
+  return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
 };
 
 /** 分数を0分、1時間、1時間30分の日本語表示へ変換する。 */
@@ -42,9 +37,7 @@ export const formatEffortMinutes = (minutes: number): string => {
   if (hours === 0) {
     return `${remainingMinutes}分`;
   }
-  return remainingMinutes === 0
-    ? `${hours}時間`
-    : `${hours}時間${remainingMinutes}分`;
+  return remainingMinutes === 0 ? `${hours}時間` : `${hours}時間${remainingMinutes}分`;
 };
 
 /** ISO日時を日本語のAsia/Tokyo日時へ変換する。解釈不能値は元の文字列を返す。 */
@@ -74,17 +67,11 @@ export const buildDefaultTimerHistoryRange = (
 };
 
 /** Timer Session状態コードを利用者向け表示へ変換する。 */
-export const getTimerSessionStatusLabel = (
-  status: TaskTimeSessionStatus
-): string =>
-  ({ RUNNING: "計測中", STOPPED: "停止済み", CANCELED: "取消済み" })[
-    status
-  ];
+export const getTimerSessionStatusLabel = (status: TaskTimeSessionStatus): string =>
+  ({ RUNNING: "計測中", STOPPED: "停止済み", CANCELED: "取消済み" })[status];
 
 /** 工数監査の操作コードを利用者向け表示へ変換する。 */
-export const getWorkLogAuditActionLabel = (
-  action: TaskWorkLogAuditAction
-): string =>
+export const getWorkLogAuditActionLabel = (action: TaskWorkLogAuditAction): string =>
   ({
     MANUAL_CREATE: "手入力登録",
     MANUAL_UPDATE: "手入力更新",
@@ -94,7 +81,12 @@ export const getWorkLogAuditActionLabel = (
 
 /** Timer sessionの状態を表示色へ変換する。 */
 export const getTimerSessionStatusColor = (status: TaskTimeSessionStatus): SemanticColor =>
-  ({ RUNNING: "success", STOPPED: "primary", CANCELED: "neutral" } satisfies Record<string, SemanticColor>)[status];
+  (
+    ({ RUNNING: "success", STOPPED: "primary", CANCELED: "neutral" }) satisfies Record<
+      string,
+      SemanticColor
+    >
+  )[status];
 
 /** 工数監査の操作コードを表示色へ変換する。Timer反映だけを強調し、手入力の操作は同じ色で表す。 */
 export const getWorkLogAuditActionColor = (action: TaskWorkLogAuditAction): SemanticColor =>

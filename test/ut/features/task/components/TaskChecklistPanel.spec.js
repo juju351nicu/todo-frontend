@@ -52,9 +52,15 @@ describe("TaskChecklistPanel", () => {
     expect(wrapper.find('[data-checklist-control="1:toggle"]').exists()).toBe(true);
     expect(wrapper.find('[data-checklist-control="1:edit"]').exists()).toBe(true);
     // 先頭の「上へ」と末尾の「下へ」は押せない。
-    expect(wrapper.find('[data-checklist-control="1:move-up"]').attributes("disabled")).toBeDefined();
-    expect(wrapper.find('[data-checklist-control="2:move-down"]').attributes("disabled")).toBeDefined();
-    expect(wrapper.find('[data-checklist-control="1:move-down"]').attributes("disabled")).toBeUndefined();
+    expect(
+      wrapper.find('[data-checklist-control="1:move-up"]').attributes("disabled")
+    ).toBeDefined();
+    expect(
+      wrapper.find('[data-checklist-control="2:move-down"]').attributes("disabled")
+    ).toBeDefined();
+    expect(
+      wrapper.find('[data-checklist-control="1:move-down"]').attributes("disabled")
+    ).toBeUndefined();
     expect(wrapper.findAll("button").some((button) => button.text() === "追加")).toBe(true);
   });
 
@@ -64,11 +70,15 @@ describe("TaskChecklistPanel", () => {
     expect(wrapper.find('[data-checklist-control="1:edit"]').exists()).toBe(false);
     expect(wrapper.find('[data-checklist-control="1:move-up"]').exists()).toBe(false);
     expect(wrapper.findAll("button").some((button) => button.text() === "追加")).toBe(false);
-    expect(wrapper.find('[data-checklist-control="1:toggle"]').attributes("disabled")).toBeDefined();
+    expect(
+      wrapper.find('[data-checklist-control="1:toggle"]').attributes("disabled")
+    ).toBeDefined();
   });
 
   it("上限件数に達したら、追加できないことを案内する", async () => {
-    await mountPanel(Array.from({ length: CHECKLIST_ITEM_MAX_COUNT }, (_, index) => item(index + 1)));
+    await mountPanel(
+      Array.from({ length: CHECKLIST_ITEM_MAX_COUNT }, (_, index) => item(index + 1))
+    );
 
     expect(wrapper.text()).toContain(`チェック項目は最大${CHECKLIST_ITEM_MAX_COUNT}件です。`);
   });

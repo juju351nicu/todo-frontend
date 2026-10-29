@@ -16,12 +16,22 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const { audits, closeDialog, errorMessages, isLoading, isOpen, loadNextPage, loadPreviousPage, openDialog } =
-  useTaskWorkLogAudits(props.projectId, props.taskId);
+const {
+  audits,
+  closeDialog,
+  errorMessages,
+  isLoading,
+  isOpen,
+  loadNextPage,
+  loadPreviousPage,
+  openDialog,
+} = useTaskWorkLogAudits(props.projectId, props.taskId);
 </script>
 
 <template>
-  <UButton icon="i-mdi-history" variant="soft" size="sm" @click="openDialog">工数の変更履歴</UButton>
+  <UButton icon="i-mdi-history" variant="soft" size="sm" @click="openDialog"
+    >工数の変更履歴</UButton
+  >
 
   <UModal
     v-model:open="isOpen"
@@ -55,7 +65,9 @@ const { audits, closeDialog, errorMessages, isLoading, isOpen, loadNextPage, loa
                 <UBadge :color="getWorkLogAuditActionColor(audit.actionCode)" size="sm">
                   {{ getWorkLogAuditActionLabel(audit.actionCode) }}
                 </UBadge>
-                <div v-if="audit.timerSessionId !== null" class="mt-1 text-xs">Timer {{ audit.timerSessionId }}</div>
+                <div v-if="audit.timerSessionId !== null" class="mt-1 text-xs">
+                  Timer {{ audit.timerSessionId }}
+                </div>
               </td>
               <td class="whitespace-nowrap">
                 {{ formatNullableEffortMinutes(audit.beforeMinutes) }} →
@@ -69,7 +81,9 @@ const { audits, closeDialog, errorMessages, isLoading, isOpen, loadNextPage, loa
           </tbody>
         </table>
       </div>
-      <StatusAlert v-else-if="audits" type="info" variant="soft">このTaskの工数変更履歴はまだありません。</StatusAlert>
+      <StatusAlert v-else-if="audits" type="info" variant="soft"
+        >このTaskの工数変更履歴はまだありません。</StatusAlert
+      >
 
       <div v-if="audits" class="mt-4 flex items-center justify-center gap-3">
         <UButton
@@ -82,8 +96,9 @@ const { audits, closeDialog, errorMessages, isLoading, isOpen, loadNextPage, loa
           @click="loadPreviousPage"
         />
         <span class="text-sm">
-          {{ audits.totalPages === 0 ? 0 : audits.page + 1 }} / {{ audits.totalPages }}
-          （{{ audits.totalElements }}件）
+          {{ audits.totalPages === 0 ? 0 : audits.page + 1 }} / {{ audits.totalPages }} （{{
+            audits.totalElements
+          }}件）
         </span>
         <UButton
           icon="i-mdi-chevron-right"

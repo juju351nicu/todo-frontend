@@ -111,10 +111,7 @@ export interface TaskTimerSessionListResponse extends TaskTimerSessionSearch {
 
 /** Task日別実績工数の監査操作コード。 */
 export type TaskWorkLogAuditAction =
-  | "MANUAL_CREATE"
-  | "MANUAL_UPDATE"
-  | "MANUAL_DELETE"
-  | "TIMER_APPLY";
+  "MANUAL_CREATE" | "MANUAL_UPDATE" | "MANUAL_DELETE" | "TIMER_APPLY";
 
 /** Task日別実績工数の手入力・Timer加算履歴1件。 */
 export interface TaskWorkLogAudit {

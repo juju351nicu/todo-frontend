@@ -3,32 +3,17 @@ export type AttendancePunchState = "OFF_DUTY" | "WORKING" | "ON_BREAK";
 
 /** 勤怠の実勤務分とTask実績工数の日別照合状態。 */
 export type AttendanceAllocationStatus =
-  | "BALANCED"
-  | "UNALLOCATED"
-  | "OVER_ALLOCATED"
-  | "INCOMPLETE";
+  "BALANCED" | "UNALLOCATED" | "OVER_ALLOCATED" | "INCOMPLETE";
 
 /** 月次勤怠の提出・審査・締め状態。 */
-export type AttendanceMonthStatus =
-  | "DRAFT"
-  | "SUBMITTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "CLOSED";
+export type AttendanceMonthStatus = "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "CLOSED";
 
 /** 勤務・休憩区間を登録した業務経路。 */
 export type AttendanceEntrySource =
-  | "SELF_PUNCH"
-  | "ADMIN_CORRECTION"
-  | "APPROVED_CORRECTION"
-  | "IMPORT";
+  "SELF_PUNCH" | "ADMIN_CORRECTION" | "APPROVED_CORRECTION" | "IMPORT";
 
 /** 勤怠修正申請の審査状態。 */
-export type AttendanceCorrectionStatus =
-  | "PENDING"
-  | "APPROVED"
-  | "REJECTED"
-  | "CANCELLED";
+export type AttendanceCorrectionStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
 /** 本人勤怠日に属する1休憩区間。 */
 export interface AttendanceBreakPeriod {
@@ -232,8 +217,4 @@ export interface AttendanceMonthRow extends AttendanceDaySummary {
 }
 
 /** 本人打刻APIで許可する操作。 */
-export type AttendancePunchAction =
-  | "clock-in"
-  | "clock-out"
-  | "break-start"
-  | "break-end";
+export type AttendancePunchAction = "clock-in" | "clock-out" | "break-start" | "break-end";

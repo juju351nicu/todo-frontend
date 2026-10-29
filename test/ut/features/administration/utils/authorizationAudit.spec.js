@@ -24,9 +24,7 @@ describe("Authorization audit display", () => {
     ]);
 
     expect(formatRoleNames([], roleNames)).toBe("なし");
-    expect(formatRoleNames(["SYSTEM_ADMIN", "USER"], roleNames)).toBe(
-      "システム管理者、一般利用者"
-    );
+    expect(formatRoleNames(["SYSTEM_ADMIN", "USER"], roleNames)).toBe("システム管理者、一般利用者");
   });
 
   it("表示名のないロールはコードのまま表示する", () => {
@@ -49,8 +47,6 @@ describe("Authorization audit display", () => {
   });
 
   it("不正な日時は監査値を隠さず元文字列を表示する", () => {
-    expect(formatAuthorizationAuditOccurredAt("invalid-date")).toBe(
-      "invalid-date"
-    );
+    expect(formatAuthorizationAuditOccurredAt("invalid-date")).toBe("invalid-date");
   });
 });

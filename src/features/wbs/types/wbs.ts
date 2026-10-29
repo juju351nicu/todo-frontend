@@ -252,8 +252,7 @@ export interface TaskEffortPlanCreateRequest {
 }
 
 /** Task日別予定の更新APIへ送信する検証済みRequest。 */
-export interface TaskEffortPlanUpdateRequest
-  extends TaskEffortPlanCreateRequest {
+export interface TaskEffortPlanUpdateRequest extends TaskEffortPlanCreateRequest {
   /** 一覧取得時点の楽観ロックversion。 */
   version: number;
 }
@@ -446,8 +445,7 @@ export interface WorkingCalendarDateRange {
 
 /** 稼働日calendarで表示・編集するProject共通またはmember固有の対象。 */
 export type WorkingCalendarTarget =
-  | { kind: "PROJECT"; accountId: null }
-  | { kind: "MEMBER"; accountId: number };
+  { kind: "PROJECT"; accountId: null } | { kind: "MEMBER"; accountId: number };
 
 /** 稼働日calendarの対象selectへ表示するProject共通またはProject member候補。 */
 export interface WorkingCalendarTargetOption {
@@ -639,10 +637,7 @@ export interface WbsBaselineActivationRequest {
 
 /** 現在計画とactive baselineのTask単位比較状態。 */
 export type WbsBaselineComparisonStatus =
-  | "UNCHANGED"
-  | "CHANGED"
-  | "CURRENT_ONLY"
-  | "BASELINE_ONLY";
+  "UNCHANGED" | "CHANGED" | "CURRENT_ONLY" | "BASELINE_ONLY";
 
 /** 現在計画とactive baselineの予定期間・予定工数をTask IDで突合した表示行。 */
 export interface WbsBaselineComparisonRow {

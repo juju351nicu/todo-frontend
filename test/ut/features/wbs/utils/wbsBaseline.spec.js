@@ -67,10 +67,7 @@ describe("WBS baseline utility", () => {
         name: " ",
         description: "a".repeat(1001),
       })
-    ).toEqual([
-      "baseline名を入力してください。",
-      "説明は1000文字以内で入力してください。",
-    ]);
+    ).toEqual(["baseline名を入力してください。", "説明は1000文字以内で入力してください。"]);
   });
 
   it("現在順を維持して変更・追加・除外と工数差分をTask IDで比較する", () => {

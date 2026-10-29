@@ -54,10 +54,7 @@ const normalizeComment = <T extends TaskComment>(comment: T): T => ({
  * @returns 認可済みコメント一覧
  * @throws TaskCommentApiError 未認証、参照不可またはBackendエラーの場合
  */
-const findComments = async (
-  projectId: number,
-  taskId: number
-): Promise<TaskComment[]> => {
+const findComments = async (projectId: number, taskId: number): Promise<TaskComment[]> => {
   const response = await HttpClient.getRequest(createPath(projectId, taskId));
   await ensureSuccess(response);
   return ((await response.json()) as TaskComment[]).map(normalizeComment);
@@ -70,9 +67,7 @@ const findComments = async (
  * @returns archive済みTaskを含む、最終更新時刻の新しい順の最新100件
  * @throws TaskCommentApiError 未認証、参照不可またはBackendエラーの場合
  */
-const findProjectComments = async (
-  projectId: number
-): Promise<ProjectTaskComment[]> => {
+const findProjectComments = async (projectId: number): Promise<ProjectTaskComment[]> => {
   const response = await HttpClient.getRequest(createProjectPath(projectId));
   await ensureSuccess(response);
   return ((await response.json()) as ProjectTaskComment[]).map(normalizeComment);
@@ -92,10 +87,7 @@ const createComment = async (
   taskId: number,
   payload: TaskCommentCreateRequest
 ): Promise<TaskComment> => {
-  const response = await HttpClient.postRequest(
-    createPath(projectId, taskId),
-    payload
-  );
+  const response = await HttpClient.postRequest(createPath(projectId, taskId), payload);
   await ensureSuccess(response);
   return normalizeComment((await response.json()) as TaskComment);
 };

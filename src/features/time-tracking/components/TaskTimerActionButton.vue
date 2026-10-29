@@ -17,12 +17,20 @@ const props = withDefaults(defineProps<Props>(), {
   compact: false,
 });
 
-const { actionKey, currentTimer, isAnotherTaskRunning, isDisabled, isThisTaskRunning, pendingMutation, startTimer, stopTimer } =
-  useTaskTimerAction({
-    projectId: () => props.projectId,
-    taskId: () => props.taskId,
-    disabled: () => props.disabled,
-  });
+const {
+  actionKey,
+  currentTimer,
+  isAnotherTaskRunning,
+  isDisabled,
+  isThisTaskRunning,
+  pendingMutation,
+  startTimer,
+  stopTimer,
+} = useTaskTimerAction({
+  projectId: () => props.projectId,
+  taskId: () => props.taskId,
+  disabled: () => props.disabled,
+});
 </script>
 
 <template>
@@ -50,7 +58,9 @@ const { actionKey, currentTimer, isAnotherTaskRunning, isDisabled, isThisTaskRun
     :size="compact ? 'sm' : 'md'"
     :loading="pendingMutation === 'START'"
     :disabled="isDisabled"
-    :aria-label="compact ? (isAnotherTaskRunning ? '別のTaskを計測中' : 'このTaskのTimerを開始') : undefined"
+    :aria-label="
+      compact ? (isAnotherTaskRunning ? '別のTaskを計測中' : 'このTaskのTimerを開始') : undefined
+    "
     :title="isAnotherTaskRunning ? `「${currentTimer?.taskTitle}」を計測中です` : undefined"
     :data-task-timer-action="actionKey"
     @click.stop="startTimer"

@@ -10,10 +10,7 @@ import { useTodoStore } from "@/features/todo/stores/todo";
 import type { TodoListItem, TodoListRequest } from "@/features/todo/types/todo";
 import { LEGACY_TODO_ERROR_CODES } from "@/features/todo/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  DATA_TABLE_PAGE_OPTIONS,
-  DEFAULT_ITEMS_PER_PAGE,
-} from "@/shared/constants/ui";
+import { DATA_TABLE_PAGE_OPTIONS, DEFAULT_ITEMS_PER_PAGE } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
@@ -65,8 +62,7 @@ export const useTodoListPage = () => {
    */
   const canWriteTodo = (todo: TodoListItem): boolean =>
     userStore.hasPermission("TASK_WRITE_ALL") ||
-    (userStore.hasPermission("TASK_WRITE_OWN") &&
-      userStore.accountId === todo.userId);
+    (userStore.hasPermission("TASK_WRITE_OWN") && userStore.accountId === todo.userId);
 
   /** 画面の検索状態をBackendのsnake_case Requestへ変換する。 */
   const createSearchRequest = (): TodoListRequest => ({
@@ -87,11 +83,7 @@ export const useTodoListPage = () => {
   };
 
   /** API statusと契約済みerror codeを旧Todo一覧向け表示へ変換する。 */
-  const getErrorMessages = (
-    error: unknown,
-    fallback: string,
-    forbidden: string
-  ): string[] => {
+  const getErrorMessages = (error: unknown, fallback: string, forbidden: string): string[] => {
     return resolveStandardErrorMessages(error, TodoApiError, {
       forbidden,
       notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
@@ -122,10 +114,7 @@ export const useTodoListPage = () => {
       await replaceTodoList(payload);
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        if (
-          error instanceof TodoApiError &&
-          (error.status === 403 || error.status === 404)
-        ) {
+        if (error instanceof TodoApiError && (error.status === 403 || error.status === 404)) {
           clearProtectedState();
         }
         errorMessages.value = getErrorMessages(
@@ -161,7 +150,9 @@ export const useTodoListPage = () => {
   const completeTodo = async (todo: TodoListItem): Promise<void> => {
     await submitComplete(todo);
     // 401でLoginへ移った後や、一覧から消えた後は部品が見つからないので何もしない。
-    await focusFirstEnabledElement([`[data-todo-control="${buildTodoEditControlKey(todo.todoId)}"]`]);
+    await focusFirstEnabledElement([
+      `[data-todo-control="${buildTodoEditControlKey(todo.todoId)}"]`,
+    ]);
   };
 
   /** 完了APIを呼び、一覧を取り直して結果をmessageへ反映する。 */
@@ -195,9 +186,7 @@ export const useTodoListPage = () => {
           );
           return;
         }
-        errorMessages.value = [
-          DISPLAY_MESSAGES.task.todo.completedRefreshFailed,
-        ];
+        errorMessages.value = [DISPLAY_MESSAGES.task.todo.completedRefreshFailed];
       }
     } catch (error: unknown) {
       if (await handleUnauthorized(error)) return;
@@ -228,10 +217,7 @@ export const useTodoListPage = () => {
           );
           return;
         }
-        errorMessages.value = [
-          ...operationMessages,
-          DISPLAY_MESSAGES.task.todo.reloadFailed,
-        ];
+        errorMessages.value = [...operationMessages, DISPLAY_MESSAGES.task.todo.reloadFailed];
       }
     } finally {
       isLoading.value = false;

@@ -20,9 +20,7 @@ export const buildWbsBaselineCreateRequest = (
 };
 
 /** baseline名・説明をBackendと同じ文字数境界で検査する。 */
-export const validateWbsBaselineCreateForm = (
-  form: Readonly<WbsBaselineCreateForm>
-): string[] => {
+export const validateWbsBaselineCreateForm = (form: Readonly<WbsBaselineCreateForm>): string[] => {
   const messages: string[] = [];
   const name = form.name.trim();
   const description = form.description.trim();
@@ -72,8 +70,7 @@ const buildComparisonRow = (
   currentPlannedEndDate: currentTask?.plannedEndDate ?? null,
   currentPlannedEffortMinutes: currentTask?.plannedEffortMinutes ?? null,
   plannedEffortDifferenceMinutes:
-    (currentTask?.plannedEffortMinutes ?? 0) -
-    (baselineTask?.plannedEffortMinutes ?? 0),
+    (currentTask?.plannedEffortMinutes ?? 0) - (baselineTask?.plannedEffortMinutes ?? 0),
 });
 
 /**
@@ -85,9 +82,7 @@ export const buildWbsBaselineComparisonRows = (
   baselineTasks: readonly WbsBaselineTask[]
 ): WbsBaselineComparisonRow[] => {
   const currentById = new Map(currentTasks.map((task) => [task.taskId, task]));
-  const baselineById = new Map(
-    baselineTasks.map((task) => [task.sourceTaskId, task])
-  );
+  const baselineById = new Map(baselineTasks.map((task) => [task.sourceTaskId, task]));
   const currentRows = currentTasks.map((task) =>
     buildComparisonRow(task.taskId, task, baselineById.get(task.taskId))
   );
@@ -97,7 +92,10 @@ export const buildWbsBaselineComparisonRows = (
   return currentRows.concat(baselineOnlyRows);
 };
 
-const BASELINE_CREATED_AT_FORMATTER = new Intl.DateTimeFormat("ja-JP", { dateStyle: "medium", timeStyle: "short" });
+const BASELINE_CREATED_AT_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
 
 /** baseline作成日時（ISO）を日本語の短い日時へ変換する。解釈できない値は元の文字列を返す。 */
 export const formatBaselineCreatedAt = (createdAt: string): string => {
@@ -124,8 +122,9 @@ export const getBaselineComparisonStatusLabel = (status: WbsBaselineComparisonSt
   COMPARISON_STATUS_LABELS[status];
 
 /** baseline比較状態を表示色へ変換する。 */
-export const getBaselineComparisonStatusColor = (status: WbsBaselineComparisonStatus): SemanticColor =>
-  COMPARISON_STATUS_COLORS[status];
+export const getBaselineComparisonStatusColor = (
+  status: WbsBaselineComparisonStatus
+): SemanticColor => COMPARISON_STATUS_COLORS[status];
 
 /** 開始日・終了日のどちらかが比較対象にない場合は`—`、それ以外は`開始 ～ 終了`で表す。 */
 export const formatBaselinePeriod = (dateFrom: string | null, dateTo: string | null): string =>

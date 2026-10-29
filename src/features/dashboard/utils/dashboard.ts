@@ -23,15 +23,11 @@ export const normalizeDashboardProgress = (progress: number): number => {
 };
 
 /** Project内roleをDashboard向け日本語へ変換する。 */
-export const getDashboardProjectRoleLabel = (
-  projectRole: ProjectRole | null
-): string => {
+export const getDashboardProjectRoleLabel = (projectRole: ProjectRole | null): string => {
   if (projectRole === null) {
     return "システム管理者参照";
   }
-  return ({ OWNER: "オーナー", MANAGER: "マネージャー", MEMBER: "メンバー" })[
-    projectRole
-  ];
+  return { OWNER: "オーナー", MANAGER: "マネージャー", MEMBER: "メンバー" }[projectRole];
 };
 
 // 画面ではbaselineを「基準計画」、AC（Actual Cost）を「実績工数」と呼ぶ（利用者に英語の用語を読ませないため）。

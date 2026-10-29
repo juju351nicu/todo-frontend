@@ -23,10 +23,7 @@ export const buildWbsTaskEditForm = (task: WbsTask): WbsTaskEditForm => ({
 });
 
 /** 指定Taskの全子孫IDを、循環した入力でも停止するよう反復処理で収集する。 */
-const collectDescendantTaskIds = (
-  tasks: readonly WbsTask[],
-  taskId: number
-): Set<number> => {
+const collectDescendantTaskIds = (tasks: readonly WbsTask[], taskId: number): Set<number> => {
   const childIdsByParentId = new Map<number, number[]>();
   tasks.forEach((task) => {
     if (task.parentTaskId === null) {
@@ -41,11 +38,7 @@ const collectDescendantTaskIds = (
   const pendingTaskIds = [...(childIdsByParentId.get(taskId) ?? [])];
   while (pendingTaskIds.length > 0) {
     const currentTaskId = pendingTaskIds.pop();
-    if (
-      currentTaskId === undefined ||
-      currentTaskId === taskId ||
-      descendants.has(currentTaskId)
-    ) {
+    if (currentTaskId === undefined || currentTaskId === taskId || descendants.has(currentTaskId)) {
       continue;
     }
     descendants.add(currentTaskId);
@@ -69,10 +62,7 @@ export const buildWbsParentOptions = (
   const excludedTaskIds = collectDescendantTaskIds(tasks, editingTaskId);
   excludedTaskIds.add(editingTaskId);
   const summaryOptions = buildWbsTreeRows(tasks)
-    .filter(
-      (task) =>
-        task.taskType === "SUMMARY" && !excludedTaskIds.has(task.taskId)
-    )
+    .filter((task) => task.taskType === "SUMMARY" && !excludedTaskIds.has(task.taskId))
     .map((task) => ({
       title: `${"　".repeat(task.depth)}${task.wbsCode ? `${task.wbsCode} ` : ""}${task.title}`,
       value: task.taskId,
@@ -105,17 +95,12 @@ const hasAtMostTwoDecimalPlaces = (value: number): boolean =>
  * @param form Dialogから受け取った入力値
  * @returns 利用者へ表示する検証メッセージ。問題がなければ空配列
  */
-export const validateWbsTaskEditForm = (
-  form: Readonly<WbsTaskEditForm>
-): string[] => {
+export const validateWbsTaskEditForm = (form: Readonly<WbsTaskEditForm>): string[] => {
   const messages: string[] = [];
   if (form.wbsCode.trim().length > 100) {
     messages.push("WBSコードは100文字以内で入力してください。");
   }
-  if (
-    !isValidIsoLocalDate(form.plannedStartDate) ||
-    !isValidIsoLocalDate(form.plannedEndDate)
-  ) {
+  if (!isValidIsoLocalDate(form.plannedStartDate) || !isValidIsoLocalDate(form.plannedEndDate)) {
     messages.push("予定開始日と予定終了日を入力してください。");
   } else if (form.plannedStartDate > form.plannedEndDate) {
     messages.push("予定終了日は予定開始日以降にしてください。");
@@ -141,10 +126,8 @@ export const validateWbsTaskEditForm = (
   const actualEndDate = form.actualEndDate ?? "";
   const hasActualStartDate = actualStartDate !== "";
   const hasActualEndDate = actualEndDate !== "";
-  const isActualStartDateValid =
-    !hasActualStartDate || isValidIsoLocalDate(actualStartDate);
-  const isActualEndDateValid =
-    !hasActualEndDate || isValidIsoLocalDate(actualEndDate);
+  const isActualStartDateValid = !hasActualStartDate || isValidIsoLocalDate(actualStartDate);
+  const isActualEndDateValid = !hasActualEndDate || isValidIsoLocalDate(actualEndDate);
   if (!isActualStartDateValid) {
     messages.push("実績開始日は正しい日付を入力してください。");
   }
@@ -164,8 +147,7 @@ export const validateWbsTaskEditForm = (
   }
   if (
     form.taskType === "MILESTONE" &&
-    (form.plannedStartDate !== form.plannedEndDate ||
-      form.plannedEffortMinutes !== 0)
+    (form.plannedStartDate !== form.plannedEndDate || form.plannedEffortMinutes !== 0)
   ) {
     messages.push("Milestoneは開始日と終了日を同日にし、予定工数を0分にしてください。");
   }

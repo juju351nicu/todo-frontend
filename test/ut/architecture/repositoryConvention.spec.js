@@ -29,8 +29,7 @@ const documentedFunctionDirectories = ["/api/"];
  * 開発段階の名前、`§`と番号）。どの資料のどこかが読み手に分からず、資料が変わると意味を失うため、
  * コメントは業務上の意味と理由の文で書く（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
-const internalDocumentReference =
-  /改善提案\s*\d|動作確認\s*\/|BE\s*資料|Stage\s*\d+[A-Z]|§\s*\d/g;
+const internalDocumentReference = /改善提案\s*\d|動作確認\s*\/|BE\s*資料|Stage\s*\d+[A-Z]|§\s*\d/g;
 /** 資料番号の書き方を探すディレクトリと拡張子。 */
 const internalDocumentReferenceSources = [
   { directory: "src", extensions: [".ts", ".vue", ".js"] },
@@ -74,17 +73,14 @@ const collectProjectTextFiles = (directory) => {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const entryPath = join(directory, entry.name);
     if (entry.isDirectory()) {
-      return excludedDirectories.has(entry.name)
-        ? []
-        : collectProjectTextFiles(entryPath);
+      return excludedDirectories.has(entry.name) ? [] : collectProjectTextFiles(entryPath);
     }
     return textExtensions.has(extname(entry.name)) ? [entryPath] : [];
   });
 };
 
 /** Vue SFCからTypeScript compilerで解析するscript部分だけを取り出す。 */
-const extractScript = (source) =>
-  source.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)?.[1] ?? "";
+const extractScript = (source) => source.match(/<script\b[^>]*>([\s\S]*?)<\/script>/)?.[1] ?? "";
 
 /** 宣言または親のvariable statementにJSDocが付いているか判定する。 */
 const hasJSDoc = (node) => {
@@ -110,9 +106,7 @@ const hasJSDoc = (node) => {
 
 /** TypeScript宣言にexport modifierが付いているか判定する。 */
 const isExported = (node) =>
-  node.modifiers?.some(
-    (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
-  ) ?? false;
+  node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword) ?? false;
 
 /**
  * exportedな型・関数とAPI境界の内部関数から、JSDoc未記載宣言を収集する。
@@ -134,15 +128,13 @@ const findMissingJSDoc = (file) => {
     ts.ScriptKind.TS
   );
   const normalizedFile = file.replaceAll("\\", "/");
-  const requiresInternalFunctionDoc = documentedFunctionDirectories.some(
-    (directory) => normalizedFile.includes(directory)
+  const requiresInternalFunctionDoc = documentedFunctionDirectories.some((directory) =>
+    normalizedFile.includes(directory)
   );
   const violations = [];
 
   const report = (node, name) => {
-    const { line } = sourceFile.getLineAndCharacterOfPosition(
-      node.getStart(sourceFile)
-    );
+    const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
     violations.push(`${relative(projectRoot, file)}:${line + 1} ${name}`);
   };
 
@@ -161,8 +153,7 @@ const findMissingJSDoc = (file) => {
     if (
       ts.isVariableDeclaration(node) &&
       node.initializer &&
-      (ts.isArrowFunction(node.initializer) ||
-        ts.isFunctionExpression(node.initializer))
+      (ts.isArrowFunction(node.initializer) || ts.isFunctionExpression(node.initializer))
     ) {
       const statement = node.parent?.parent;
       const exported = ts.isVariableStatement(statement) && isExported(statement);
@@ -179,10 +170,7 @@ const findMissingJSDoc = (file) => {
 
 describe("Repository coding conventions", () => {
   it("旧タスク管理製品の名称をリポジトリへ再混入させない", () => {
-    const excludedProductName = new RegExp(
-      ["k", "[\\s_.-]*", "tr", "aq"].join(""),
-      "i"
-    );
+    const excludedProductName = new RegExp(["k", "[\\s_.-]*", "tr", "aq"].join(""), "i");
     const violations = collectProjectTextFiles(projectRoot)
       .filter((file) => excludedProductName.test(readFileSync(file, "utf8")))
       .map((file) => relative(projectRoot, file));
@@ -199,24 +187,17 @@ describe("Repository coding conventions", () => {
     ]);
     const differences = [...paths]
       .sort()
-      .map((path) => [
-        path,
-        INTERNAL_DOCUMENT_REFERENCE_BASELINE[path] ?? 0,
-        actual[path] ?? 0,
-      ])
+      .map((path) => [path, INTERNAL_DOCUMENT_REFERENCE_BASELINE[path] ?? 0, actual[path] ?? 0])
       .filter(([, expectedCount, actualCount]) => expectedCount !== actualCount)
-      .map(
-        ([path, expectedCount, actualCount]) =>
-          `${path}: ${expectedCount} -> ${actualCount}`
-      );
+      .map(([path, expectedCount, actualCount]) => `${path}: ${expectedCount} -> ${actualCount}`);
 
     // 減らした場合も、internalDocumentReferenceBaseline.js を同じ変更で減らす。
     expect(differences).toEqual([]);
   });
 
   it("exportedな型・関数とAPI境界の関数へJSDocを記載する", () => {
-    const sourceFiles = collectProjectTextFiles(join(projectRoot, "src")).filter(
-      (file) => [".ts", ".vue"].includes(extname(file))
+    const sourceFiles = collectProjectTextFiles(join(projectRoot, "src")).filter((file) =>
+      [".ts", ".vue"].includes(extname(file))
     );
     const violations = sourceFiles.flatMap(findMissingJSDoc);
 

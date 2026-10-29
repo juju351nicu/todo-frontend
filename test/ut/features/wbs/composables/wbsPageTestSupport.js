@@ -506,24 +506,14 @@ export const resetWbsPageMocks = () => {
   mocks.wbsApi.activateWbsBaseline.mockResolvedValue(
     structuredClone({ ...inactiveBaselineSummary, active: true, version: 3 })
   );
-  mocks.wbsApi.createWbsBaseline.mockResolvedValue(
-    structuredClone(baselineCreateResponse)
-  );
-  mocks.wbsApi.createTaskDependency.mockResolvedValue(
-    structuredClone(updatedDependencyList)
-  );
-  mocks.wbsApi.createTaskEffortPlan.mockResolvedValue(
-    structuredClone(effortPlanList)
-  );
-  mocks.wbsApi.createTaskWorkLog.mockResolvedValue(
-    structuredClone(workLogList)
-  );
+  mocks.wbsApi.createWbsBaseline.mockResolvedValue(structuredClone(baselineCreateResponse));
+  mocks.wbsApi.createTaskDependency.mockResolvedValue(structuredClone(updatedDependencyList));
+  mocks.wbsApi.createTaskEffortPlan.mockResolvedValue(structuredClone(effortPlanList));
+  mocks.wbsApi.createTaskWorkLog.mockResolvedValue(structuredClone(workLogList));
   mocks.wbsApi.createMemberWorkingDay.mockResolvedValue(
     structuredClone(memberWorkingCalendarResponse)
   );
-  mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(
-    structuredClone(workingCalendarResponse)
-  );
+  mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(structuredClone(workingCalendarResponse));
   mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskEffortPlan.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
@@ -533,47 +523,23 @@ export const resetWbsPageMocks = () => {
     content: new Blob(["xlsx-binary"]),
     fileName: "work-management-wbs-weekly-project-7-2026-09-05.xlsx",
   });
-  mocks.wbsApi.getTaskDependencies.mockResolvedValue(
-    structuredClone(dependencyList)
-  );
-  mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(
-    structuredClone(earnedValueResponse)
-  );
-  mocks.wbsApi.getEstimateAccuracy.mockResolvedValue(
-    structuredClone(estimateAccuracyResponse)
-  );
-  mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(
-    structuredClone(effortPlanList)
-  );
-  mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(
-    structuredClone(workLogList)
-  );
-  mocks.wbsApi.getTaskWorkload.mockResolvedValue(
-    structuredClone(workloadResponse)
-  );
-  mocks.wbsApi.getWorkingCalendar.mockResolvedValue(
-    structuredClone(workingCalendarResponse)
-  );
-  mocks.wbsApi.getWbsBaseline.mockResolvedValue(
-    structuredClone(baselineDetail)
-  );
-  mocks.wbsApi.getWbsBaselines.mockResolvedValue(
-    structuredClone(baselineList)
-  );
+  mocks.wbsApi.getTaskDependencies.mockResolvedValue(structuredClone(dependencyList));
+  mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(structuredClone(earnedValueResponse));
+  mocks.wbsApi.getEstimateAccuracy.mockResolvedValue(structuredClone(estimateAccuracyResponse));
+  mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(structuredClone(effortPlanList));
+  mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(structuredClone(workLogList));
+  mocks.wbsApi.getTaskWorkload.mockResolvedValue(structuredClone(workloadResponse));
+  mocks.wbsApi.getWorkingCalendar.mockResolvedValue(structuredClone(workingCalendarResponse));
+  mocks.wbsApi.getWbsBaseline.mockResolvedValue(structuredClone(baselineDetail));
+  mocks.wbsApi.getWbsBaselines.mockResolvedValue(structuredClone(baselineList));
   mocks.wbsApi.getWbs.mockResolvedValue(structuredClone(wbs));
-  mocks.wbsApi.updateTaskEffortPlan.mockResolvedValue(
-    structuredClone(updatedEffortPlanList)
-  );
+  mocks.wbsApi.updateTaskEffortPlan.mockResolvedValue(structuredClone(updatedEffortPlanList));
   mocks.wbsApi.updateWbsTask.mockResolvedValue(structuredClone(updatedWbs));
-  mocks.wbsApi.updateTaskWorkLog.mockResolvedValue(
-    structuredClone(updatedWorkLogList)
-  );
+  mocks.wbsApi.updateTaskWorkLog.mockResolvedValue(structuredClone(updatedWorkLogList));
   mocks.wbsApi.updateMemberWorkingDay.mockResolvedValue(
     structuredClone(memberWorkingCalendarResponse)
   );
-  mocks.wbsApi.updateProjectWorkingDay.mockResolvedValue(
-    structuredClone(workingCalendarResponse)
-  );
+  mocks.wbsApi.updateProjectWorkingDay.mockResolvedValue(structuredClone(workingCalendarResponse));
   Object.defineProperty(URL, "createObjectURL", {
     configurable: true,
     value: mocks.createObjectUrl,

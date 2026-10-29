@@ -17,7 +17,10 @@ describe("AppSnackbar", () => {
   });
 
   it("表示から timeout が過ぎたら、閉じることを親へ通知する", () => {
-    wrapper = mountWithUi(AppSnackbar, { props: { open: true, color: "success", timeout: 3000 }, slots: { default: "保存しました" } });
+    wrapper = mountWithUi(AppSnackbar, {
+      props: { open: true, color: "success", timeout: 3000 },
+      slots: { default: "保存しました" },
+    });
 
     vi.advanceTimersByTime(2999);
     expect(wrapper.emitted("update:open")).toBeUndefined();

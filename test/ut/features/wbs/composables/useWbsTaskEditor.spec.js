@@ -62,9 +62,7 @@ describe("useWbsTaskEditor", () => {
     page.openTaskEditor(2);
 
     expect(page.isEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "WBSを更新するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["WBSを更新するpermissionがありません。"]);
   });
 
   it("MEMBERは自分が担当するTaskだけ編集でき、他人の担当Taskは入口を出さずDialogも開かない", async () => {
@@ -80,9 +78,7 @@ describe("useWbsTaskEditor", () => {
     page.openTaskEditor(2);
 
     expect(page.isEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "担当していないTaskのWBS情報は編集できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["担当していないTaskのWBS情報は編集できません。"]);
   });
 
   it("OWNER・MANAGER・SYSTEM_ADMINは他人の担当Taskも編集できる", async () => {
@@ -104,9 +100,7 @@ describe("useWbsTaskEditor", () => {
     expect(page.canEditTask({ assigneeAccountId: 2 })).toBe(false);
     page.openTaskEditor(2);
     expect(page.isEditorOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "archive済みのProjectのTaskは編集できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["archive済みのProjectのTaskは編集できません。"]);
   });
 
   it("取得時点のversion付きRequestを送りResponse全体でWBSを更新する", async () => {
@@ -146,9 +140,7 @@ describe("useWbsTaskEditor", () => {
     );
 
     expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
-    expect(page.editorErrorMessages.value).toEqual([
-      "予定終了日は予定開始日以降にしてください。",
-    ]);
+    expect(page.editorErrorMessages.value).toEqual(["予定終了日は予定開始日以降にしてください。"]);
     expect(page.isEditorOpen.value).toBe(true);
   });
 
@@ -157,9 +149,7 @@ describe("useWbsTaskEditor", () => {
     await page.initialize();
     page.openTaskEditor(2);
 
-    await page.saveWbsTask(
-      buildEditForm({ actualStartDate: "", actualEndDate: "2026-08-24" })
-    );
+    await page.saveWbsTask(buildEditForm({ actualStartDate: "", actualEndDate: "2026-08-24" }));
 
     expect(mocks.wbsApi.updateWbsTask).not.toHaveBeenCalled();
     expect(page.editorErrorMessages.value).toEqual([
@@ -260,9 +250,7 @@ describe("useWbsTaskEditor", () => {
 
     await page.saveWbsTask(buildEditForm());
 
-    expect(page.editorErrorMessages.value).toEqual([
-      "WBS Taskを更新できませんでした。",
-    ]);
+    expect(page.editorErrorMessages.value).toEqual(["WBS Taskを更新できませんでした。"]);
     expect(page.isEditorOpen.value).toBe(true);
   });
 
@@ -315,9 +303,7 @@ describe("useWbsTaskEditor", () => {
 
     await page.saveWbsTask(buildEditForm());
 
-    expect(page.errorMessages.value).toEqual([
-      "archive済みTaskのWBSは変更できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["archive済みTaskのWBSは変更できません。"]);
   });
 
   it("WBS更新409後の再取得で401になった場合は競合案内を残さない", async () => {

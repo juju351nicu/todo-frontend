@@ -65,9 +65,7 @@ describe("useTaskTemplates", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.taskTemplateApi.findOwnTemplates.mockResolvedValue([
-      structuredClone(template),
-    ]);
+    mocks.taskTemplateApi.findOwnTemplates.mockResolvedValue([structuredClone(template)]);
     mocks.taskTemplateApi.update.mockImplementation((_id, request) =>
       Promise.resolve({ ...template, ...request, version: 1 })
     );
@@ -180,15 +178,11 @@ describe("useTaskTemplates", () => {
     const page = createPage();
     await page.loadTemplates();
     page.selectTemplate(page.templates.value[0]);
-    mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(
-      new TaskTemplateApiError(403, null)
-    );
+    mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(new TaskTemplateApiError(403, null));
 
     await page.loadTemplates();
 
-    expect(page.errorMessage.value).toBe(
-      "Task Templateを参照するpermissionがありません。"
-    );
+    expect(page.errorMessage.value).toBe("Task Templateを参照するpermissionがありません。");
     expect(page.templates.value).toEqual([]);
     expect(page.selectedTemplate.value).toBeNull();
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
@@ -242,9 +236,7 @@ describe("useTaskTemplates", () => {
 
     await page.saveTemplate();
 
-    expect(page.errorMessage.value).toBe(
-      "Task Templateを更新できませんでした。"
-    );
+    expect(page.errorMessage.value).toBe("Task Templateを更新できませんでした。");
   });
 
   it("409回復中の401では古いTemplateを破棄してLoginへ戻す", async () => {
@@ -305,9 +297,7 @@ describe("useTaskTemplates", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(
-      new TaskTemplateApiError(401, null)
-    );
+    mocks.taskTemplateApi.findOwnTemplates.mockRejectedValue(new TaskTemplateApiError(401, null));
     const page = createPage();
 
     await page.loadTemplates();

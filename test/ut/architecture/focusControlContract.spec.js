@@ -45,7 +45,8 @@ const VUE_SOURCES = listVueFiles(SOURCE_ROOT).map((path) => readFileSync(path, "
 const isRendered = (attribute, constantExpression, value) =>
   VUE_SOURCES.some(
     (source) =>
-      source.includes(`:${attribute}="${constantExpression}"`) || source.includes(` ${attribute}="${value}"`)
+      source.includes(`:${attribute}="${constantExpression}"`) ||
+      source.includes(` ${attribute}="${value}"`)
   );
 
 const GROUPED_CONTROLS = [
@@ -67,17 +68,24 @@ const SINGLE_CONTROLS = [
   ["data-task-timer-control", "TASK_TIMER_HISTORY_CONTROL", TASK_TIMER_HISTORY_CONTROL],
   ["data-todo-detail-control", "TODO_SUBMIT_CONTROL", TODO_SUBMIT_CONTROL],
   ["data-earned-value-control", "EARNED_VALUE_SUBMIT_CONTROL", EARNED_VALUE_SUBMIT_CONTROL],
-  ["data-working-calendar-control", "WORKING_CALENDAR_SUBMIT_CONTROL", WORKING_CALENDAR_SUBMIT_CONTROL],
+  [
+    "data-working-calendar-control",
+    "WORKING_CALENDAR_SUBMIT_CONTROL",
+    WORKING_CALENDAR_SUBMIT_CONTROL,
+  ],
 ];
 
 describe("フォーカスの戻し先の属性の契約（composable と template）", () => {
-  it.each(GROUPED_CONTROLS)("%s：%s の各keyがtemplateに付いている", (attribute, constantName, control) => {
-    const missing = Object.entries(control)
-      .filter(([key, value]) => !isRendered(attribute, `${constantName}.${key}`, value))
-      .map(([key]) => key);
+  it.each(GROUPED_CONTROLS)(
+    "%s：%s の各keyがtemplateに付いている",
+    (attribute, constantName, control) => {
+      const missing = Object.entries(control)
+        .filter(([key, value]) => !isRendered(attribute, `${constantName}.${key}`, value))
+        .map(([key]) => key);
 
-    expect(missing).toEqual([]);
-  });
+      expect(missing).toEqual([]);
+    }
+  );
 
   it.each(SINGLE_CONTROLS)("%s：%s がtemplateに付いている", (attribute, constantName, value) => {
     expect(isRendered(attribute, constantName, value)).toBe(true);

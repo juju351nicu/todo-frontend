@@ -36,4 +36,5 @@ const MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
  *
  * @param date 表示する日時。省略時は現在時刻
  */
-export const formatTodoSearchDate = (date: Date = new Date()): string => MONTH_DAY_FORMATTER.format(date);
+export const formatTodoSearchDate = (date: Date = new Date()): string =>
+  MONTH_DAY_FORMATTER.format(date);

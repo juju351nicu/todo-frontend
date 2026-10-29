@@ -16,9 +16,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/task/api/taskCommentApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/task/api/taskCommentApi"
-  );
+  const actual = await vi.importActual("@/features/task/api/taskCommentApi");
   return { ...actual, default: mocks.taskCommentApi };
 });
 
@@ -50,10 +48,7 @@ describe("useProjectComments", () => {
     await page.openComments();
 
     expect(mocks.taskCommentApi.findProjectComments).toHaveBeenCalledTimes(2);
-    expect(mocks.taskCommentApi.findProjectComments).toHaveBeenNthCalledWith(
-      1,
-      5
-    );
+    expect(mocks.taskCommentApi.findProjectComments).toHaveBeenNthCalledWith(1, 5);
     expect(page.comments.value).toEqual([comment]);
     expect(page.isOpen.value).toBe(true);
   });
@@ -93,9 +88,7 @@ describe("useProjectComments", () => {
     await page.openComments();
 
     expect(page.comments.value).toEqual([]);
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.readForbidden,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.readForbidden]);
     expect(page.isOpen.value).toBe(true);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
@@ -117,9 +110,7 @@ describe("useProjectComments", () => {
     await page.openComments();
 
     expect(page.comments.value).toEqual([]);
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.resourceNotFound,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.resourceNotFound]);
     expect(page.isOpen.value).toBe(true);
   });
 
@@ -139,15 +130,11 @@ describe("useProjectComments", () => {
 
     await page.openComments();
 
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.projectLoadFailed,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.projectLoadFailed]);
   });
 
   it("401ではSessionを破棄してDialogを閉じLoginへ戻す", async () => {
-    mocks.taskCommentApi.findProjectComments.mockRejectedValue(
-      new TaskCommentApiError(401, null)
-    );
+    mocks.taskCommentApi.findProjectComments.mockRejectedValue(new TaskCommentApiError(401, null));
     const page = useProjectComments(ref(5));
 
     await page.openComments();

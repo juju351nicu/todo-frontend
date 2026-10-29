@@ -23,6 +23,9 @@ describe("taskFormOptions", () => {
   });
 
   it("status code選択肢は名前とcodeを併記する", () => {
-    expect(buildTaskStatusCodeOptions(statuses)[1]).toEqual({ title: "完了（DONE）", value: "DONE" });
+    expect(buildTaskStatusCodeOptions(statuses)[1]).toEqual({
+      title: "完了（DONE）",
+      value: "DONE",
+    });
   });
 });

@@ -127,13 +127,8 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(updatedWbs),
     });
 
-    await expect(WbsApi.updateWbsTask(7, 11, request)).resolves.toEqual(
-      updatedWbs
-    );
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/tasks/11",
-      request
-    );
+    await expect(WbsApi.updateWbsTask(7, 11, request)).resolves.toEqual(updatedWbs);
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11", request);
   });
 
   it("更新APIの項目エラー本文をstatus付きWbsApiErrorへ保持する", async () => {
@@ -178,9 +173,7 @@ describe("WBS API", () => {
       projectId: 7,
       dependencies: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/dependencies"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/dependencies");
   });
 
   it("Finish-to-Start依存関係をPOSTして確定後の一覧を返す", async () => {
@@ -192,18 +185,14 @@ describe("WBS API", () => {
     };
     const response = {
       projectId: 7,
-      dependencies: [
-        { dependencyId: 31, ...request, version: 0 },
-      ],
+      dependencies: [{ dependencyId: 31, ...request, version: 0 }],
     };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(WbsApi.createTaskDependency(7, request)).resolves.toEqual(
-      response
-    );
+    await expect(WbsApi.createTaskDependency(7, request)).resolves.toEqual(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/dependencies",
       request
@@ -257,9 +246,7 @@ describe("WBS API", () => {
       totalActualEffortMinutes: 0,
       workLogs: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/tasks/11/work-logs"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11/work-logs");
   });
 
   it("業務日・工数・作業者をPOSTして確定後の日別実績一覧を返す", async () => {
@@ -279,9 +266,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(WbsApi.createTaskWorkLog(7, 11, request)).resolves.toEqual(
-      response
-    );
+    await expect(WbsApi.createTaskWorkLog(7, 11, request)).resolves.toEqual(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/work-logs",
       request
@@ -306,9 +291,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.updateTaskWorkLog(7, 11, 41, request)
-    ).resolves.toEqual(response);
+    await expect(WbsApi.updateTaskWorkLog(7, 11, 41, request)).resolves.toEqual(response);
     expect(HttpClient.putRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/work-logs/41",
       request
@@ -318,9 +301,7 @@ describe("WBS API", () => {
   it("日別実績IDとversionをDELETE queryへ含めて204を確定結果にする", async () => {
     HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
 
-    await expect(
-      WbsApi.deleteTaskWorkLog(7, 11, 41, 3)
-    ).resolves.toBeUndefined();
+    await expect(WbsApi.deleteTaskWorkLog(7, 11, 41, 3)).resolves.toBeUndefined();
     expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/work-logs/41?version=3"
     );
@@ -395,9 +376,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(WbsApi.createTaskEffortPlan(7, 11, request)).resolves.toEqual(
-      response
-    );
+    await expect(WbsApi.createTaskEffortPlan(7, 11, request)).resolves.toEqual(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/effort-plans",
       request
@@ -424,9 +403,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.updateTaskEffortPlan(7, 11, 51, request)
-    ).resolves.toEqual(response);
+    await expect(WbsApi.updateTaskEffortPlan(7, 11, 51, request)).resolves.toEqual(response);
     expect(HttpClient.putRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/effort-plans/51",
       request
@@ -436,9 +413,7 @@ describe("WBS API", () => {
   it("日別予定IDとversionをDELETE queryへ含めて204を確定結果にする", async () => {
     HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
 
-    await expect(
-      WbsApi.deleteTaskEffortPlan(7, 11, 51, 3)
-    ).resolves.toBeUndefined();
+    await expect(WbsApi.deleteTaskEffortPlan(7, 11, 51, 3)).resolves.toBeUndefined();
     expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/effort-plans/51?version=3"
     );
@@ -471,9 +446,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.getTaskWorkload(7, "2026-08-01", "2026-08-31")
-    ).resolves.toEqual(response);
+    await expect(WbsApi.getTaskWorkload(7, "2026-08-01", "2026-08-31")).resolves.toEqual(response);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/workload?dateFrom=2026-08-01&dateTo=2026-08-31"
     );
@@ -497,9 +470,7 @@ describe("WBS API", () => {
       medianAbsoluteErrorMinutes: null,
       tasks: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/estimate-accuracy"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/estimate-accuracy");
   });
 
   it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {
@@ -526,9 +497,11 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.getWorkingCalendar(7, "2026-08-01", "2026-08-31", null)
-    ).resolves.toEqual({ ...response, accountId: null, days: [] });
+    await expect(WbsApi.getWorkingCalendar(7, "2026-08-01", "2026-08-31", null)).resolves.toEqual({
+      ...response,
+      accountId: null,
+      days: [],
+    });
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/calendar?dateFrom=2026-08-01&dateTo=2026-08-31"
     );
@@ -645,9 +618,7 @@ describe("WBS API", () => {
       projectId: 7,
       baselines: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/baselines"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/baselines");
   });
 
   it("active baseline詳細で欠けたsnapshot配列を空配列へ正規化する", async () => {
@@ -669,9 +640,7 @@ describe("WBS API", () => {
       dependencies: [],
       effortPlans: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/7/wbs/baselines/21"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/baselines/21");
   });
 
   it("現在計画のbaseline名と説明をProject配下へPOSTする", async () => {
@@ -707,9 +676,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.activateWbsBaseline(7, 21, request)
-    ).resolves.toEqual(response);
+    await expect(WbsApi.activateWbsBaseline(7, 21, request)).resolves.toEqual(response);
     expect(HttpClient.putRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/baselines/21/activation",
       request
@@ -747,9 +714,7 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(response),
     });
 
-    await expect(
-      WbsApi.getEarnedValueMetrics(7, "2026-08-30")
-    ).resolves.toEqual(response);
+    await expect(WbsApi.getEarnedValueMetrics(7, "2026-08-30")).resolves.toEqual(response);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/metrics?statusDate=2026-08-30"
     );
@@ -765,9 +730,7 @@ describe("WBS API", () => {
       }),
     });
 
-    await expect(
-      WbsApi.getEarnedValueMetrics(7, "2026-08-30")
-    ).resolves.toEqual({
+    await expect(WbsApi.getEarnedValueMetrics(7, "2026-08-30")).resolves.toEqual({
       projectId: 7,
       baselineId: 21,
       statusDate: "2026-08-30",
@@ -789,9 +752,10 @@ describe("WBS API", () => {
       blob: vi.fn().mockResolvedValue(content),
     });
 
-    await expect(
-      WbsApi.downloadWbsReport(7, reportType, "2026-09-05")
-    ).resolves.toEqual({ content, fileName });
+    await expect(WbsApi.downloadWbsReport(7, reportType, "2026-09-05")).resolves.toEqual({
+      content,
+      fileName,
+    });
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       `/api/v1/projects/7/wbs/exports/${reportType}?statusDate=2026-09-05`,
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -808,9 +772,7 @@ describe("WBS API", () => {
       blob: vi.fn().mockResolvedValue(content),
     });
 
-    await expect(
-      WbsApi.downloadWbsReport(7, "weekly", "2026-09-05")
-    ).resolves.toEqual({
+    await expect(WbsApi.downloadWbsReport(7, "weekly", "2026-09-05")).resolves.toEqual({
       content,
       fileName: "work-management-wbs-weekly-project-7-2026-09-05.xlsx",
     });
@@ -832,8 +794,9 @@ describe("WBS API", () => {
       json: vi.fn().mockResolvedValue(errorResponse),
     });
 
-    await expect(
-      WbsApi.downloadWbsReport(7, "monthly", "2026-09-05")
-    ).rejects.toMatchObject({ status: 409, errorResponse });
+    await expect(WbsApi.downloadWbsReport(7, "monthly", "2026-09-05")).rejects.toMatchObject({
+      status: 409,
+      errorResponse,
+    });
   });
 });

@@ -1,6 +1,5 @@
 import type { TodoDetailResponse, TodoUpsertRequest } from "@/features/todo/types/todo";
 
-
 /** Todo詳細Responseと登録・更新Requestの間で使用する画面編集フォーム。 */
 export interface TodoDetailForm {
   todoId: number;
@@ -16,14 +15,11 @@ export interface TodoDetailForm {
 }
 
 /** Backendの文字列完了フラグを画面フォームの数値コードへ正規化する。 */
-const toDoneFlag = (
-  value: TodoDetailResponse["done_flag"] | undefined
-): 0 | 1 => (value === "1" ? 1 : 0);
+const toDoneFlag = (value: TodoDetailResponse["done_flag"] | undefined): 0 | 1 =>
+  value === "1" ? 1 : 0;
 
 /** Todo詳細APIのsnake_caseレスポンスを編集フォームへ変換する。 */
-export const createTodoDetailForm = (
-  detail: Partial<TodoDetailResponse> = {}
-): TodoDetailForm => ({
+export const createTodoDetailForm = (detail: Partial<TodoDetailResponse> = {}): TodoDetailForm => ({
   todoId: detail.todo_id ?? 0,
   dateFrom: detail.date_from ?? "",
   dateTo: detail.date_to ?? "",
@@ -39,9 +35,7 @@ export const createTodoDetailForm = (
  * Todo編集フォームを登録・更新APIのsnake_caseリクエストへ変換する。
  * 旧数値roleを送信せず、BackendがHttpSessionのAuthenticatedUserからpermissionを判定する。
  */
-export const buildTodoUpsertRequest = (
-  form: TodoDetailForm
-): TodoUpsertRequest => ({
+export const buildTodoUpsertRequest = (form: TodoDetailForm): TodoUpsertRequest => ({
   todo_id: form.todoId,
   date_from: form.dateFrom,
   date_to: form.dateTo,

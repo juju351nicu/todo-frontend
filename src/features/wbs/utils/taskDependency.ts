@@ -25,9 +25,7 @@ export const buildDependencyTaskLabel = (task: Readonly<WbsTask>): string =>
  * @param tasks 階層表の行順に並んだTask
  * @returns WBSコード付き表示名とTask IDの組
  */
-export const buildDependencyTaskOptions = (
-  tasks: readonly WbsTask[]
-): TaskDependencyTaskOption[] =>
+export const buildDependencyTaskOptions = (tasks: readonly WbsTask[]): TaskDependencyTaskOption[] =>
   tasks.map((task) => ({
     title: buildDependencyTaskLabel(task),
     value: task.taskId,
@@ -51,9 +49,7 @@ export const canChangeDependencyEndpoint = (
   canManageAnyTask: boolean
 ): boolean =>
   canManageAnyTask ||
-  (task !== undefined &&
-    currentAccountId !== null &&
-    task.assigneeAccountId === currentAccountId);
+  (task !== undefined && currentAccountId !== null && task.assigneeAccountId === currentAccountId);
 
 /**
  * 依存関係一覧の各行へ、先行・後続Taskの表示名と削除できるかを付ける。
@@ -69,9 +65,7 @@ export const buildDependencyRows = (
   taskOptions: readonly TaskDependencyTaskOption[],
   canChangeTaskId: (taskId: number) => boolean
 ): TaskDependencyRow[] => {
-  const labelByTaskId = new Map(
-    taskOptions.map((option) => [option.value, option.title])
-  );
+  const labelByTaskId = new Map(taskOptions.map((option) => [option.value, option.title]));
   return dependencies.map((dependency) => ({
     ...dependency,
     predecessorLabel:
@@ -81,15 +75,13 @@ export const buildDependencyRows = (
       labelByTaskId.get(dependency.successorTaskId) ??
       `Task ID: ${dependency.successorTaskId}（表示対象外）`,
     canDelete:
-      canChangeTaskId(dependency.predecessorTaskId) &&
-      canChangeTaskId(dependency.successorTaskId),
+      canChangeTaskId(dependency.predecessorTaskId) && canChangeTaskId(dependency.successorTaskId),
   }));
 };
 
 /** 依存関係追加Formの検証結果。正常時はRequestだけ、入力不正時はmessageだけを持つ。 */
 export type TaskDependencyCreateRequestResult =
-  | { request: TaskDependencyCreateRequest; messages: [] }
-  | { request: null; messages: string[] };
+  { request: TaskDependencyCreateRequest; messages: [] } | { request: null; messages: string[] };
 
 /**
  * 依存関係追加Formを検証し、Backendへ送信できるFinish-to-Start Requestへ変換する。
@@ -121,11 +113,7 @@ export const buildTaskDependencyCreateRequest = (
   ) {
     messages.push("先行Taskと後続Taskには別のTaskを選択してください。");
   }
-  if (
-    lagMinutes === null ||
-    !Number.isSafeInteger(lagMinutes) ||
-    lagMinutes < 0
-  ) {
+  if (lagMinutes === null || !Number.isSafeInteger(lagMinutes) || lagMinutes < 0) {
     messages.push("待ち時間は0以上の整数で入力してください。");
   }
   if (
@@ -163,7 +151,4 @@ const isSelectableTaskId = (
   taskId: number | null,
   availableTaskIds: ReadonlySet<number>
 ): taskId is number =>
-  taskId !== null &&
-  Number.isSafeInteger(taskId) &&
-  taskId > 0 &&
-  availableTaskIds.has(taskId);
+  taskId !== null && Number.isSafeInteger(taskId) && taskId > 0 && availableTaskIds.has(taskId);

@@ -33,9 +33,7 @@ const findOwnTemplates = async (): Promise<ProjectTemplateSummary[]> => {
 };
 
 /** 本人所有のactive Project Template snapshot全体を取得する。 */
-const getOwnTemplate = async (
-  projectTemplateId: number
-): Promise<ProjectTemplate> => {
+const getOwnTemplate = async (projectTemplateId: number): Promise<ProjectTemplate> => {
   const response = await HttpClient.getRequest(
     `${API_PATHS.PROJECT_TEMPLATES}/${projectTemplateId}`
   );
@@ -70,10 +68,7 @@ const update = async (
 };
 
 /** 本人所有Project Templateを取得時点version付きで論理archiveする。 */
-const archive = async (
-  projectTemplateId: number,
-  version: number
-): Promise<void> => {
+const archive = async (projectTemplateId: number, version: number): Promise<void> => {
   const query = new URLSearchParams({ version: String(version) });
   const response = await HttpClient.deleteRequest(
     `${API_PATHS.PROJECT_TEMPLATES}/${projectTemplateId}?${query}`

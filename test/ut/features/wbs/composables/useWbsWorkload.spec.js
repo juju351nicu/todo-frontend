@@ -2,10 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
-import {
-  useWbsWorkload,
-  WORKLOAD_CONTROL,
-} from "@/features/wbs/composables/useWbsWorkload";
+import { useWbsWorkload, WORKLOAD_CONTROL } from "@/features/wbs/composables/useWbsWorkload";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 import {
@@ -133,11 +130,7 @@ describe("useWbsWorkload", () => {
 
       await state.reloadTaskWorkload();
 
-      expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(
-        7,
-        "2026-08-01",
-        "2026-08-31"
-      );
+      expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(7, "2026-08-01", "2026-08-31");
     });
 
     it("401ではSession失効処理へ委ね、検索欄へ案内を出さない", async () => {

@@ -63,9 +63,7 @@ export const useMemberStore = defineStore("member", {
      * @returns Backend Response（削除後の一覧）
      * @throws MemberApiError 削除APIが失敗した場合（Storeの一覧は変えない）
      */
-    async deleteMemberList(
-      memberIds: ReadonlyArray<number | string>
-    ): Promise<MemberListResponse> {
+    async deleteMemberList(memberIds: ReadonlyArray<number | string>): Promise<MemberListResponse> {
       this.isLoading = true;
       try {
         const data = await MemberApi.deleteMembers(memberIds);
@@ -83,9 +81,7 @@ export const useMemberStore = defineStore("member", {
      * @returns 確定済み会員情報
      * @throws MemberApiError 保存APIが失敗した場合
      */
-    async upsertMemberInfo(
-      payload: MemberUpsertRequest
-    ): Promise<MemberUpsertResponse> {
+    async upsertMemberInfo(payload: MemberUpsertRequest): Promise<MemberUpsertResponse> {
       this.isLoading = true;
       try {
         return await MemberApi.upsert(payload);
@@ -101,9 +97,7 @@ export const useMemberStore = defineStore("member", {
      * @returns 対象会員ID
      * @throws MemberApiError 退会APIが失敗した場合（パスワード不一致を含む）
      */
-    async cancelMemberInfo(
-      payload: MemberCancelRequest
-    ): Promise<MemberCancelResponse> {
+    async cancelMemberInfo(payload: MemberCancelRequest): Promise<MemberCancelResponse> {
       this.isLoading = true;
       try {
         return await MemberApi.cancel(payload);

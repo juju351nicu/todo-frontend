@@ -40,7 +40,8 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 
 ## 検証
 
-Node.js 24で`npm run build`、`npm run typecheck`、`npm run test`を実行する。Nuxt UIのVite pluginはbuild時にComponent型宣言（`components.d.ts`等）を生成するため、clone直後はbuildを先に実行してから型検査する。
+Node.js 24で`npm run format:check`、`npm run lint`、`npm run build`、`npm run typecheck`、`npm run test`を実行する。Nuxt UIのVite pluginはbuild時にComponent型宣言（`components.d.ts`等）を生成するため、clone直後はbuildを先に実行してから型検査する。
+コードを書き換えたら`npm run format`で整形し、ESLintの指摘は無効化のコメントで隠さず直す。
 
 - 新規・変更したAPI、composable、Store、業務utilityにはVitestを同じ変更で追加または更新する。
 - 正常系だけでなく、入力境界、null・空、401、403、404、409、通信失敗、二重送信、再読込・rollback等、対象処理に実在する異常系を優先して検証する。

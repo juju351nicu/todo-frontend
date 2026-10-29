@@ -61,7 +61,7 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
   const pageSize = computed<number>(() =>
     options.hideFooter()
       ? Math.max(options.items().length, 1)
-      : resolvePageSize(options.itemsPerPage.value, options.items().length),
+      : resolvePageSize(options.itemsPerPage.value, options.items().length)
   );
   /** `UTable`の`v-model:pagination`。ページ番号の変更だけを受け取り、件数は`itemsPerPage`から決める。 */
   const pagination = computed<PaginationState>({
@@ -78,10 +78,12 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
     },
   });
 
-  const pageCount = computed<number>(() => Math.max(Math.ceil(options.items().length / pageSize.value), 1));
+  const pageCount = computed<number>(() =>
+    Math.max(Math.ceil(options.items().length / pageSize.value), 1)
+  );
   /** footerに出す「1〜10件 / 全25件」形式の表示範囲。 */
   const pageRangeText = computed<string>(() =>
-    formatPageRange(pageIndex.value, pageSize.value, options.items().length),
+    formatPageRange(pageIndex.value, pageSize.value, options.items().length)
   );
 
   // 件数変更や削除で現在ページが範囲外になった場合、空のページを見せないよう、表示可能な最終ページへ戻す。
@@ -96,7 +98,7 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
 
   /** 並べ替えできる列。見出しを並べ替えボタンとして描画する列の一覧に使う。 */
   const sortableHeaders = computed<DataTableHeader[]>(() =>
-    options.headers().filter((header) => header.sortable !== false),
+    options.headers().filter((header) => header.sortable !== false)
   );
 
   /** `UTable`の列定義。`selectable`なら先頭に選択列（`id: "select"`）を加える。 */
@@ -110,7 +112,9 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
         meta: { class: { th: alignClass, td: alignClass } },
       };
     });
-    return options.selectable() ? [{ id: "select", enableSorting: false }, ...dataColumns] : dataColumns;
+    return options.selectable()
+      ? [{ id: "select", enableSorting: false }, ...dataColumns]
+      : dataColumns;
   });
 
   /**

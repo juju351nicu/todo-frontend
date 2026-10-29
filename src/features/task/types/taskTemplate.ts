@@ -1,7 +1,4 @@
-import type {
-  TaskDetail,
-  TaskPriority,
-} from "@/features/project/types/project";
+import type { TaskDetail, TaskPriority } from "@/features/project/types/project";
 
 /** Task Templateに保存されたchecklist snapshot。 */
 export interface TaskTemplateChecklistItem {

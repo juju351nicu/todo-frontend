@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import NotificationApi, {
-  NotificationApiError,
-} from "@/features/notification/api/notificationApi";
+import NotificationApi, { NotificationApiError } from "@/features/notification/api/notificationApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -32,9 +30,7 @@ describe("Notification API", () => {
       json: vi.fn().mockResolvedValue(payload),
     });
 
-    await expect(NotificationApi.getNotificationCenter()).resolves.toEqual(
-      payload
-    );
+    await expect(NotificationApi.getNotificationCenter()).resolves.toEqual(payload);
     expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.NOTIFICATIONS);
   });
 
@@ -46,10 +42,7 @@ describe("Notification API", () => {
     });
 
     await expect(NotificationApi.markEventsRead()).resolves.toEqual(payload);
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/notifications/events/read",
-      null
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/notifications/events/read", null);
   });
 
   it("全体お知らせの件名・本文・表示終了時刻を管理APIへ渡す", async () => {
@@ -67,9 +60,7 @@ describe("Notification API", () => {
       json: vi.fn().mockResolvedValue(responsePayload),
     });
 
-    await expect(NotificationApi.createAnnouncement(request)).resolves.toEqual(
-      responsePayload
-    );
+    await expect(NotificationApi.createAnnouncement(request)).resolves.toEqual(responsePayload);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       API_PATHS.ADMINISTRATION_NOTIFICATION_ANNOUNCEMENTS,
       request
@@ -103,9 +94,7 @@ describe("Notification API", () => {
       status: 400,
       errorResponse,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(NotificationApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(NotificationApiError));
   });
 
   it("非JSONの403も本文なしstatus付き例外へ変換する", async () => {

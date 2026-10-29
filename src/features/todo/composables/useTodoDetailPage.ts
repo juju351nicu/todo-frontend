@@ -1,5 +1,4 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
@@ -64,7 +63,6 @@ const USER_ITEMS: UserItem[] = [
  * `TASK_WRITE_ALL`だけが所有者指定UIを利用でき、本人更新permissionではBackendが所有者を固定する。
  */
 export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => {
-  const router = useRouter();
   const todoStore = useTodoStore();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
@@ -81,9 +79,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     return Number.isInteger(value) && value > 0 ? value : 0;
   });
   const isLoading = computed(() => todoStore.isLoading || isSubmitting.value);
-  const canAssignTodoOwner = computed(() =>
-    userStore.hasPermission("TASK_WRITE_ALL")
-  );
+  const canAssignTodoOwner = computed(() => userStore.hasPermission("TASK_WRITE_ALL"));
   const canWriteTodo = computed(() => {
     if (userStore.hasPermission("TASK_WRITE_ALL")) {
       return true;
@@ -91,9 +87,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     if (!userStore.hasPermission("TASK_WRITE_OWN")) {
       return false;
     }
-    return (
-      normalizedTodoId.value === 0 || todoForm.userId === userStore.accountId
-    );
+    return normalizedTodoId.value === 0 || todoForm.userId === userStore.accountId;
   });
   /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のない会員ではnull。 */
   const ownerName = ref<string | null>(null);
@@ -131,11 +125,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   };
 
   /** API statusと契約済みerror codeを旧Todo詳細向け表示へ変換する。 */
-  const getErrorMessages = (
-    error: unknown,
-    fallback: string,
-    forbidden: string
-  ): string[] => {
+  const getErrorMessages = (error: unknown, fallback: string, forbidden: string): string[] => {
     return resolveStandardErrorMessages(error, TodoApiError, {
       forbidden,
       notFound: DISPLAY_MESSAGES.task.todo.resourceNotFound,
@@ -244,11 +234,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
       }
     } catch (error: unknown) {
       if (await handleUnauthorized(error)) return;
-      if (
-        isUpdate &&
-        error instanceof TodoApiError &&
-        error.status === 409
-      ) {
+      if (isUpdate && error instanceof TodoApiError && error.status === 409) {
         const conflictMessages = getErrorMessages(
           error,
           DISPLAY_MESSAGES.task.todo.conflict,
@@ -272,10 +258,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
             );
             return;
           }
-          errorMessages.value = [
-            ...conflictMessages,
-            DISPLAY_MESSAGES.task.todo.reloadFailed,
-          ];
+          errorMessages.value = [...conflictMessages, DISPLAY_MESSAGES.task.todo.reloadFailed];
         }
         return;
       }

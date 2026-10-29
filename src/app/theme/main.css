@@ -30,42 +30,53 @@
   --breakpoint-2xl: 2560px;
 
   /* Vuetifyのelevation 1／2／3／4／8／24と同じ影。 */
-  --shadow-elevation-1: 0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14), 0 1px 3px 0 rgba(0, 0, 0, 0.12);
-  --shadow-elevation-2: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-  --shadow-elevation-3: 0 3px 3px -2px rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14), 0 1px 8px 0 rgba(0, 0, 0, 0.12);
-  --shadow-elevation-4: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
-  --shadow-elevation-8: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
-  --shadow-elevation-24: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-1:
+    0 2px 1px -1px rgba(0, 0, 0, 0.2), 0 1px 1px 0 rgba(0, 0, 0, 0.14),
+    0 1px 3px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-2:
+    0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+    0 1px 5px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-3:
+    0 3px 3px -2px rgba(0, 0, 0, 0.2), 0 3px 4px 0 rgba(0, 0, 0, 0.14),
+    0 1px 8px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-4:
+    0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14),
+    0 1px 10px 0 rgba(0, 0, 0, 0.12);
+  --shadow-elevation-8:
+    0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-24:
+    0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12);
 
   /* primary: 参考デザインの主要button色（#F34382）。白文字との対比を保つため、button背景とlinkは600（:rootで指定）を使う。 */
-  --color-brand-50: color-mix(in oklab, #F34382 8%, white);
-  --color-brand-100: color-mix(in oklab, #F34382 16%, white);
-  --color-brand-200: color-mix(in oklab, #F34382 32%, white);
-  --color-brand-300: color-mix(in oklab, #F34382 52%, white);
-  --color-brand-400: color-mix(in oklab, #F34382 76%, white);
-  --color-brand-500: #F34382;
-  --color-brand-600: color-mix(in oklab, #F34382 86%, black);
-  --color-brand-700: color-mix(in oklab, #F34382 72%, black);
-  --color-brand-800: color-mix(in oklab, #F34382 58%, black);
-  --color-brand-900: color-mix(in oklab, #F34382 44%, black);
-  --color-brand-950: color-mix(in oklab, #F34382 30%, black);
+  --color-brand-50: color-mix(in oklab, #f34382 8%, white);
+  --color-brand-100: color-mix(in oklab, #f34382 16%, white);
+  --color-brand-200: color-mix(in oklab, #f34382 32%, white);
+  --color-brand-300: color-mix(in oklab, #f34382 52%, white);
+  --color-brand-400: color-mix(in oklab, #f34382 76%, white);
+  --color-brand-500: #f34382;
+  --color-brand-600: color-mix(in oklab, #f34382 86%, black);
+  --color-brand-700: color-mix(in oklab, #f34382 72%, black);
+  --color-brand-800: color-mix(in oklab, #f34382 58%, black);
+  --color-brand-900: color-mix(in oklab, #f34382 44%, black);
+  --color-brand-950: color-mix(in oklab, #f34382 30%, black);
 
   /* secondary: 参考デザインの見出し・アクセント色（プラム）。 */
-  --color-plum-50: color-mix(in oklab, #7C4370 8%, white);
-  --color-plum-100: color-mix(in oklab, #7C4370 16%, white);
-  --color-plum-200: color-mix(in oklab, #7C4370 32%, white);
-  --color-plum-300: color-mix(in oklab, #7C4370 52%, white);
-  --color-plum-400: color-mix(in oklab, #7C4370 76%, white);
-  --color-plum-500: #7C4370;
-  --color-plum-600: color-mix(in oklab, #7C4370 86%, black);
-  --color-plum-700: color-mix(in oklab, #7C4370 72%, black);
-  --color-plum-800: color-mix(in oklab, #7C4370 58%, black);
-  --color-plum-900: color-mix(in oklab, #7C4370 44%, black);
-  --color-plum-950: color-mix(in oklab, #7C4370 30%, black);
+  --color-plum-50: color-mix(in oklab, #7c4370 8%, white);
+  --color-plum-100: color-mix(in oklab, #7c4370 16%, white);
+  --color-plum-200: color-mix(in oklab, #7c4370 32%, white);
+  --color-plum-300: color-mix(in oklab, #7c4370 52%, white);
+  --color-plum-400: color-mix(in oklab, #7c4370 76%, white);
+  --color-plum-500: #7c4370;
+  --color-plum-600: color-mix(in oklab, #7c4370 86%, black);
+  --color-plum-700: color-mix(in oklab, #7c4370 72%, black);
+  --color-plum-800: color-mix(in oklab, #7c4370 58%, black);
+  --color-plum-900: color-mix(in oklab, #7c4370 44%, black);
+  --color-plum-950: color-mix(in oklab, #7c4370 30%, black);
 
   /* ヘッダーとサイドメニューの背景（参考デザインの濃い紫のサイドバー）。 */
   --color-sidebar: #310750;
-
 }
 
 /*

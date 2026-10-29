@@ -1,9 +1,4 @@
-import {
-  expect,
-  test as base,
-  type Page,
-  type TestInfo,
-} from "@playwright/test";
+import { expect, test as base, type Page, type TestInfo } from "@playwright/test";
 
 type BrowserDiagnostics = {
   consoleEvents: string[];

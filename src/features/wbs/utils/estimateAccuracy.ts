@@ -1,18 +1,10 @@
-import type {
-  EstimateAccuracyResponse,
-  EstimateAccuracyTask,
-} from "@/features/wbs/types/wbs";
-import {
-  formatEffortMinutes,
-  formatSignedEffortMinutes,
-} from "@/features/wbs/utils/effort";
+import type { EstimateAccuracyResponse, EstimateAccuracyTask } from "@/features/wbs/types/wbs";
+import { formatEffortMinutes, formatSignedEffortMinutes } from "@/features/wbs/utils/effort";
 
 /**
  * 散布図の目盛り間隔の候補（分）。30分から始め、1・2・4・8時間…と倍にして5本前後の目盛りに収める。
  */
-const TICK_STEP_CANDIDATES_MINUTES = [
-  30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360,
-] as const;
+const TICK_STEP_CANDIDATES_MINUTES = [30, 60, 120, 240, 480, 960, 1920, 3840, 7680, 15360] as const;
 
 /** 1軸あたりの目盛り本数の上限。これを超えない最小の間隔を採用する。 */
 const MAX_TICK_COUNT = 6;
@@ -63,9 +55,7 @@ export interface EstimateAccuracyChart {
  * @param maxMinutes 予定・実績の最大値（分）。1以上
  * @returns 上限（分）と0からの目盛り
  */
-const buildAxis = (
-  maxMinutes: number
-): Pick<EstimateAccuracyChart, "axisMaxMinutes" | "ticks"> => {
+const buildAxis = (maxMinutes: number): Pick<EstimateAccuracyChart, "axisMaxMinutes" | "ticks"> => {
   const paddedMax = maxMinutes * AXIS_HEADROOM_RATIO;
   const step =
     TICK_STEP_CANDIDATES_MINUTES.find(
@@ -98,10 +88,7 @@ export const buildEstimateAccuracyChart = (
     return null;
   }
   const maxMinutes = Math.max(
-    ...response.tasks.flatMap((task) => [
-      task.plannedEffortMinutes,
-      task.actualEffortMinutes,
-    ])
+    ...response.tasks.flatMap((task) => [task.plannedEffortMinutes, task.actualEffortMinutes])
   );
   const { axisMaxMinutes, ticks } = buildAxis(maxMinutes);
   const toleranceRatio = response.tolerancePercent / 100;
@@ -140,15 +127,11 @@ export const isEstimateAccuracyReferenceOnly = (
  * @param response Backendが確定した見積もり精度
  * @returns `2 / 3件（67%）`の形式。対象が0件の場合は`—`
  */
-export const formatWithinToleranceRate = (
-  response: Readonly<EstimateAccuracyResponse>
-): string => {
+export const formatWithinToleranceRate = (response: Readonly<EstimateAccuracyResponse>): string => {
   if (response.sampleCount === 0) {
     return "—";
   }
-  const percent = Math.round(
-    (response.withinToleranceTaskCount / response.sampleCount) * 100
-  );
+  const percent = Math.round((response.withinToleranceTaskCount / response.sampleCount) * 100);
   return `${response.withinToleranceTaskCount} / ${response.sampleCount}件（${percent}%）`;
 };
 
@@ -158,9 +141,8 @@ export const formatWithinToleranceRate = (
  * @param minutes `実績 - 予定`等の符号付き工数（分）。対象がない場合はnull
  * @returns `+1時間`、`-30分`、`0分`、または`—`
  */
-export const formatOptionalSignedEffortMinutes = (
-  minutes: number | null
-): string => (minutes === null ? "—" : formatSignedEffortMinutes(minutes));
+export const formatOptionalSignedEffortMinutes = (minutes: number | null): string =>
+  minutes === null ? "—" : formatSignedEffortMinutes(minutes);
 
 /**
  * 符号付き誤差の中央値から、見積もりの偏りの向きを文章にする。
@@ -168,9 +150,7 @@ export const formatOptionalSignedEffortMinutes = (
  * @param medianSignedVarianceMinutes `実績 - 予定`の中央値（分）。対象がない場合はnull
  * @returns 偏りの説明。対象がない場合は`—`
  */
-export const describeEstimateBias = (
-  medianSignedVarianceMinutes: number | null
-): string => {
+export const describeEstimateBias = (medianSignedVarianceMinutes: number | null): string => {
   if (medianSignedVarianceMinutes === null) {
     return "—";
   }
@@ -189,16 +169,10 @@ export const describeEstimateBias = (
  * @param task 誤差を計算したTask
  * @returns `"1.1 実装"`、`"実装"`、またはタイトルがない場合は`"Task ID: 15"`
  */
-export const formatEstimateAccuracyTaskLabel = (
-  task: Readonly<EstimateAccuracyTask>
-): string => {
+export const formatEstimateAccuracyTaskLabel = (task: Readonly<EstimateAccuracyTask>): string => {
   const title =
-    task.title === null || task.title.trim() === ""
-      ? `Task ID: ${task.taskId}`
-      : task.title;
-  return task.wbsCode === null || task.wbsCode.trim() === ""
-    ? title
-    : `${task.wbsCode} ${title}`;
+    task.title === null || task.title.trim() === "" ? `Task ID: ${task.taskId}` : task.title;
+  return task.wbsCode === null || task.wbsCode.trim() === "" ? title : `${task.wbsCode} ${title}`;
 };
 
 /**
@@ -212,6 +186,5 @@ export const sortByAbsoluteErrorDescending = (
 ): EstimateAccuracyTask[] =>
   [...tasks].sort(
     (left, right) =>
-      right.absoluteErrorMinutes - left.absoluteErrorMinutes ||
-      left.taskId - right.taskId
+      right.absoluteErrorMinutes - left.absoluteErrorMinutes || left.taskId - right.taskId
   );

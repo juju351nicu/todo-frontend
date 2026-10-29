@@ -1,10 +1,7 @@
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import NotificationApi, {
-  NotificationApiError,
-} from "@/features/notification/api/notificationApi";
+import NotificationApi, { NotificationApiError } from "@/features/notification/api/notificationApi";
 import { NOTIFICATION_REFRESH_EVENT } from "@/features/notification/composables/useNotificationCenter";
 import { ANNOUNCEMENT_ERROR_CODES } from "@/features/notification/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -18,7 +15,6 @@ export const ANNOUNCEMENT_MESSAGE_MAX_LENGTH = 2000;
 
 /** 全利用者向けお知らせ画面の入力、送信状態、認証・入力エラー処理を提供する。 */
 export const useAnnouncementManagementPage = () => {
-  const router = useRouter();
   const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
@@ -41,18 +37,14 @@ export const useAnnouncementManagementPage = () => {
   const submitAnnouncement = async (): Promise<void> => {
     successMessage.value = "";
     if (!canSubmit.value) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.notification.announcement.invalidInput,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.notification.announcement.invalidInput];
       return;
     }
     let expiresAt: string | null;
     try {
       expiresAt = buildExpiresAt();
     } catch (_error: unknown) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.notification.announcement.invalidExpiration,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.notification.announcement.invalidExpiration];
       return;
     }
     isSubmitting.value = true;
@@ -66,8 +58,7 @@ export const useAnnouncementManagementPage = () => {
       title.value = "";
       message.value = "";
       expiresAtLocal.value = "";
-      successMessage.value =
-        DISPLAY_MESSAGES.notification.announcement.published;
+      successMessage.value = DISPLAY_MESSAGES.notification.announcement.published;
       window.dispatchEvent(new Event(NOTIFICATION_REFRESH_EVENT));
     } catch (error: unknown) {
       await handleApiError(error);
@@ -99,9 +90,7 @@ export const useAnnouncementManagementPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.notification.announcement.operationForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.notification.announcement.operationForbidden];
       return;
     }
     errorMessages.value = resolveApiErrorMessages(

@@ -46,10 +46,7 @@ const normalizeTaskDetail = (task: TaskDetail): TaskDetail => ({
  * @returns 登録後のTask詳細
  * @throws ProjectTaskApiError 入力不正、認可失敗またはBackendエラーの場合
  */
-const createTask = async (
-  projectId: number,
-  payload: TaskCreateRequest
-): Promise<TaskDetail> => {
+const createTask = async (projectId: number, payload: TaskCreateRequest): Promise<TaskDetail> => {
   const response = await HttpClient.postRequest(
     `${API_PATHS.PROJECTS}/${projectId}/tasks`,
     payload
@@ -66,11 +63,7 @@ const createTask = async (
  * @param version Task詳細取得時点のversion
  * @throws ProjectTaskApiError 認可失敗、未検出または競合の場合
  */
-const archiveTask = async (
-  projectId: number,
-  taskId: number,
-  version: number
-): Promise<void> => {
+const archiveTask = async (projectId: number, taskId: number, version: number): Promise<void> => {
   const query = new URLSearchParams({ version: String(version) });
   const response = await HttpClient.deleteRequest(
     `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}?${query}`

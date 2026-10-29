@@ -21,8 +21,7 @@ const parseIsoLocalDate = (value: string): Date => {
  * 初期workload検索期間として、業務日（Asia/Tokyo）の今月の初日・末日を返す。
  * Backendのworkloadは業務日で集計するため、利用端末のタイムゾーンでは月初・月末に1日ずれる。
  */
-export const buildDefaultWorkloadDateRange = (): TaskWorkloadDateRange =>
-  getBusinessMonthRange();
+export const buildDefaultWorkloadDateRange = (): TaskWorkloadDateRange => getBusinessMonthRange();
 
 /**
  * 新規登録または更新対象から、API Responseを変更しないDialog入力を作る。
@@ -37,8 +36,7 @@ export const buildTaskEffortPlanForm = (
 ): TaskEffortPlanForm => ({
   planDate: effortPlan?.planDate ?? getBusinessToday(),
   plannedEffortMinutes: effortPlan?.plannedEffortMinutes ?? null,
-  assigneeAccountId:
-    effortPlan?.assigneeAccountId ?? defaultAssigneeAccountId,
+  assigneeAccountId: effortPlan?.assigneeAccountId ?? defaultAssigneeAccountId,
 });
 
 /**
@@ -118,9 +116,6 @@ export const validateTaskWorkloadDateRange = (
   if (dateTo.getTime() < dateFrom.getTime()) {
     return ["集計終了日は集計開始日以降にしてください。"];
   }
-  const inclusiveDays =
-    Math.floor((dateTo.getTime() - dateFrom.getTime()) / MILLIS_PER_DAY) + 1;
-  return inclusiveDays > MAX_WORKLOAD_DAYS
-    ? ["workloadの集計期間は366日以内にしてください。"]
-    : [];
+  const inclusiveDays = Math.floor((dateTo.getTime() - dateFrom.getTime()) / MILLIS_PER_DAY) + 1;
+  return inclusiveDays > MAX_WORKLOAD_DAYS ? ["workloadの集計期間は366日以内にしてください。"] : [];
 };

@@ -6,11 +6,8 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 
 import type { TodoListItem } from "@/features/todo/types/todo";
 
-
 /** Todo一覧APIのデータをFullCalendarのイベントへ変換する。 */
-export const buildTodoCalendarEvents = (
-  todoList: TodoListItem[]
-): EventInput[] =>
+export const buildTodoCalendarEvents = (todoList: TodoListItem[]): EventInput[] =>
   todoList.map((todo) => ({
     id: String(todo.todoId),
     title: todo.title,

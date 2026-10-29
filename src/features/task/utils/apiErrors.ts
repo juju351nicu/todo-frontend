@@ -101,9 +101,7 @@ export const TASK_RECURRENCE_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** My Tasksの一覧（`/api/v1/my-tasks`）が共通Validation handlerから返すerror code。 */
-export const MY_TASK_ERROR_CODES: ReadonlySet<string> = new Set([
-  "INVALID_REQUEST_BODY",
-]);
+export const MY_TASK_ERROR_CODES: ReadonlySet<string> = new Set(["INVALID_REQUEST_BODY"]);
 
 /**
  * My Tasksの完了（Project TaskのcompleteAPI）が表示契約を持つerror code。
@@ -120,6 +118,4 @@ export const MY_TASK_COMPLETE_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 競合回復中に古い409より優先する認証・認可・公開範囲のHTTP status。 */
-export {
-  API_RECOVERY_PRIORITY_STATUSES as TASK_RECOVERY_PRIORITY_STATUSES,
-} from "@/shared/utils/apiError";
+export { API_RECOVERY_PRIORITY_STATUSES as TASK_RECOVERY_PRIORITY_STATUSES } from "@/shared/utils/apiError";

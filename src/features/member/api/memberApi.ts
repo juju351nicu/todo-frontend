@@ -25,10 +25,7 @@ export class MemberApiError extends ApiError {
  * @throws MemberApiError HTTP statusが2xxでない場合
  */
 const ensureSuccess = (response: Response): Promise<void> =>
-  ensureApiSuccess(
-    response,
-    (status, errorResponse) => new MemberApiError(status, errorResponse)
-  );
+  ensureApiSuccess(response, (status, errorResponse) => new MemberApiError(status, errorResponse));
 
 /**
  * 会員一覧を取得する。
@@ -50,9 +47,7 @@ const findList = async (): Promise<MemberListResponse> => {
  * @throws MemberApiError 対象未検出を含め、詳細APIが非2xxを返した場合
  */
 const findDetail = async (memberId: number): Promise<MemberDetailResponse> => {
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.MEMBER_DETAIL}/${memberId}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.MEMBER_DETAIL}/${memberId}`);
   await ensureSuccess(response);
   return (await response.json()) as MemberDetailResponse;
 };
@@ -85,9 +80,7 @@ const deleteMembers = async (
  * @returns Backendが確定した会員情報
  * @throws MemberApiError 保存APIが非2xxを返した場合
  */
-const upsert = async (
-  payload: MemberUpsertRequest
-): Promise<MemberUpsertResponse> => {
+const upsert = async (payload: MemberUpsertRequest): Promise<MemberUpsertResponse> => {
   const response = await HttpClient.postRequest(API_PATHS.MEMBER_UPSERT, payload);
   await ensureSuccess(response);
   return (await response.json()) as MemberUpsertResponse;
@@ -100,9 +93,7 @@ const upsert = async (
  * @returns 退会した会員ID
  * @throws MemberApiError 認証・パスワード確認を含め退会APIが非2xxを返した場合
  */
-const cancel = async (
-  payload: MemberCancelRequest
-): Promise<MemberCancelResponse> => {
+const cancel = async (payload: MemberCancelRequest): Promise<MemberCancelResponse> => {
   const response = await HttpClient.postRequest(API_PATHS.MEMBER_CANCEL, payload);
   await ensureSuccess(response);
   return (await response.json()) as MemberCancelResponse;

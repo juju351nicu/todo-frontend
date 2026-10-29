@@ -3,7 +3,10 @@ import { onBeforeMount } from "vue";
 
 import AttendanceCorrectionDialog from "@/features/attendance/components/AttendanceCorrectionDialog.vue";
 import AttendancePunchPanel from "@/features/attendance/components/AttendancePunchPanel.vue";
-import { ATTENDANCE_CONTROL, useAttendancePage } from "@/features/attendance/composables/useAttendancePage";
+import {
+  ATTENDANCE_CONTROL,
+  useAttendancePage,
+} from "@/features/attendance/composables/useAttendancePage";
 import {
   formatAttendanceDate,
   formatAttendanceAllocationDifference,
@@ -82,7 +85,10 @@ onBeforeMount(initialize);
         <div class="flex flex-wrap items-center gap-3">
           <UIcon name="i-mdi-clock-outline" class="size-6" />
           本人勤怠
-          <UFormField label="表示月" class="ms-auto w-52.5 pb-0 text-base font-normal tracking-normal">
+          <UFormField
+            label="表示月"
+            class="ms-auto w-52.5 pb-0 text-base font-normal tracking-normal"
+          >
             <UInput
               :model-value="selectedMonth"
               type="month"
@@ -96,10 +102,22 @@ onBeforeMount(initialize);
         </div>
       </template>
 
-      <StatusAlert v-if="errorMessages.length" type="error" class="mb-4" closable @close="errorMessages = []">
+      <StatusAlert
+        v-if="errorMessages.length"
+        type="error"
+        class="mb-4"
+        closable
+        @close="errorMessages = []"
+      >
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" class="mb-4" closable @close="successMessage = ''">
+      <StatusAlert
+        v-if="successMessage"
+        type="success"
+        class="mb-4"
+        closable
+        @close="successMessage = ''"
+      >
         {{ successMessage }}
       </StatusAlert>
 
@@ -156,10 +174,20 @@ onBeforeMount(initialize);
             <strong>{{ formatAttendanceInstant(monthSummary.submittedAt) }}</strong>
           </div>
         </div>
-        <StatusAlert v-if="monthSummary.hasIncompletePeriod" type="warning" density="compact" class="mt-3">
+        <StatusAlert
+          v-if="monthSummary.hasIncompletePeriod"
+          type="warning"
+          density="compact"
+          class="mt-3"
+        >
           未終了の勤務・休憩区間があるため提出できません。
         </StatusAlert>
-        <StatusAlert v-if="monthSummary.statusCode === 'REJECTED'" type="warning" density="compact" class="mt-3">
+        <StatusAlert
+          v-if="monthSummary.statusCode === 'REJECTED'"
+          type="warning"
+          density="compact"
+          class="mt-3"
+        >
           差戻し理由: {{ monthSummary.reviewComment || "理由は登録されていません。" }}
         </StatusAlert>
         <div v-if="monthSummary.statusCode === 'CLOSED'" class="mt-3 text-sm">
@@ -201,7 +229,11 @@ onBeforeMount(initialize);
                   >
                     <td>{{ formatAttendanceDate(row.workDate) }}</td>
                     <td>
-                      <UBadge v-if="row.hasRecord" :color="getAttendancePunchStateColor(row.punchState)" size="sm">
+                      <UBadge
+                        v-if="row.hasRecord"
+                        :color="getAttendancePunchStateColor(row.punchState)"
+                        size="sm"
+                      >
                         {{ getAttendancePunchStateLabel(row.punchState) }}
                       </UBadge>
                       <span v-else class="text-muted">未打刻</span>
@@ -223,7 +255,10 @@ onBeforeMount(initialize);
                       {{ formatAttendanceMinutes(row.taskActualMinutes) }}
                     </td>
                     <td>
-                      <UBadge :color="getAttendanceAllocationStatusColor(row.allocationStatus)" size="sm">
+                      <UBadge
+                        :color="getAttendanceAllocationStatusColor(row.allocationStatus)"
+                        size="sm"
+                      >
                         {{ getAttendanceAllocationStatusLabel(row.allocationStatus) }}
                       </UBadge>
                     </td>
@@ -239,7 +274,11 @@ onBeforeMount(initialize);
             <template #header>
               <div class="flex flex-wrap items-center gap-2">
                 {{ formatAttendanceDate(selectedWorkDate) }}
-                <UBadge v-if="selectedDay" :color="getAttendancePunchStateColor(selectedDay.punchState)" size="sm">
+                <UBadge
+                  v-if="selectedDay"
+                  :color="getAttendancePunchStateColor(selectedDay.punchState)"
+                  size="sm"
+                >
                   {{ getAttendancePunchStateLabel(selectedDay.punchState) }}
                 </UBadge>
                 <UButton
@@ -254,8 +293,13 @@ onBeforeMount(initialize);
                   修正申請
                 </UButton>
               </div>
-              <div class="text-sm font-normal tracking-normal text-muted">選択日の確定済み勤務・休憩区間を表示します。</div>
-              <div v-if="selectedDay && correctionUnavailableReason" class="mt-1 text-sm font-normal tracking-normal text-muted">
+              <div class="text-sm font-normal tracking-normal text-muted">
+                選択日の確定済み勤務・休憩区間を表示します。
+              </div>
+              <div
+                v-if="selectedDay && correctionUnavailableReason"
+                class="mt-1 text-sm font-normal tracking-normal text-muted"
+              >
                 {{ correctionUnavailableReason }}
               </div>
             </template>
@@ -264,7 +308,9 @@ onBeforeMount(initialize);
               <div class="-m-1 mb-1 flex flex-wrap">
                 <div class="w-1/2 p-1 sm:w-1/4">
                   <div class="text-xs text-muted">勤務</div>
-                  <strong>{{ formatAttendanceMinutes(selectedDaySummary.grossWorkMinutes) }}</strong>
+                  <strong>{{
+                    formatAttendanceMinutes(selectedDaySummary.grossWorkMinutes)
+                  }}</strong>
                 </div>
                 <div class="w-1/2 p-1 sm:w-1/4">
                   <div class="text-xs text-muted">休憩</div>
@@ -280,17 +326,32 @@ onBeforeMount(initialize);
                 </div>
               </div>
 
-              <StatusAlert :type="selectedDayAllocationAlertType" variant="soft" density="compact" class="mb-4">
+              <StatusAlert
+                :type="selectedDayAllocationAlertType"
+                variant="soft"
+                density="compact"
+                class="mb-4"
+              >
                 <div class="flex flex-wrap items-center gap-2">
                   <strong>Task実績との照合</strong>
-                  <UBadge :color="getAttendanceAllocationStatusColor(selectedDay.allocationStatus)" size="sm">
+                  <UBadge
+                    :color="getAttendanceAllocationStatusColor(selectedDay.allocationStatus)"
+                    size="sm"
+                  >
                     {{ getAttendanceAllocationStatusLabel(selectedDay.allocationStatus) }}
                   </UBadge>
-                  <span>{{ formatAttendanceAllocationDifference(selectedDay.unallocatedMinutes) }}</span>
+                  <span>{{
+                    formatAttendanceAllocationDifference(selectedDay.unallocatedMinutes)
+                  }}</span>
                 </div>
               </StatusAlert>
 
-              <StatusAlert v-if="selectedDaySummary.incomplete" type="warning" density="compact" class="mb-4">
+              <StatusAlert
+                v-if="selectedDaySummary.incomplete"
+                type="warning"
+                density="compact"
+                class="mb-4"
+              >
                 未終了区間があるため、時間は確定分だけを表示しています。
               </StatusAlert>
 
@@ -323,8 +384,15 @@ onBeforeMount(initialize);
               </div>
 
               <USeparator class="my-4" />
-              <div class="mb-2 text-sm font-medium">修正申請履歴（{{ correctionRequests.length }}件）</div>
-              <StatusAlert v-if="hasPendingCorrectionInReviewedMonth" type="warning" density="compact" class="mb-3">
+              <div class="mb-2 text-sm font-medium">
+                修正申請履歴（{{ correctionRequests.length }}件）
+              </div>
+              <StatusAlert
+                v-if="hasPendingCorrectionInReviewedMonth"
+                type="warning"
+                density="compact"
+                class="mb-3"
+              >
                 この勤務日は審査待ちです。結果確定または取消後に再申請できます。
               </StatusAlert>
               <UCard
@@ -355,11 +423,18 @@ onBeforeMount(initialize);
                 <div class="text-xs text-muted">
                   申請勤務区間: {{ request.workPeriods.length }}件 / version {{ request.version }}
                 </div>
-                <StatusAlert v-if="request.reviewComment" type="info" density="compact" class="mt-2">
+                <StatusAlert
+                  v-if="request.reviewComment"
+                  type="info"
+                  density="compact"
+                  class="mt-2"
+                >
                   審査コメント: {{ request.reviewComment }}
                 </StatusAlert>
               </UCard>
-              <div v-if="correctionRequests.length === 0" class="text-muted">この勤務日の修正申請はありません。</div>
+              <div v-if="correctionRequests.length === 0" class="text-muted">
+                この勤務日の修正申請はありません。
+              </div>
             </template>
           </UCard>
         </div>
@@ -378,11 +453,21 @@ onBeforeMount(initialize);
     @remove-break="removeCorrectionBreakPeriod"
     @remove-work="removeCorrectionWorkPeriod"
     @submit="submitCorrectionRequest"
-    @update-break-ended-at="(workIndex, breakIndex, value) => updateCorrectionBreakPeriod(workIndex, breakIndex, 'endedAt', value)"
-    @update-break-started-at="(workIndex, breakIndex, value) => updateCorrectionBreakPeriod(workIndex, breakIndex, 'startedAt', value)"
+    @update-break-ended-at="
+      (workIndex, breakIndex, value) =>
+        updateCorrectionBreakPeriod(workIndex, breakIndex, 'endedAt', value)
+    "
+    @update-break-started-at="
+      (workIndex, breakIndex, value) =>
+        updateCorrectionBreakPeriod(workIndex, breakIndex, 'startedAt', value)
+    "
     @update-note="correctionForm.note = $event"
     @update-reason="correctionForm.reason = $event"
-    @update-work-ended-at="(workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'endedAt', value)"
-    @update-work-started-at="(workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'startedAt', value)"
+    @update-work-ended-at="
+      (workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'endedAt', value)
+    "
+    @update-work-started-at="
+      (workIndex, value) => updateCorrectionWorkPeriod(workIndex, 'startedAt', value)
+    "
   />
 </template>

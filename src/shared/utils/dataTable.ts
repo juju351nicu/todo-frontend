@@ -21,7 +21,11 @@ export const resolvePageSize = (itemsPerPage: number, totalCount: number): numbe
  * @param totalCount 全件数
  * @returns 例: `1〜5件 / 全12件`。0件の場合は`0件`
  */
-export const formatPageRange = (pageIndex: number, pageSize: number, totalCount: number): string => {
+export const formatPageRange = (
+  pageIndex: number,
+  pageSize: number,
+  totalCount: number
+): string => {
   if (totalCount === 0) {
     return "0件";
   }
@@ -42,5 +46,5 @@ export const toRowSelection = (selectedIds: readonly (string | number)[]): RowSe
  */
 export const fromRowSelection = <T extends string | number>(
   selection: RowSelectionState,
-  rowIds: readonly T[],
+  rowIds: readonly T[]
 ): T[] => rowIds.filter((id) => selection[String(id)] === true);

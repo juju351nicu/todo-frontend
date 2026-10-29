@@ -21,9 +21,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/notification/api/notificationApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/notification/api/notificationApi"
-  );
+  const actual = await vi.importActual("@/features/notification/api/notificationApi");
   return { ...actual, default: mocks.notificationApi };
 });
 
@@ -52,9 +50,7 @@ describe("useAnnouncementManagementPage", () => {
     });
     expect(page.title.value).toBe("");
     expect(page.message.value).toBe("");
-    expect(page.successMessage.value).toBe(
-      "お知らせを全利用者へ配信しました。"
-    );
+    expect(page.successMessage.value).toBe("お知らせを全利用者へ配信しました。");
     expect(mocks.dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: NOTIFICATION_REFRESH_EVENT })
     );
@@ -67,9 +63,7 @@ describe("useAnnouncementManagementPage", () => {
     await page.submitAnnouncement();
 
     expect(mocks.notificationApi.createAnnouncement).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "件名と本文を入力上限内で入力してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["件名と本文を入力上限内で入力してください。"]);
   });
 
   it("Backendの項目エラーを画面へ表示する", async () => {
@@ -90,9 +84,7 @@ describe("useAnnouncementManagementPage", () => {
 
     await page.submitAnnouncement();
 
-    expect(page.errorMessages.value).toEqual([
-      "表示終了時刻は現在より後を指定してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["表示終了時刻は現在より後を指定してください。"]);
   });
 
   it("契約済み複数項目エラーをBackend順で表示する", async () => {
@@ -148,18 +140,14 @@ describe("useAnnouncementManagementPage", () => {
   });
 
   it("本文なし403はpermission不足として表示しSessionを維持する", async () => {
-    mocks.notificationApi.createAnnouncement.mockRejectedValue(
-      new NotificationApiError(403, null)
-    );
+    mocks.notificationApi.createAnnouncement.mockRejectedValue(new NotificationApiError(403, null));
     const page = useAnnouncementManagementPage();
     page.title.value = "件名";
     page.message.value = "本文";
 
     await page.submitAnnouncement();
 
-    expect(page.errorMessages.value).toEqual([
-      "お知らせを配信するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["お知らせを配信するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -173,16 +161,12 @@ describe("useAnnouncementManagementPage", () => {
     await page.submitAnnouncement();
 
     expect(mocks.notificationApi.createAnnouncement).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "表示終了日時を正しく入力してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["表示終了日時を正しく入力してください。"]);
     expect(page.successMessage.value).toBe("");
   });
 
   it("401ではSession表示を破棄してログイン画面へ戻す", async () => {
-    mocks.notificationApi.createAnnouncement.mockRejectedValue(
-      new NotificationApiError(401, null)
-    );
+    mocks.notificationApi.createAnnouncement.mockRejectedValue(new NotificationApiError(401, null));
     const page = useAnnouncementManagementPage();
     page.title.value = "件名";
     page.message.value = "本文";

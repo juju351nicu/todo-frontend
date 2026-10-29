@@ -37,7 +37,9 @@ describe("WorkingCalendarCard", () => {
   it("変更できるときは日ごとの「変更」を出し、押した日を通知する", async () => {
     wrapper = mountWithUi(WorkingCalendarCard, { props: baseProps });
 
-    const edit = wrapper.find(`[data-working-calendar-control="${buildWorkingDayEditControlKey("2026-11-03")}"]`);
+    const edit = wrapper.find(
+      `[data-working-calendar-control="${buildWorkingDayEditControlKey("2026-11-03")}"]`
+    );
     expect(edit.exists()).toBe(true);
     await edit.trigger("click");
 
@@ -46,10 +48,18 @@ describe("WorkingCalendarCard", () => {
 
   it("変更できないときは操作を出さず、理由の案内を出す", () => {
     wrapper = mountWithUi(WorkingCalendarCard, {
-      props: { ...baseProps, canEditSelectedTarget: false, readOnlyMessage: "archive済みのProjectでは変更できません。" },
+      props: {
+        ...baseProps,
+        canEditSelectedTarget: false,
+        readOnlyMessage: "archive済みのProjectでは変更できません。",
+      },
     });
 
-    expect(wrapper.find(`[data-working-calendar-control="${buildWorkingDayEditControlKey("2026-11-02")}"]`).exists()).toBe(false);
+    expect(
+      wrapper
+        .find(`[data-working-calendar-control="${buildWorkingDayEditControlKey("2026-11-02")}"]`)
+        .exists()
+    ).toBe(false);
     expect(wrapper.text()).toContain("archive済みのProjectでは変更できません。");
   });
 });

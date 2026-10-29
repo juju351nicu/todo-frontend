@@ -1,6 +1,10 @@
 import { computed, watch } from "vue";
 
-import type { WorkingCalendarDay, WorkingCalendarTarget, WorkingDayForm } from "@/features/wbs/types/wbs";
+import type {
+  WorkingCalendarDay,
+  WorkingCalendarTarget,
+  WorkingDayForm,
+} from "@/features/wbs/types/wbs";
 import { buildWorkingDayForm, getWorkingDayOverride } from "@/features/wbs/utils/workingCalendar";
 import { useDialogForm } from "@/shared/composables/useDialogForm";
 
@@ -55,7 +59,9 @@ export const useWorkingDayEditForm = (options: UseWorkingDayEditFormOptions) => 
     const target = options.target();
     return day !== null && target !== null ? getWorkingDayOverride(day, target) : null;
   });
-  const dialogTitle = computed(() => (editingOverride.value === null ? "稼働日例外を登録" : "稼働日例外を編集"));
+  const dialogTitle = computed(() =>
+    editingOverride.value === null ? "稼働日例外を登録" : "稼働日例外を編集"
+  );
   /** Dialogの説明に出す例外の対象。個人例外なら参加者名（不明ならアカウントID）を示す。 */
   const targetLabel = computed(() => {
     const target = options.target();
@@ -71,7 +77,9 @@ export const useWorkingDayEditForm = (options: UseWorkingDayEditFormOptions) => 
     buildForm: () => {
       const day = options.day();
       const target = options.target();
-      return options.open() && day !== null && target !== null ? buildWorkingDayForm(day, target) : createEmptyForm();
+      return options.open() && day !== null && target !== null
+        ? buildWorkingDayForm(day, target)
+        : createEmptyForm();
     },
     isBusy: options.isSaving,
     canSubmit: () => options.day() !== null && options.target() !== null,
@@ -88,8 +96,16 @@ export const useWorkingDayEditForm = (options: UseWorkingDayEditFormOptions) => 
       } else if (form.value.availableMinutes === 0) {
         form.value.availableMinutes = DEFAULT_AVAILABLE_MINUTES;
       }
-    },
+    }
   );
 
-  return { closeDialog, dialogTitle, editingOverride, form, handleDialogVisibility, submitForm, targetLabel };
+  return {
+    closeDialog,
+    dialogTitle,
+    editingOverride,
+    form,
+    handleDialogVisibility,
+    submitForm,
+    targetLabel,
+  };
 };

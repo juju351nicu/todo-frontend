@@ -29,9 +29,7 @@ vi.mock("@/features/auth/stores/user", () => ({
 }));
 
 vi.mock("@/features/administration/api/administrationApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/administration/api/administrationApi"
-  );
+  const actual = await vi.importActual("@/features/administration/api/administrationApi");
   return {
     ...actual,
     default: mocks.administrationApi,
@@ -112,17 +110,11 @@ describe("useAccountAdministrationPage", () => {
     expect(page.filteredAccounts.value).toEqual([]);
 
     page.searchText.value = "USER@EXAMPLE";
-    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([
-      2,
-    ]);
+    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([2]);
     page.searchText.value = "system_admin";
-    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([
-      1,
-    ]);
+    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([1]);
     page.searchText.value = "一般利用者";
-    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([
-      2,
-    ]);
+    expect(page.filteredAccounts.value.map((account) => account.accountId)).toEqual([2]);
   });
 
   it("検索欄をclearして空文字になったら全件表示へ戻す", async () => {
@@ -156,9 +148,7 @@ describe("useAccountAdministrationPage", () => {
     await page.saveRoles();
 
     expect(mocks.administrationApi.updateAccountRoles).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "ロールを1件以上選択してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["ロールを1件以上選択してください。"]);
   });
 
   it("一覧取得時のversionと選択ロールを更新し成功結果だけ一覧へ反映する", async () => {
@@ -180,9 +170,7 @@ describe("useAccountAdministrationPage", () => {
       version: 2,
     });
     expect(page.accounts.value[1]).toEqual(updated);
-    expect(page.successMessage.value).toBe(
-      "利用 花子さんのロールを更新しました。"
-    );
+    expect(page.successMessage.value).toBe("利用 花子さんのロールを更新しました。");
   });
 
   it("保存中の再実行では更新APIを二重送信しない", async () => {
@@ -292,9 +280,7 @@ describe("useAccountAdministrationPage", () => {
 
     await page.saveRoles();
 
-    expect(page.errorMessages.value).toEqual([
-      "最後の有効なシステム管理者は変更できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["最後の有効なシステム管理者は変更できません。"]);
   });
 
   it("契約済み入力エラーはBackend順で複数表示する", async () => {
@@ -344,9 +330,7 @@ describe("useAccountAdministrationPage", () => {
 
     await page.saveRoles();
 
-    expect(page.errorMessages.value).toEqual([
-      "アカウントのロールを更新できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["アカウントのロールを更新できませんでした。"]);
   });
 
   it("本文なし409はfallbackを表示して最新versionへ回復する", async () => {
@@ -391,9 +375,7 @@ describe("useAccountAdministrationPage", () => {
 
     await page.saveRoles();
 
-    expect(page.errorMessages.value).toEqual([
-      "対象のアカウントが見つかりません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["対象のアカウントが見つかりません。"]);
     expect(page.accounts.value).toEqual([accounts[0]]);
     expect(page.isEditorOpen.value).toBe(false);
   });
@@ -499,9 +481,7 @@ describe("useAccountAdministrationPage", () => {
   });
 
   it("初期取得の本文なし403は保護状態を破棄して参照permission不足を表示する", async () => {
-    mocks.administrationApi.getAccounts.mockRejectedValue(
-      new AdministrationApiError(403, null)
-    );
+    mocks.administrationApi.getAccounts.mockRejectedValue(new AdministrationApiError(403, null));
     const page = useAccountAdministrationPage();
 
     await page.initialize();

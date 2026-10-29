@@ -101,9 +101,7 @@ describe("useTodoDetailPage", () => {
   });
 
   it("詳細取得失敗時は画面用メッセージを設定する", async () => {
-    mocks.todoStore.findTodoDetail.mockRejectedValue(
-      new TodoApiError(404, null)
-    );
+    mocks.todoStore.findTodoDetail.mockRejectedValue(new TodoApiError(404, null));
 
     const page = useTodoDetailPage(ref(999));
 
@@ -113,9 +111,7 @@ describe("useTodoDetailPage", () => {
   });
 
   it("詳細取得の401ではフォームとSession表示を破棄してLoginへ戻す", async () => {
-    mocks.todoStore.findTodoDetail.mockRejectedValue(
-      new TodoApiError(401, null)
-    );
+    mocks.todoStore.findTodoDetail.mockRejectedValue(new TodoApiError(401, null));
 
     const page = useTodoDetailPage(ref(42));
 
@@ -190,9 +186,7 @@ describe("useTodoDetailPage", () => {
 
     expect(page.isShowConfirm.value).toBe(false);
     expect(mocks.todoStore.upsertTodoInfo).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "Todoを更新するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todoを更新するpermissionがありません。"]);
   });
 
   it("本人更新permissionでは他人が所有するTodoを参照専用にする", async () => {
@@ -252,9 +246,7 @@ describe("useTodoDetailPage", () => {
 
     await page.confirmSubmit();
 
-    expect(page.errorMessages.value).toEqual([
-      "Todo情報を保存できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todo情報を保存できませんでした。"]);
   });
 
   it("更新確定後に詳細を再取得して新しいversionへ置き換える", async () => {
@@ -343,9 +335,7 @@ describe("useTodoDetailPage", () => {
         priority: 3,
         version: 5,
       });
-    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TodoApiError(409, null)
-    );
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(new TodoApiError(409, null));
     const page = useTodoDetailPage(ref(42));
     await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
     page.todoForm.title = "破棄対象draft";
@@ -373,9 +363,7 @@ describe("useTodoDetailPage", () => {
         version: 4,
       })
       .mockRejectedValueOnce(new TodoApiError(401, null));
-    mocks.todoStore.upsertTodoInfo.mockRejectedValue(
-      new TodoApiError(409, null)
-    );
+    mocks.todoStore.upsertTodoInfo.mockRejectedValue(new TodoApiError(409, null));
     const page = useTodoDetailPage(ref(42));
     await vi.waitFor(() => expect(page.todoForm.version).toBe(4));
 

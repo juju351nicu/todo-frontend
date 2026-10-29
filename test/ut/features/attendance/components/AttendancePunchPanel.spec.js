@@ -45,7 +45,9 @@ describe("AttendancePunchPanel", () => {
   });
 
   it("更新のpermissionがなければ参照のみの案内、今日以外の未出勤なら出勤は今日だけの案内を出す", () => {
-    wrapper = mountWithUi(AttendancePunchPanel, { props: { ...baseProps, canWriteAttendance: false } });
+    wrapper = mountWithUi(AttendancePunchPanel, {
+      props: { ...baseProps, canWriteAttendance: false },
+    });
     expect(wrapper.text()).toContain("参照のみです");
     wrapper.unmount();
 

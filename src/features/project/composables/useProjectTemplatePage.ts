@@ -25,10 +25,7 @@ import {
 import { validateProjectKey } from "@/features/project/utils/projectForm";
 import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
@@ -85,17 +82,13 @@ const APPLY_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 409のResponseのerror codeが、すべて指定の集合に含まれるか（error codeがない場合はfalse）。 */
-const hasOnlyErrorCodes = (
-  error: ProjectTemplateApiError,
-  codes: ReadonlySet<string>
-): boolean => {
+const hasOnlyErrorCodes = (error: ProjectTemplateApiError, codes: ReadonlySet<string>): boolean => {
   const fieldErrors = error.errorResponse?.fieldErrors;
   return (
     Array.isArray(fieldErrors) &&
     fieldErrors.length > 0 &&
     fieldErrors.every(
-      (fieldError) =>
-        typeof fieldError?.errorCode === "string" && codes.has(fieldError.errorCode)
+      (fieldError) => typeof fieldError?.errorCode === "string" && codes.has(fieldError.errorCode)
     )
   );
 };
@@ -167,15 +160,9 @@ export const useProjectTemplatePage = () => {
   const isSaving = ref(false);
   const feedbackTarget = ref<FeedbackTarget>("page");
 
-  const canEditTemplate = computed(() =>
-    userStore.hasPermission("PROJECT_UPDATE")
-  );
-  const canApplyTemplate = computed(() =>
-    userStore.hasPermission("PROJECT_CREATE")
-  );
-  const isMutating = computed(
-    () => isApplying.value || isArchiving.value || isSaving.value
-  );
+  const canEditTemplate = computed(() => userStore.hasPermission("PROJECT_UPDATE"));
+  const canApplyTemplate = computed(() => userStore.hasPermission("PROJECT_CREATE"));
+  const isMutating = computed(() => isApplying.value || isArchiving.value || isSaving.value);
   /**
    * 結果のmessageを「TemplateからProjectを作成」のボタンの上に出すか。
    * 作成フォームは画面の中ほどにあり、上部のmessageは作成ボタンを押した位置から見えないことがあるため
@@ -197,11 +184,7 @@ export const useProjectTemplatePage = () => {
   /** 機能資格不足をpermission不足のbodyなし403と区別する。 */
   const isFeatureNotEntitled = (error: ProjectTemplateApiError): boolean =>
     error.status === 403 &&
-    hasApiFieldError(
-      error.errorResponse,
-      "FEATURE_NOT_ENTITLED",
-      "featureCode"
-    );
+    hasApiFieldError(error.errorResponse, "FEATURE_NOT_ENTITLED", "featureCode");
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
@@ -264,19 +247,13 @@ export const useProjectTemplatePage = () => {
       templates.value = await ProjectTemplateApi.findOwnTemplates();
       if (
         selectedTemplateId.value !== null &&
-        !templates.value.some(
-          (template) =>
-            template.projectTemplateId === selectedTemplateId.value
-        )
+        !templates.value.some((template) => template.projectTemplateId === selectedTemplateId.value)
       ) {
         clearSelection();
       }
       return true;
     } catch (error: unknown) {
-      await handleReadError(
-        error,
-        DISPLAY_MESSAGES.project.template.listLoadFailed
-      );
+      await handleReadError(error, DISPLAY_MESSAGES.project.template.listLoadFailed);
       return false;
     } finally {
       isLoadingList.value = false;
@@ -298,19 +275,14 @@ export const useProjectTemplatePage = () => {
       return true;
     } catch (error: unknown) {
       if (error instanceof ProjectTemplateApiError && error.status === 404) {
-        const notFoundMessages = [
-          DISPLAY_MESSAGES.project.template.resourceNotFound,
-        ];
+        const notFoundMessages = [DISPLAY_MESSAGES.project.template.resourceNotFound];
         clearSelection();
         if (await loadTemplates()) {
           errorMessages.value = notFoundMessages;
         }
         return false;
       }
-      await handleReadError(
-        error,
-        DISPLAY_MESSAGES.project.template.detailLoadFailed
-      );
+      await handleReadError(error, DISPLAY_MESSAGES.project.template.detailLoadFailed);
       return false;
     } finally {
       isLoadingDetail.value = false;
@@ -324,9 +296,7 @@ export const useProjectTemplatePage = () => {
   };
 
   /** 一覧からTemplateを選択し、snapshot詳細をBackendから取得する。 */
-  const selectTemplate = async (
-    template: ProjectTemplateSummary
-  ): Promise<void> => {
+  const selectTemplate = async (template: ProjectTemplateSummary): Promise<void> => {
     if (isMutating.value || isLoadingDetail.value) return;
     selectedTemplateId.value = template.projectTemplateId;
     selectedTemplate.value = null;
@@ -362,11 +332,15 @@ export const useProjectTemplatePage = () => {
     const name = editForm.value.name.trim();
     const description = editForm.value.description.trim();
     if (!name || name.length > PROJECT_TEMPLATE_NAME_MAX_LENGTH) {
-      errorMessages.value = [`Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`];
+      errorMessages.value = [
+        `Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`,
+      ];
       return null;
     }
     if (description.length > PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH) {
-      errorMessages.value = [`説明は${PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`];
+      errorMessages.value = [
+        `説明は${PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`,
+      ];
       return null;
     }
     return {
@@ -387,24 +361,16 @@ export const useProjectTemplatePage = () => {
     successMessage.value = "";
     feedbackTarget.value = "page";
     try {
-      const updated = await ProjectTemplateApi.update(
-        template.projectTemplateId,
-        request
-      );
+      const updated = await ProjectTemplateApi.update(template.projectTemplateId, request);
       selectedTemplate.value = updated;
       templates.value = templates.value.map((candidate) =>
-        candidate.projectTemplateId === updated.projectTemplateId
-          ? toSummary(updated)
-          : candidate
+        candidate.projectTemplateId === updated.projectTemplateId ? toSummary(updated) : candidate
       );
       isEditing.value = false;
       synchronizeForms(updated);
       successMessage.value = "Project Templateを更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.project.template.updateFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.project.template.updateFailed);
     } finally {
       isSaving.value = false;
     }
@@ -439,13 +405,9 @@ export const useProjectTemplatePage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      await ProjectTemplateApi.archive(
-        template.projectTemplateId,
-        template.version
-      );
+      await ProjectTemplateApi.archive(template.projectTemplateId, template.version);
       templates.value = templates.value.filter(
-        (candidate) =>
-          candidate.projectTemplateId !== template.projectTemplateId
+        (candidate) => candidate.projectTemplateId !== template.projectTemplateId
       );
       clearSelection();
       successMessage.value = "Project Templateをアーカイブしました。";
@@ -457,19 +419,16 @@ export const useProjectTemplatePage = () => {
       }
     } catch (error: unknown) {
       isArchiveConfirmOpen.value = false;
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.project.template.archiveFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.project.template.archiveFailed);
     } finally {
       isArchiving.value = false;
     }
     // archiveしたTemplateの部品は消えるため、次に表示したTemplateの「編集」か、一覧の先頭へ戻す。
     await restoreControlFocus([
       PROJECT_TEMPLATE_CONTROL.editButton,
-      ...templates.value.slice(0, 1).map((candidate) =>
-        buildTemplateItemControlKey(candidate.projectTemplateId)
-      ),
+      ...templates.value
+        .slice(0, 1)
+        .map((candidate) => buildTemplateItemControlKey(candidate.projectTemplateId)),
     ]);
   };
 
@@ -494,15 +453,11 @@ export const useProjectTemplatePage = () => {
       }
       const accountId = parseAccountId(rawAccountId);
       if (accountId === null) {
-        errorMessages.value = [
-          `${slot.displayName}へ正の整数のアカウントIDを割り当ててください。`,
-        ];
+        errorMessages.value = [`${slot.displayName}へ正の整数のアカウントIDを割り当ててください。`];
         return null;
       }
       if (accountIds.has(accountId)) {
-        errorMessages.value = [
-          "同じアカウントを複数のmember slotへ割り当てることはできません。",
-        ];
+        errorMessages.value = ["同じアカウントを複数のmember slotへ割り当てることはできません。"];
         return null;
       }
       accountIds.add(accountId);
@@ -512,9 +467,7 @@ export const useProjectTemplatePage = () => {
       mappings.push({ slotKey: slot.slotKey, accountId });
     }
     if (!actorIsOwner) {
-      errorMessages.value = [
-        "自分のアカウントIDをOWNER slotへ割り当ててください。",
-      ];
+      errorMessages.value = ["自分のアカウントIDをOWNER slotへ割り当ててください。"];
       return null;
     }
     return mappings;
@@ -551,15 +504,12 @@ export const useProjectTemplatePage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      const created = await ProjectTemplateApi.apply(
-        template.projectTemplateId,
-        {
-          projectKey,
-          name,
-          projectStartDate: applyForm.value.projectStartDate,
-          memberMappings,
-        }
-      );
+      const created = await ProjectTemplateApi.apply(template.projectTemplateId, {
+        projectKey,
+        name,
+        projectStartDate: applyForm.value.projectStartDate,
+        memberMappings,
+      });
       await router.push({
         name: ROUTE_NAMES.taskBoard,
         params: { projectId: created.projectId },
@@ -577,10 +527,7 @@ export const useProjectTemplatePage = () => {
           DISPLAY_MESSAGES.project.template.applyFailed
         );
       } else {
-        await handleMutationError(
-          error,
-          DISPLAY_MESSAGES.project.template.applyFailed
-        );
+        await handleMutationError(error, DISPLAY_MESSAGES.project.template.applyFailed);
       }
     } finally {
       isApplying.value = false;
@@ -589,10 +536,7 @@ export const useProjectTemplatePage = () => {
   };
 
   /** 参照APIのstatusをSession、permission、公開範囲、業務エラーへ変換する。 */
-  async function handleReadError(
-    error: unknown,
-    fallback: string
-  ): Promise<void> {
+  async function handleReadError(error: unknown, fallback: string): Promise<void> {
     if (!(error instanceof ProjectTemplateApiError)) {
       errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
@@ -603,9 +547,7 @@ export const useProjectTemplatePage = () => {
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.project.template.resourceNotFound,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.project.template.resourceNotFound];
       return;
     }
     errorMessages.value = resolveApiErrorMessages(
@@ -631,9 +573,7 @@ export const useProjectTemplatePage = () => {
       templates.value = await ProjectTemplateApi.findOwnTemplates();
       if (
         currentId === null ||
-        !templates.value.some(
-          (template) => template.projectTemplateId === currentId
-        )
+        !templates.value.some((template) => template.projectTemplateId === currentId)
       ) {
         clearSelection();
         errorMessages.value = [...messagesBeforeReload, ...reloadedMessages];
@@ -660,10 +600,7 @@ export const useProjectTemplatePage = () => {
           );
           clearSelection();
         }
-        await handleReadError(
-          error,
-          DISPLAY_MESSAGES.project.template.reloadFailed
-        );
+        await handleReadError(error, DISPLAY_MESSAGES.project.template.reloadFailed);
         return;
       }
       errorMessages.value = [
@@ -677,10 +614,7 @@ export const useProjectTemplatePage = () => {
   }
 
   /** 更新系APIのstatusとcodeを処理し、404／409では古いdraftを破棄して再取得する。 */
-  async function handleMutationError(
-    error: unknown,
-    fallback: string
-  ): Promise<void> {
+  async function handleMutationError(error: unknown, fallback: string): Promise<void> {
     if (!(error instanceof ProjectTemplateApiError)) {
       errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
@@ -688,11 +622,7 @@ export const useProjectTemplatePage = () => {
     if (await handleUnauthorized(error)) return;
     if (error.status === 403) {
       errorMessages.value = isFeatureNotEntitled(error)
-        ? resolveApiErrorMessages(
-            error.errorResponse,
-            PROJECT_TEMPLATE_ERROR_CODES,
-            fallback
-          )
+        ? resolveApiErrorMessages(error.errorResponse, PROJECT_TEMPLATE_ERROR_CODES, fallback)
         : [DISPLAY_MESSAGES.project.template.operationForbidden];
       return;
     }
@@ -700,11 +630,7 @@ export const useProjectTemplatePage = () => {
       const messages =
         error.status === 404
           ? [DISPLAY_MESSAGES.project.template.resourceNotFound]
-          : resolveApiErrorMessages(
-              error.errorResponse,
-              PROJECT_TEMPLATE_ERROR_CODES,
-              fallback
-            );
+          : resolveApiErrorMessages(error.errorResponse, PROJECT_TEMPLATE_ERROR_CODES, fallback);
       // version競合のBackendの文言は「再読み込みしてください。」だが、画面はこの後で取り直す。
       // 取り直せたときは、取り直し済みであることを添える（チェックリスト・コメント・Project設定の409と同じ書き方）。
       const reloadedMessages =

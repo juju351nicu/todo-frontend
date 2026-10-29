@@ -37,18 +37,26 @@ const requestDownload = (reportType: WbsReportType): void => {
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">
-      active baselineのEVM、現在WBS、担当者別工数、警告を週次または月次のExcelへ出力します。 基準日はEVM集計と共通です。
+      active baselineのEVM、現在WBS、担当者別工数、警告を週次または月次のExcelへ出力します。
+      基準日はEVM集計と共通です。
     </p>
 
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+      successMessage
+    }}</StatusAlert>
 
     <div class="-m-3 flex flex-wrap items-end">
       <div class="w-full p-3 sm:w-5/12 md:w-1/4">
         <UFormField label="帳票基準日" class="pb-0">
-          <UInput v-model="formStatusDate" type="date" :disabled="exportingReportType !== null" class="w-full" />
+          <UInput
+            v-model="formStatusDate"
+            type="date"
+            :disabled="exportingReportType !== null"
+            class="w-full"
+          />
         </UFormField>
       </div>
       <div class="w-full p-3 sm:w-1/4 md:w-1/6">
@@ -80,6 +88,8 @@ const requestDownload = (reportType: WbsReportType): void => {
       </div>
     </div>
 
-    <p class="mt-3 mb-0 text-xs text-muted">週次は基準日を含む月曜日から、月次は基準月の1日から基準日までを対象にします。</p>
+    <p class="mt-3 mb-0 text-xs text-muted">
+      週次は基準日を含む月曜日から、月次は基準月の1日から基準日までを対象にします。
+    </p>
   </UCard>
 </template>

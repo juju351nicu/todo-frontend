@@ -32,10 +32,7 @@ const getNotificationCenter = async (): Promise<NotificationCenterResponse> => {
 
 /** 現在時刻までのイベント型通知を一括既読にする。 */
 const markEventsRead = async (): Promise<NotificationReadResponse> => {
-  const response = await HttpClient.postRequest(
-    `${API_PATHS.NOTIFICATIONS}/events/read`,
-    null
-  );
+  const response = await HttpClient.postRequest(`${API_PATHS.NOTIFICATIONS}/events/read`, null);
   await ensureSuccess(response);
   return (await response.json()) as NotificationReadResponse;
 };

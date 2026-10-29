@@ -4,9 +4,7 @@ import { useRouter } from "vue-router";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import ProjectApi, {
-  ProjectApiError,
-} from "@/features/project/api/projectApi";
+import ProjectApi, { ProjectApiError } from "@/features/project/api/projectApi";
 import {
   PROJECT_DESCRIPTION_MAX_LENGTH,
   PROJECT_NAME_MAX_LENGTH,
@@ -94,8 +92,7 @@ export const PROJECT_SETTINGS_CONTROL = {
  * @param accountId 行のアカウントID
  * @returns `"member:{accountId}:role"`形式の属性値
  */
-export const buildMemberRoleControlKey = (accountId: number): string =>
-  `member:${accountId}:role`;
+export const buildMemberRoleControlKey = (accountId: number): string => `member:${accountId}:role`;
 
 /**
  * Backendの文言が「最新状態を取得してください。」で終わる409のerror code（`messages.properties`の
@@ -118,7 +115,9 @@ const needsReloadGuidance = (error: ProjectApiError): boolean =>
   );
 
 /** `data-project-settings-control`属性の値から、その要素を探すselectorを作る。 */
-const buildProjectSettingsControlSelector = createDataAttributeSelector("data-project-settings-control");
+const buildProjectSettingsControlSelector = createDataAttributeSelector(
+  "data-project-settings-control"
+);
 
 /**
  * Task Board上のProject設定Dialogについて、Project更新・archive・member管理をまとめて扱う。
@@ -159,18 +158,14 @@ export const useProjectSettingsDialog = (
   const projectForm = ref<ProjectSettingsForm>(createEmptyProjectForm());
   const successMessage = ref("");
 
-  const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.accountId)
-  );
+  const currentProjectRole = computed(() => findProjectRole(project.value, userStore.accountId));
   const canManageResource = computed(() =>
     canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
   const isProjectActive = computed(() => isActiveProject(project.value));
   const canUpdateProject = computed(
     () =>
-      canManageResource.value &&
-      userStore.hasPermission("PROJECT_UPDATE") &&
-      isProjectActive.value
+      canManageResource.value && userStore.hasPermission("PROJECT_UPDATE") && isProjectActive.value
   );
   const canManageMembers = computed(
     () =>
@@ -192,9 +187,7 @@ export const useProjectSettingsDialog = (
       isSavingProject.value
   );
   const ownerCount = computed(
-    () =>
-      project.value?.members.filter((member) => member.projectRole === "OWNER")
-        .length ?? 0
+    () => project.value?.members.filter((member) => member.projectRole === "OWNER").length ?? 0
   );
   const hasProjectChanges = computed(() => {
     const current = project.value;
@@ -317,10 +310,7 @@ export const useProjectSettingsDialog = (
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      const updatedProject = await ProjectApi.updateProject(
-        current.projectId,
-        request
-      );
+      const updatedProject = await ProjectApi.updateProject(current.projectId, request);
       applyProjectDetail(updatedProject);
       successMessage.value = "Project情報を更新しました。";
     } catch (error: unknown) {
@@ -369,10 +359,7 @@ export const useProjectSettingsDialog = (
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      const updatedProject = await ProjectApi.updateProject(
-        current.projectId,
-        request
-      );
+      const updatedProject = await ProjectApi.updateProject(current.projectId, request);
       isArchiveConfirmOpen.value = false;
       applyProjectDetail(updatedProject);
       successMessage.value = "Projectをアーカイブしました。";
@@ -451,10 +438,7 @@ export const useProjectSettingsDialog = (
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      const updatedProject = await ProjectApi.addProjectMember(
-        current.projectId,
-        request
-      );
+      const updatedProject = await ProjectApi.addProjectMember(current.projectId, request);
       applyProjectDetail(updatedProject);
       addMemberAccountId.value = null;
       addMemberRole.value = "MEMBER";
@@ -525,10 +509,7 @@ export const useProjectSettingsDialog = (
       applyProjectDetail(updatedProject);
       successMessage.value = `${member.displayName}（ID: ${member.accountId}）のProject roleを更新しました。`;
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.project.settings.memberRoleUpdateFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.project.settings.memberRoleUpdateFailed);
       if (error instanceof ProjectApiError && error.status === 409) {
         await reloadProjectAfterConflict(error);
       }
@@ -573,12 +554,7 @@ export const useProjectSettingsDialog = (
   const removeMember = async (): Promise<void> => {
     const current = project.value;
     const target = memberToRemove.value;
-    if (
-      current === null ||
-      target === null ||
-      isSavingMember.value ||
-      !canManageMembers.value
-    ) {
+    if (current === null || target === null || isSavingMember.value || !canManageMembers.value) {
       return;
     }
 
@@ -586,11 +562,7 @@ export const useProjectSettingsDialog = (
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      await ProjectApi.removeProjectMember(
-        current.projectId,
-        target.accountId,
-        target.version
-      );
+      await ProjectApi.removeProjectMember(current.projectId, target.accountId, target.version);
     } catch (error: unknown) {
       isRemoveConfirmOpen.value = false;
       memberToRemove.value = null;
@@ -657,10 +629,7 @@ export const useProjectSettingsDialog = (
         PROJECT_RECOVERY_PRIORITY_STATUSES.has(error.status)
       ) {
         // 再取得時点の認証・認可・公開範囲を操作時点の競合理由より優先する。
-        await handleProjectRefreshError(
-          error,
-          DISPLAY_MESSAGES.project.settings.reloadFailed
-        );
+        await handleProjectRefreshError(error, DISPLAY_MESSAGES.project.settings.reloadFailed);
         return;
       }
       errorMessages.value = [
@@ -708,10 +677,7 @@ export const useProjectSettingsDialog = (
   };
 
   /** Project APIのstatusと項目エラーを、Sessionを含むDialog動作へ変換する。 */
-  const handleApiError = async (
-    error: unknown,
-    fallbackMessage: string
-  ): Promise<void> => {
+  const handleApiError = async (error: unknown, fallbackMessage: string): Promise<void> => {
     if (!(error instanceof ProjectApiError)) {
       errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
@@ -721,9 +687,7 @@ export const useProjectSettingsDialog = (
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.project.settings.operationForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.project.settings.operationForbidden];
       return;
     }
     if (error.status === 404) {

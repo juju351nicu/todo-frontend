@@ -3,16 +3,10 @@ import { resolve } from "node:path";
 
 const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:8081";
 const boardAuthStatePath = resolve("playwright/.auth/board-browser.json");
-const dashboardAuthStatePath = resolve(
-  "playwright/.auth/dashboard-browser.json"
-);
+const dashboardAuthStatePath = resolve("playwright/.auth/dashboard-browser.json");
 const myTasksAuthStatePath = resolve("playwright/.auth/my-tasks-browser.json");
-const projectTemplateAuthStatePath = resolve(
-  "playwright/.auth/project-template-owner.json"
-);
-const taskRecurrenceAuthStatePath = resolve(
-  "playwright/.auth/recurrence-owner.json"
-);
+const projectTemplateAuthStatePath = resolve("playwright/.auth/project-template-owner.json");
+const taskRecurrenceAuthStatePath = resolve("playwright/.auth/recurrence-owner.json");
 const authorizationAdminAuthStatePath = resolve(
   "playwright/.auth/authorization-admin-browser.json"
 );

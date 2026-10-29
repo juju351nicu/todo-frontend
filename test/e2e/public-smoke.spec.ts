@@ -4,13 +4,8 @@ test("未認証利用者へログイン画面を表示する", async ({ page }) 
   await page.goto("/");
 
   await expect(page.getByPlaceholder("ログインID")).toBeVisible();
-  await expect(page.getByPlaceholder("パスワード")).toHaveAttribute(
-    "type",
-    "password"
-  );
-  await expect(
-    page.getByRole("button", { name: "ログイン", exact: true })
-  ).toBeVisible();
+  await expect(page.getByPlaceholder("パスワード")).toHaveAttribute("type", "password");
+  await expect(page.getByRole("button", { name: "ログイン", exact: true })).toBeVisible();
 });
 
 test("未認証で保護画面へ入るとログインへ戻し、理由を画面内に出す", async ({ page }) => {
@@ -23,9 +18,7 @@ test("未認証で保護画面へ入るとログインへ戻し、理由を画�
   await page.goto("/dashboard");
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("alert")).toContainText(
-    "この画面を開くにはログインが必要です。"
-  );
+  await expect(page.getByRole("alert")).toContainText("この画面を開くにはログインが必要です。");
   await expect(page.getByPlaceholder("ログインID")).toBeVisible();
   expect(dialogCount).toBe(0);
 });
@@ -37,9 +30,7 @@ test("認証失敗でアカウントの存在を公開しない", async ({ page 
 
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
 
-  await expect(
-    page.getByText("ログインIDまたはパスワードが正しくありません。")
-  ).toBeVisible();
+  await expect(page.getByText("ログインIDまたはパスワードが正しくありません。")).toBeVisible();
   await expect(page).toHaveURL(/\/$/);
 });
 

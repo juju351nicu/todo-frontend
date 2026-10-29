@@ -132,20 +132,17 @@ describe("Task search API", () => {
 
     await expect(getTaskSavedViews()).resolves.toEqual([savedView]);
     await expect(createTaskSavedView(createRequest)).resolves.toEqual(savedView);
-    await expect(
-      updateTaskSavedView(3, { ...createRequest, version: 1 })
-    ).resolves.toEqual(savedView);
+    await expect(updateTaskSavedView(3, { ...createRequest, version: 1 })).resolves.toEqual(
+      savedView
+    );
     await expect(deleteTaskSavedView(3, 1)).resolves.toBeUndefined();
 
     expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.TASK_SAVED_VIEWS);
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.TASK_SAVED_VIEWS,
-      createRequest
-    );
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      `${API_PATHS.TASK_SAVED_VIEWS}/3`,
-      { ...createRequest, version: 1 }
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.TASK_SAVED_VIEWS, createRequest);
+    expect(HttpClient.putRequest).toHaveBeenCalledWith(`${API_PATHS.TASK_SAVED_VIEWS}/3`, {
+      ...createRequest,
+      version: 1,
+    });
     expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
       `${API_PATHS.TASK_SAVED_VIEWS}/3?version=1`
     );

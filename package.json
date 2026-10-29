@@ -19,6 +19,10 @@
     "typecheck:ts": "tsc --noEmit",
     "typecheck:vue": "vue-tsc --noEmit -p tsconfig.vue.json",
     "typecheck:e2e": "tsc --noEmit -p tsconfig.e2e.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -38,12 +42,19 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.19.1",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/test-utils": "^2.5.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
     "happy-dom": "^21.0.4",
+    "prettier": "^3.9.10",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
     "vite": "^8.0.16",
     "vitest": "^4.1.10",
     "vue-tsc": "^3.3.8"

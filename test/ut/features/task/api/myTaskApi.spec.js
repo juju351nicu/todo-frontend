@@ -42,6 +42,9 @@ describe("My Tasks API", () => {
 
     await expect(MyTaskApi.completeMyTask(3, 15, 7)).resolves.toBeUndefined();
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(`${API_PATHS.PROJECTS}/3/tasks/15/complete`, { version: 7 });
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      `${API_PATHS.PROJECTS}/3/tasks/15/complete`,
+      { version: 7 }
+    );
   });
 });

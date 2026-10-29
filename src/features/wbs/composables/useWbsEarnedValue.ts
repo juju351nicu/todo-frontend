@@ -55,10 +55,7 @@ export const useWbsEarnedValue = (context: WbsPageContext) => {
     earnedValueErrorMessages.value = [];
     earnedValueStatusDate.value = statusDate;
     try {
-      earnedValue.value = await WbsApi.getEarnedValueMetrics(
-        projectId,
-        statusDate
-      );
+      earnedValue.value = await WbsApi.getEarnedValueMetrics(projectId, statusDate);
     } catch (error: unknown) {
       earnedValue.value = null;
       await handleEarnedValueReadError(error);

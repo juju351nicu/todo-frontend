@@ -5,10 +5,7 @@ import {
   buildAccountRoleEditControlKey,
   useAccountAdministrationPage,
 } from "@/features/administration/composables/useAccountAdministrationPage";
-import {
-  getAccountStatusColor,
-  getAccountStatusLabel,
-} from "@/shared/utils/accountStatus";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";
@@ -49,7 +46,12 @@ onBeforeMount(initialize);
         <div class="flex flex-wrap items-center gap-3">
           <UIcon name="i-mdi-account-key" class="size-6" />
           アカウント・ロール管理
-          <SearchField v-model="searchText" label="アカウント検索" placeholder="表示名・メール・ロール" class="ms-auto w-90" />
+          <SearchField
+            v-model="searchText"
+            label="アカウント検索"
+            placeholder="表示名・メール・ロール"
+            class="ms-auto w-90"
+          />
         </div>
       </template>
 
@@ -108,7 +110,11 @@ onBeforeMount(initialize);
     v-model:open="isEditorOpen"
     :dismissible="!isSaving"
     title="ロール編集"
-    :description="selectedAccount ? `${selectedAccount.displayName}（ID: ${selectedAccount.accountId}）` : undefined"
+    :description="
+      selectedAccount
+        ? `${selectedAccount.displayName}（ID: ${selectedAccount.accountId}）`
+        : undefined
+    "
     :ui="{ content: 'max-w-140' }"
   >
     <template v-if="selectedAccount" #body>
@@ -118,13 +124,24 @@ onBeforeMount(initialize);
       <p class="mb-2">ロールを1件以上選択してください。</p>
       <UCheckboxGroup
         v-model="selectedRoleCodes"
-        :items="roles.map((role) => ({ label: `${role.roleName}（${role.roleCode}）`, value: role.roleCode }))"
+        :items="
+          roles.map((role) => ({
+            label: `${role.roleName}（${role.roleCode}）`,
+            value: role.roleCode,
+          }))
+        "
         :disabled="isSaving"
       />
     </template>
     <template v-if="selectedAccount" #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="closeRoleEditor">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :disabled="!canSaveRoles" :loading="isSaving" @click="saveRoles">
+      <UButton
+        color="primary"
+        variant="ghost"
+        :disabled="!canSaveRoles"
+        :loading="isSaving"
+        @click="saveRoles"
+      >
         保存
       </UButton>
     </template>

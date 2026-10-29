@@ -1,9 +1,6 @@
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 
-import AttendanceApi, {
-  AttendanceApiError,
-} from "@/features/attendance/api/attendanceApi";
+import AttendanceApi, { AttendanceApiError } from "@/features/attendance/api/attendanceApi";
 import type {
   AttendanceCorrectionResponse,
   AttendanceCorrectionStatus,
@@ -13,9 +10,7 @@ import type {
   AttendanceMonthResponse,
   AttendanceMonthStatus,
 } from "@/features/attendance/types/attendance";
-import {
-  buildAttendanceMonthDateRange,
-} from "@/features/attendance/utils/attendance";
+import { buildAttendanceMonthDateRange } from "@/features/attendance/utils/attendance";
 import {
   ATTENDANCE_ERROR_CODES,
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
@@ -99,7 +94,6 @@ const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
  * 一覧と選択詳細を1 composableに置き、画面に業務遷移判断を分散させない。
  */
 export const useAttendanceAdministrationPage = () => {
-  const router = useRouter();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
 
@@ -108,9 +102,7 @@ export const useAttendanceAdministrationPage = () => {
   const isLoadingList = ref(false);
   const isLoadingCorrections = ref(false);
   const isExportingMonthlyCsv = ref(false);
-  const processingAction = ref<
-    AttendanceMonthAction | AttendanceCorrectionAction | null
-  >(null);
+  const processingAction = ref<AttendanceMonthAction | AttendanceCorrectionAction | null>(null);
   const months = ref<AttendanceMonthListItem[]>([]);
   const correctionRequests = ref<AttendanceCorrectionResponse[]>([]);
   const correctionReviewComment = ref("");
@@ -137,7 +129,9 @@ export const useAttendanceAdministrationPage = () => {
   const selectedAccountId = ref<number | null>(null);
   const selectedDetail = ref<AttendanceMonthResponse | null>(null);
   const selectedMonth = ref(getBusinessToday().slice(0, 7));
-  const selectedStatus = ref<AttendanceMonthStatus | typeof ALL_ATTENDANCE_MONTH_STATUSES>(ALL_ATTENDANCE_MONTH_STATUSES);
+  const selectedStatus = ref<AttendanceMonthStatus | typeof ALL_ATTENDANCE_MONTH_STATUSES>(
+    ALL_ATTENDANCE_MONTH_STATUSES
+  );
   /** 状態絞込みをBackendの検索条件へ変換する。全状態の場合は条件なし。 */
   const statusFilter = computed<AttendanceMonthStatus | null>(() =>
     selectedStatus.value === ALL_ATTENDANCE_MONTH_STATUSES ? null : selectedStatus.value
@@ -145,20 +139,11 @@ export const useAttendanceAdministrationPage = () => {
   const successMessage = ref("");
 
   const selectedListItem = computed(
-    () =>
-      months.value.find(
-        (month) => month.accountId === selectedAccountId.value
-      ) ?? null
+    () => months.value.find((month) => month.accountId === selectedAccountId.value) ?? null
   );
-  const canReview = computed(() =>
-    userStore.hasPermission("ATTENDANCE_REVIEW")
-  );
-  const canClose = computed(() =>
-    userStore.hasPermission("ATTENDANCE_CLOSE")
-  );
-  const canExport = computed(() =>
-    userStore.hasPermission("ATTENDANCE_EXPORT")
-  );
+  const canReview = computed(() => userStore.hasPermission("ATTENDANCE_REVIEW"));
+  const canClose = computed(() => userStore.hasPermission("ATTENDANCE_CLOSE"));
+  const canExport = computed(() => userStore.hasPermission("ATTENDANCE_EXPORT"));
   const canApproveOrReject = computed(
     () => canReview.value && selectedDetail.value?.statusCode === "SUBMITTED"
   );
@@ -187,9 +172,7 @@ export const useAttendanceAdministrationPage = () => {
     try {
       buildAttendanceMonthDateRange(selectedMonth.value);
     } catch (error: unknown) {
-      errorMessages.value = [
-        error instanceof Error ? error.message : "対象月が不正です。",
-      ];
+      errorMessages.value = [error instanceof Error ? error.message : "対象月が不正です。"];
       return;
     }
     selectedAccountId.value = null;
@@ -208,9 +191,7 @@ export const useAttendanceAdministrationPage = () => {
     try {
       buildAttendanceMonthDateRange(selectedMonth.value);
     } catch (error: unknown) {
-      errorMessages.value = [
-        error instanceof Error ? error.message : "対象月が不正です。",
-      ];
+      errorMessages.value = [error instanceof Error ? error.message : "対象月が不正です。"];
       return;
     }
 
@@ -218,9 +199,7 @@ export const useAttendanceAdministrationPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      const download = await AttendanceApi.downloadAdministrationMonthlyCsv(
-        selectedMonth.value
-      );
+      const download = await AttendanceApi.downloadAdministrationMonthlyCsv(selectedMonth.value);
       saveMonthlyExport(download);
       successMessage.value = "月次勤怠CSVをダウンロードしました。";
     } catch (error: unknown) {
@@ -235,9 +214,7 @@ export const useAttendanceAdministrationPage = () => {
    * Backendから受け取ったCSVを一時URLへ変換し、同一画面のまま保存を開始する。
    * 使用済みURLは成否にかかわらず破棄し、長時間開く管理画面でmemoryを残さない。
    */
-  const saveMonthlyExport = (
-    download: AttendanceMonthlyExportDownload
-  ): void => {
+  const saveMonthlyExport = (download: AttendanceMonthlyExportDownload): void => {
     const objectUrl = URL.createObjectURL(download.content);
     const anchor = document.createElement("a");
     anchor.href = objectUrl;
@@ -262,9 +239,7 @@ export const useAttendanceAdministrationPage = () => {
   };
 
   /** 管理一覧で選択した修正申請と現在勤怠を比較表示する。 */
-  const selectCorrectionRequest = async (
-    request: AttendanceCorrectionResponse
-  ): Promise<void> => {
+  const selectCorrectionRequest = async (request: AttendanceCorrectionResponse): Promise<void> => {
     if (isLoadingDetail.value || processingAction.value !== null) {
       return;
     }
@@ -279,8 +254,7 @@ export const useAttendanceAdministrationPage = () => {
         request.workDate.slice(0, 7)
       );
       selectedCorrectionCurrentDay.value =
-        currentMonth.days.find((day) => day.workDate === request.workDate) ??
-        null;
+        currentMonth.days.find((day) => day.workDate === request.workDate) ?? null;
     } catch (error: unknown) {
       await handleApiError(
         error,
@@ -297,15 +271,12 @@ export const useAttendanceAdministrationPage = () => {
     if (!canReview.value || request?.statusCode !== "PENDING") {
       return;
     }
-    await executeCorrectionAction(
-      "approve-correction",
-      "勤怠修正申請を承認しました。",
-      () =>
-        AttendanceApi.approveCorrectionRequest(
-          request.attendanceCorrectionRequestId,
-          request.version,
-          correctionReviewComment.value.trim() || null
-        )
+    await executeCorrectionAction("approve-correction", "勤怠修正申請を承認しました。", () =>
+      AttendanceApi.approveCorrectionRequest(
+        request.attendanceCorrectionRequestId,
+        request.version,
+        correctionReviewComment.value.trim() || null
+      )
     );
   };
 
@@ -323,15 +294,12 @@ export const useAttendanceAdministrationPage = () => {
       ]);
       return;
     }
-    await executeCorrectionAction(
-      "reject-correction",
-      "勤怠修正申請を却下しました。",
-      () =>
-        AttendanceApi.rejectCorrectionRequest(
-          request.attendanceCorrectionRequestId,
-          request.version,
-          reason
-        )
+    await executeCorrectionAction("reject-correction", "勤怠修正申請を却下しました。", () =>
+      AttendanceApi.rejectCorrectionRequest(
+        request.attendanceCorrectionRequestId,
+        request.version,
+        reason
+      )
     );
   };
 
@@ -349,11 +317,7 @@ export const useAttendanceAdministrationPage = () => {
   /** SUBMITTED月を任意コメント付きで承認する。 */
   const approve = async (): Promise<void> => {
     const detail = selectedDetail.value;
-    if (
-      !canApproveOrReject.value ||
-      detail === null ||
-      detail.attendanceMonthId === null
-    ) {
+    if (!canApproveOrReject.value || detail === null || detail.attendanceMonthId === null) {
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
@@ -370,45 +334,32 @@ export const useAttendanceAdministrationPage = () => {
   const reject = async (): Promise<void> => {
     const detail = selectedDetail.value;
     const reason = rejectReason.value.trim();
-    if (
-      !canApproveOrReject.value ||
-      detail === null ||
-      detail.attendanceMonthId === null
-    ) {
+    if (!canApproveOrReject.value || detail === null || detail.attendanceMonthId === null) {
       return;
     }
     if (!reason) {
       // 画面上部では押した位置から見えないため、入力欄の下に出して入力欄へ移す。
       monthRejectReasonError.value = "差戻し理由を入力してください。";
-      await focusFirstEnabledElement([buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
+      await focusFirstEnabledElement([
+        buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason),
+      ]);
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
     await executeAction("reject", "勤怠月を差し戻しました。", () =>
-      AttendanceApi.rejectMonth(
-        attendanceMonthId,
-        detail.version,
-        reason
-      )
+      AttendanceApi.rejectMonth(attendanceMonthId, detail.version, reason)
     );
   };
 
   /** APPROVED月を最新versionで締める。 */
   const close = async (): Promise<void> => {
     const detail = selectedDetail.value;
-    if (
-      !canCloseMonth.value ||
-      detail === null ||
-      detail.attendanceMonthId === null
-    ) {
+    if (!canCloseMonth.value || detail === null || detail.attendanceMonthId === null) {
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
     await executeAction("close", "勤怠月を締めました。", () =>
-      AttendanceApi.closeMonth(
-        attendanceMonthId,
-        detail.version
-      )
+      AttendanceApi.closeMonth(attendanceMonthId, detail.version)
     );
   };
 
@@ -426,10 +377,7 @@ export const useAttendanceAdministrationPage = () => {
       );
       months.value = response.months;
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.administration.monthListLoadFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.administration.monthListLoadFailed);
     } finally {
       isLoadingList.value = false;
     }
@@ -470,10 +418,7 @@ export const useAttendanceAdministrationPage = () => {
         selectedMonth.value
       );
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.administration.monthDetailLoadFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.administration.monthDetailLoadFailed);
     } finally {
       isLoadingDetail.value = false;
     }
@@ -498,10 +443,7 @@ export const useAttendanceAdministrationPage = () => {
       successMessage.value = message;
       await loadMonths();
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.administration.monthUpdateFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.administration.monthUpdateFailed);
       if (error instanceof AttendanceApiError && error.status === 409) {
         // version競合後は古い画面値で再実行させず、最新詳細と一覧へ戻す。
         const conflictMessages = [...errorMessages.value];
@@ -545,9 +487,8 @@ export const useAttendanceAdministrationPage = () => {
           selectedCorrection.value.workDate.slice(0, 7)
         );
         selectedCorrectionCurrentDay.value =
-          currentMonth.days.find(
-            (day) => day.workDate === selectedCorrection.value?.workDate
-          ) ?? null;
+          currentMonth.days.find((day) => day.workDate === selectedCorrection.value?.workDate) ??
+          null;
       }
     } catch (error: unknown) {
       await handleApiError(
@@ -573,10 +514,7 @@ export const useAttendanceAdministrationPage = () => {
   };
 
   /** API失敗をSession状態と利用者向けメッセージへ変換する。 */
-  const handleApiError = async (
-    error: unknown,
-    fallbackMessage: string
-  ): Promise<void> => {
+  const handleApiError = async (error: unknown, fallbackMessage: string): Promise<void> => {
     if (!(error instanceof AttendanceApiError)) {
       errorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
@@ -587,15 +525,11 @@ export const useAttendanceAdministrationPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.attendance.administration.forbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.attendance.administration.forbidden];
       return;
     }
     if (error.status === 404) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.attendance.administration.resourceNotFound,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.attendance.administration.resourceNotFound];
       return;
     }
     errorMessages.value = resolveApiErrorMessages(
@@ -617,9 +551,7 @@ export const useAttendanceAdministrationPage = () => {
       return;
     }
     if (error.status === 403) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.attendance.administration.exportForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.attendance.administration.exportForbidden];
       return;
     }
     errorMessages.value = resolveApiErrorMessages(
@@ -648,10 +580,7 @@ export const useAttendanceAdministrationPage = () => {
     try {
       const [detail, listResponse] = await Promise.all([
         AttendanceApi.getAdministrationMonth(accountId, selectedMonth.value),
-        AttendanceApi.getAdministrationMonths(
-          selectedMonth.value,
-          statusFilter.value
-        ),
+        AttendanceApi.getAdministrationMonths(selectedMonth.value, statusFilter.value),
       ]);
       selectedDetail.value = detail;
       months.value = listResponse.months;

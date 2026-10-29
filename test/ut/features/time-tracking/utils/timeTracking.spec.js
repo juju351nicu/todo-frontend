@@ -33,9 +33,10 @@ describe("timeTracking表示utility", () => {
   });
 
   it("Timer履歴の初期期間をAsia Tokyo基準の30日間にする", () => {
-    expect(
-      buildDefaultTimerHistoryRange(new Date("2026-10-03T03:00:00Z"))
-    ).toEqual({ dateFrom: "2026-09-04", dateTo: "2026-10-03" });
+    expect(buildDefaultTimerHistoryRange(new Date("2026-10-03T03:00:00Z"))).toEqual({
+      dateFrom: "2026-09-04",
+      dateTo: "2026-10-03",
+    });
   });
 });
 

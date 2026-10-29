@@ -1,11 +1,8 @@
 import { computed, ref, type Ref } from "vue";
-import { useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
-import TaskTemplateApi, {
-  TaskTemplateApiError,
-} from "@/features/task/api/taskTemplateApi";
+import TaskTemplateApi, { TaskTemplateApiError } from "@/features/task/api/taskTemplateApi";
 import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskTemplate,
@@ -18,10 +15,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { validateTaskSnapshot } from "@/features/task/utils/taskSnapshotForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /** Task Template編集Dialogが保持する入力値。 */
@@ -56,10 +50,7 @@ const createEmptyEditForm = (): TaskTemplateEditForm => ({
  * 本人所有Task Templateの一覧・編集・archive・Project適用を管理する。
  * 404／409では古い選択とversionを破棄し、最新一覧へ回復する。
  */
-export const useTaskTemplates = (
-  projectId: Readonly<Ref<number | null>>
-) => {
-  const router = useRouter();
+export const useTaskTemplates = (projectId: Readonly<Ref<number | null>>) => {
   const { expireSession } = useSessionExpiry();
 
   const templates = ref<TaskTemplate[]>([]);
@@ -75,14 +66,11 @@ export const useTaskTemplates = (
   const isSaving = ref(false);
   const isArchiving = ref(false);
   const isApplying = ref(false);
-  const isMutating = computed(
-    () => isSaving.value || isArchiving.value || isApplying.value
-  );
+  const isMutating = computed(() => isSaving.value || isArchiving.value || isApplying.value);
   const selectedTemplate = computed(
     () =>
-      templates.value.find(
-        (template) => template.taskTemplateId === selectedTemplateId.value
-      ) ?? null
+      templates.value.find((template) => template.taskTemplateId === selectedTemplateId.value) ??
+      null
   );
 
   /** 選択、編集、適用上書き値を破棄し、古いTemplate versionを再利用できない状態へ戻す。 */
@@ -106,24 +94,16 @@ export const useTaskTemplates = (
       return DISPLAY_MESSAGES.common.connectionFailed;
     }
     if (error.status === 403) {
-      if (
-        !hasApiFieldError(
-          error.errorResponse,
-          "FEATURE_NOT_ENTITLED",
-          "featureCode"
-        )
-      ) {
+      if (!hasApiFieldError(error.errorResponse, "FEATURE_NOT_ENTITLED", "featureCode")) {
         return forbidden;
       }
     }
     if (error.status === 404) {
       return DISPLAY_MESSAGES.task.template.resourceNotFound;
     }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_TEMPLATE_ERROR_CODES,
-      fallback
-    ).join("\n");
+    return resolveApiErrorMessages(error.errorResponse, TASK_TEMPLATE_ERROR_CODES, fallback).join(
+      "\n"
+    );
   };
 
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
@@ -147,9 +127,7 @@ export const useTaskTemplates = (
       templates.value = await TaskTemplateApi.findOwnTemplates();
       if (
         selectedTemplateId.value !== null &&
-        !templates.value.some(
-          (template) => template.taskTemplateId === selectedTemplateId.value
-        )
+        !templates.value.some((template) => template.taskTemplateId === selectedTemplateId.value)
       ) {
         selectedTemplateId.value = null;
         isEditing.value = false;
@@ -223,7 +201,7 @@ export const useTaskTemplates = (
   const validateEditForm = (): boolean => {
     const form = editForm.value;
     const name = form.name.trim();
-    let message = "";
+    let message: string;
     if (!name || name.length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
       message = `Template名を1〜${TASK_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`;
     } else {
@@ -255,33 +233,21 @@ export const useTaskTemplates = (
   /** Template snapshotを取得時点version付きで更新する。 */
   const saveTemplate = async (): Promise<void> => {
     const template = selectedTemplate.value;
-    if (
-      !template ||
-      isMutating.value ||
-      !validateEditForm()
-    ) {
+    if (!template || isMutating.value || !validateEditForm()) {
       return;
     }
     isSaving.value = true;
     errorMessage.value = "";
     successMessage.value = "";
     try {
-      const updated = await TaskTemplateApi.update(
-        template.taskTemplateId,
-        buildUpdateRequest()
-      );
+      const updated = await TaskTemplateApi.update(template.taskTemplateId, buildUpdateRequest());
       templates.value = templates.value.map((candidate) =>
-        candidate.taskTemplateId === updated.taskTemplateId
-          ? updated
-          : candidate
+        candidate.taskTemplateId === updated.taskTemplateId ? updated : candidate
       );
       cancelEditing();
       successMessage.value = "Task Templateを更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.template.updateFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.template.updateFailed);
     } finally {
       isSaving.value = false;
     }
@@ -295,10 +261,7 @@ export const useTaskTemplates = (
     errorMessage.value = "";
     successMessage.value = "";
     try {
-      await TaskTemplateApi.archive(
-        template.taskTemplateId,
-        template.version
-      );
+      await TaskTemplateApi.archive(template.taskTemplateId, template.version);
       templates.value = templates.value.filter(
         (candidate) => candidate.taskTemplateId !== template.taskTemplateId
       );
@@ -306,10 +269,7 @@ export const useTaskTemplates = (
       cancelEditing();
       successMessage.value = "Task Templateをアーカイブしました。";
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.template.archiveFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.template.archiveFailed);
     } finally {
       isArchiving.value = false;
     }
@@ -318,11 +278,7 @@ export const useTaskTemplates = (
   /** 選択Templateを任意上書き値付きでProjectへ適用する。 */
   const applyTemplate = async (): Promise<TaskTemplateApplyResponse | null> => {
     const template = selectedTemplate.value;
-    if (
-      !template ||
-      isMutating.value ||
-      projectId.value === null
-    ) {
+    if (!template || isMutating.value || projectId.value === null) {
       return null;
     }
     isApplying.value = true;
@@ -338,10 +294,7 @@ export const useTaskTemplates = (
       successMessage.value = "TemplateからTaskを登録しました。";
       return created;
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.template.applyFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.template.applyFailed);
       return null;
     } finally {
       isApplying.value = false;
@@ -349,10 +302,7 @@ export const useTaskTemplates = (
   };
 
   /** 404／409後に古いversionを破棄し、本人所有の最新Template一覧へ回復する。 */
-  const recoverTemplates = async (
-    error: TaskTemplateApiError,
-    fallback: string
-  ): Promise<void> => {
+  const recoverTemplates = async (error: TaskTemplateApiError, fallback: string): Promise<void> => {
     const preferredId = selectedTemplateId.value;
     const mutationMessage = getErrorMessage(error, fallback);
     clearTemplateState(true);
@@ -390,19 +340,10 @@ export const useTaskTemplates = (
   };
 
   /** 更新系APIの401と404／409再取得を共通処理する。 */
-  async function handleMutationError(
-    error: unknown,
-    fallback: string
-  ): Promise<void> {
+  async function handleMutationError(error: unknown, fallback: string): Promise<void> {
     if (await handleUnauthorized(error)) return;
-    if (
-      error instanceof TaskTemplateApiError &&
-      (error.status === 404 || error.status === 409)
-    ) {
-      await recoverTemplates(
-        error,
-        "Task Templateが変更されています。最新の一覧を表示しました。"
-      );
+    if (error instanceof TaskTemplateApiError && (error.status === 404 || error.status === 409)) {
+      await recoverTemplates(error, "Task Templateが変更されています。最新の一覧を表示しました。");
       return;
     }
     errorMessage.value = getErrorMessage(error, fallback);

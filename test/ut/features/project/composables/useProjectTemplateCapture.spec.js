@@ -18,9 +18,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/project/api/projectTemplateApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/project/api/projectTemplateApi"
-  );
+  const actual = await vi.importActual("@/features/project/api/projectTemplateApi");
   return { ...actual, default: mocks.projectTemplateApi };
 });
 
@@ -60,9 +58,7 @@ describe("useProjectTemplateCapture", () => {
       baseDate: "2026-09-21",
     });
     expect(state.isOpen.value).toBe(false);
-    expect(state.successMessage.value).toBe(
-      "ProjectをTemplateとして保存しました。"
-    );
+    expect(state.successMessage.value).toBe("ProjectをTemplateとして保存しました。");
   });
 
   it.each([
@@ -100,9 +96,7 @@ describe("useProjectTemplateCapture", () => {
     await state.capture();
 
     expect(mocks.projectTemplateApi.capture).not.toHaveBeenCalled();
-    expect(state.errorMessages.value).toEqual([
-      "Task日付の基準日を入力してください。",
-    ]);
+    expect(state.errorMessages.value).toEqual(["Task日付の基準日を入力してください。"]);
   });
 
   it("機能資格403ではBackendのupgrade案内をDialogへ表示する", async () => {
@@ -124,16 +118,12 @@ describe("useProjectTemplateCapture", () => {
 
     await state.capture();
 
-    expect(state.errorMessages.value).toEqual([
-      "現在のPlanでは利用できません。",
-    ]);
+    expect(state.errorMessages.value).toEqual(["現在のPlanでは利用できません。"]);
     expect(state.isOpen.value).toBe(true);
   });
 
   it("本文なし403はSessionを維持してpermission不足を表示する", async () => {
-    mocks.projectTemplateApi.capture.mockRejectedValue(
-      new ProjectTemplateApiError(403, null)
-    );
+    mocks.projectTemplateApi.capture.mockRejectedValue(new ProjectTemplateApiError(403, null));
     const state = useProjectTemplateCapture(ref(5), ref(false));
     state.open();
     state.name.value = "開発Template";
@@ -165,9 +155,7 @@ describe("useProjectTemplateCapture", () => {
 
     await state.capture();
 
-    expect(state.errorMessages.value).toEqual([
-      "ProjectをTemplateとして保存できませんでした。",
-    ]);
+    expect(state.errorMessages.value).toEqual(["ProjectをTemplateとして保存できませんでした。"]);
   });
 
   it("契約済みの複数入力エラーをBackend順で表示する", async () => {
@@ -200,9 +188,7 @@ describe("useProjectTemplateCapture", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.projectTemplateApi.capture.mockRejectedValue(
-      new ProjectTemplateApiError(401, null)
-    );
+    mocks.projectTemplateApi.capture.mockRejectedValue(new ProjectTemplateApiError(401, null));
     const state = useProjectTemplateCapture(ref(5), ref(false));
     state.open();
     state.name.value = "開発Template";
@@ -236,7 +222,11 @@ describe("useProjectTemplateCapture", () => {
       mocks.projectTemplateApi.capture.mockRejectedValue(
         new ProjectTemplateApiError(409, {
           fieldErrors: [
-            { field: "name", errorCode: "PROJECT_TEMPLATE_NAME_CONFLICT", message: "同じ名前のactive Project Templateが既に存在します。" },
+            {
+              field: "name",
+              errorCode: "PROJECT_TEMPLATE_NAME_CONFLICT",
+              message: "同じ名前のactive Project Templateが既に存在します。",
+            },
           ],
         })
       );

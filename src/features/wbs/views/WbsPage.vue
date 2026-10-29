@@ -62,18 +62,35 @@ const VIEW_OPTIONS = [
       />
       <div>
         <h1 class="text-2xl">{{ page.wbs?.projectName ?? "WBS" }}</h1>
-        <div class="text-sm opacity-70">Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理</div>
+        <div class="text-sm opacity-70">
+          Boardと同じTaskを使用する階層・予定・実績期間・日別予定実績管理
+        </div>
       </div>
-      <UButton icon="i-mdi-view-column-outline" variant="soft" class="ms-auto" :disabled="page.isLoading" @click="page.openBoard">
+      <UButton
+        icon="i-mdi-view-column-outline"
+        variant="soft"
+        class="ms-auto"
+        :disabled="page.isLoading"
+        @click="page.openBoard"
+      >
         Boardを開く
       </UButton>
-      <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="page.isLoading" @click="page.initialize">再読込</UButton>
+      <UButton
+        icon="i-mdi-refresh"
+        color="primary"
+        variant="soft"
+        :loading="page.isLoading"
+        @click="page.initialize"
+        >再読込</UButton
+      >
     </div>
 
     <StatusAlert v-if="page.errorMessages.length" type="error" class="mb-4">
       <div v-for="message in page.errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="page.successMessage" type="success" class="mb-4">{{ page.successMessage }}</StatusAlert>
+    <StatusAlert v-if="page.successMessage" type="success" class="mb-4">{{
+      page.successMessage
+    }}</StatusAlert>
 
     <UCard v-if="page.wbs" class="mx-auto max-w-400" :ui="{ body: 'p-0 sm:p-0 not-first:pt-0' }">
       <template #header>
@@ -108,7 +125,9 @@ const VIEW_OPTIONS = [
       </div>
 
       <div v-if="page.rows.length && page.activeView === 'table'" class="overflow-x-auto">
-        <table class="wbs-table app-table app-table-hover min-w-320 [&_td]:h-13 [&_td]:py-2 [&_th]:h-13">
+        <table
+          class="wbs-table app-table app-table-hover min-w-320 [&_td]:h-13 [&_td]:py-2 [&_th]:h-13"
+        >
           <thead>
             <tr>
               <th scope="col">WBS</th>
@@ -136,7 +155,9 @@ const VIEW_OPTIONS = [
                     :aria-label="getWbsTaskTypeLabel(row.taskType)"
                   />
                   <div>
-                    <div :class="row.hasChildren ? 'font-bold' : 'font-medium'">{{ row.title }}</div>
+                    <div :class="row.hasChildren ? 'font-bold' : 'font-medium'">
+                      {{ row.title }}
+                    </div>
                     <div class="line-clamp-2 max-w-110 text-xs text-muted">{{ row.detail }}</div>
                   </div>
                 </div>
@@ -151,7 +172,9 @@ const VIEW_OPTIONS = [
                 {{ row.plannedStartDate }}<br />
                 <span class="text-muted">～ {{ row.plannedEndDate }}</span>
               </td>
-              <td class="whitespace-nowrap">{{ formatActualPeriod(row.actualStartDate, row.actualEndDate) }}</td>
+              <td class="whitespace-nowrap">
+                {{ formatActualPeriod(row.actualStartDate, row.actualEndDate) }}
+              </td>
               <td class="whitespace-nowrap">{{ formatPlannedEffort(row.plannedEffortMinutes) }}</td>
               <td>
                 <div class="grid min-w-37.5 grid-cols-[minmax(80px,1fr)_auto] items-center gap-2">
@@ -159,12 +182,18 @@ const VIEW_OPTIONS = [
                     :model-value="normalizeProgressPercent(row.progressPercent)"
                     :ui="{ base: 'h-2 rounded-full', indicator: 'rounded-full' }"
                   />
-                  <span class="text-xs whitespace-nowrap">{{ formatProgressPercent(row.progressPercent) }}%</span>
+                  <span class="text-xs whitespace-nowrap"
+                    >{{ formatProgressPercent(row.progressPercent) }}%</span
+                  >
                 </div>
               </td>
-              <td class="whitespace-nowrap">{{ page.resolveAssigneeDisplayName(row.assigneeAccountId) }}</td>
+              <td class="whitespace-nowrap">
+                {{ page.resolveAssigneeDisplayName(row.assigneeAccountId) }}
+              </td>
               <td>
-                <UBadge :color="getWbsPriorityColor(row.priority)" size="xs">{{ getWbsPriorityLabel(row.priority) }}</UBadge>
+                <UBadge :color="getWbsPriorityColor(row.priority)" size="xs">{{
+                  getWbsPriorityLabel(row.priority)
+                }}</UBadge>
               </td>
               <td>
                 <div class="flex gap-1">
@@ -219,7 +248,9 @@ const VIEW_OPTIONS = [
       <div v-else class="p-10 text-center">
         <UIcon name="i-mdi-file-tree-outline" class="mb-3 size-12" />
         <h2 class="mb-2 text-xl font-medium">WBSへ表示するTaskがありません</h2>
-        <p class="mb-0 text-sm text-muted">TaskをProject Boardへ登録すると、同じTask IDでここに表示されます。</p>
+        <p class="mb-0 text-sm text-muted">
+          TaskをProject Boardへ登録すると、同じTask IDでここに表示されます。
+        </p>
       </div>
     </UCard>
 
@@ -394,13 +425,26 @@ const VIEW_OPTIONS = [
     >
       <template #body>
         <template v-if="page.workingDayPendingDelete">
-          {{ page.workingDayPendingDelete.workDate }}の保存済み例外を削除し、下位の既定値へ戻します。
+          {{
+            page.workingDayPendingDelete.workDate
+          }}の保存済み例外を削除し、下位の既定値へ戻します。
         </template>
         <template v-else>選択した稼働日例外を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="page.isDeletingWorkingDay" @click="page.cancelWorkingDayDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="page.isDeletingWorkingDay" @click="page.confirmWorkingDayDelete">削除</UButton>
+        <UButton
+          variant="ghost"
+          :disabled="page.isDeletingWorkingDay"
+          @click="page.cancelWorkingDayDelete"
+          >キャンセル</UButton
+        >
+        <UButton
+          color="error"
+          variant="ghost"
+          :loading="page.isDeletingWorkingDay"
+          @click="page.confirmWorkingDayDelete"
+          >削除</UButton
+        >
       </template>
     </UModal>
 
@@ -413,14 +457,26 @@ const VIEW_OPTIONS = [
     >
       <template #body>
         <template v-if="page.effortPlanPendingDelete">
-          {{ page.effortPlanPendingDelete.planDate }}・{{ page.effortPlanPendingDelete.assigneeDisplayName }}の
-          {{ page.effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
+          {{ page.effortPlanPendingDelete.planDate }}・{{
+            page.effortPlanPendingDelete.assigneeDisplayName
+          }}の {{ page.effortPlanPendingDelete.plannedEffortMinutes }}分を削除します。
         </template>
         <template v-else>選択したTask日別予定を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="page.isDeletingEffortPlan" @click="page.cancelEffortPlanDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="page.isDeletingEffortPlan" @click="page.confirmEffortPlanDelete">削除</UButton>
+        <UButton
+          variant="ghost"
+          :disabled="page.isDeletingEffortPlan"
+          @click="page.cancelEffortPlanDelete"
+          >キャンセル</UButton
+        >
+        <UButton
+          color="error"
+          variant="ghost"
+          :loading="page.isDeletingEffortPlan"
+          @click="page.confirmEffortPlanDelete"
+          >削除</UButton
+        >
       </template>
     </UModal>
 
@@ -433,14 +489,26 @@ const VIEW_OPTIONS = [
     >
       <template #body>
         <template v-if="page.workLogPendingDelete">
-          {{ page.workLogPendingDelete.workDate }}・{{ page.workLogPendingDelete.workerDisplayName }}の
-          {{ page.workLogPendingDelete.actualEffortMinutes }}分を削除します。
+          {{ page.workLogPendingDelete.workDate }}・{{
+            page.workLogPendingDelete.workerDisplayName
+          }}の {{ page.workLogPendingDelete.actualEffortMinutes }}分を削除します。
         </template>
         <template v-else>選択したTask日別実績を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="page.isDeletingWorkLog" @click="page.cancelWorkLogDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="page.isDeletingWorkLog" @click="page.confirmWorkLogDelete">削除</UButton>
+        <UButton
+          variant="ghost"
+          :disabled="page.isDeletingWorkLog"
+          @click="page.cancelWorkLogDelete"
+          >キャンセル</UButton
+        >
+        <UButton
+          color="error"
+          variant="ghost"
+          :loading="page.isDeletingWorkLog"
+          @click="page.confirmWorkLogDelete"
+          >削除</UButton
+        >
       </template>
     </UModal>
 
@@ -453,14 +521,26 @@ const VIEW_OPTIONS = [
     >
       <template #body>
         <template v-if="page.dependencyPendingDeleteRow">
-          「{{ page.dependencyPendingDeleteRow.predecessorLabel }}」から
-          「{{ page.dependencyPendingDeleteRow.successorLabel }}」への依存関係を削除します。
+          「{{ page.dependencyPendingDeleteRow.predecessorLabel }}」から 「{{
+            page.dependencyPendingDeleteRow.successorLabel
+          }}」への依存関係を削除します。
         </template>
         <template v-else>選択したTask依存関係を削除します。</template>
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="page.isDeletingDependency" @click="page.cancelDependencyDelete">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="page.isDeletingDependency" @click="page.confirmDependencyDelete">削除</UButton>
+        <UButton
+          variant="ghost"
+          :disabled="page.isDeletingDependency"
+          @click="page.cancelDependencyDelete"
+          >キャンセル</UButton
+        >
+        <UButton
+          color="error"
+          variant="ghost"
+          :loading="page.isDeletingDependency"
+          @click="page.confirmDependencyDelete"
+          >削除</UButton
+        >
       </template>
     </UModal>
   </div>

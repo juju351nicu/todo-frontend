@@ -3,17 +3,12 @@ import { useRouter } from "vue-router";
 
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import ProjectApi, {
-  ProjectApiError,
-} from "@/features/project/api/projectApi";
+import ProjectApi, { ProjectApiError } from "@/features/project/api/projectApi";
 import {
   PROJECT_DESCRIPTION_MAX_LENGTH,
   PROJECT_NAME_MAX_LENGTH,
 } from "@/features/project/constants/projectLimits";
-import type {
-  ProjectCreateRequest,
-  ProjectSummary,
-} from "@/features/project/types/project";
+import type { ProjectCreateRequest, ProjectSummary } from "@/features/project/types/project";
 import { useUserStore } from "@/features/auth/stores/user";
 import { PROJECT_ERROR_CODES } from "@/features/project/utils/apiErrors";
 import { validateProjectKey } from "@/features/project/utils/projectForm";

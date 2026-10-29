@@ -73,10 +73,7 @@ const buildTaskForm = (task: TaskDetail): TaskForm => ({
  * @param context Board画面の共通の状態と操作
  * @param permissions Project単位の操作の可否
  */
-export const useTaskEditor = (
-  context: TaskBoardPageContext,
-  permissions: TaskBoardPermissions
-) => {
+export const useTaskEditor = (context: TaskBoardPageContext, permissions: TaskBoardPermissions) => {
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
@@ -121,20 +118,15 @@ export const useTaskEditor = (
   const canUpdateEditingTask = computed(
     () =>
       canUpdateTask.value &&
-      (canManageTasks.value ||
-        editingTaskAssigneeAccountId.value === userStore.accountId)
+      (canManageTasks.value || editingTaskAssigneeAccountId.value === userStore.accountId)
   );
-  const isReadonly = computed(
-    () => isEditing.value && !canUpdateEditingTask.value
-  );
+  const isReadonly = computed(() => isEditing.value && !canUpdateEditingTask.value);
   /**
    * 開いているTaskが通常Task（`TASK`）か。実績工数（Timer・日別実績）とTask Templateへの保存は通常Taskだけが対象で、
    * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない
    * （`todo-backend`の`docs/time-tracking-design.md`、`TaskTemplateLogic#calculateDueOffsetDays`）。
    */
-  const isEditingRegularTask = computed(
-    () => isEditing.value && editingTaskType.value === "TASK"
-  );
+  const isEditingRegularTask = computed(() => isEditing.value && editingTaskType.value === "TASK");
   /** 開いているTaskへ実績工数（Timer・日別実績）を計上できるか。 */
   const canRecordTaskWork = computed(() => isEditingRegularTask.value);
   /**
@@ -151,8 +143,7 @@ export const useTaskEditor = (
       form.value.taskId !== null &&
       canUpdateTask.value &&
       isCurrentUserProjectMember.value &&
-      (canManageTasks.value ||
-        form.value.assigneeAccountId === userStore.accountId)
+      (canManageTasks.value || form.value.assigneeAccountId === userStore.accountId)
   );
   const canSave = computed(
     () =>
@@ -192,11 +183,11 @@ export const useTaskEditor = (
     const today = getBusinessToday();
     form.value = {
       ...createEmptyTaskForm(),
-      taskStatusId:
-        taskStatusId ?? project.value?.taskStatuses[0]?.taskStatusId ?? null,
+      taskStatusId: taskStatusId ?? project.value?.taskStatuses[0]?.taskStatusId ?? null,
       assigneeAccountId:
-        memberOptions.value.find((option) => option.value === userStore.accountId)
-          ?.value ?? memberOptions.value[0]?.value ?? null,
+        memberOptions.value.find((option) => option.value === userStore.accountId)?.value ??
+        memberOptions.value[0]?.value ??
+        null,
       dateFrom: today,
       dateTo: today,
     };
@@ -386,16 +377,9 @@ export const useTaskEditor = (
     successMessage.value = "";
     try {
       if (taskId === null) {
-        await ProjectTaskApi.createTask(
-          projectId.value,
-          buildTaskCreateRequest()
-        );
+        await ProjectTaskApi.createTask(projectId.value, buildTaskCreateRequest());
       } else {
-        await ProjectTaskApi.updateTask(
-          projectId.value,
-          taskId,
-          buildTaskUpdateRequest()
-        );
+        await ProjectTaskApi.updateTask(projectId.value, taskId, buildTaskUpdateRequest());
       }
     } catch (error: unknown) {
       try {
@@ -407,8 +391,7 @@ export const useTaskEditor = (
     }
 
     closeTaskEditorAfterSaving();
-    successMessage.value =
-      taskId === null ? "Taskを登録しました。" : "Taskを更新しました。";
+    successMessage.value = taskId === null ? "Taskを登録しました。" : "Taskを更新しました。";
     try {
       await context.loadBoardData();
     } catch (error: unknown) {
@@ -424,11 +407,7 @@ export const useTaskEditor = (
 
   /** version取得済みの既存Taskだけを対象にarchive確認Dialogを開く。 */
   const openArchiveConfirm = (): void => {
-    if (
-      !canArchiveTask.value ||
-      form.value.taskId === null ||
-      form.value.version === null
-    ) {
+    if (!canArchiveTask.value || form.value.taskId === null || form.value.version === null) {
       editorErrorMessages.value = ["Taskをアーカイブするpermissionがありません。"];
       return;
     }

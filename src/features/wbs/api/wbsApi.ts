@@ -29,8 +29,7 @@ import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
 import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
-const XLSX_CONTENT_TYPE =
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const XLSX_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const SAFE_XLSX_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+\.xlsx$/;
 
 /** WBS APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
@@ -42,10 +41,7 @@ export class WbsApiError extends ApiError {
 
 /** 非2xx ResponseをWbsApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
-  ensureApiSuccess(
-    response,
-    (status, errorResponse) => new WbsApiError(status, errorResponse)
-  );
+  ensureApiSuccess(response, (status, errorResponse) => new WbsApiError(status, errorResponse));
 
 /**
  * Content-DispositionのASCII filenameをpathとして解釈できない安全なxlsx名へ制限する。
@@ -85,17 +81,13 @@ const normalizeWbsResponse = (payload: WbsResponse): WbsResponse => ({
  * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
  */
 const getWbs = async (projectId: number): Promise<WbsResponse> => {
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.PROJECTS}/${projectId}/wbs`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.PROJECTS}/${projectId}/wbs`);
   await ensureSuccess(response);
   return normalizeWbsResponse((await response.json()) as WbsResponse);
 };
 
 /** API Responseで欠落したbaseline header一覧を空配列へ正規化する。 */
-const normalizeWbsBaselineList = (
-  payload: WbsBaselineListResponse
-): WbsBaselineListResponse => ({
+const normalizeWbsBaselineList = (payload: WbsBaselineListResponse): WbsBaselineListResponse => ({
   ...payload,
   baselines: payload.baselines ?? [],
 });
@@ -111,9 +103,7 @@ const normalizeWbsBaselineDetail = (
 });
 
 /** API Responseで欠落したEVM警告・Task明細を空配列へ正規化する。 */
-const normalizeEarnedValueResponse = (
-  payload: EarnedValueResponse
-): EarnedValueResponse => ({
+const normalizeEarnedValueResponse = (payload: EarnedValueResponse): EarnedValueResponse => ({
   ...payload,
   warnings: payload.warnings ?? [],
   tasks: payload.tasks ?? [],
@@ -126,16 +116,10 @@ const normalizeEarnedValueResponse = (
  * @returns baseline未作成時は空配列を持つ一覧Response
  * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
  */
-const getWbsBaselines = async (
-  projectId: number
-): Promise<WbsBaselineListResponse> => {
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines`
-  );
+const getWbsBaselines = async (projectId: number): Promise<WbsBaselineListResponse> => {
+  const response = await HttpClient.getRequest(`${API_PATHS.PROJECTS}/${projectId}/wbs/baselines`);
   await ensureSuccess(response);
-  return normalizeWbsBaselineList(
-    (await response.json()) as WbsBaselineListResponse
-  );
+  return normalizeWbsBaselineList((await response.json()) as WbsBaselineListResponse);
 };
 
 /**
@@ -154,9 +138,7 @@ const getWbsBaseline = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/baselines/${baselineId}`
   );
   await ensureSuccess(response);
-  return normalizeWbsBaselineDetail(
-    (await response.json()) as WbsBaselineDetailResponse
-  );
+  return normalizeWbsBaselineDetail((await response.json()) as WbsBaselineDetailResponse);
 };
 
 /**
@@ -220,9 +202,7 @@ const getEarnedValueMetrics = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/metrics?${query.toString()}`
   );
   await ensureSuccess(response);
-  return normalizeEarnedValueResponse(
-    (await response.json()) as EarnedValueResponse
-  );
+  return normalizeEarnedValueResponse((await response.json()) as EarnedValueResponse);
 };
 
 /**
@@ -286,9 +266,7 @@ const updateWbsTask = async (
  * @returns Task依存関係ID順の一覧。未登録時は空配列
  * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
  */
-const getTaskDependencies = async (
-  projectId: number
-): Promise<TaskDependencyListResponse> => {
+const getTaskDependencies = async (projectId: number): Promise<TaskDependencyListResponse> => {
   const response = await HttpClient.getRequest(
     `${API_PATHS.PROJECTS}/${projectId}/wbs/dependencies`
   );
@@ -346,9 +324,7 @@ const deleteTaskDependency = async (
 };
 
 /** API Responseの欠落したworkLogsを画面へ伝播させず空配列へ正規化する。 */
-const normalizeTaskWorkLogList = (
-  payload: TaskWorkLogListResponse
-): TaskWorkLogListResponse => ({
+const normalizeTaskWorkLogList = (payload: TaskWorkLogListResponse): TaskWorkLogListResponse => ({
   ...payload,
   workLogs: payload.workLogs ?? [],
 });
@@ -369,9 +345,7 @@ const getTaskWorkLogs = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/work-logs`
   );
   await ensureSuccess(response);
-  return normalizeTaskWorkLogList(
-    (await response.json()) as TaskWorkLogListResponse
-  );
+  return normalizeTaskWorkLogList((await response.json()) as TaskWorkLogListResponse);
 };
 
 /**
@@ -393,9 +367,7 @@ const createTaskWorkLog = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeTaskWorkLogList(
-    (await response.json()) as TaskWorkLogListResponse
-  );
+  return normalizeTaskWorkLogList((await response.json()) as TaskWorkLogListResponse);
 };
 
 /**
@@ -419,9 +391,7 @@ const updateTaskWorkLog = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeTaskWorkLogList(
-    (await response.json()) as TaskWorkLogListResponse
-  );
+  return normalizeTaskWorkLogList((await response.json()) as TaskWorkLogListResponse);
 };
 
 /**
@@ -469,9 +439,7 @@ const getTaskEffortPlans = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/effort-plans`
   );
   await ensureSuccess(response);
-  return normalizeTaskEffortPlanList(
-    (await response.json()) as TaskEffortPlanListResponse
-  );
+  return normalizeTaskEffortPlanList((await response.json()) as TaskEffortPlanListResponse);
 };
 
 /**
@@ -493,9 +461,7 @@ const createTaskEffortPlan = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeTaskEffortPlanList(
-    (await response.json()) as TaskEffortPlanListResponse
-  );
+  return normalizeTaskEffortPlanList((await response.json()) as TaskEffortPlanListResponse);
 };
 
 /**
@@ -519,9 +485,7 @@ const updateTaskEffortPlan = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeTaskEffortPlanList(
-    (await response.json()) as TaskEffortPlanListResponse
-  );
+  return normalizeTaskEffortPlanList((await response.json()) as TaskEffortPlanListResponse);
 };
 
 /**
@@ -578,9 +542,7 @@ const getTaskWorkload = async (
  * @returns 除外件数、中央値、許容範囲内の件数、Task別の誤差。完了済みTaskがない場合は件数0と空配列
  * @throws WbsApiError 未認証、TASK_READ不足、Project未参加またはBackendエラーの場合
  */
-const getEstimateAccuracy = async (
-  projectId: number
-): Promise<EstimateAccuracyResponse> => {
+const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyResponse> => {
   const response = await HttpClient.getRequest(
     `${API_PATHS.PROJECTS}/${projectId}/wbs/estimate-accuracy`
   );
@@ -593,9 +555,7 @@ const getEstimateAccuracy = async (
 };
 
 /** API Responseで欠落したcalendar日付一覧を画面へ伝播させず空配列へ正規化する。 */
-const normalizeWorkingCalendar = (
-  payload: WorkingCalendarResponse
-): WorkingCalendarResponse => ({
+const normalizeWorkingCalendar = (payload: WorkingCalendarResponse): WorkingCalendarResponse => ({
   ...payload,
   accountId: payload.accountId ?? null,
   days: payload.days ?? [],
@@ -625,9 +585,7 @@ const getWorkingCalendar = async (
     `${API_PATHS.PROJECTS}/${projectId}/wbs/calendar?${query.toString()}`
   );
   await ensureSuccess(response);
-  return normalizeWorkingCalendar(
-    (await response.json()) as WorkingCalendarResponse
-  );
+  return normalizeWorkingCalendar((await response.json()) as WorkingCalendarResponse);
 };
 
 /**
@@ -647,9 +605,7 @@ const createProjectWorkingDay = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeWorkingCalendar(
-    (await response.json()) as WorkingCalendarResponse
-  );
+  return normalizeWorkingCalendar((await response.json()) as WorkingCalendarResponse);
 };
 
 /**
@@ -671,9 +627,7 @@ const updateProjectWorkingDay = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeWorkingCalendar(
-    (await response.json()) as WorkingCalendarResponse
-  );
+  return normalizeWorkingCalendar((await response.json()) as WorkingCalendarResponse);
 };
 
 /**
@@ -714,9 +668,7 @@ const createMemberWorkingDay = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeWorkingCalendar(
-    (await response.json()) as WorkingCalendarResponse
-  );
+  return normalizeWorkingCalendar((await response.json()) as WorkingCalendarResponse);
 };
 
 /**
@@ -740,9 +692,7 @@ const updateMemberWorkingDay = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeWorkingCalendar(
-    (await response.json()) as WorkingCalendarResponse
-  );
+  return normalizeWorkingCalendar((await response.json()) as WorkingCalendarResponse);
 };
 
 /**

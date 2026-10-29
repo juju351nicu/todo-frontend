@@ -13,17 +13,12 @@ export type BrowserRegressionFixture =
   | "project-template"
   | "task-recurrence"
   | "wbs-journey";
-export type BrowserRegressionFixtureAction =
-  | "prepare"
-  | "cleanup"
-  | "inspect-stage10d2";
+export type BrowserRegressionFixtureAction = "prepare" | "cleanup" | "inspect-stage10d2";
 
-const MYSQL_CONTAINER =
-  process.env.E2E_MYSQL_CONTAINER ?? "work-management-mysql";
+const MYSQL_CONTAINER = process.env.E2E_MYSQL_CONTAINER ?? "work-management-mysql";
 const MYSQL_DATABASE = process.env.E2E_DB_NAME ?? "todo";
 const MYSQL_USER = process.env.E2E_DB_USER ?? "work_management_app";
-const MYSQL_PASSWORD =
-  process.env.E2E_DB_PASSWORD ?? "work_management_password";
+const MYSQL_PASSWORD = process.env.E2E_DB_PASSWORD ?? "work_management_password";
 
 /**
  * Backendの専用SQLをDocker MySQLへ流し、通常のローカルデータから分離したE2E状態を操作する。
@@ -41,10 +36,7 @@ export const runBrowserRegressionFixture = (
     return "";
   }
 
-  const sqlPath = resolve(
-    BACKEND_PATH,
-    `scripts/browser-regression/${fixture}/${action}.sql`
-  );
+  const sqlPath = resolve(BACKEND_PATH, `scripts/browser-regression/${fixture}/${action}.sql`);
   const sql = readFileSync(sqlPath, "utf8");
   const result = spawnSync(
     "docker",

@@ -36,7 +36,7 @@ const props = withDefaults(
     canUpdate?: boolean;
     projectActive?: boolean;
   }>(),
-  { canCreate: false, canUpdate: false, projectActive: false },
+  { canCreate: false, canUpdate: false, projectActive: false }
 );
 
 const {
@@ -113,8 +113,17 @@ const CREATION_MODE_OPTIONS = [
     <template #body>
       <!-- 作成・編集フォームを開いている間は、エラーを「作成」「更新」ボタンのすぐ上に出す（下のform内）。
            フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
-      <StatusAlert v-if="errorMessage && !isFormOpen" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+      <StatusAlert v-if="errorMessage && !isFormOpen" type="error" density="compact" class="mb-3">{{
+        errorMessage
+      }}</StatusAlert>
+      <StatusAlert
+        v-if="successMessage"
+        type="success"
+        density="compact"
+        closable
+        class="mb-3"
+        @close="successMessage = ''"
+      >
         {{ successMessage }}
       </StatusAlert>
       <StatusAlert v-if="!projectActive" type="info" density="compact" class="mb-3">
@@ -143,20 +152,35 @@ const CREATION_MODE_OPTIONS = [
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
+                :class="
+                  selectedRule?.taskRecurrenceRuleId === rule.taskRecurrenceRuleId
+                    ? 'bg-primary/12 text-primary'
+                    : 'hover:bg-elevated'
+                "
                 @click="selectRule(rule)"
               >
                 <span class="min-w-0 flex-1">
                   <span class="block text-base">{{ rule.title }}</span>
                   <span class="block text-sm opacity-60">
-                    {{ formatRecurrenceSchedule(rule.frequency, rule.intervalCount, rule.weekdays, rule.monthlyDay) }}
+                    {{
+                      formatRecurrenceSchedule(
+                        rule.frequency,
+                        rule.intervalCount,
+                        rule.weekdays,
+                        rule.monthlyDay
+                      )
+                    }}
                   </span>
                 </span>
-                <UBadge :color="getRecurrenceStatusColor(rule.status)" size="xs">{{ getRecurrenceStatusLabel(rule.status) }}</UBadge>
+                <UBadge :color="getRecurrenceStatusColor(rule.status)" size="xs">{{
+                  getRecurrenceStatusLabel(rule.status)
+                }}</UBadge>
               </button>
             </li>
           </ul>
-          <div v-else-if="!isLoading" class="p-3 text-sm text-muted">繰り返しTask規則はありません。</div>
+          <div v-else-if="!isLoading" class="p-3 text-sm text-muted">
+            繰り返しTask規則はありません。
+          </div>
         </div>
 
         <div class="w-full p-3 md:w-2/3">
@@ -182,13 +206,24 @@ const CREATION_MODE_OPTIONS = [
             <template v-if="!isCreating || creationMode === 'DIRECT'">
               <div class="relative">
                 <UFormField label="Taskタイトル">
-                  <UInput v-model="form.title" :maxlength="TASK_TITLE_MAX_LENGTH" :disabled="isMutating" class="w-full" />
+                  <UInput
+                    v-model="form.title"
+                    :maxlength="TASK_TITLE_MAX_LENGTH"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
                 <FieldCounter :value="form.title" :max="TASK_TITLE_MAX_LENGTH" />
               </div>
               <div class="relative">
                 <UFormField label="Task詳細">
-                  <UTextarea v-model="form.detail" :maxlength="TASK_DETAIL_MAX_LENGTH" :rows="3" :disabled="isMutating" class="w-full" />
+                  <UTextarea
+                    v-model="form.detail"
+                    :maxlength="TASK_DETAIL_MAX_LENGTH"
+                    :rows="3"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
                 <FieldCounter :value="form.detail" :max="TASK_DETAIL_MAX_LENGTH" />
               </div>
@@ -207,12 +242,25 @@ const CREATION_MODE_OPTIONS = [
                 </div>
                 <div class="w-full p-3 sm:w-1/3">
                   <UFormField label="予定工数（分）">
-                    <UInput v-model.number="form.plannedEffortMinutes" type="number" min="0" :disabled="isMutating" class="w-full" />
+                    <UInput
+                      v-model.number="form.plannedEffortMinutes"
+                      type="number"
+                      min="0"
+                      :disabled="isMutating"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
                 <div class="w-full p-3 sm:w-1/3">
                   <UFormField label="期限オフセット（日）">
-                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" :max="TASK_DUE_OFFSET_MAX_DAYS" :disabled="isMutating" class="w-full" />
+                    <UInput
+                      v-model.number="form.dueOffsetDays"
+                      type="number"
+                      min="0"
+                      :max="TASK_DUE_OFFSET_MAX_DAYS"
+                      :disabled="isMutating"
+                      class="w-full"
+                    />
                   </UFormField>
                 </div>
                 <div class="w-full p-3 sm:w-1/2">
@@ -242,8 +290,17 @@ const CREATION_MODE_OPTIONS = [
                   </UFormField>
                 </div>
               </div>
-              <UFormField label="チェック項目" :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`" class="mb-3">
-                <UInputTags v-model="form.checklistContents" :max="CHECKLIST_ITEM_MAX_COUNT" :disabled="isMutating" class="w-full" />
+              <UFormField
+                label="チェック項目"
+                :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`"
+                class="mb-3"
+              >
+                <UInputTags
+                  v-model="form.checklistContents"
+                  :max="CHECKLIST_ITEM_MAX_COUNT"
+                  :disabled="isMutating"
+                  class="w-full"
+                />
               </UFormField>
             </template>
 
@@ -265,7 +322,10 @@ const CREATION_MODE_OPTIONS = [
               </UFormField>
               <div class="-m-3 flex flex-wrap">
                 <div class="w-full p-3 sm:w-1/2">
-                  <UFormField label="担当者上書き" help="未指定時はTemplate既定値、さらに未指定なら作成者">
+                  <UFormField
+                    label="担当者上書き"
+                    help="未指定時はTemplate既定値、さらに未指定なら作成者"
+                  >
                     <USelectMenu
                       :model-value="form.assigneeAccountId ?? undefined"
                       :items="memberOptions"
@@ -340,18 +400,39 @@ const CREATION_MODE_OPTIONS = [
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
-                <UFormField label="最初の発生日" :help="isEditing ? '作成時のanchorは変更できません' : undefined">
-                  <UInput v-model="form.firstOccurrenceDate" type="date" :readonly="isEditing" :disabled="isMutating" class="w-full" />
+                <UFormField
+                  label="最初の発生日"
+                  :help="isEditing ? '作成時のanchorは変更できません' : undefined"
+                >
+                  <UInput
+                    v-model="form.firstOccurrenceDate"
+                    type="date"
+                    :readonly="isEditing"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="終了日（任意）">
-                  <UInput v-model="form.endDate" type="date" :disabled="isMutating" class="w-full" />
+                  <UInput
+                    v-model="form.endDate"
+                    type="date"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="生成先行日数" help="発生日の何日前にTaskを作るか">
-                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" :max="TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS" :disabled="isMutating" class="w-full" />
+                  <UInput
+                    v-model.number="form.generationLeadDays"
+                    type="number"
+                    min="0"
+                    :max="TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div v-if="isEditing" class="w-full p-3 sm:w-1/3">
@@ -386,10 +467,14 @@ const CREATION_MODE_OPTIONS = [
                 </UButton>
               </div>
             </div>
-            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{
+              errorMessage
+            }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isMutating" @click="cancelForm">キャンセル</UButton>
-              <UButton type="submit" color="primary" :loading="isSaving">{{ isCreating ? "作成" : "更新" }}</UButton>
+              <UButton type="submit" color="primary" :loading="isSaving">{{
+                isCreating ? "作成" : "更新"
+              }}</UButton>
             </div>
           </form>
 
@@ -422,30 +507,61 @@ const CREATION_MODE_OPTIONS = [
                 アーカイブ
               </UButton>
             </div>
-            <StatusAlert v-if="selectedRule.status === 'BLOCKED'" type="error" density="compact" class="mb-3">
-              {{ formatRecurrenceErrorCode(selectedRule.blockedReason) }} 入力や参照先を修正して「有効」で更新してください。
+            <StatusAlert
+              v-if="selectedRule.status === 'BLOCKED'"
+              type="error"
+              density="compact"
+              class="mb-3"
+            >
+              {{ formatRecurrenceErrorCode(selectedRule.blockedReason) }}
+              入力や参照先を修正して「有効」で更新してください。
             </StatusAlert>
             <p class="mb-3 text-sm whitespace-pre-wrap">{{ selectedRule.detail }}</p>
             <div class="-m-1 mb-2 flex flex-wrap">
               <div class="w-full p-1 sm:w-1/2">
                 <strong>Schedule:</strong>
-                {{ formatRecurrenceSchedule(selectedRule.frequency, selectedRule.intervalCount, selectedRule.weekdays, selectedRule.monthlyDay) }}
+                {{
+                  formatRecurrenceSchedule(
+                    selectedRule.frequency,
+                    selectedRule.intervalCount,
+                    selectedRule.weekdays,
+                    selectedRule.monthlyDay
+                  )
+                }}
               </div>
-              <div class="w-full p-1 sm:w-1/2"><strong>次回発生日:</strong> {{ selectedRule.nextOccurrenceDate ?? "-" }}</div>
               <div class="w-full p-1 sm:w-1/2">
-                <strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～ {{ selectedRule.endDate ?? "終了日なし" }}
+                <strong>次回発生日:</strong> {{ selectedRule.nextOccurrenceDate ?? "-" }}
               </div>
-              <div class="w-full p-1 sm:w-1/2"><strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前</div>
-              <div class="w-full p-1 sm:w-1/2"><strong>担当者:</strong> {{ selectedRuleAssigneeDisplayName }}</div>
-              <div class="w-full p-1 sm:w-1/2"><strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日</div>
-              <div class="w-full p-1 sm:w-1/2"><strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分</div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>期間:</strong> {{ selectedRule.firstOccurrenceDate }} ～
+                {{ selectedRule.endDate ?? "終了日なし" }}
+              </div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>生成:</strong> 発生日の{{ selectedRule.generationLeadDays }}日前
+              </div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>担当者:</strong> {{ selectedRuleAssigneeDisplayName }}
+              </div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>期限:</strong> 発生日 +{{ selectedRule.dueOffsetDays }}日
+              </div>
+              <div class="w-full p-1 sm:w-1/2">
+                <strong>予定工数:</strong> {{ selectedRule.plannedEffortMinutes }}分
+              </div>
               <div class="w-full p-1 sm:w-1/2">
                 <strong>作成元:</strong>
                 {{ selectedRuleSourceLabel }}
               </div>
             </div>
-            <ul v-if="selectedRule.checklistItems.length" class="mb-4 rounded-sm border border-default py-2">
-              <li v-for="item in selectedRule.checklistItems" :key="item.position" class="flex items-center gap-8 px-4 py-1.5">
+            <ul
+              v-if="selectedRule.checklistItems.length"
+              class="mb-4 rounded-sm border border-default py-2"
+            >
+              <li
+                v-for="item in selectedRule.checklistItems"
+                :key="item.position"
+                class="flex items-center gap-8 px-4 py-1.5"
+              >
                 <UIcon name="i-mdi-checkbox-blank-outline" class="size-6 opacity-60" />
                 <span class="text-base">{{ item.content }}</span>
               </li>
@@ -480,17 +596,26 @@ const CREATION_MODE_OPTIONS = [
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="generation in generations" :key="generation.taskRecurrenceGenerationId">
+                  <tr
+                    v-for="generation in generations"
+                    :key="generation.taskRecurrenceGenerationId"
+                  >
                     <td>{{ generation.occurrenceDate }}</td>
                     <td>
                       <UBadge :color="getGenerationStatusColor(generation.status)" size="xs">
                         {{ getGenerationStatusLabel(generation.status) }}
                       </UBadge>
                     </td>
-                    <td>{{ generation.generatedTaskId === null ? "-" : `#${generation.generatedTaskId}` }}</td>
+                    <td>
+                      {{
+                        generation.generatedTaskId === null ? "-" : `#${generation.generatedTaskId}`
+                      }}
+                    </td>
                     <td>{{ generation.attemptCount }}</td>
                     <td>
-                      <span v-if="generation.lastErrorCode">{{ formatRecurrenceErrorCode(generation.lastErrorCode) }}</span>
+                      <span v-if="generation.lastErrorCode">{{
+                        formatRecurrenceErrorCode(generation.lastErrorCode)
+                      }}</span>
                       <span v-else>{{ formatRecurrenceDateTime(generation.nextRetryAt) }}</span>
                     </td>
                     <td class="text-end">
@@ -510,10 +635,17 @@ const CREATION_MODE_OPTIONS = [
                 </tbody>
               </table>
             </div>
-            <div v-if="!isLoadingGenerations && generations.length === 0" class="p-3 text-sm text-muted">生成履歴はありません。</div>
+            <div
+              v-if="!isLoadingGenerations && generations.length === 0"
+              class="p-3 text-sm text-muted"
+            >
+              生成履歴はありません。
+            </div>
           </div>
 
-          <div v-else class="p-4 text-sm text-muted">左の一覧から規則を選択するか、新しい規則を作成してください。</div>
+          <div v-else class="p-4 text-sm text-muted">
+            左の一覧から規則を選択するか、新しい規則を作成してください。
+          </div>
         </div>
       </div>
     </template>
@@ -530,8 +662,12 @@ const CREATION_MODE_OPTIONS = [
       生成履歴は保持されますが、将来のTask生成は停止します。
     </template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isArchiving" @click="isArchiveConfirmOpen = false">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isArchiving" @click="confirmArchive">アーカイブ</UButton>
+      <UButton variant="ghost" :disabled="isArchiving" @click="isArchiveConfirmOpen = false"
+        >キャンセル</UButton
+      >
+      <UButton color="error" variant="ghost" :loading="isArchiving" @click="confirmArchive"
+        >アーカイブ</UButton
+      >
     </template>
   </UModal>
 </template>

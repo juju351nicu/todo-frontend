@@ -3,9 +3,7 @@ import { useRouter } from "vue-router";
 
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import DashboardApi, {
-  DashboardApiError,
-} from "@/features/dashboard/api/dashboardApi";
+import DashboardApi, { DashboardApiError } from "@/features/dashboard/api/dashboardApi";
 import type {
   AdvancedDashboardProject,
   AdvancedDashboardResponse,
@@ -18,10 +16,7 @@ import { useUserStore } from "@/features/auth/stores/user";
 import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
@@ -67,12 +62,8 @@ export const useDashboardPage = () => {
   const isAdvancedLoading = ref(false);
   const isAdvancedNotEntitled = ref(false);
 
-  const displayName = computed(
-    () => userStore.displayName ?? userStore.username ?? "利用者"
-  );
-  const isInitialLoading = computed(
-    () => isLoading.value && dashboard.value === null
-  );
+  const displayName = computed(() => userStore.displayName ?? userStore.username ?? "利用者");
+  const isInitialLoading = computed(() => isLoading.value && dashboard.value === null);
 
   /** Basic Dashboardを取得し、失敗時は直前の表示可能なsnapshotを維持する。 */
   const loadDashboard = async (): Promise<void> => {
@@ -104,18 +95,12 @@ export const useDashboardPage = () => {
   /** 高度Dashboardの安定error codeから、機能資格不足だけを判定する。 */
   const isFeatureNotEntitled = (error: DashboardApiError): boolean =>
     error.status === 403 &&
-    hasApiFieldError(
-      error.errorResponse,
-      "FEATURE_NOT_ENTITLED",
-      "featureCode"
-    );
+    hasApiFieldError(error.errorResponse, "FEATURE_NOT_ENTITLED", "featureCode");
 
   /** 高度Dashboard APIのstatusをSession、upgrade案内、業務エラーへ分離する。 */
   const handleAdvancedApiError = async (error: unknown): Promise<void> => {
     if (!(error instanceof DashboardApiError)) {
-      advancedErrorMessages.value = [
-        DISPLAY_MESSAGES.dashboard.advancedConnectionFailed,
-      ];
+      advancedErrorMessages.value = [DISPLAY_MESSAGES.dashboard.advancedConnectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -149,9 +134,7 @@ export const useDashboardPage = () => {
       return;
     }
     const normalizedStatusDate = requestedStatusDate.trim();
-    const validationErrors = validateEarnedValueStatusDate(
-      normalizedStatusDate
-    );
+    const validationErrors = validateEarnedValueStatusDate(normalizedStatusDate);
     if (validationErrors.length > 0) {
       advancedErrorMessages.value = validationErrors;
       return;
@@ -161,9 +144,7 @@ export const useDashboardPage = () => {
     isAdvancedNotEntitled.value = false;
     advancedErrorMessages.value = [];
     try {
-      advancedDashboard.value = await DashboardApi.getAdvancedDashboard(
-        normalizedStatusDate
-      );
+      advancedDashboard.value = await DashboardApi.getAdvancedDashboard(normalizedStatusDate);
     } catch (error: unknown) {
       await handleAdvancedApiError(error);
     } finally {
@@ -206,9 +187,7 @@ export const useDashboardPage = () => {
   };
 
   /** 高度DashboardのProject summaryから既存WBS・EVM画面へ遷移する。 */
-  const openAdvancedProject = async (
-    project: AdvancedDashboardProject
-  ): Promise<void> => {
+  const openAdvancedProject = async (project: AdvancedDashboardProject): Promise<void> => {
     await router.push({
       name: ROUTE_NAMES.wbs,
       params: { projectId: project.projectId },
@@ -227,7 +206,9 @@ export const useDashboardPage = () => {
   /** 高度Dashboardの「集計」（またはEVM基準日でEnter）の後に、EVM基準日へフォーカスを戻す。 */
   const submitAdvancedDashboard = async (): Promise<void> => {
     await loadAdvancedDashboard();
-    await focusFirstEnabledElement([buildDashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
+    await focusFirstEnabledElement([
+      buildDashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate),
+    ]);
   };
 
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
@@ -241,9 +222,7 @@ export const useDashboardPage = () => {
    *
    * @param event 押された通知
    */
-  const openNotificationEvent = async (
-    event: DashboardNotificationEvent
-  ): Promise<void> => {
+  const openNotificationEvent = async (event: DashboardNotificationEvent): Promise<void> => {
     await openOrToggleNotification(event, async (navigationPath) => {
       await router.push(navigationPath);
     });

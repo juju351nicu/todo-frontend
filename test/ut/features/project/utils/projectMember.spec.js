@@ -32,9 +32,9 @@ describe("projectMember", () => {
   });
 
   it("includeInactiveなら停止中の参加者も状態付きで選択肢に残す（既存の担当者を選択肢から消さないため）", () => {
-    expect(buildProjectMemberOptions(members, { includeInactive: true }).map((option) => option.value)).toEqual([
-      7, 8, 9,
-    ]);
+    expect(
+      buildProjectMemberOptions(members, { includeInactive: true }).map((option) => option.value)
+    ).toEqual([7, 8, 9]);
   });
 
   it("アカウントIDから表示名を引き、参加者から外れたアカウントはIDで示す", () => {

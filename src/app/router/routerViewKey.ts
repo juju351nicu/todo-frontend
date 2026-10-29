@@ -14,9 +14,7 @@ import type { RouteParamsGeneric } from "vue-router";
  * @param params 現在のrouteのparam
  * @returns `projectId`があればその値（配列なら先頭）、なければundefined
  */
-export const resolveRouterViewKey = (
-  params: RouteParamsGeneric
-): string | undefined => {
+export const resolveRouterViewKey = (params: RouteParamsGeneric): string | undefined => {
   const projectId = params.projectId;
   return Array.isArray(projectId) ? projectId[0] : projectId;
 };
