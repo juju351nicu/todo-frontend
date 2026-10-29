@@ -54,9 +54,9 @@ describe("useDataTable", () => {
     const { table } = setup();
 
     expect(table.pageCount.value).toBe(3);
-    expect(table.pageRangeText.value).toBe("1-10 of 25");
+    expect(table.pageRangeText.value).toBe("1〜10件 / 全25件");
     table.movePage(2);
-    expect(table.pageRangeText.value).toBe("21-25 of 25");
+    expect(table.pageRangeText.value).toBe("21〜25件 / 全25件");
     table.movePage(99);
     expect(table.pageIndex.value).toBe(2);
     table.movePage(-1);

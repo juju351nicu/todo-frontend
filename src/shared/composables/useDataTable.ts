@@ -79,7 +79,7 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
   });
 
   const pageCount = computed<number>(() => Math.max(Math.ceil(options.items().length / pageSize.value), 1));
-  /** footerに出す「1-10 of 25」形式の表示範囲。 */
+  /** footerに出す「1〜10件 / 全25件」形式の表示範囲。 */
   const pageRangeText = computed<string>(() =>
     formatPageRange(pageIndex.value, pageSize.value, options.items().length),
   );

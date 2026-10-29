@@ -14,20 +14,20 @@ export const resolvePageSize = (itemsPerPage: number, totalCount: number): numbe
   itemsPerPage === ALL_ITEMS_PER_PAGE ? Math.max(totalCount, 1) : Math.max(itemsPerPage, 1);
 
 /**
- * 一覧表の下に出す「開始-終了 of 全件」の表記を作る。
+ * 一覧表の下に出す「表示中の範囲 / 全件数」の表記を作る。
  *
  * @param pageIndex 0始まりのページ番号
  * @param pageSize 1ページの件数
  * @param totalCount 全件数
- * @returns 例: `1-5 of 12`。0件の場合は`0-0 of 0`
+ * @returns 例: `1〜5件 / 全12件`。0件の場合は`0件`
  */
 export const formatPageRange = (pageIndex: number, pageSize: number, totalCount: number): string => {
   if (totalCount === 0) {
-    return "0-0 of 0";
+    return "0件";
   }
   const start = pageIndex * pageSize + 1;
   const end = Math.min((pageIndex + 1) * pageSize, totalCount);
-  return `${start}-${end} of ${totalCount}`;
+  return `${start}〜${end}件 / 全${totalCount}件`;
 };
 
 /** 選択済み行IDの配列を、TanStack Tableの行選択stateへ変換する。 */

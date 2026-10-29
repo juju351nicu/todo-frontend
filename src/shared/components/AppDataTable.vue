@@ -34,7 +34,7 @@ const props = withDefaults(
     itemsPerPageOptions: () => [],
     hideFooter: false,
     loading: false,
-    noDataText: "No data available",
+    noDataText: "表示するデータはありません。",
   },
 );
 

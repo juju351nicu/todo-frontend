@@ -21,15 +21,15 @@ describe("dataTable utils", () => {
   });
 
   it("最終ページの終了位置を全件数で打ち切る", () => {
-    expect(formatPageRange(2, 5, 12)).toBe("11-12 of 12");
+    expect(formatPageRange(2, 5, 12)).toBe("11〜12件 / 全12件");
   });
 
   it("先頭ページの範囲を表示する", () => {
-    expect(formatPageRange(0, 5, 3)).toBe("1-3 of 3");
+    expect(formatPageRange(0, 5, 3)).toBe("1〜3件 / 全3件");
   });
 
-  it("0件ではVuetifyと同じく0-0 of 0を表示する", () => {
-    expect(formatPageRange(0, 5, 0)).toBe("0-0 of 0");
+  it("0件では範囲を出さず0件とだけ表示する", () => {
+    expect(formatPageRange(0, 5, 0)).toBe("0件");
   });
 
   it("行IDの配列と行選択stateを相互変換し、数値IDの型を保つ", () => {

@@ -17,11 +17,11 @@ describe("AppDataTable", () => {
     wrapper?.unmount();
   });
 
-  const mountTable = () => {
+  const mountTable = (tableItems = items) => {
     wrapper = mountWithUi(AppDataTable, {
       props: {
         headers,
-        items,
+        items: tableItems,
         itemValue: "id",
         selectable: true,
         selected: [],
@@ -31,11 +31,18 @@ describe("AppDataTable", () => {
     });
   };
 
-  it("1ページに表示件数ぶんの行を出し、「開始-終了 of 全件」を出す", () => {
+  it("1ページに表示件数ぶんの行を出し、「表示中の範囲 / 全件数」を出す", () => {
     mountTable();
 
     expect(wrapper.findAll('[aria-label="行を選択"]')).toHaveLength(5);
-    expect(wrapper.text()).toContain("1-5 of 12");
+    expect(wrapper.text()).toContain("1〜5件 / 全12件");
+  });
+
+  it("0件では、文言を渡さない画面にも日本語の既定の文言と「0件」を出す", () => {
+    mountTable([]);
+
+    expect(wrapper.text()).toContain("表示するデータはありません。");
+    expect(wrapper.text()).toContain("0件");
   });
 
   it("見出しのcheckboxは、表示中のページの行だけを選ぶ", async () => {
