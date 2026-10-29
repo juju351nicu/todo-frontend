@@ -1,0 +1,18 @@
+# build・testの出力と依存packageは整形しない
+dist
+dist-ssr
+coverage
+node_modules
+playwright-report
+test-results
+playwright/.auth
+
+# Nuxt UIのVite pluginが生成する型宣言
+auto-imports.d.ts
+components.d.ts
+
+# npmが書くlockfile
+package-lock.json
+
+# 設計書・手順書は表や日本語の改行を手で整えているため、Prettierで書き換えない
+*.md
