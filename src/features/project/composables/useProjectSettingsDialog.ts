@@ -6,6 +6,10 @@ import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectDetail,
   ProjectMember,
@@ -207,8 +211,8 @@ export const useProjectSettingsDialog = (
       !isBusy.value &&
       hasProjectChanges.value &&
       projectForm.value.name.trim().length > 0 &&
-      projectForm.value.name.trim().length <= 100 &&
-      projectForm.value.description.trim().length <= 2000
+      projectForm.value.name.trim().length <= PROJECT_NAME_MAX_LENGTH &&
+      projectForm.value.description.trim().length <= PROJECT_DESCRIPTION_MAX_LENGTH
   );
   /** 入力中のアカウントIDが、すでにProjectへ参加しているアカウントか。 */
   const isAddMemberAlreadyJoined = computed<boolean>(() => {

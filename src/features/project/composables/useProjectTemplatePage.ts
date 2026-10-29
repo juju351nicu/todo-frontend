@@ -6,6 +6,11 @@ import { useUserStore } from "@/features/auth/stores/user";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
+import {
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH,
+  PROJECT_TEMPLATE_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectTemplate,
   ProjectTemplateMemberMappingRequest,
@@ -16,6 +21,7 @@ import {
   PROJECT_RECOVERY_PRIORITY_STATUSES,
   PROJECT_TEMPLATE_ERROR_CODES,
 } from "@/features/project/utils/apiErrors";
+import { validateProjectKey } from "@/features/project/utils/projectForm";
 import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
@@ -355,12 +361,12 @@ export const useProjectTemplatePage = () => {
   const buildUpdateRequest = (): ProjectTemplateUpdateRequest | null => {
     const name = editForm.value.name.trim();
     const description = editForm.value.description.trim();
-    if (!name || name.length > 100) {
-      errorMessages.value = ["Template名を1〜100文字で入力してください。"];
+    if (!name || name.length > PROJECT_TEMPLATE_NAME_MAX_LENGTH) {
+      errorMessages.value = [`Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`];
       return null;
     }
-    if (description.length > 2000) {
-      errorMessages.value = ["説明は2000文字以内で入力してください。"];
+    if (description.length > PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH) {
+      errorMessages.value = [`説明は${PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`];
       return null;
     }
     return {
@@ -525,14 +531,13 @@ export const useProjectTemplatePage = () => {
     successMessage.value = "";
     const projectKey = applyForm.value.projectKey.trim().toUpperCase();
     const name = applyForm.value.name.trim();
-    if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(projectKey) || projectKey.length > 30) {
-      errorMessages.value = [
-        "Projectキーは30文字以内の大文字英数字をハイフンで区切って入力してください。",
-      ];
+    const projectKeyError = validateProjectKey(projectKey);
+    if (projectKeyError) {
+      errorMessages.value = [projectKeyError];
       return;
     }
-    if (!name || name.length > 100) {
-      errorMessages.value = ["Project名を1〜100文字で入力してください。"];
+    if (!name || name.length > PROJECT_NAME_MAX_LENGTH) {
+      errorMessages.value = [`Project名を1〜${PROJECT_NAME_MAX_LENGTH}文字で入力してください。`];
       return;
     }
     if (!isValidLocalDateInput(applyForm.value.projectStartDate)) {

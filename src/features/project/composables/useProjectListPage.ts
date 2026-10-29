@@ -5,18 +5,22 @@ import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectCreateRequest,
   ProjectSummary,
 } from "@/features/project/types/project";
 import { useUserStore } from "@/features/auth/stores/user";
 import { PROJECT_ERROR_CODES } from "@/features/project/utils/apiErrors";
+import { validateProjectKey } from "@/features/project/utils/projectForm";
 import { getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** Projectキーの形式（Backendの`ProjectCreateRequest`と同じ。大文字英数字をハイフンで区切る）。 */
-const PROJECT_KEY_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 
 /** Project作成フォームの初期値。 */
 const createEmptyCreateForm = (): ProjectCreateRequest => ({
@@ -56,14 +60,15 @@ export const useProjectListPage = () => {
     const name = createForm.value.name.trim();
     const description = createForm.value.description.trim();
     return {
-      projectKey:
-        projectKey.length > 30
-          ? "Projectキーは30文字以内で入力してください。"
-          : projectKey.length > 0 && !PROJECT_KEY_PATTERN.test(projectKey)
-            ? "Projectキーは大文字英数字をハイフンで区切って入力してください（例：SALES-2026）。"
-            : "",
-      name: name.length > 100 ? "名前は100文字以内で入力してください。" : "",
-      description: description.length > 2000 ? "説明は2000文字以内で入力してください。" : "",
+      projectKey: projectKey.length > 0 ? validateProjectKey(projectKey) : "",
+      name:
+        name.length > PROJECT_NAME_MAX_LENGTH
+          ? `名前は${PROJECT_NAME_MAX_LENGTH}文字以内で入力してください。`
+          : "",
+      description:
+        description.length > PROJECT_DESCRIPTION_MAX_LENGTH
+          ? `説明は${PROJECT_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`
+          : "",
     };
   });
 

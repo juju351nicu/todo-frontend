@@ -7,6 +7,12 @@ import {
   useProjectTemplatePage,
 } from "@/features/project/composables/useProjectTemplatePage";
 import {
+  PROJECT_KEY_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH,
+  PROJECT_TEMPLATE_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
+import {
   formatProjectTemplateOffset,
   formatProjectTemplateParent,
   formatProjectTemplateTaskTitle,
@@ -149,19 +155,19 @@ onBeforeMount(initialize);
                   <UFormField label="Template名">
                     <UInput
                       v-model="editForm.name"
-                      :maxlength="100"
+                      :maxlength="PROJECT_TEMPLATE_NAME_MAX_LENGTH"
                       :disabled="isSaving"
                       class="w-full"
                       :data-project-template-control="PROJECT_TEMPLATE_CONTROL.editName"
                     />
                   </UFormField>
-                  <FieldCounter :value="editForm.name" :max="100" />
+                  <FieldCounter :value="editForm.name" :max="PROJECT_TEMPLATE_NAME_MAX_LENGTH" />
                 </div>
                 <div class="relative">
                   <UFormField label="生成Projectへ複製する説明">
-                    <UTextarea v-model="editForm.description" :maxlength="2000" :rows="4" :disabled="isSaving" class="w-full" />
+                    <UTextarea v-model="editForm.description" :maxlength="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH" :rows="4" :disabled="isSaving" class="w-full" />
                   </UFormField>
-                  <FieldCounter :value="editForm.description" :max="2000" />
+                  <FieldCounter :value="editForm.description" :max="PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH" />
                 </div>
                 <StatusAlert type="info" variant="soft" density="compact">
                   member slot、Board列、Task、checklist、依存関係のsnapshotは編集されません。
@@ -193,18 +199,18 @@ onBeforeMount(initialize);
                   <UFormField label="Projectキー" help="大文字英数字をハイフンで区切ります。">
                     <UInput
                       v-model="applyForm.projectKey"
-                      :maxlength="30"
+                      :maxlength="PROJECT_KEY_MAX_LENGTH"
                       :disabled="!canApplyTemplate || isMutating"
                       class="w-full"
                     />
                   </UFormField>
-                  <FieldCounter :value="applyForm.projectKey" :max="30" class="end-7 bottom-3.5" />
+                  <FieldCounter :value="applyForm.projectKey" :max="PROJECT_KEY_MAX_LENGTH" class="end-7 bottom-3.5" />
                 </div>
                 <div class="relative w-full p-3 md:w-1/3">
                   <UFormField label="Project名">
-                    <UInput v-model="applyForm.name" :maxlength="100" :disabled="!canApplyTemplate || isMutating" class="w-full" />
+                    <UInput v-model="applyForm.name" :maxlength="PROJECT_NAME_MAX_LENGTH" :disabled="!canApplyTemplate || isMutating" class="w-full" />
                   </UFormField>
-                  <FieldCounter :value="applyForm.name" :max="100" class="end-7 bottom-3.5" />
+                  <FieldCounter :value="applyForm.name" :max="PROJECT_NAME_MAX_LENGTH" class="end-7 bottom-3.5" />
                 </div>
                 <div class="w-full p-3 md:w-1/3">
                   <UFormField label="Project開始日">

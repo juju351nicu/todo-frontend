@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import {
-  CAPTURE_NAME_CONTROL,
-  TEMPLATE_NAME_MAX_LENGTH,
-  useProjectTemplateCapture,
-} from "@/features/project/composables/useProjectTemplateCapture";
+import { CAPTURE_NAME_CONTROL, useProjectTemplateCapture } from "@/features/project/composables/useProjectTemplateCapture";
+import { PROJECT_TEMPLATE_NAME_MAX_LENGTH } from "@/features/project/constants/projectLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -52,14 +49,14 @@ const { baseDate, canCapture, capture, close, errorMessages, isOpen, isSaving, n
         <UFormField label="Template名">
           <UInput
             v-model="name"
-            :maxlength="TEMPLATE_NAME_MAX_LENGTH"
+            :maxlength="PROJECT_TEMPLATE_NAME_MAX_LENGTH"
             autofocus
             :disabled="isSaving"
             class="w-full"
             :data-project-template-capture="CAPTURE_NAME_CONTROL"
           />
         </UFormField>
-        <FieldCounter :value="name" :max="TEMPLATE_NAME_MAX_LENGTH" />
+        <FieldCounter :value="name" :max="PROJECT_TEMPLATE_NAME_MAX_LENGTH" />
       </div>
       <UFormField label="Task日付の基準日" help="各Taskの開始日・期限は、この日からの差として保存されます。">
         <UInput v-model="baseDate" type="date" :disabled="isSaving" class="w-full" @keydown.enter.prevent="capture" />

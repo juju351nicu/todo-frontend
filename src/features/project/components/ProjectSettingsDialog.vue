@@ -6,6 +6,10 @@ import {
   PROJECT_SETTINGS_CONTROL,
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
@@ -126,27 +130,27 @@ const SECTION_TABS = [
             <UFormField label="Project名">
               <UInput
                 v-model="projectForm.name"
-                :maxlength="100"
+                :maxlength="PROJECT_NAME_MAX_LENGTH"
                 :readonly="!canUpdateProject"
                 :disabled="isBusy"
                 class="w-full"
                 :data-project-settings-control="PROJECT_SETTINGS_CONTROL.projectName"
               />
             </UFormField>
-            <FieldCounter :value="projectForm.name" :max="100" />
+            <FieldCounter :value="projectForm.name" :max="PROJECT_NAME_MAX_LENGTH" />
           </div>
           <div class="relative">
             <UFormField label="説明">
               <UTextarea
                 v-model="projectForm.description"
-                :maxlength="2000"
+                :maxlength="PROJECT_DESCRIPTION_MAX_LENGTH"
                 :rows="5"
                 :readonly="!canUpdateProject"
                 :disabled="isBusy"
                 class="w-full"
               />
             </UFormField>
-            <FieldCounter :value="projectForm.description" :max="2000" />
+            <FieldCounter :value="projectForm.description" :max="PROJECT_DESCRIPTION_MAX_LENGTH" />
           </div>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <UButton
