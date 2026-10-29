@@ -22,7 +22,7 @@ interface UserState {
   permissionCodes: PermissionCode[];
   /** ログイン中ならtrue。 */
   authenticated: boolean;
-  /** Session APIで状態を確かめ終えたらtrue（確かめる前に保護画面を判定しないため）。 */
+  /** Session APIで状態を確かめ終えたらtrue。確かめた後は、`restoreSession`がSession APIを呼び直さない。 */
   sessionChecked: boolean;
 }
 
