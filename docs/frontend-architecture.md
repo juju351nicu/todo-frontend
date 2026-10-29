@@ -125,14 +125,15 @@ src/
 - `src/features/task/utils/taskDisplay.ts`: Project Taskの優先度の表示名・色、残り日数の表示変換
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
-- `src/features/todo/`: 旧Todo（`/api/v1/todo/*`）の画面。Project Taskと混ざらないよう分けて置き、旧Todo APIを廃止するときに丸ごと消す
-  - `api/todoApi.ts`（`TodoApi`・`TodoApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
-  - `stores/todo.ts`: 画面のAPI呼び出しと通信中状態
-  - `types/todo.ts`: Request / Response型（snake_caseの項目を含む）
-  - `composables/useTodoListPage.ts`・`useTodoDetailPage.ts`・`useTodoCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
-  - `components/TodoSearchCard.vue`・`TodoUpsertConfirm.vue`・`TodoPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
-  - `utils/todoForm.ts`・`todoCalendar.ts`・`todoDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
-  - `views/TodoListPage.vue`・`TodoDetailPage.vue`・`TodoCalendarPage.vue`: 一覧・登録更新・カレンダー画面
+- `src/features/task-list/`: Task一覧（`/api/v1/task-list/*`）の画面。担当者ごとに、利用中の全ProjectのTaskを一覧・カレンダーで見て、登録・更新・完了する。Board・WBS等のProject Task（`src/features/task/`）と混ざらないよう分けて置く
+  - `api/taskListApi.ts`（`TaskListApi`・`TaskListApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
+  - `stores/taskList.ts`: 画面のAPI呼び出しと通信中状態
+  - `types/taskList.ts`: Request / Response型（snake_caseの項目を含む）
+  - `composables/useTaskListPage.ts`・`useTaskListDetailPage.ts`・`useTaskCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
+  - `components/TaskListSearchCard.vue`・`TaskListUpsertConfirm.vue`・`TaskListPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
+  - `utils/taskListForm.ts`・`taskCalendar.ts`・`taskListDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
+  - `views/TaskListPage.vue`・`TaskListDetailPage.vue`・`TaskCalendarPage.vue`: 一覧・登録更新・カレンダー画面（`/tasks/list`・`/tasks/list/:id`・`/tasks/register`・`/tasks/calendar`）
+  - 2026-10-30に、旧Todo画面（`src/features/todo`、`/todo/*`、`/api/v1/todo/*`）を機能を変えずにTask一覧へ改名した。この資料と`browser-regression-checklist.md`の日付付きの記録は、当時の名前のまま残している
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/api/projectTemplateApi.ts`: 本人所有Project Templateのcapture・一覧・詳細・更新・archive・適用API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
