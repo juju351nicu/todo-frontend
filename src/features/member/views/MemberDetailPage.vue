@@ -39,7 +39,7 @@ const {
     <StatusAlert v-if="submitError" type="error" class="mb-4">
       {{ submitError }}
     </StatusAlert>
-    <!-- 固定幅800pxでは幅390pxで右が切れたため、16のTodo詳細と同じく画面幅に収める（動作確認/24_ログイン_会員 G-5）。 -->
+    <!-- 幅の狭い画面（390px）でも右が切れないよう、固定幅にせず画面幅に収める（Todo詳細と同じ作り）。 -->
     <UCard class="w-full max-w-200">
       <template #header>
         <span>{{ memberForm.memberId > 0 ? memberForm.memberId : " (新規)" }}</span>

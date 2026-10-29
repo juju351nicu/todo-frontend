@@ -26,7 +26,7 @@ import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/
 /**
  * Dashboardの部品に付ける`data-dashboard-control`属性の値。
  * 再読込中は「再読み込み」が、集計中は「EVM基準日」がdisabledになりフォーカスがbodyへ外れるため、
- * 利用者が押した操作の後にここへ戻す（動作確認/17_Dashboard G-9）。
+ * 利用者が押した操作の後にここへ戻す。
  */
 export const DASHBOARD_CONTROL = {
   /** 画面右上の「再読み込み」ボタン。 */

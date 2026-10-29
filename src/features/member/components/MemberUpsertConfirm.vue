@@ -32,8 +32,8 @@ const handleOpenChange = (open: boolean): void => {
 
 <template>
   <!--
-    旧画面は固定幅600px・高さ600pxの独自のoverlayで、幅390pxでは左右が切れ、Escで閉じず、Dialogとして読み上げられず、
-    権限を数値で出していた（動作確認/24_ログイン_会員 G-5）。16のTodo確認画面と同じUModalにする。
+    UModalにして、幅の狭い画面（390px）でも切れず、Escで閉じられ、Dialogとして読み上げられるようにする
+    （Todoの確認画面と同じ作り）。権限は数値ではなく表示名で出す。
   -->
   <UModal
     :open="true"

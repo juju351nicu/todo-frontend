@@ -5,16 +5,6 @@
  * 新しいファイル・行を足してはいけない（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
 export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
-  "src/features/administration/composables/useAccountAdministrationPage.ts": 2,
-  "src/features/attendance/components/AttendanceCorrectionDialog.vue": 1,
-  "src/features/attendance/composables/useAttendanceAdministrationPage.ts": 1,
-  "src/features/attendance/composables/useAttendancePage.ts": 3,
-  "src/features/attendance/utils/apiErrors.ts": 1,
-  "src/features/dashboard/composables/useDashboardPage.ts": 1,
-  "src/features/dashboard/utils/dashboard.ts": 1,
-  "src/features/member/components/MemberUpsertConfirm.vue": 1,
-  "src/features/member/utils/memberForm.ts": 1,
-  "src/features/member/views/MemberDetailPage.vue": 1,
   "src/features/project/api/projectApi.ts": 2,
   "src/features/project/components/ProjectSettingsDialog.vue": 2,
   "src/features/project/composables/useProjectListPage.ts": 3,

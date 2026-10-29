@@ -32,7 +32,7 @@ defineEmits<{
 </script>
 
 <template>
-  <!-- 入力途中の申請を誤って破棄しないよう、Vuetifyのpersistentと同じく外側クリックやEscでは閉じない。 -->
+  <!-- 入力途中の申請を誤って破棄しないよう、外側クリックやEscでは閉じない（`dismissible`を無効にする）。 -->
   <UModal
     :open="modelValue"
     :dismissible="false"
@@ -42,8 +42,8 @@ defineEmits<{
   >
     <template #body>
       <!--
-        失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。以前は画面上部（Dialogの後ろ）へ出て見えなかった
-        （動作確認/21_勤怠本人 G-5）。負のtopとmarginでUModal本文の上余白（pt-4）まで覆う（12・18と同じ対応）。
+        失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。画面上部（Dialogの後ろ）に出すと見えないため。
+        負のtopとmarginでUModal本文の上余白（pt-4）まで覆う（Project設定・WBSのDialogと同じ書き方）。
       -->
       <div v-if="errorMessages.length" class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4">
         <StatusAlert type="error">

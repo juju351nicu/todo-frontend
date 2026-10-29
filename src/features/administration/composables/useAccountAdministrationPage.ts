@@ -26,7 +26,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
 /**
  * アカウント一覧の行の「ロールを編集」ボタンに付ける`data-account-admin-control`属性の値を作る。
  * 409の後は一覧を取り直して行を作り直すため、Dialogを開いたボタンが消えてフォーカスがbodyへ外れる。
- * 取り直した後に同じaccountの行のボタンへ戻す（動作確認/23_アカウント管理 G-3）。
+ * 取り直した後に同じaccountの行のボタンへ戻す。
  *
  * @param accountId 行のaccount ID
  * @returns 属性の値
@@ -280,7 +280,7 @@ export const useAccountAdministrationPage = () => {
   /**
    * 404／409後に最新versionを再取得し、古い対象と編集draftを画面へ残さない。
    * 取り直した対象のversionが送ったversionと違う（別の操作で更新されていた）ときだけ、Backendの「再読み込みしてください。」の後ろに
-   * 取り直し済みの案内を添える（動作確認/23_アカウント管理 G-3。12・18〜22の対応と同じ）。
+   * 取り直し済みの案内を添える（Project設定・WBS・勤怠の409と同じ書き方）。
    * Backendは最後の管理者の保護も同じ409（`AUTHORIZATION_CONFLICT`）で返すため、error codeではなくversionで見分ける。
    *
    * @param operationMessages 更新APIの失敗として表示した理由

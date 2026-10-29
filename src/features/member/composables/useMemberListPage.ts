@@ -46,7 +46,7 @@ export const formatMemberDateTime = (value: string | null): string =>
  *
  * 削除（行の選択と「削除確認する」）は`ACCOUNT_UPDATE`を持つ利用者だけに出す（`canDeleteMembers`）。
  * BackendはこのpermissionがないDELETEを403で拒否するため、押しても必ず失敗するボタンを出さない
- * （確認依頼「会員一覧の見え方の変更」2、2026-10-28決定）。最終的な認可はBackendが行う。
+ * 最終的な認可はBackendが行う。
  */
 export const useMemberListPage = () => {
   const router = useRouter();

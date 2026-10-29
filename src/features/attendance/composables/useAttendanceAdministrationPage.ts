@@ -31,7 +31,7 @@ import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/
 /**
  * 勤怠管理画面の部品に付ける`data-attendance-admin-control`属性の値。
  * 承認・差戻し・締め・修正の審査の後は押したボタンが消えてフォーカスがbodyへ外れるため、
- * 一覧の同じ行（なければ「検索」）へ戻す。理由が空のときは理由の入力欄へ移す（動作確認/22_勤怠管理 G-2〜G-5）。
+ * 一覧の同じ行（なければ「検索」）へ戻す。理由が空のときは理由の入力欄へ移す。
  */
 export const ATTENDANCE_ADMIN_CONTROL = {
   /** 月次一覧の「検索」ボタン。 */

@@ -58,7 +58,7 @@ const {
 
 onBeforeMount(loadDashboard);
 
-// 移行前のv-card-title直下のv-dividerと同じく、見出しと本文を線で区切り、本文の上余白を残す。
+// 見出しと本文を線で区切り、本文の上余白を残す（cardの見出しと本文の境目を分かりやすくするため）。
 const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4" };
 </script>
 

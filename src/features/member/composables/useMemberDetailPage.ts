@@ -35,7 +35,7 @@ export const useMemberDetailPage = (
   });
   /**
    * 会員の権限の表示名。会員画面ではロールを変えられない（Backendの旧会員APIが403で拒否する）ため、表示だけにする。
-   * ロールの変更は監査ログの残るアカウント・ロール管理で行う（確認依頼「旧会員APIの認可」2、2026-10-28決定）。
+   * ロールの変更は、監査ログの残るアカウント・ロール管理で行う。
    */
   const roleLabel = computed<string>(
     () => MEMBER_ROLE_LABELS[memberForm.role] ?? String(memberForm.role)

@@ -44,8 +44,7 @@ const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
 
 /**
  * 打刻ボタンに付ける`data-attendance-punch`属性の値（打刻操作名と同じ）を、画面の並び順で並べたもの。
- * 打刻すると押したボタンがdisabledになりフォーカスがbodyへ外れるため、打刻の後は次に押せるボタンへ移す
- * （動作確認/21_勤怠本人 G-2）。
+ * 打刻すると押したボタンがdisabledになりフォーカスがbodyへ外れるため、打刻の後は次に押せるボタンへ移す。
  */
 const PUNCH_FOCUS_ORDER: readonly AttendancePunchAction[] = [
   "clock-in",
@@ -56,8 +55,7 @@ const PUNCH_FOCUS_ORDER: readonly AttendancePunchAction[] = [
 
 /**
  * 本人勤怠画面の部品に付ける`data-attendance-control`属性の値。
- * 押したボタンが消える操作（提出・修正申請・申請取消）の後に、フォーカスがbodyへ外れないよう次の部品へ移す
- * （動作確認/21_勤怠本人 G-6〜G-8）。
+ * 押したボタンが消える操作（提出・修正申請・申請取消）の後に、フォーカスがbodyへ外れないよう次の部品へ移す。
  */
 export const ATTENDANCE_CONTROL = {
   /** 画面見出しの「表示月」入力欄。提出の後、「提出」が消えたときの戻り先。 */
@@ -169,7 +167,7 @@ export const useAttendancePage = () => {
       ["APPROVED", "CLOSED"].includes(monthSummary.value?.statusCode ?? "")
   );
   /**
-   * 選択日に修正申請できない理由（改善提案 1-22）。ボタンを出さないだけでは理由が分からないため、日の詳細に添える。
+   * 選択日に修正申請できない理由。ボタンを出さないだけでは理由が分からないため、日の詳細に添える。
    * 修正申請は承認済み・締め済みの月だけが対象（`docs/attendance-mvp-design.md`「修正申請」）。
    * 勤怠の更新permissionがない利用者、申請できる日、月の情報を取得していない間は空文字。
    */
