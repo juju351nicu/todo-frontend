@@ -149,7 +149,11 @@ src/
 - `src/features/project/views/ProjectTemplatePage.vue`: Template snapshot参照、管理、member slot mapping、Project生成画面
 - `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputの実在日付検証（日付の既定値は`src/shared/utils/businessDate.ts`の業務日）
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
-- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task ID queryからの詳細表示、Task登録・更新・移動・archive・競合回復
+- `src/features/task/composables/useTaskBoardPage.ts`: Board画面の統括。Project詳細・Boardの読込、`?taskId=`のTaskを開く処理、APIエラーの表示（401のSession破棄、403・404で古い画面を破棄）、409後の再取得と、下記の領域別composableの配線
+- `src/features/task/composables/taskBoardPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、Board、画面上部message、Board再取得、エラー処理）の型
+- `src/features/task/composables/useTaskBoardPermissions.ts`: Project単位の操作の可否（permission・Project role・Projectの状態から決まる作成・更新・移動・archive・コメント投稿・Template保存等）
+- `src/features/task/composables/useTaskEditor.ts`: Task作成・編集Dialog（詳細の読込、入力チェック、登録・更新、archive、閉じたときの`?taskId=`の除去、WBSの日別実績への遷移）と、開いたTaskごとの可否
+- `src/features/task/composables/useTaskBoardMove.ts`: Taskの移動（dragの楽観表示と失敗時の復元、キーボードでの上下左右移動とフォーカスの復元）
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
 - `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
@@ -219,6 +223,8 @@ Project設定とmember管理はTask Boardから開く1つのDialogと`useProject
 WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。
 
 2026-10-26に、約2,700行へ増えた`useWbsPage`を領域別composableへ分割した。`useWbsPage`は統括として残り、各composableの戻り値を分割前と同じ名前で返すため、`WbsPage.vue`は変更していない（契約は`useWbsPage.spec.js`の戻り値テストで固定）。領域別composableは`WbsPageContext`で画面共通の状態を受け取り、領域をまたぐ処理（日別予定・実績・稼働日例外の変更後のworkload再取得、workloadの401時の日別予定・実績Dialogのclose、baseline変更時のEVM破棄、依存関係の競合時の画面全体再取得）は各composableのoptionsのcallbackで`useWbsPage`から配線する。テストは領域ごとのspecへ分け、共通mock・fixtureは`test/ut/features/wbs/composables/wbsPageTestSupport.js`に置く。
+
+2026-10-29に、約1,000行の`useTaskBoardPage`も同じ形で分割した。`useTaskBoardPage`は統括として残り、Project単位の可否（`useTaskBoardPermissions`）、Task作成・編集Dialog（`useTaskEditor`）、Taskの移動（`useTaskBoardMove`）の戻り値を分割前と同じ名前で返すため、`TaskBoardPage.vue`は変更していない（契約は`useTaskBoardPage.spec.js`で固定）。領域別composableは`TaskBoardPageContext`で画面共通の状態とエラー処理を受け取る。401・403・404で画面を片付けるときは、統括がDialogの破棄（`discardTaskEditor`）とドラッグ前Boardの破棄（`discardDragSnapshot`）を呼ぶ。
 
 2026-08-22にWBS階層表へTask編集Dialogを追加した。親候補はSummaryだけとし、編集中Task自身と全子孫を除いて明らかな循環をFrontendでも抑止する。予定日、整数分の予定工数、0から100まで小数第2位の進捗率、Milestoneの同日・0分制約を送信前に検証するが、Project状態、親Taskの最新状態、子Task有無、同時更新はBackendを最終判定とする。更新は取得時点のversionを含む`PUT /api/v1/projects/{projectId}/wbs/tasks/{taskId}`を使用し、成功時はResponse全体、409時は再取得した最新WBSで画面を差し替える。Ganttのdrag・resize・progress直接変更は引き続き無効とする。
 
