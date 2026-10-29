@@ -9,6 +9,12 @@ import TaskRecurrenceApi, {
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  CHECKLIST_ITEM_MAX_LENGTH,
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import type {
   TaskRecurrence,
   TaskRecurrenceCreateRequest,
@@ -411,10 +417,10 @@ export const useTaskRecurrences = (
   const validateSnapshot = (): string => {
     const value = form.value;
     const checklist = value.checklistContents.map((content) => content.trim());
-    if (!value.title.trim() || value.title.trim().length > 45) {
+    if (!value.title.trim() || value.title.trim().length > TASK_TITLE_MAX_LENGTH) {
       return "Taskタイトルを1〜45文字で入力してください。";
     }
-    if (!value.detail.trim() || value.detail.trim().length > 1000) {
+    if (!value.detail.trim() || value.detail.trim().length > TASK_DETAIL_MAX_LENGTH) {
       return "Task詳細を1〜1000文字で入力してください。";
     }
     if (
@@ -433,8 +439,8 @@ export const useTaskRecurrences = (
     if (value.assigneeAccountId === null) return "担当者を選択してください。";
     if (value.taskStatusId === null) return "未完了のBoard列を選択してください。";
     if (
-      checklist.length > 50 ||
-      checklist.some((content) => content.length === 0 || content.length > 255)
+      checklist.length > CHECKLIST_ITEM_MAX_COUNT ||
+      checklist.some((content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH)
     ) {
       return "チェック項目は1〜255文字、最大50件で入力してください。";
     }

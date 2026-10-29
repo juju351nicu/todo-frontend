@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
+import { checklistControlKey, useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
-  checklistControlKey,
-  useTaskChecklist,
-} from "@/features/task/composables/useTaskChecklist";
+} from "@/features/task/constants/taskLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 

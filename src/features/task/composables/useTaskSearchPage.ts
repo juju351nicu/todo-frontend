@@ -11,6 +11,7 @@ import {
   TaskSearchApiError,
   updateTaskSavedView,
 } from "@/features/task/api/taskSearchApi";
+import { TASK_SEARCH_KEYWORD_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskSavedView,
   TaskSearchColumn,
@@ -28,9 +29,6 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
-
-/** キーワードの最大文字数。Backendの入力制約（`TaskSearchFilterRequest#keyword`の`@Size(max = 100)`）と同じ値。 */
-export const TASK_SEARCH_KEYWORD_MAX_LENGTH = 100;
 
 /**
  * Saved Viewの部品に付ける`data-task-search-control`属性の値。

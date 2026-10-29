@@ -6,6 +6,7 @@ import { useUserStore } from "@/features/auth/stores/user";
 import TaskCommentApi, {
   TaskCommentApiError,
 } from "@/features/task/api/taskCommentApi";
+import { TASK_COMMENT_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskComment,
   TaskCommentCreateRequest,
@@ -19,9 +20,6 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
-
-/** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
-export const TASK_COMMENT_MAX_LENGTH = 2000;
 
 /**
  * 投稿欄（`TaskCommentsPanel.vue`の「コメントを追加」）に付ける`data-comment-control`属性の値。

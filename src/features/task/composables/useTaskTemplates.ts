@@ -6,6 +6,13 @@ import type { TaskPriority } from "@/features/project/types/project";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  CHECKLIST_ITEM_MAX_LENGTH,
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_TEMPLATE_NAME_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import type {
   TaskTemplate,
   TaskTemplateApplyResponse,
@@ -220,11 +227,11 @@ export const useTaskTemplates = (
       content.trim()
     );
     let message = "";
-    if (!form.name.trim() || form.name.trim().length > 100) {
+    if (!form.name.trim() || form.name.trim().length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
       message = "Template名を1〜100文字で入力してください。";
-    } else if (!form.title.trim() || form.title.trim().length > 45) {
+    } else if (!form.title.trim() || form.title.trim().length > TASK_TITLE_MAX_LENGTH) {
       message = "Taskタイトルを1〜45文字で入力してください。";
-    } else if (!form.detail.trim() || form.detail.trim().length > 1000) {
+    } else if (!form.detail.trim() || form.detail.trim().length > TASK_DETAIL_MAX_LENGTH) {
       message = "Task詳細を1〜1000文字で入力してください。";
     } else if (
       !Number.isInteger(form.dueOffsetDays) ||
@@ -240,9 +247,9 @@ export const useTaskTemplates = (
     } else if (!form.defaultStatusCode) {
       message = "既定のBoard列を選択してください。";
     } else if (
-      checklistContents.length > 50 ||
+      checklistContents.length > CHECKLIST_ITEM_MAX_COUNT ||
       checklistContents.some(
-        (content) => content.length === 0 || content.length > 255
+        (content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH
       )
     ) {
       message = "チェック項目は1〜255文字、最大50件で入力してください。";

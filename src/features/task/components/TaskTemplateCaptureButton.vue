@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import {
-  TASK_TEMPLATE_NAME_MAX_LENGTH,
-  useTaskTemplateCapture,
-} from "@/features/task/composables/useTaskTemplateCapture";
+import { useTaskTemplateCapture } from "@/features/task/composables/useTaskTemplateCapture";
+import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 

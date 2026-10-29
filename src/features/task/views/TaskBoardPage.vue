@@ -12,6 +12,10 @@ import TaskRecurrenceDialog from "@/features/task/components/TaskRecurrenceDialo
 import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
 import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
+import {
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import { getTaskPriorityColor, getTaskPriorityLabel } from "@/features/task/utils/taskDisplay";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import TaskWorkLogAuditDialog from "@/features/time-tracking/components/TaskWorkLogAuditDialog.vue";
@@ -252,22 +256,22 @@ onBeforeMount(initialize);
         <form @submit.prevent="saveTask">
           <div class="relative mb-2">
             <UFormField label="タイトル">
-              <UInput v-model="form.title" :maxlength="45" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+              <UInput v-model="form.title" :maxlength="TASK_TITLE_MAX_LENGTH" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
             </UFormField>
-            <FieldCounter :value="form.title" :max="45" />
+            <FieldCounter :value="form.title" :max="TASK_TITLE_MAX_LENGTH" />
           </div>
           <div class="relative mb-2">
             <UFormField label="詳細">
               <UTextarea
                 v-model="form.detail"
-                :maxlength="1000"
+                :maxlength="TASK_DETAIL_MAX_LENGTH"
                 :rows="4"
                 :readonly="isReadonly"
                 :disabled="isSaving"
                 class="w-full"
               />
             </UFormField>
-            <FieldCounter :value="form.detail" :max="1000" />
+            <FieldCounter :value="form.detail" :max="TASK_DETAIL_MAX_LENGTH" />
           </div>
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 sm:w-1/2">

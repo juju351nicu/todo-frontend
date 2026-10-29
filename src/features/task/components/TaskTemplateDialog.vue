@@ -3,6 +3,12 @@ import { toRef } from "vue";
 
 import type { ProjectMember, TaskDetail, TaskStatus } from "@/features/project/types/project";
 import { useTaskTemplateDialog } from "@/features/task/composables/useTaskTemplateDialog";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_TEMPLATE_NAME_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -219,21 +225,21 @@ const {
             <div class="mb-3 text-base font-bold">Templateを編集</div>
             <div class="relative">
               <UFormField label="Template名">
-                <UInput v-model="editForm.name" :maxlength="100" class="w-full" />
+                <UInput v-model="editForm.name" :maxlength="TASK_TEMPLATE_NAME_MAX_LENGTH" class="w-full" />
               </UFormField>
-              <FieldCounter :value="editForm.name" :max="100" />
+              <FieldCounter :value="editForm.name" :max="TASK_TEMPLATE_NAME_MAX_LENGTH" />
             </div>
             <div class="relative">
               <UFormField label="Taskタイトル">
-                <UInput v-model="editForm.title" :maxlength="45" class="w-full" />
+                <UInput v-model="editForm.title" :maxlength="TASK_TITLE_MAX_LENGTH" class="w-full" />
               </UFormField>
-              <FieldCounter :value="editForm.title" :max="45" />
+              <FieldCounter :value="editForm.title" :max="TASK_TITLE_MAX_LENGTH" />
             </div>
             <div class="relative">
               <UFormField label="Task詳細">
-                <UTextarea v-model="editForm.detail" :maxlength="1000" :rows="3" class="w-full" />
+                <UTextarea v-model="editForm.detail" :maxlength="TASK_DETAIL_MAX_LENGTH" :rows="3" class="w-full" />
               </UFormField>
-              <FieldCounter :value="editForm.detail" :max="1000" />
+              <FieldCounter :value="editForm.detail" :max="TASK_DETAIL_MAX_LENGTH" />
             </div>
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 sm:w-1/2">
@@ -278,8 +284,8 @@ const {
                 </UFormField>
               </div>
             </div>
-            <UFormField label="チェック項目" help="入力後にEnterで項目を追加します（最大50件）">
-              <UInputTags v-model="editForm.checklistContents" :max="50" class="w-full" />
+            <UFormField label="チェック項目" :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`">
+              <UInputTags v-model="editForm.checklistContents" :max="CHECKLIST_ITEM_MAX_COUNT" class="w-full" />
             </UFormField>
             <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">

@@ -2,11 +2,11 @@
 import { onBeforeMount } from "vue";
 
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import { TASK_SEARCH_CONTROL, useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
 import {
-  TASK_SEARCH_CONTROL,
+  TASK_SAVED_VIEW_NAME_MAX_LENGTH,
   TASK_SEARCH_KEYWORD_MAX_LENGTH,
-  useTaskSearchPage,
-} from "@/features/task/composables/useTaskSearchPage";
+} from "@/features/task/constants/taskLimits";
 import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -91,12 +91,12 @@ onBeforeMount(initialize);
           <UFormField label="Saved View名">
             <UInput
               v-model="savedViewName"
-              :maxlength="100"
+              :maxlength="TASK_SAVED_VIEW_NAME_MAX_LENGTH"
               class="w-full"
               :data-task-search-control="TASK_SEARCH_CONTROL.savedViewName"
             />
           </UFormField>
-          <FieldCounter :value="savedViewName" :max="100" class="end-7 bottom-3.5" />
+          <FieldCounter :value="savedViewName" :max="TASK_SAVED_VIEW_NAME_MAX_LENGTH" class="end-7 bottom-3.5" />
         </div>
         <div class="flex w-full flex-wrap gap-2 p-3 md:w-1/3">
           <UButton color="primary" icon="i-mdi-content-save-plus-outline" @click="createSavedView">新規保存</UButton>

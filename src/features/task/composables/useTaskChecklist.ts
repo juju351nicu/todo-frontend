@@ -5,6 +5,10 @@ import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskChecklistApi, {
   TaskChecklistApiError,
 } from "@/features/task/api/taskChecklistApi";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  CHECKLIST_ITEM_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import type { TaskChecklistItem } from "@/features/task/types/taskChecklist";
 import {
   TASK_CHECKLIST_ERROR_CODES,
@@ -14,12 +18,6 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
-
-/** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
-export const CHECKLIST_ITEM_MAX_LENGTH = 255;
-
-/** 1 Taskに登録できるチェック項目の最大件数。Backendの入力制約と同じ値。 */
-export const CHECKLIST_ITEM_MAX_COUNT = 50;
 
 /**
  * 操作後にフォーカスを戻すチェック項目の部品。

@@ -3,10 +3,10 @@ import { toRef } from "vue";
 
 import {
   COMMENT_COMPOSER_CONTROL,
-  TASK_COMMENT_MAX_LENGTH,
   commentEditControlKey,
   useTaskComments,
 } from "@/features/task/composables/useTaskComments";
+import { TASK_COMMENT_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
