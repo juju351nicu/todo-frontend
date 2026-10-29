@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useUserStore } from "@/features/auth/stores/user";
@@ -25,6 +25,7 @@ import {
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 import {
   buildProjectMemberOptions,
   resolveProjectMemberDisplayName,
@@ -128,6 +129,8 @@ export const useTaskBoardPage = () => {
   const isSaving = ref(false);
   const project = ref<ProjectDetail | null>(null);
   const successMessage = ref("");
+  /** Task詳細の読込の順番。続けて別のTaskを開いたとき、先に開いたTaskの詳細で表示を上書きしないために使う。 */
+  const taskDetailRequests = createLatestRequestTracker();
 
   const projectId = computed(() => {
     const value = Array.isArray(route.params.projectId)
@@ -377,31 +380,58 @@ export const useTaskBoardPage = () => {
     isEditorOpen.value = true;
   };
 
-  /** 最新versionを取得してTask参照・編集Dialogを開く。 */
+  /**
+   * 最新versionを取得してTask参照・編集Dialogを開く。
+   * 読込中に別のTaskを開いた場合は、後で開いたTaskだけを表示する（先に開いたTaskのResponseと失敗は捨てる）。
+   *
+   * @param taskId 開くTaskのID
+   */
   const openTaskEditor = async (taskId: number): Promise<void> => {
-    if (projectId.value === null || isLoadingTask.value) {
+    if (projectId.value === null) {
       return;
     }
+    const isLatestRequest = taskDetailRequests.begin();
     isLoadingTask.value = true;
     errorMessages.value = [];
     editorErrorMessages.value = [];
     successMessage.value = "";
     try {
       const task = await ProjectTaskApi.getTask(projectId.value, taskId);
+      if (!isLatestRequest()) {
+        return;
+      }
       form.value = buildTaskForm(task);
       editingTaskAssigneeAccountId.value = task.assigneeAccountId;
       editingTaskType.value = task.taskType;
       isEditorOpen.value = true;
     } catch (error: unknown) {
+      if (!isLatestRequest()) {
+        return;
+      }
       await handleApiError(
         error,
         DISPLAY_MESSAGES.task.board.detailLoadFailed,
         DISPLAY_MESSAGES.task.board.readForbidden
       );
     } finally {
-      isLoadingTask.value = false;
+      if (isLatestRequest()) {
+        isLoadingTask.value = false;
+      }
     }
   };
+
+  // 同じProjectのBoardを開いたまま`?taskId=`だけが変わる遷移（通知から同じProjectの別Taskを開く、ブラウザーの戻る等）では、
+  // Vue RouterがComponentを再利用して`initialize`を呼び直さないため、ここで指定のTaskを開く。
+  // Projectが変わる遷移は画面ごと作り直す（`app/router/routerViewKey.ts`）ので、ここでは扱わない。
+  // - taskIdが外れた場合は何もしない。Dialogを閉じたときに画面自身がqueryを外す（`removeRequestedTaskIdQuery`）ため。
+  // - 初期表示の読込中は、読込の最後に`initialize`が今のqueryのTaskを開くので、ここでは開かない。
+  // - 保存・archive中は開かない。完了時の後始末でDialogを閉じるため、開いたTaskがすぐ消えてしまう。
+  watch(requestedTaskId, (taskId) => {
+    if (taskId === null || isLoading.value || isSaving.value || isArchiving.value) {
+      return;
+    }
+    void openTaskEditor(taskId);
+  });
 
   /** Template適用後のBoardを再取得し、生成されたTask詳細を開く。 */
   const handleTemplateTaskCreated = async (task: TaskDetail): Promise<void> => {
@@ -439,12 +469,46 @@ export const useTaskBoardPage = () => {
     closeTaskEditorAfterSaving();
   };
 
-  /** 保存成功・競合時に、保存中でもTask Dialogの状態を破棄する。 */
+  /**
+   * Task Dialogの開閉の変更（UModalの`update:open`）を受ける。×・Esc・Dialogの外のクリックで閉じた場合も
+   * 「キャンセル」と同じく`closeTaskEditor`を通し、入力を捨てて`?taskId=`を外す。開くのは`openTaskEditor`等だけ。
+   *
+   * @param open UModalが求める開閉の状態
+   */
+  const handleEditorOpenChange = (open: boolean): void => {
+    if (!open) {
+      closeTaskEditor();
+    }
+  };
+
+  /** 保存成功・競合時に、保存中でもTask Dialogの状態を破棄し、URLの`?taskId=`を外す。 */
   const closeTaskEditorAfterSaving = (): void => {
+    discardTaskEditor();
+    void removeRequestedTaskIdQuery();
+  };
+
+  /**
+   * Task Dialogの状態（入力・エラー・archive確認）を破棄する。URLは変えない。
+   * Session切れで画面を片付けるときはLoginへ遷移するため、URLの書き換えでその遷移を妨げないようこちらを使う。
+   */
+  const discardTaskEditor = (): void => {
     isArchiveConfirmOpen.value = false;
     isEditorOpen.value = false;
     form.value = createEmptyTaskForm();
     editorErrorMessages.value = [];
+  };
+
+  /**
+   * Task Dialogを閉じたときに、URLから`?taskId=`を外す。
+   * 残したままだと、同じTaskの通知をもう一度押しても同じURLへの遷移になってDialogが開かず、
+   * 再読込やブラウザーの戻る操作では閉じたDialogが再び開くため。履歴を増やさないよう`replace`し、ほかのqueryは残す。
+   */
+  const removeRequestedTaskIdQuery = async (): Promise<void> => {
+    if (route.query.taskId === undefined) {
+      return;
+    }
+    const { taskId: _taskId, ...remainingQuery } = route.query;
+    await router.replace({ query: remainingQuery });
   };
 
   /** Taskフォームの必須項目と日付順序をBackend送信前に検証する。 */
@@ -871,7 +935,7 @@ export const useTaskBoardPage = () => {
     board.value = null;
     project.value = null;
     dragSnapshot.value = null;
-    closeTaskEditorAfterSaving();
+    discardTaskEditor();
   };
 
   /** Session失効時に古いBoardとメッセージを破棄してLoginへ戻す。 */
@@ -1001,6 +1065,7 @@ export const useTaskBoardPage = () => {
     errorMessages,
     form,
     finishTaskDrag,
+    handleEditorOpenChange,
     handleTaskDrop,
     handleTemplateTaskCreated,
     initialize,

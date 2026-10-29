@@ -43,6 +43,7 @@ const {
   errorMessages,
   finishTaskDrag,
   form,
+  handleEditorOpenChange,
   handleTaskDrop,
   handleTemplateTaskCreated,
   initialize,
@@ -236,10 +237,11 @@ onBeforeMount(initialize);
     </div>
 
     <UModal
-      v-model:open="isEditorOpen"
+      :open="isEditorOpen"
       :dismissible="!isSaving"
       :title="form.taskId === null ? 'Taskを追加' : isReadonly ? 'Task詳細' : 'Taskを編集'"
       :ui="{ content: 'max-w-180' }"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>

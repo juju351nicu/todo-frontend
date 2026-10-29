@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick, reactive } from "vue";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
 import { ProjectTaskApiError } from "@/features/task/api/projectTaskApi";
@@ -14,8 +15,8 @@ const mocks = vi.hoisted(() => ({
     moveTask: vi.fn(),
     updateTask: vi.fn(),
   },
-  route: { params: { projectId: "5" }, query: {} },
-  router: { push: vi.fn() },
+  route: null,
+  router: { push: vi.fn(), replace: vi.fn() },
   userStore: {
     memberId: 2,
     clearSession: vi.fn(),
@@ -164,9 +165,10 @@ describe("useTaskBoardPage", () => {
     mocks.permissions.add("TASK_UPDATE");
     mocks.permissions.add("TASK_MOVE");
     mocks.permissions.add("TASK_ARCHIVE");
-    mocks.route.params.projectId = "5";
-    mocks.route.query = {};
+    // watchがqueryの変更を検知できるようreactiveにし、前のテストのcomposableのwatchが動かないよう毎回作り直す。
+    mocks.route = reactive({ params: { projectId: "5" }, query: {} });
     mocks.router.push.mockResolvedValue(undefined);
+    mocks.router.replace.mockResolvedValue(undefined);
     mocks.projectApi.getProject.mockResolvedValue(structuredClone(project));
     mocks.projectApi.getTaskBoard.mockResolvedValue(structuredClone(board));
     mocks.projectTaskApi.getTask.mockResolvedValue(task);
@@ -197,6 +199,134 @@ describe("useTaskBoardPage", () => {
     expect(page.form.value.taskId).toBe(31);
     expect(page.isEditorOpen.value).toBe(true);
     expect(page.canStartTaskTimer.value).toBe(true);
+  });
+
+  describe("Boardを開いたまま?taskId=だけが変わったとき（通知から同じProjectの別Taskを開く等）", () => {
+    /** 表示中の画面で、Component再利用のままqueryだけを変え、watchの実行と読込の完了を待つ。 */
+    const changeRequestedTaskId = async (taskId) => {
+      mocks.route.query = taskId === null ? {} : { taskId: String(taskId) };
+      await nextTick();
+      await Promise.resolve();
+    };
+
+    it("指定のTaskの詳細Dialogを開き直す", async () => {
+      mocks.route.query = { taskId: "31" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+      mocks.projectTaskApi.getTask.mockResolvedValue({ ...task, taskId: 40, title: "通知のTask" });
+
+      await changeRequestedTaskId(40);
+
+      expect(mocks.projectTaskApi.getTask).toHaveBeenLastCalledWith(5, 40);
+      expect(page.form.value.taskId).toBe(40);
+      expect(page.form.value.title).toBe("通知のTask");
+      expect(page.isEditorOpen.value).toBe(true);
+    });
+
+    it("先に開いたTaskの詳細が後から届いても、後で開いたTaskの表示を上書きしない", async () => {
+      const page = useTaskBoardPage();
+      await page.initialize();
+      let resolveFirstTask;
+      mocks.projectTaskApi.getTask
+        .mockReturnValueOnce(new Promise((resolve) => { resolveFirstTask = resolve; }))
+        .mockResolvedValueOnce({ ...task, taskId: 40, title: "後で開いたTask" });
+
+      await changeRequestedTaskId(31);
+      await changeRequestedTaskId(40);
+      resolveFirstTask({ ...task, title: "先に開いたTask" });
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(page.form.value.taskId).toBe(40);
+      expect(page.form.value.title).toBe("後で開いたTask");
+      expect(page.isLoadingTask.value).toBe(false);
+    });
+
+    it("queryからtaskIdが外れても、開いているDialogは閉じない", async () => {
+      mocks.route.query = { taskId: "31" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await changeRequestedTaskId(null);
+
+      expect(mocks.projectTaskApi.getTask).toHaveBeenCalledOnce();
+      expect(page.isEditorOpen.value).toBe(true);
+      expect(page.form.value.taskId).toBe(31);
+    });
+
+    it("保存中は開き直さず、保存の後始末でDialogの内容が入れ替わらないようにする", async () => {
+      mocks.route.query = { taskId: "31" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+      mocks.projectTaskApi.updateTask.mockReturnValue(new Promise(() => {}));
+      void page.saveTask();
+
+      await changeRequestedTaskId(40);
+
+      expect(mocks.projectTaskApi.getTask).toHaveBeenCalledOnce();
+      expect(page.form.value.taskId).toBe(31);
+    });
+  });
+
+  describe("Task Dialogを閉じたときのURL", () => {
+    it("?taskId=を外し、ほかのqueryは残す（同じ通知をもう一度押したときに開き直せるようにする）", async () => {
+      mocks.route.query = { taskId: "31", view: "compact" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      page.closeTaskEditor();
+
+      expect(page.isEditorOpen.value).toBe(false);
+      expect(mocks.router.replace).toHaveBeenCalledWith({ query: { view: "compact" } });
+    });
+
+    it("×・Esc・Dialogの外のクリックで閉じたときも、入力を捨てて?taskId=を外す", async () => {
+      mocks.route.query = { taskId: "31" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+      page.form.value.title = "保存しない入力";
+
+      page.handleEditorOpenChange(false);
+
+      expect(page.isEditorOpen.value).toBe(false);
+      expect(page.form.value.taskId).toBeNull();
+      expect(page.form.value.title).toBe("");
+      expect(mocks.router.replace).toHaveBeenCalledWith({ query: {} });
+    });
+
+    it("保存に成功して閉じたときも?taskId=を外す", async () => {
+      mocks.route.query = { taskId: "31" };
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.saveTask();
+
+      expect(page.isEditorOpen.value).toBe(false);
+      expect(mocks.router.replace).toHaveBeenCalledWith({ query: {} });
+    });
+
+    it("?taskId=のないURLでは、閉じてもURLを書き換えない", async () => {
+      const page = useTaskBoardPage();
+      await page.initialize();
+      await page.openTaskEditor(31);
+
+      page.closeTaskEditor();
+
+      expect(mocks.router.replace).not.toHaveBeenCalled();
+    });
+
+    it("Session切れ（401）でDialogを片付けるときはURLを書き換えず、Loginへの遷移を妨げない", async () => {
+      mocks.route.query = { taskId: "31" };
+      mocks.projectTaskApi.updateTask.mockRejectedValue(new ProjectTaskApiError(401, null));
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      await page.saveTask();
+
+      expect(page.isEditorOpen.value).toBe(false);
+      expect(mocks.router.replace).not.toHaveBeenCalled();
+      expect(mocks.router.push).toHaveBeenCalledWith({ name: "Login" });
+    });
   });
 
   it.each(["SUMMARY", "MILESTONE"])(
