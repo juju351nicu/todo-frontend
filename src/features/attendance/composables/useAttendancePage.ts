@@ -15,7 +15,6 @@ import type {
 import {
   buildAttendanceMonthDateRange,
   buildAttendanceMonthRows,
-  getTodayInTokyo,
   summarizeAttendanceDay,
 } from "@/features/attendance/utils/attendance";
 import {
@@ -33,6 +32,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { StatusAlertType } from "@/shared/types/color";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
   "clock-in": "出勤を記録しました。",
@@ -84,7 +84,7 @@ const punchButtonSelector = (action: AttendancePunchAction): string =>
 export const useAttendancePage = () => {
   const router = useRouter();
   const userStore = useUserStore();
-  const today = getTodayInTokyo();
+  const today = getBusinessToday();
 
   const errorMessages = ref<string[]>([]);
   /** 修正申請Dialogの入力チェック・申請APIの失敗。Dialogを開いている間は画面上部が隠れるため、Dialogの中へ出す。 */

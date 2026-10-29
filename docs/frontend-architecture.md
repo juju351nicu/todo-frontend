@@ -75,6 +75,8 @@ src/
 - `src/shared/types/error.ts`: Backend共通エラー型
 - `src/shared/utils/apiError.ts`: error code／field判定と安全な表示message抽出
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
+- `src/shared/utils/businessDate.ts`: 業務タイムゾーン（Asia/Tokyo）と、業務日の「今日」・業務月の範囲。画面の日付の既定値はすべてここから作り、端末のタイムゾーンを使わない
+- `src/shared/utils/latestRequest.ts`: 表示対象を素早く切り替える読込で、最後に始めた読込の結果だけを反映するための判定
 - `src/shared/types/accountStatus.ts`、`src/shared/utils/accountStatus.ts`: アカウント状態コード（ACTIVE／LOCKED／DISABLED）と表示名・表示色。管理画面とProject参加者表示で共通に使う
 - `src/features/dashboard/api/dashboardApi.ts`: permission別Basic Dashboardと資格境界を持つ高度Dashboard API
 - `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠、横断EVM／負荷のDashboard契約型
@@ -96,6 +98,7 @@ src/
 - `src/app/router/index.ts`: Router生成とSession認証ガード
 - `src/app/router/routes.ts`: ルート定義と画面単位の遅延読み込み
 - `src/app/router/router.d.ts`: Routerの認証要否メタデータ型
+- `src/app/router/routerViewKey.ts`: `RouterView`のkey。route paramの`projectId`が変わったら画面を作り直し、前のProjectの表示・Dialog・遅れて届くResponseを残さない
 - `src/app/views/NotFoundPage.vue`: NotFound画面
 - `src/features/auth/api/authApi.ts`: Session確認、ローカルログイン、ログアウト、GitHub OAuth2開始URL
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
@@ -145,7 +148,7 @@ src/
 - `src/features/project/components/ProjectTemplateCaptureButton.vue`: OWNER／SYSTEM_ADMIN向けProject snapshot保存Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
 - `src/features/project/views/ProjectTemplatePage.vue`: Template snapshot参照、管理、member slot mapping、Project生成画面
-- `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputのローカル日付変換と実在日付検証
+- `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputの実在日付検証（日付の既定値は`src/shared/utils/businessDate.ts`の業務日）
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
 - `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task ID queryからの詳細表示、Task登録・更新・移動・archive・競合回復
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
@@ -430,8 +433,8 @@ Backendでも再検査する。生成成功後は既存Project Boardへ遷移し
 
 Template参照は契約終了後も可能とし、capture・更新・archive・適用で機能資格403を受けた場合はBackendの案内を表示する。
 401ではSessionを破棄してLoginへ戻り、更新系の404／409では古いsnapshot、version、member mapping draftを破棄して
-一覧・詳細を再取得する。Project Template固有の日付既定値とMySQL DATE範囲の実在日付検証は
-`projectTemplateDate.ts`へ集約した。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
+一覧・詳細を再取得する。MySQL DATE範囲の実在日付検証は`projectTemplateDate.ts`へ集約した（日付の既定値は業務日の
+`shared/utils/businessDate.ts`から作る）。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
 専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認も完了している。Stage 10D-2では同じfixtureを
 Playwrightへ統合し、capture、snapshot表示、member slot mapping、別Project適用、生成Board、DB lineageを自動化した。
 

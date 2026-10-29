@@ -5,8 +5,8 @@ import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type { EarnedValueResponse } from "@/features/wbs/types/wbs";
 import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
-import { getToday } from "@/features/wbs/utils/effort";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
@@ -31,7 +31,7 @@ export const useWbsEarnedValue = (context: WbsPageContext) => {
   const earnedValue = ref<EarnedValueResponse | null>(null);
   const earnedValueErrorMessages = ref<string[]>([]);
   /** EVMとExcel帳票の共通基準日（yyyy-MM-dd）。初期値はブラウザーの今日。 */
-  const earnedValueStatusDate = ref(getToday());
+  const earnedValueStatusDate = ref(getBusinessToday());
   const isLoadingEarnedValue = ref(false);
 
   /**

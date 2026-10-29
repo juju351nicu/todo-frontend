@@ -8,28 +8,10 @@ import type {
   AttendancePunchState,
 } from "@/features/attendance/types/attendance";
 import type { SemanticColor } from "@/shared/types/color";
+import { BUSINESS_TIME_ZONE } from "@/shared/utils/businessDate";
 
 const ISO_YEAR_MONTH_PATTERN = /^(\d{4})-(\d{2})$/;
 const MILLISECONDS_PER_MINUTE = 60_000;
-const TOKYO_TIME_ZONE = "Asia/Tokyo";
-
-/**
- * 指定時刻をAsia/Tokyoの業務日へ変換する。
- *
- * @param now 変換対象時刻。省略時はブラウザー現在時刻
- * @returns yyyy-MM-dd形式の東京日付
- */
-export const getTodayInTokyo = (now = new Date()): string => {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TOKYO_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(now);
-  const valueOf = (type: Intl.DateTimeFormatPartTypes): string =>
-    parts.find((part) => part.type === type)?.value ?? "";
-  return `${valueOf("year")}-${valueOf("month")}-${valueOf("day")}`;
-};
 
 /**
  * 指定時刻を打刻パネルへ表示するAsia/Tokyoの24時間制時刻へ変換する。
@@ -40,7 +22,7 @@ export const getTodayInTokyo = (now = new Date()): string => {
  */
 export const formatAttendanceClockTime = (now = new Date()): string =>
   new Intl.DateTimeFormat("ja-JP", {
-    timeZone: TOKYO_TIME_ZONE,
+    timeZone: BUSINESS_TIME_ZONE,
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -220,7 +202,7 @@ export const formatAttendanceInstant = (instant: string | null): string => {
   return Number.isNaN(date.getTime())
     ? "—"
     : new Intl.DateTimeFormat("ja-JP", {
-        timeZone: TOKYO_TIME_ZONE,
+        timeZone: BUSINESS_TIME_ZONE,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -253,7 +235,7 @@ export const formatAttendanceTime = (instant: string | null): string => {
   return Number.isNaN(date.getTime())
     ? "—"
     : new Intl.DateTimeFormat("ja-JP", {
-        timeZone: TOKYO_TIME_ZONE,
+        timeZone: BUSINESS_TIME_ZONE,
         month: "numeric",
         day: "numeric",
         hour: "2-digit",

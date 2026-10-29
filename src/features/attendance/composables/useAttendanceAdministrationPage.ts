@@ -15,7 +15,6 @@ import type {
 } from "@/features/attendance/types/attendance";
 import {
   buildAttendanceMonthDateRange,
-  getTodayInTokyo,
 } from "@/features/attendance/utils/attendance";
 import {
   ATTENDANCE_ERROR_CODES,
@@ -25,6 +24,7 @@ import {
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
@@ -135,7 +135,7 @@ export const useAttendanceAdministrationPage = () => {
   });
   const selectedAccountId = ref<number | null>(null);
   const selectedDetail = ref<AttendanceMonthResponse | null>(null);
-  const selectedMonth = ref(getTodayInTokyo().slice(0, 7));
+  const selectedMonth = ref(getBusinessToday().slice(0, 7));
   const selectedStatus = ref<AttendanceMonthStatus | typeof ALL_ATTENDANCE_MONTH_STATUSES>(ALL_ATTENDANCE_MONTH_STATUSES);
   /** 状態絞込みをBackendの検索条件へ変換する。全状態の場合は条件なし。 */
   const statusFilter = computed<AttendanceMonthStatus | null>(() =>

@@ -5,11 +5,8 @@ import type {
   TaskEffortPlanUpdateRequest,
   TaskWorkloadDateRange,
 } from "@/features/wbs/types/wbs";
-import {
-  getToday,
-  isValidIsoLocalDate,
-} from "@/features/wbs/utils/effort";
-import { getBusinessMonthRange } from "@/shared/utils/businessDate";
+import { isValidIsoLocalDate } from "@/features/wbs/utils/effort";
+import { getBusinessMonthRange, getBusinessToday } from "@/shared/utils/businessDate";
 
 const MILLIS_PER_DAY = 24 * 60 * 60 * 1000;
 const MAX_WORKLOAD_DAYS = 366;
@@ -38,7 +35,7 @@ export const buildTaskEffortPlanForm = (
   defaultAssigneeAccountId: number | null,
   effortPlan?: Readonly<TaskEffortPlan> | null
 ): TaskEffortPlanForm => ({
-  planDate: effortPlan?.planDate ?? getToday(),
+  planDate: effortPlan?.planDate ?? getBusinessToday(),
   plannedEffortMinutes: effortPlan?.plannedEffortMinutes ?? null,
   assigneeAccountId:
     effortPlan?.assigneeAccountId ?? defaultAssigneeAccountId,

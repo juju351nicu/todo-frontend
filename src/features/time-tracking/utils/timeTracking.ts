@@ -3,8 +3,7 @@ import type {
   TaskWorkLogAuditAction,
 } from "@/features/time-tracking/types/timeTracking";
 import type { SemanticColor } from "@/shared/types/color";
-
-const JST_TIME_ZONE = "Asia/Tokyo";
+import { BUSINESS_TIME_ZONE, getBusinessToday } from "@/shared/utils/businessDate";
 
 /**
  * Backend取得時点の経過秒へ、受信後にブラウザーで経過した秒数を加える。
@@ -55,7 +54,7 @@ export const formatJstDateTime = (value: string): string => {
     return value;
   }
   return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: JST_TIME_ZONE,
+    timeZone: BUSINESS_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -65,27 +64,13 @@ export const formatJstDateTime = (value: string): string => {
   }).format(date);
 };
 
-/** DateをAsia/Tokyoのyyyy-MM-dd形式へ変換する。 */
-export const formatJstDate = (date: Date): string => {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: JST_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-  const values = Object.fromEntries(
-    parts.map((part) => [part.type, part.value])
-  );
-  return `${values.year}-${values.month}-${values.day}`;
-};
-
 /** 現在日まで30日間を初期表示するTimer履歴の検索期間を作る。 */
 export const buildDefaultTimerHistoryRange = (
   now = new Date()
 ): { dateFrom: string; dateTo: string } => {
   const from = new Date(now.getTime());
   from.setUTCDate(from.getUTCDate() - 29);
-  return { dateFrom: formatJstDate(from), dateTo: formatJstDate(now) };
+  return { dateFrom: getBusinessToday(from), dateTo: getBusinessToday(now) };
 };
 
 /** Timer Session状態コードを利用者向け表示へ変換する。 */

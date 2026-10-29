@@ -1,5 +1,6 @@
 import type { TaskPriority } from "@/features/project/types/project";
 import type { SemanticColor } from "@/shared/types/color";
+import { BUSINESS_TIME_ZONE } from "@/shared/utils/businessDate";
 
 const TODO_PRIORITY_LABELS: Readonly<Record<number, string>> = {
   1: "低",
@@ -44,7 +45,7 @@ export const formatRemainingDays = (value: number): string => {
 export const truncateTodoDetail = (value: string): string => value.slice(0, 3);
 
 const MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
-  timeZone: "Asia/Tokyo",
+  timeZone: BUSINESS_TIME_ZONE,
   month: "long",
   day: "numeric",
 });
