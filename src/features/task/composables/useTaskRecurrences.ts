@@ -10,10 +10,8 @@ import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
 import {
-  CHECKLIST_ITEM_MAX_COUNT,
-  CHECKLIST_ITEM_MAX_LENGTH,
-  TASK_DETAIL_MAX_LENGTH,
-  TASK_TITLE_MAX_LENGTH,
+  TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS,
+  TASK_RECURRENCE_INTERVAL_MAX,
 } from "@/features/task/constants/taskLimits";
 import type {
   TaskRecurrence,
@@ -30,6 +28,7 @@ import {
   TASK_RECURRENCE_ERROR_CODES,
   TASK_TEMPLATE_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
+import { validateTaskSnapshot } from "@/features/task/utils/taskSnapshotForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
@@ -108,10 +107,6 @@ const buildForm = (rule: TaskRecurrence): TaskRecurrenceForm => ({
   version: rule.version,
   taskTemplateId: rule.sourceTaskTemplateId,
 });
-
-/** 頻度ごとのBackend上限を返す。 */
-const maxInterval = (frequency: TaskRecurrenceFrequency): number =>
-  ({ DAILY: 365, WEEKLY: 52, MONTHLY: 24 })[frequency];
 
 /** Project内の繰り返し規則CRUD、生成履歴、手動再試行を管理する。 */
 export const useTaskRecurrences = (
@@ -387,9 +382,9 @@ export const useTaskRecurrences = (
     if (
       !Number.isInteger(value.intervalCount) ||
       value.intervalCount < 1 ||
-      value.intervalCount > maxInterval(value.frequency)
+      value.intervalCount > TASK_RECURRENCE_INTERVAL_MAX[value.frequency]
     ) {
-      return `繰り返し間隔を1〜${maxInterval(value.frequency)}で入力してください。`;
+      return `繰り返し間隔を1〜${TASK_RECURRENCE_INTERVAL_MAX[value.frequency]}で入力してください。`;
     }
     if (value.frequency === "WEEKLY" && value.weekdays.length === 0) {
       return "週次では曜日を1つ以上選択してください。";
@@ -406,44 +401,24 @@ export const useTaskRecurrences = (
     if (
       !Number.isInteger(value.generationLeadDays) ||
       value.generationLeadDays < 0 ||
-      value.generationLeadDays > 90
+      value.generationLeadDays > TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS
     ) {
-      return "生成先行日数を0〜90日で入力してください。";
+      return `生成先行日数を0〜${TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS}日で入力してください。`;
     }
     return "";
   };
 
-  /** Task snapshotとchecklistをBackend契約に合わせて検証する。 */
+  /**
+   * 生成するTaskの内容（件名・詳細・期限オフセット・予定工数・チェック項目）と、担当者・Board列を検証する。
+   *
+   * @returns 最初に見つかった誤りの文言。誤りがなければ空文字
+   */
   const validateSnapshot = (): string => {
     const value = form.value;
-    const checklist = value.checklistContents.map((content) => content.trim());
-    if (!value.title.trim() || value.title.trim().length > TASK_TITLE_MAX_LENGTH) {
-      return "Taskタイトルを1〜45文字で入力してください。";
-    }
-    if (!value.detail.trim() || value.detail.trim().length > TASK_DETAIL_MAX_LENGTH) {
-      return "Task詳細を1〜1000文字で入力してください。";
-    }
-    if (
-      !Number.isSafeInteger(value.plannedEffortMinutes) ||
-      value.plannedEffortMinutes < 0
-    ) {
-      return "予定工数を0分以上の整数で入力してください。";
-    }
-    if (
-      !Number.isInteger(value.dueOffsetDays) ||
-      value.dueOffsetDays < 0 ||
-      value.dueOffsetDays > 365
-    ) {
-      return "期限オフセットを0〜365日で入力してください。";
-    }
+    const snapshotError = validateTaskSnapshot(value);
+    if (snapshotError) return snapshotError;
     if (value.assigneeAccountId === null) return "担当者を選択してください。";
     if (value.taskStatusId === null) return "未完了のBoard列を選択してください。";
-    if (
-      checklist.length > CHECKLIST_ITEM_MAX_COUNT ||
-      checklist.some((content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH)
-    ) {
-      return "チェック項目は1〜255文字、最大50件で入力してください。";
-    }
     return "";
   };
 

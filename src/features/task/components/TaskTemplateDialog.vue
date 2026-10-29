@@ -6,6 +6,7 @@ import { useTaskTemplateDialog } from "@/features/task/composables/useTaskTempla
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   TASK_DETAIL_MAX_LENGTH,
+  TASK_DUE_OFFSET_MAX_DAYS,
   TASK_TEMPLATE_NAME_MAX_LENGTH,
   TASK_TITLE_MAX_LENGTH,
 } from "@/features/task/constants/taskLimits";
@@ -260,7 +261,7 @@ const {
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="期限オフセット（日）">
-                  <UInput v-model.number="editForm.dueOffsetDays" type="number" min="0" max="365" class="w-full" />
+                  <UInput v-model.number="editForm.dueOffsetDays" type="number" min="0" :max="TASK_DUE_OFFSET_MAX_DAYS" class="w-full" />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">

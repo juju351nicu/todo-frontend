@@ -6,6 +6,9 @@ import { useTaskRecurrenceDialog } from "@/features/task/composables/useTaskRecu
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   TASK_DETAIL_MAX_LENGTH,
+  TASK_DUE_OFFSET_MAX_DAYS,
+  TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS,
+  TASK_RECURRENCE_INTERVAL_MAX,
   TASK_TITLE_MAX_LENGTH,
 } from "@/features/task/constants/taskLimits";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
@@ -209,7 +212,7 @@ const CREATION_MODE_OPTIONS = [
                 </div>
                 <div class="w-full p-3 sm:w-1/3">
                   <UFormField label="期限オフセット（日）">
-                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" max="365" :disabled="isMutating" class="w-full" />
+                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" :max="TASK_DUE_OFFSET_MAX_DAYS" :disabled="isMutating" class="w-full" />
                   </UFormField>
                 </div>
                 <div class="w-full p-3 sm:w-1/2">
@@ -317,7 +320,7 @@ const CREATION_MODE_OPTIONS = [
                     v-model.number="form.intervalCount"
                     type="number"
                     min="1"
-                    :max="form.frequency === 'DAILY' ? 365 : form.frequency === 'WEEKLY' ? 52 : 24"
+                    :max="TASK_RECURRENCE_INTERVAL_MAX[form.frequency]"
                     :disabled="isMutating"
                     class="w-full"
                   />
@@ -348,7 +351,7 @@ const CREATION_MODE_OPTIONS = [
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="生成先行日数" help="発生日の何日前にTaskを作るか">
-                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" max="90" :disabled="isMutating" class="w-full" />
+                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" :max="TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS" :disabled="isMutating" class="w-full" />
                 </UFormField>
               </div>
               <div v-if="isEditing" class="w-full p-3 sm:w-1/3">

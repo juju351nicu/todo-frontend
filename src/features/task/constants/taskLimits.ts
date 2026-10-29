@@ -1,3 +1,5 @@
+import type { TaskRecurrenceFrequency } from "@/features/task/types/taskRecurrence";
+
 /**
  * Task（Board・Template・繰り返し・checklist・コメント・検索）の入力の上限。
  *
@@ -11,6 +13,19 @@ export const TASK_TITLE_MAX_LENGTH = 45;
 
 /** Taskの詳細の最大文字数。 */
 export const TASK_DETAIL_MAX_LENGTH = 1000;
+
+/** Template・繰り返し規則で、開始日から期限までに置ける最大の日数（期限オフセット）。 */
+export const TASK_DUE_OFFSET_MAX_DAYS = 365;
+
+/** 繰り返し規則で、発生日の何日前からTaskを作っておくか（生成先行日数）の最大日数。 */
+export const TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS = 90;
+
+/** 繰り返し規則の頻度ごとの間隔の上限（日次は日、週次は週、月次は月）。 */
+export const TASK_RECURRENCE_INTERVAL_MAX: Readonly<Record<TaskRecurrenceFrequency, number>> = {
+  DAILY: 365,
+  WEEKLY: 52,
+  MONTHLY: 24,
+};
 
 /** Task Templateの名前の最大文字数。 */
 export const TASK_TEMPLATE_NAME_MAX_LENGTH = 100;

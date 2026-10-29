@@ -6,13 +6,7 @@ import type { TaskPriority } from "@/features/project/types/project";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
-import {
-  CHECKLIST_ITEM_MAX_COUNT,
-  CHECKLIST_ITEM_MAX_LENGTH,
-  TASK_DETAIL_MAX_LENGTH,
-  TASK_TEMPLATE_NAME_MAX_LENGTH,
-  TASK_TITLE_MAX_LENGTH,
-} from "@/features/task/constants/taskLimits";
+import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskTemplate,
   TaskTemplateApplyResponse,
@@ -22,6 +16,7 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
   TASK_TEMPLATE_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
+import { validateTaskSnapshot } from "@/features/task/utils/taskSnapshotForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
@@ -220,39 +215,22 @@ export const useTaskTemplates = (
     editForm.value = createEmptyEditForm();
   };
 
-  /** 編集フォームをBackend契約に合わせて検証する。 */
+  /**
+   * 編集フォーム（Template名、生成するTaskの内容、既定のBoard列）を検証し、最初の誤りを`errorMessage`へ出す。
+   *
+   * @returns 誤りがなければtrue
+   */
   const validateEditForm = (): boolean => {
     const form = editForm.value;
-    const checklistContents = form.checklistContents.map((content) =>
-      content.trim()
-    );
+    const name = form.name.trim();
     let message = "";
-    if (!form.name.trim() || form.name.trim().length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
-      message = "Template名を1〜100文字で入力してください。";
-    } else if (!form.title.trim() || form.title.trim().length > TASK_TITLE_MAX_LENGTH) {
-      message = "Taskタイトルを1〜45文字で入力してください。";
-    } else if (!form.detail.trim() || form.detail.trim().length > TASK_DETAIL_MAX_LENGTH) {
-      message = "Task詳細を1〜1000文字で入力してください。";
-    } else if (
-      !Number.isInteger(form.dueOffsetDays) ||
-      form.dueOffsetDays < 0 ||
-      form.dueOffsetDays > 365
-    ) {
-      message = "期限オフセットを0〜365日で入力してください。";
-    } else if (
-      !Number.isSafeInteger(form.plannedEffortMinutes) ||
-      form.plannedEffortMinutes < 0
-    ) {
-      message = "予定工数を0分以上の整数で入力してください。";
-    } else if (!form.defaultStatusCode) {
-      message = "既定のBoard列を選択してください。";
-    } else if (
-      checklistContents.length > CHECKLIST_ITEM_MAX_COUNT ||
-      checklistContents.some(
-        (content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH
-      )
-    ) {
-      message = "チェック項目は1〜255文字、最大50件で入力してください。";
+    if (!name || name.length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
+      message = `Template名を1〜${TASK_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`;
+    } else {
+      message = validateTaskSnapshot(form);
+      if (!message && !form.defaultStatusCode) {
+        message = "既定のBoard列を選択してください。";
+      }
     }
     errorMessage.value = message;
     return !message;
