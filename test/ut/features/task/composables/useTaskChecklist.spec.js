@@ -93,6 +93,25 @@ describe("useTaskChecklist", () => {
     expect(page.completedCount.value).toBe(0);
   });
 
+  it("Taskを切り替えた後に前のTaskのchecklistが届いても、今のTaskのchecklistを上書きしない", async () => {
+    let resolvePreviousTaskList;
+    mocks.taskChecklistApi.findItems
+      .mockReturnValueOnce(new Promise((resolve) => { resolvePreviousTaskList = resolve; }))
+      .mockResolvedValueOnce([{ ...firstItem, taskId: 40, content: "今のTaskのchecklist" }]);
+    const taskId = ref(31);
+    const page = useTaskChecklist(ref(5), taskId, ref(false));
+
+    taskId.value = 40;
+    await vi.waitFor(() => {
+      expect(page.items.value.map((entry) => entry.content)).toEqual(["今のTaskのchecklist"]);
+    });
+    resolvePreviousTaskList([structuredClone(firstItem)]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.items.value.map((entry) => entry.content)).toEqual(["今のTaskのchecklist"]);
+    expect(page.isLoading.value).toBe(false);
+  });
+
   it("本文をtrimして追加しBackend確定Responseを末尾へ反映する", async () => {
     const page = createPage();
     await waitForInitialLoad();

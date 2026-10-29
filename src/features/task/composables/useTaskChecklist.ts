@@ -13,6 +13,7 @@ import {
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
 /** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_LENGTH = 255;
@@ -95,6 +96,11 @@ export const useTaskChecklist = (
   /** パネル内に緑で出す文言。出さないときは空文字。 */
   const successMessage = ref("");
   const isLoading = ref(false);
+  /**
+   * checklist一覧の読込の順番。Task詳細Dialogを開いたまま別のTaskへ切り替えたとき、
+   * 前のTaskの一覧が後から届いて今のTaskの一覧を上書きしないよう、最後に始めた読込だけを反映する。
+   */
+  const listRequests = createLatestRequestTracker();
   const isCreating = ref(false);
   const isUpdating = ref(false);
   const isDeleting = ref(false);
@@ -212,15 +218,23 @@ export const useTaskChecklist = (
       items.value = [];
       return false;
     }
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      items.value = await TaskChecklistApi.findItems(
+      const loadedItems = await TaskChecklistApi.findItems(
         projectId.value,
         taskId.value
       );
+      if (!isLatestRequest()) {
+        return false;
+      }
+      items.value = loadedItems;
       return true;
     } catch (error: unknown) {
+      if (!isLatestRequest()) {
+        return false;
+      }
       if (!(await handleUnauthorized(error))) {
         if (
           error instanceof TaskChecklistApiError &&
@@ -237,7 +251,9 @@ export const useTaskChecklist = (
       }
       return false;
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -263,19 +279,24 @@ export const useTaskChecklist = (
     }
     const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      items.value = await TaskChecklistApi.findItems(
+      const loadedItems = await TaskChecklistApi.findItems(
         currentProjectId,
         currentTaskId
       );
+      if (!isLatestRequest()) {
+        return;
+      }
+      items.value = loadedItems;
       errorMessages.value = [
         ...mutationMessages,
         DISPLAY_MESSAGES.task.checklist.conflictReloaded,
       ];
     } catch (reloadError: unknown) {
-      if (await handleUnauthorized(reloadError)) {
+      if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
       }
       if (
@@ -297,7 +318,9 @@ export const useTaskChecklist = (
         DISPLAY_MESSAGES.task.checklist.reloadFailed,
       ];
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 

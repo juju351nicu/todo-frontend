@@ -92,6 +92,25 @@ describe("useTaskComments", () => {
     expect(page.comments.value).toEqual([ownComment, otherComment]);
   });
 
+  it("Taskを切り替えた後に前のTaskのコメントが届いても、今のTaskのコメントを上書きしない", async () => {
+    let resolvePreviousTaskList;
+    mocks.taskCommentApi.findComments
+      .mockReturnValueOnce(new Promise((resolve) => { resolvePreviousTaskList = resolve; }))
+      .mockResolvedValueOnce([{ ...ownComment, taskId: 40, body: "今のTaskのコメント" }]);
+    const taskId = ref(31);
+    const page = useTaskComments(ref(5), taskId, ref(false));
+
+    taskId.value = 40;
+    await vi.waitFor(() => {
+      expect(page.comments.value.map((entry) => entry.body)).toEqual(["今のTaskのコメント"]);
+    });
+    resolvePreviousTaskList([structuredClone(ownComment)]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.comments.value.map((entry) => entry.body)).toEqual(["今のTaskのコメント"]);
+    expect(page.isLoading.value).toBe(false);
+  });
+
   it("本人コメントだけを編集・削除可能と判定し、参照専用では本人も変更不可にする", async () => {
     const page = createPage();
     await waitForInitialLoad();

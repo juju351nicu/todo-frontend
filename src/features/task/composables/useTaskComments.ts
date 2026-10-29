@@ -17,6 +17,7 @@ import {
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
 /** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const TASK_COMMENT_MAX_LENGTH = 2000;
@@ -95,6 +96,11 @@ export const useTaskComments = (
   /** パネル内に緑で出す文言。出さないときは空文字。 */
   const successMessage = ref("");
   const isLoading = ref(false);
+  /**
+   * コメント一覧の読込の順番。Task詳細Dialogを開いたまま別のTaskへ切り替えたとき、
+   * 前のTaskの一覧が後から届いて今のTaskの一覧を上書きしないよう、最後に始めた読込だけを反映する。
+   */
+  const listRequests = createLatestRequestTracker();
   const isSubmitting = ref(false);
   const isUpdating = ref(false);
   const isDeleting = ref(false);
@@ -196,15 +202,23 @@ export const useTaskComments = (
       comments.value = [];
       return false;
     }
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      comments.value = await TaskCommentApi.findComments(
+      const loadedComments = await TaskCommentApi.findComments(
         projectId.value,
         taskId.value
       );
+      if (!isLatestRequest()) {
+        return false;
+      }
+      comments.value = loadedComments;
       return true;
     } catch (error: unknown) {
+      if (!isLatestRequest()) {
+        return false;
+      }
       if (!(await handleUnauthorized(error))) {
         if (
           error instanceof TaskCommentApiError &&
@@ -221,7 +235,9 @@ export const useTaskComments = (
       }
       return false;
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -247,19 +263,24 @@ export const useTaskComments = (
     }
     const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      comments.value = await TaskCommentApi.findComments(
+      const loadedComments = await TaskCommentApi.findComments(
         currentProjectId,
         currentTaskId
       );
+      if (!isLatestRequest()) {
+        return;
+      }
+      comments.value = loadedComments;
       errorMessages.value = [
         ...mutationMessages,
         DISPLAY_MESSAGES.task.comments.conflictReloaded,
       ];
     } catch (reloadError: unknown) {
-      if (await handleUnauthorized(reloadError)) {
+      if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
       }
       if (
@@ -281,7 +302,9 @@ export const useTaskComments = (
         DISPLAY_MESSAGES.task.comments.reloadFailed,
       ];
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
