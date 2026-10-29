@@ -9,8 +9,11 @@ import type {
   AttendanceDayResponse,
 } from "@/features/attendance/types/attendance";
 import type { SemanticColor } from "@/shared/types/color";
+import {
+  BUSINESS_TIME_ZONE_OFFSET,
+  BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS,
+} from "@/shared/utils/businessDate";
 
-const TOKYO_OFFSET = "+09:00";
 
 /** 勤怠修正申請状態を画面表示用の日本語へ変換する。 */
 export const getAttendanceCorrectionStatusLabel = (
@@ -40,7 +43,7 @@ export const toTokyoDateTimeInput = (instant: string): string => {
   if (Number.isNaN(date.getTime())) {
     return "";
   }
-  const tokyoDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const tokyoDate = new Date(date.getTime() + BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS);
   return tokyoDate.toISOString().slice(0, 19);
 };
 
@@ -48,7 +51,7 @@ export const toTokyoDateTimeInput = (instant: string): string => {
 export const toTokyoOffsetDateTime = (input: string): string => {
   // datetime-localは利用者が値を変更すると秒を省略するため、Instantが解釈できる形式へ揃える。
   const normalizedInput = input.length === 16 ? `${input}:00` : input;
-  return `${normalizedInput}${TOKYO_OFFSET}`;
+  return `${normalizedInput}${BUSINESS_TIME_ZONE_OFFSET}`;
 };
 
 /** 現在の勤怠日を全置換用の修正申請フォーム初期値へ変換する。 */

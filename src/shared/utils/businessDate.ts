@@ -4,6 +4,15 @@
  */
 export const BUSINESS_TIME_ZONE = "Asia/Tokyo";
 
+/**
+ * 業務タイムゾーンのUTCからのoffset（`datetime-local`の入力値へ付けてBackendへ送る形）。
+ * 日本時間には夏時間がないため、年間を通して同じ値になる。
+ */
+export const BUSINESS_TIME_ZONE_OFFSET = "+09:00";
+
+/** 業務タイムゾーンのUTCからのoffset（ミリ秒）。`BUSINESS_TIME_ZONE_OFFSET`と同じ9時間。 */
+export const BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS = 9 * 60 * 60 * 1000;
+
 /** 業務タイムゾーンの年・月・日を数値で取り出すformatter。`en-US`は数字だけを返すため、表示ロケールに依存しない。 */
 const BUSINESS_DATE_PARTS_FORMATTER = new Intl.DateTimeFormat("en-US", {
   timeZone: BUSINESS_TIME_ZONE,
