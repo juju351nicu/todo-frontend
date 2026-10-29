@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import TaskPriorityBadge from "@/features/task/components/TaskPriorityBadge.vue";
 import {
   MY_TASKS_RELOAD_CONTROL,
   buildMyTaskCompleteControlKey,
@@ -106,7 +106,7 @@ const FILTER_OPTIONS = [
                 @click="showTask(task)"
                 @keydown.enter.self="showTask(task)"
               >
-                <TodoPriorityBadge :priority="task.priority" size="xs" class="me-2 mt-0.5" />
+                <TaskPriorityBadge :priority="task.priority" size="xs" class="me-2 mt-0.5" />
                 <span class="min-w-0 flex-1">
                   <span class="block text-base font-medium">{{ task.title }}</span>
                   <span class="line-clamp-2 text-sm text-muted">

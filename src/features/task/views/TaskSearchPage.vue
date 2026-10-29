@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import TaskPriorityBadge from "@/features/task/components/TaskPriorityBadge.vue";
 import { TASK_SEARCH_CONTROL, useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
 import {
   TASK_SAVED_VIEW_NAME_MAX_LENGTH,
@@ -303,7 +303,7 @@ onBeforeMount(initialize);
               <td v-if="isColumnVisible('STATUS')">{{ task.statusName }}</td>
               <td v-if="isColumnVisible('ASSIGNEE')">{{ task.assigneeDisplayName }}</td>
               <td v-if="isColumnVisible('PRIORITY')">
-                <TodoPriorityBadge :priority="task.priority" />
+                <TaskPriorityBadge :priority="task.priority" />
               </td>
               <td v-if="isColumnVisible('START_DATE')">{{ task.dateFrom }}</td>
               <td v-if="isColumnVisible('DUE_DATE')">
