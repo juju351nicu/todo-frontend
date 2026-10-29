@@ -6,10 +6,7 @@ import type {
   WbsTaskType,
   WbsTreeRow,
 } from "@/features/wbs/types/wbs";
-import {
-  formatActualPeriod,
-  normalizeProgressPercent,
-} from "@/features/wbs/utils/wbsTree";
+import { formatActualPeriod, normalizeProgressPercent } from "@/features/wbs/utils/wbsTree";
 import type { GanttStatic, Task } from "dhtmlx-gantt";
 
 const ISO_LOCAL_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -18,11 +15,7 @@ const GANTT_ROOT_ID = 0;
 /** Gantt tooltipへ渡すWBS固有項目。DHTMLXのTask型へ業務項目を混在させない。 */
 type WbsGanttTooltipTask = Pick<
   WbsGanttTask,
-  | "text"
-  | "plannedStartDate"
-  | "plannedEndDate"
-  | "actualStartDate"
-  | "actualEndDate"
+  "text" | "plannedStartDate" | "plannedEndDate" | "actualStartDate" | "actualEndDate"
 >;
 
 /** Backend由来のTask名をtooltip HTMLへ安全に埋め込む。 */
@@ -40,9 +33,7 @@ const escapeHtml = (value: string): string =>
  * @param task DHTMLXへ渡したWBS固有表示項目
  * @returns HTML escape済みTask名、予定期間、nullableな実績期間
  */
-export const buildWbsGanttTooltipText = (
-  task: WbsGanttTooltipTask
-): string =>
+export const buildWbsGanttTooltipText = (task: WbsGanttTooltipTask): string =>
   `<strong>${escapeHtml(task.text)}</strong><br>` +
   `予定: ${escapeHtml(task.plannedStartDate)} ～ ${escapeHtml(task.plannedEndDate)}<br>` +
   `実績: ${escapeHtml(formatActualPeriod(task.actualStartDate, task.actualEndDate))}`;
@@ -93,9 +84,7 @@ const parseIsoLocalDate = (value: string): Date | null => {
   const month = Number(matched[2]);
   const day = Number(matched[3]);
   const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year &&
-    date.getMonth() === month - 1 &&
-    date.getDate() === day
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
     ? date
     : null;
 };
@@ -113,22 +102,18 @@ const addOneDay = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 
 /** BackendのTask種別をDHTMLX GanttのTask種別へ対応付ける。 */
-const toGanttTaskType = (
-  taskType: WbsTaskType
-): WbsGanttTask["type"] =>
+const toGanttTaskType = (taskType: WbsTaskType): WbsGanttTask["type"] =>
   (
-    {
+    ({
       TASK: "task",
       SUMMARY: "project",
       MILESTONE: "milestone",
-    } as const
+    }) as const
   )[taskType];
 
 /** WBSコードがある場合だけGanttのTask名へ前置する。 */
 const buildTaskText = (row: WbsTreeRow): string =>
-  row.wbsCode === null || row.wbsCode.trim() === ""
-    ? row.title
-    : `${row.wbsCode} ${row.title}`;
+  row.wbsCode === null || row.wbsCode.trim() === "" ? row.title : `${row.wbsCode} ${row.title}`;
 
 /** 予定期間の最小開始日・最大終了境界を更新する。 */
 const updateDateRange = (
@@ -151,9 +136,7 @@ const updateDateRange = (
  * @param rows buildWbsTreeRowsで安全に階層化したWBS行
  * @returns Gantt Task、日付不正Task、全体表示期間
  */
-export const buildWbsGanttData = (
-  rows: readonly WbsTreeRow[]
-): WbsGanttData => {
+export const buildWbsGanttData = (rows: readonly WbsTreeRow[]): WbsGanttData => {
   const ancestorIds: number[] = [];
   const unscheduledTaskIds: number[] = [];
   const range: { start: Date | null; end: Date | null } = {
@@ -162,8 +145,7 @@ export const buildWbsGanttData = (
   };
 
   const tasks = rows.map((row): WbsGanttTask => {
-    const parent =
-      row.depth > 0 ? ancestorIds[row.depth - 1] ?? GANTT_ROOT_ID : GANTT_ROOT_ID;
+    const parent = row.depth > 0 ? (ancestorIds[row.depth - 1] ?? GANTT_ROOT_ID) : GANTT_ROOT_ID;
     ancestorIds[row.depth] = row.taskId;
     ancestorIds.length = row.depth + 1;
 
@@ -182,18 +164,13 @@ export const buildWbsGanttData = (
     };
     const start = parseIsoLocalDate(row.plannedStartDate);
     const plannedEnd = parseIsoLocalDate(row.plannedEndDate);
-    if (
-      start === null ||
-      plannedEnd === null ||
-      plannedEnd.getTime() < start.getTime()
-    ) {
+    if (start === null || plannedEnd === null || plannedEnd.getTime() < start.getTime()) {
       task.unscheduled = true;
       unscheduledTaskIds.push(row.taskId);
       return task;
     }
 
-    const endBoundary =
-      row.taskType === "MILESTONE" ? start : addOneDay(plannedEnd);
+    const endBoundary = row.taskType === "MILESTONE" ? start : addOneDay(plannedEnd);
     task.start_date = formatIsoLocalDate(start);
     task.end_date = formatIsoLocalDate(endBoundary);
     updateDateRange(range, start, endBoundary);

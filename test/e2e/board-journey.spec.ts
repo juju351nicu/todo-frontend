@@ -49,16 +49,12 @@ const openDedicatedBoard = async (page: Page): Promise<void> => {
   await clickBoardOnProjectList(page, PROJECT_KEY, PROJECT_NAME);
 };
 
-test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復する", async ({
-  page,
-}) => {
+test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復する", async ({ page }) => {
   await openDedicatedBoard(page);
 
   const todoColumn = getBoardColumn(page, "Todo");
   const progressColumn = getBoardColumn(page, "進行中");
-  await todoColumn
-    .getByRole("button", { name: "TodoへTaskを追加", exact: true })
-    .click();
+  await todoColumn.getByRole("button", { name: "TodoへTaskを追加", exact: true }).click();
 
   const createDialog = page.getByRole("dialog");
   await expect(createDialog.getByText("Taskを追加", { exact: true })).toBeVisible();
@@ -100,32 +96,22 @@ test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復
   const conflictResponse = stalePage.waitForResponse((response) => {
     const path = new URL(response.url()).pathname;
     return (
-      response.request().method() === "PUT" &&
-      /\/api\/v1\/projects\/\d+\/tasks\/\d+$/.test(path)
+      response.request().method() === "PUT" && /\/api\/v1\/projects\/\d+\/tasks\/\d+$/.test(path)
     );
   });
   await staleDialog.getByRole("button", { name: "保存", exact: true }).click();
   expect((await conflictResponse).status()).toBe(409);
 
   await expect(stalePage.getByRole("dialog")).not.toBeVisible();
-  await expect(
-    getTaskCard(getBoardColumn(stalePage, "進行中"), WINNER_TITLE)
-  ).toHaveCount(1);
-  await expect(
-    getTaskCard(getBoardColumn(stalePage, "進行中"), STALE_TITLE)
-  ).toHaveCount(0);
+  await expect(getTaskCard(getBoardColumn(stalePage, "進行中"), WINNER_TITLE)).toHaveCount(1);
+  await expect(getTaskCard(getBoardColumn(stalePage, "進行中"), STALE_TITLE)).toHaveCount(0);
 
   await stalePage.reload();
-  await expect(
-    getTaskCard(getBoardColumn(stalePage, "進行中"), WINNER_TITLE)
-  ).toHaveCount(1);
+  await expect(getTaskCard(getBoardColumn(stalePage, "進行中"), WINNER_TITLE)).toHaveCount(1);
   await stalePage.close();
 
   if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
-    const inspection = runBrowserRegressionFixture(
-      "board",
-      "inspect-stage10d2"
-    );
+    const inspection = runBrowserRegressionFixture("board", "inspect-stage10d2");
     expect(inspection).toContain("journey_task_count=1");
     expect(inspection).toContain("project_task_count=1");
   }

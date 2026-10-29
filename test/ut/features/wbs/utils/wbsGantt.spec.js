@@ -200,20 +200,14 @@ describe("WBS Gantt変換", () => {
     ]);
 
     expect(result.unscheduledTaskIds).toEqual([1, 2]);
-    expect(result.tasks[0]).toEqual(
-      expect.objectContaining({ id: 1, unscheduled: true })
-    );
+    expect(result.tasks[0]).toEqual(expect.objectContaining({ id: 1, unscheduled: true }));
     expect(result.tasks[0].start_date).toBeUndefined();
     expect(result.rangeStart).toEqual(new Date(2026, 9, 1));
     expect(result.rangeEnd).toEqual(new Date(2026, 9, 2));
   });
 
   it("Gantt表示余白を月・年境界でもcalendar dayとして加算する", () => {
-    expect(addGanttRangePadding(new Date(2026, 0, 1), -3)).toEqual(
-      new Date(2025, 11, 29)
-    );
-    expect(addGanttRangePadding(new Date(2026, 11, 31), 7)).toEqual(
-      new Date(2027, 0, 7)
-    );
+    expect(addGanttRangePadding(new Date(2026, 0, 1), -3)).toEqual(new Date(2025, 11, 29));
+    expect(addGanttRangePadding(new Date(2026, 11, 31), 7)).toEqual(new Date(2027, 0, 7));
   });
 });

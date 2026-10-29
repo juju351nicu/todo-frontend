@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import AttendanceApi, {
-  AttendanceApiError,
-} from "@/features/attendance/api/attendanceApi";
+import AttendanceApi, { AttendanceApiError } from "@/features/attendance/api/attendanceApi";
 import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
@@ -48,9 +46,7 @@ describe("本人勤怠API", () => {
       }),
     });
 
-    await expect(
-      AttendanceApi.getDays("2026-09-01", "2026-09-30")
-    ).resolves.toEqual({
+    await expect(AttendanceApi.getDays("2026-09-01", "2026-09-30")).resolves.toEqual({
       dateFrom: "2026-09-01",
       dateTo: "2026-09-30",
       days: [{ ...attendanceDay, workPeriods: [] }],
@@ -81,9 +77,7 @@ describe("本人勤怠API", () => {
       allocationStatus: "BALANCED",
       workPeriods: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/attendance/days/2026-09-06"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/attendance/days/2026-09-06");
   });
 
   it("本人の修正申請履歴を日付で取得し作成・取消をversion付きAPIへ渡す", async () => {
@@ -177,9 +171,7 @@ describe("本人勤怠API", () => {
       json: vi.fn().mockResolvedValue(attendanceDay),
     });
 
-    await expect(AttendanceApi.punch("clock-in")).resolves.toEqual(
-      attendanceDay
-    );
+    await expect(AttendanceApi.punch("clock-in")).resolves.toEqual(attendanceDay);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/attendance/punches/clock-in",
       null
@@ -208,18 +200,14 @@ describe("本人勤怠API", () => {
       status: 409,
       errorResponse,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(AttendanceApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(AttendanceApiError));
   });
 
   it.each([
     ["本文なし", ""],
     ["非JSON本文", "Forbidden"],
   ])("%sの403を本文なしAPI例外へ変換する", async (_condition, body) => {
-    HttpClient.getRequest.mockResolvedValue(
-      new Response(body, { status: 403 })
-    );
+    HttpClient.getRequest.mockResolvedValue(new Response(body, { status: 403 }));
 
     await expect(AttendanceApi.getDay("2026-09-06")).rejects.toMatchObject({
       status: 403,
@@ -248,9 +236,7 @@ describe("本人勤怠API", () => {
       reviewComment: null,
       days: [],
     });
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/attendance/months/2026-09"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/attendance/months/2026-09");
   });
 
   it("管理一覧の状態絞込みをqueryへ設定する", async () => {
@@ -259,9 +245,10 @@ describe("本人勤怠API", () => {
       json: vi.fn().mockResolvedValue({ yearMonth: "2026-09" }),
     });
 
-    await expect(
-      AttendanceApi.getAdministrationMonths("2026-09", "SUBMITTED")
-    ).resolves.toEqual({ yearMonth: "2026-09", months: [] });
+    await expect(AttendanceApi.getAdministrationMonths("2026-09", "SUBMITTED")).resolves.toEqual({
+      yearMonth: "2026-09",
+      months: [],
+    });
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       "/api/v1/attendance/administration/months?yearMonth=2026-09&status=SUBMITTED"
     );
@@ -272,15 +259,12 @@ describe("本人勤怠API", () => {
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
       headers: new Headers({
-        "Content-Disposition":
-          'attachment; filename="work-management-attendance-2026-09.csv"',
+        "Content-Disposition": 'attachment; filename="work-management-attendance-2026-09.csv"',
       }),
       blob: vi.fn().mockResolvedValue(content),
     });
 
-    await expect(
-      AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")
-    ).resolves.toEqual({
+    await expect(AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")).resolves.toEqual({
       content,
       fileName: "work-management-attendance-2026-09.csv",
     });
@@ -299,9 +283,7 @@ describe("本人勤怠API", () => {
       blob: vi.fn().mockResolvedValue(new Blob(["CSV"])),
     });
 
-    await expect(
-      AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")
-    ).resolves.toMatchObject({
+    await expect(AttendanceApi.downloadAdministrationMonthlyCsv("2026-09")).resolves.toMatchObject({
       fileName: "work-management-attendance-2026-09.csv",
     });
   });

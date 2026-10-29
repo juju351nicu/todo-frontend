@@ -11,9 +11,7 @@ import { isUnauthorizedApiError } from "@/shared/utils/apiError";
  *
  * @param memberId 退会対象の会員ID
  */
-export const useMemberCancelPage = (
-  memberId: Readonly<Ref<number>>
-) => {
+export const useMemberCancelPage = (memberId: Readonly<Ref<number>>) => {
   const memberStore = useMemberStore();
   const { expireSession } = useSessionExpiry();
 

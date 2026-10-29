@@ -17,16 +17,27 @@ const ganttContainer = ref<HTMLElement | null>(null);
 const { ganttData } = useWbsGanttChart(
   ganttContainer,
   () => props.rows,
-  () => props.dependencies,
+  () => props.dependencies
 );
 </script>
 
 <template>
   <div>
-    <StatusAlert v-if="ganttData.unscheduledTaskIds.length" type="warning" variant="soft" density="compact" class="m-4 w-auto">
-      予定日の不正なTask {{ ganttData.unscheduledTaskIds.length }}件は、 左のtreeだけに表示しています。
+    <StatusAlert
+      v-if="ganttData.unscheduledTaskIds.length"
+      type="warning"
+      variant="soft"
+      density="compact"
+      class="m-4 w-auto"
+    >
+      予定日の不正なTask {{ ganttData.unscheduledTaskIds.length }}件は、
+      左のtreeだけに表示しています。
     </StatusAlert>
-    <div ref="ganttContainer" class="h-[min(68vh,720px)] min-h-110 w-full min-w-225" aria-label="WBSガントチャート" />
+    <div
+      ref="ganttContainer"
+      class="h-[min(68vh,720px)] min-h-110 w-full min-w-225"
+      aria-label="WBSガントチャート"
+    />
   </div>
 </template>
 

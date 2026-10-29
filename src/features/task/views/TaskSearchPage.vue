@@ -2,7 +2,10 @@
 import { onBeforeMount } from "vue";
 
 import TaskPriorityBadge from "@/features/task/components/TaskPriorityBadge.vue";
-import { TASK_SEARCH_CONTROL, useTaskSearchPage } from "@/features/task/composables/useTaskSearchPage";
+import {
+  TASK_SEARCH_CONTROL,
+  useTaskSearchPage,
+} from "@/features/task/composables/useTaskSearchPage";
 import {
   TASK_SAVED_VIEW_NAME_MAX_LENGTH,
   TASK_SEARCH_KEYWORD_MAX_LENGTH,
@@ -49,18 +52,32 @@ onBeforeMount(initialize);
   <div class="max-w-400 p-4">
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">Work Management</div>
+        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">
+          Work Management
+        </div>
         <h1 class="text-[2.125rem] leading-10 font-bold tracking-[.0073529412em]">Task検索</h1>
-        <p class="mt-1 mb-0 text-sm text-muted">参照できるProjectのTaskを横断して検索し、よく使う条件を保存できます。</p>
+        <p class="mt-1 mb-0 text-sm text-muted">
+          参照できるProjectのTaskを横断して検索し、よく使う条件を保存できます。
+        </p>
       </div>
-      <UButton icon="i-mdi-refresh" variant="ghost" :loading="isBusy" @click="initialize">再読み込み</UButton>
+      <UButton icon="i-mdi-refresh" variant="ghost" :loading="isBusy" @click="initialize"
+        >再読み込み</UButton
+      >
     </div>
 
     <LoadingIndicator v-if="isBusy" />
-    <StatusAlert v-if="errorMessages.length" type="error" class="mb-4" closable @close="errorMessages = []">
+    <StatusAlert
+      v-if="errorMessages.length"
+      type="error"
+      class="mb-4"
+      closable
+      @close="errorMessages = []"
+    >
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" variant="soft" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" variant="soft" class="mb-4">{{
+      successMessage
+    }}</StatusAlert>
 
     <UCard variant="outline" class="mb-4">
       <template #header>
@@ -96,10 +113,16 @@ onBeforeMount(initialize);
               :data-task-search-control="TASK_SEARCH_CONTROL.savedViewName"
             />
           </UFormField>
-          <FieldCounter :value="savedViewName" :max="TASK_SAVED_VIEW_NAME_MAX_LENGTH" class="end-7 bottom-3.5" />
+          <FieldCounter
+            :value="savedViewName"
+            :max="TASK_SAVED_VIEW_NAME_MAX_LENGTH"
+            class="end-7 bottom-3.5"
+          />
         </div>
         <div class="flex w-full flex-wrap gap-2 p-3 md:w-1/3">
-          <UButton color="primary" icon="i-mdi-content-save-plus-outline" @click="createSavedView">新規保存</UButton>
+          <UButton color="primary" icon="i-mdi-content-save-plus-outline" @click="createSavedView"
+            >新規保存</UButton
+          >
           <UButton
             variant="outline"
             icon="i-mdi-content-save-edit-outline"
@@ -247,7 +270,13 @@ onBeforeMount(initialize);
             >
               <template #default>
                 <span class="flex flex-wrap gap-1">
-                  <UBadge v-for="column in columnOptions.filter((option) => visibleColumns.includes(option.code))" :key="column.code" size="sm">
+                  <UBadge
+                    v-for="column in columnOptions.filter((option) =>
+                      visibleColumns.includes(option.code)
+                    )"
+                    :key="column.code"
+                    size="sm"
+                  >
                     {{ column.label }}
                   </UBadge>
                 </span>
@@ -256,7 +285,9 @@ onBeforeMount(initialize);
           </UFormField>
         </div>
         <div class="flex w-full flex-wrap items-center justify-end gap-2 p-3 md:w-1/2">
-          <UButton variant="ghost" icon="i-mdi-filter-remove-outline" @click="resetSearch">リセット</UButton>
+          <UButton variant="ghost" icon="i-mdi-filter-remove-outline" @click="resetSearch"
+            >リセット</UButton
+          >
           <UButton color="primary" icon="i-mdi-magnify" @click="executeSearch">検索</UButton>
         </div>
       </div>
@@ -266,13 +297,25 @@ onBeforeMount(initialize);
       検索結果が100件を超えたため、先頭100件を表示しています。条件を追加してください。
     </StatusAlert>
     <!-- 検索に失敗したときは結果を消しているだけなので、「一致するTaskはありません」とは出さない。 -->
-    <StatusAlert v-if="!isBusy && tasks.length === 0 && !errorMessages.length" type="info" variant="soft" class="mb-4">
+    <StatusAlert
+      v-if="!isBusy && tasks.length === 0 && !errorMessages.length"
+      type="info"
+      variant="soft"
+      class="mb-4"
+    >
       条件に一致するTaskはありません。
     </StatusAlert>
 
-    <UCard v-if="tasks.length" variant="outline" class="overflow-hidden" :ui="{ body: 'p-0 sm:p-0' }">
+    <UCard
+      v-if="tasks.length"
+      variant="outline"
+      class="overflow-hidden"
+      :ui="{ body: 'p-0 sm:p-0' }"
+    >
       <div class="max-h-[min(62vh,680px)] overflow-auto">
-        <table class="app-table app-table-hover [&_td]:h-13 [&_td]:py-2 [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-1 [&_thead_th]:bg-default">
+        <table
+          class="app-table app-table-hover [&_td]:h-13 [&_td]:py-2 [&_thead_th]:sticky [&_thead_th]:top-0 [&_thead_th]:z-1 [&_thead_th]:bg-default"
+        >
           <thead>
             <tr>
               <th>Task</th>
@@ -316,15 +359,24 @@ onBeforeMount(initialize);
                 <div class="mb-1 text-xs">{{ Number(task.progressPercent) }}%</div>
                 <UProgress :model-value="Number(task.progressPercent)" size="xs" />
               </td>
-              <td v-if="isColumnVisible('DETAIL')" class="max-w-120 min-w-70 whitespace-normal">{{ task.detail || "—" }}</td>
+              <td v-if="isColumnVisible('DETAIL')" class="max-w-120 min-w-70 whitespace-normal">
+                {{ task.detail || "—" }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </UCard>
 
-    <UModal v-model:open="isDeleteConfirmationOpen" :dismissible="false" title="Saved Viewを削除" :ui="{ content: 'max-w-120' }">
-      <template #body>「{{ activeSavedView?.name }}」を削除します。この操作は取り消せません。</template>
+    <UModal
+      v-model:open="isDeleteConfirmationOpen"
+      :dismissible="false"
+      title="Saved Viewを削除"
+      :ui="{ content: 'max-w-120' }"
+    >
+      <template #body
+        >「{{ activeSavedView?.name }}」を削除します。この操作は取り消せません。</template
+      >
       <template #footer>
         <UButton variant="ghost" @click="cancelDeleteSavedView">キャンセル</UButton>
         <UButton color="error" variant="ghost" @click="deleteSavedView">削除</UButton>

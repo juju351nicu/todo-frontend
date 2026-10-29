@@ -41,10 +41,17 @@ describe("projectTemplateDisplay", () => {
 
 describe("Template詳細の内部コード・番号を名前で示す", () => {
   const statuses = [{ statusCode: "TODO", name: "未着手", position: 1, completed: false }];
-  const memberSlots = [{ slotKey: "OWNER_1", displayName: "管理 一郎", projectRole: "OWNER", position: 1 }];
+  const memberSlots = [
+    { slotKey: "OWNER_1", displayName: "管理 一郎", projectRole: "OWNER", position: 1 },
+  ];
   const tasks = [
     { projectTemplateTaskId: 129, parentProjectTemplateTaskId: null, wbsCode: "1", title: "設計" },
-    { projectTemplateTaskId: 130, parentProjectTemplateTaskId: 129, wbsCode: "1.1", title: "画面設計" },
+    {
+      projectTemplateTaskId: 130,
+      parentProjectTemplateTaskId: 129,
+      wbsCode: "1.1",
+      title: "画面設計",
+    },
   ];
 
   it("Board列コードを列名、担当slotのキーを表示名にし、対応がなければコードのまま示す", () => {

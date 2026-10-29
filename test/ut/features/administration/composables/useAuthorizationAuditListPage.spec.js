@@ -19,9 +19,7 @@ vi.mock("@/features/auth/stores/user", () => ({
 }));
 
 vi.mock("@/features/administration/api/administrationApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/administration/api/administrationApi"
-  );
+  const actual = await vi.importActual("@/features/administration/api/administrationApi");
   return { ...actual, default: mocks.administrationApi };
 });
 
@@ -50,9 +48,7 @@ describe("useAuthorizationAuditListPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.administrationApi.getAuthorizationAuditLogs.mockResolvedValue(
-      response
-    );
+    mocks.administrationApi.getAuthorizationAuditLogs.mockResolvedValue(response);
     mocks.administrationApi.getRoles.mockResolvedValue([
       { roleCode: "USER", roleName: "一般利用者", systemRole: true, version: 0 },
       {
@@ -71,15 +67,11 @@ describe("useAuthorizationAuditListPage", () => {
 
     expect(mocks.administrationApi.getRoles).toHaveBeenCalledOnce();
     expect(page.formatRole("READ_ONLY_ADMIN")).toBe("参照専用管理者");
-    expect(page.formatRoles(["USER", "READ_ONLY_ADMIN"])).toBe(
-      "一般利用者、参照専用管理者"
-    );
+    expect(page.formatRoles(["USER", "READ_ONLY_ADMIN"])).toBe("一般利用者、参照専用管理者");
   });
 
   it("ロール一覧を取得できなくても監査ログを表示し、ロールはコードのまま示す", async () => {
-    mocks.administrationApi.getRoles.mockRejectedValue(
-      new AdministrationApiError(403, null)
-    );
+    mocks.administrationApi.getRoles.mockRejectedValue(new AdministrationApiError(403, null));
     const page = useAuthorizationAuditListPage();
 
     await page.initialize();
@@ -95,10 +87,7 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.initialize();
 
-    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(
-      0,
-      50
-    );
+    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(0, 50);
     expect(page.auditLogs.value).toEqual([auditLog]);
     expect(page.totalElements.value).toBe(51);
     expect(page.totalPages.value).toBe(2);
@@ -113,10 +102,7 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.changePage(2);
 
-    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(
-      1,
-      50
-    );
+    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(1, 50);
     expect(page.page.value).toBe(2);
   });
 
@@ -126,10 +112,7 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.changePageSize(100);
 
-    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(
-      0,
-      100
-    );
+    expect(mocks.administrationApi.getAuthorizationAuditLogs).toHaveBeenCalledWith(0, 100);
     expect(page.page.value).toBe(1);
   });
 
@@ -185,9 +168,7 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "監査ログを参照するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["監査ログを参照するpermissionがありません。"]);
     expect(page.auditLogs.value).toEqual([]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
@@ -227,9 +208,7 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "権限変更監査ログを取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["権限変更監査ログを取得できませんでした。"]);
   });
 
   it("本文なし400は監査一覧用fallbackへ閉じる", async () => {
@@ -240,8 +219,6 @@ describe("useAuthorizationAuditListPage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "権限変更監査ログを取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["権限変更監査ログを取得できませんでした。"]);
   });
 });

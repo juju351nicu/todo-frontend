@@ -29,7 +29,9 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await openDedicatedWbs(page);
 
   // fixtureの完了Task（予定2時間・実績2時間30分）が、見積もり精度の一覧へ参考値として表示される。
-  await expect(page.getByText("比較できたTaskが1件のため参考値です。", { exact: false })).toBeVisible();
+  await expect(
+    page.getByText("比較できたTaskが1件のため参考値です。", { exact: false })
+  ).toBeVisible();
   const accuracyRow = page
     .getByRole("row")
     .filter({ hasText: `2 ${COMPLETED_TASK_TITLE}` })
@@ -38,9 +40,7 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(accuracyRow).toContainText("+30分");
 
   // 未完了Taskへ日別予定（90分）を登録すると、Dialogを閉じなくてもworkloadが再集計される。
-  await page
-    .getByRole("button", { name: `${PLANNING_TASK_TITLE}の日別予定工数を開く` })
-    .click();
+  await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の日別予定工数を開く` }).click();
   // Dialog名にはWBSコードが前置される（例: "Task日別予定工数: 1 Browser WBS 設計"）。
   const effortPlanDialog = page.getByRole("dialog", {
     name: `Task日別予定工数: 1 ${PLANNING_TASK_TITLE}`,

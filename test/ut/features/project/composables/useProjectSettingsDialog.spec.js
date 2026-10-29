@@ -182,9 +182,7 @@ describe("useProjectSettingsDialog", () => {
     await dialog.addMember();
 
     expect(mocks.projectApi.getProject).toHaveBeenCalledWith(5);
-    expect(dialog.errorMessages.value).toEqual([
-      "有効なアカウントを指定してください。",
-    ]);
+    expect(dialog.errorMessages.value).toEqual(["有効なアカウントを指定してください。"]);
   });
 
   it("member versionの409で再取得できたときは取り直し済みの案内を添える", async () => {
@@ -258,7 +256,12 @@ describe("useProjectSettingsDialog", () => {
   });
 
   it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す", async () => {
-    const candidate = { accountId: 9, displayName: "山田 太郎", email: "yamada@example.com", loginId: "yamada" };
+    const candidate = {
+      accountId: 9,
+      displayName: "山田 太郎",
+      email: "yamada@example.com",
+      loginId: "yamada",
+    };
     mocks.projectApi.findMemberCandidates.mockResolvedValue([candidate]);
     mocks.projectApi.addProjectMember.mockResolvedValue(structuredClone(project));
     const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
@@ -275,7 +278,10 @@ describe("useProjectSettingsDialog", () => {
     expect(dialog.canAddMember.value).toBe(true);
 
     await dialog.addMember();
-    expect(mocks.projectApi.addProjectMember).toHaveBeenCalledWith(5, { accountId: 9, projectRole: "MEMBER" });
+    expect(mocks.projectApi.addProjectMember).toHaveBeenCalledWith(5, {
+      accountId: 9,
+      projectRole: "MEMBER",
+    });
     expect(dialog.memberCandidates.value).toEqual([]);
     expect(dialog.memberCandidateQuery.value).toBe("");
   });
@@ -334,9 +340,7 @@ describe("useProjectSettingsDialog", () => {
     const updated = {
       ...structuredClone(project),
       members: project.members.map((member) =>
-        member.accountId === 4
-          ? { ...member, projectRole: "MANAGER", version: 6 }
-          : member
+        member.accountId === 4 ? { ...member, projectRole: "MANAGER", version: 6 } : member
       ),
     };
     mocks.projectApi.updateProjectMember.mockResolvedValue(updated);
@@ -366,9 +370,7 @@ describe("useProjectSettingsDialog", () => {
 
     expect(mocks.projectApi.updateProjectMember).not.toHaveBeenCalled();
     expect(dialog.isRemoveConfirmOpen.value).toBe(false);
-    expect(dialog.errorMessages.value).toEqual([
-      "ProjectにはOWNERを1人以上残す必要があります。",
-    ]);
+    expect(dialog.errorMessages.value).toEqual(["ProjectにはOWNERを1人以上残す必要があります。"]);
   });
 
   it("別OWNERがいる場合は自己除外の204成功後に詳細を再取得せずProject一覧へ戻る", async () => {
@@ -416,9 +418,7 @@ describe("useProjectSettingsDialog", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻る", async () => {
-    mocks.projectApi.updateProject.mockRejectedValue(
-      new ProjectApiError(401, null)
-    );
+    mocks.projectApi.updateProject.mockRejectedValue(new ProjectApiError(401, null));
     const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
     dialog.openDialog();
     dialog.projectForm.value.name = "更新Project";
@@ -475,23 +475,17 @@ describe("useProjectSettingsDialog", () => {
 
     await dialog.saveProject();
 
-    expect(dialog.errorMessages.value).toEqual([
-      "Project情報を更新できませんでした。",
-    ]);
+    expect(dialog.errorMessages.value).toEqual(["Project情報を更新できませんでした。"]);
   });
 
   it("本文なし403はSessionを維持して操作権限不足を表示する", async () => {
-    mocks.projectApi.updateProject.mockRejectedValue(
-      new ProjectApiError(403, null)
-    );
+    mocks.projectApi.updateProject.mockRejectedValue(new ProjectApiError(403, null));
     const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
     dialog.projectForm.value.name = "更新Project";
 
     await dialog.saveProject();
 
-    expect(dialog.errorMessages.value).toEqual([
-      "この操作を実行するpermissionがありません。",
-    ]);
+    expect(dialog.errorMessages.value).toEqual(["この操作を実行するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
@@ -499,32 +493,27 @@ describe("useProjectSettingsDialog", () => {
   it.each([
     [403, "Projectを参照するpermissionがありません。"],
     [404, "Projectが見つからないか、このProjectへ参加していません。"],
-  ])(
-    "409回復中の%dは古い競合案内より現在の参照状態を優先する",
-    async (status, expectedMessage) => {
-      mocks.projectApi.updateProject.mockRejectedValue(
-        new ProjectApiError(409, {
-          fieldErrors: [
-            {
-              errorCode: "PROJECT_VERSION_CONFLICT",
-              field: "version",
-              message: "Projectが先に更新されています。",
-            },
-          ],
-        })
-      );
-      mocks.projectApi.getProject.mockRejectedValue(
-        new ProjectApiError(status, null)
-      );
-      const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
-      dialog.projectForm.value.name = "更新Project";
+  ])("409回復中の%dは古い競合案内より現在の参照状態を優先する", async (status, expectedMessage) => {
+    mocks.projectApi.updateProject.mockRejectedValue(
+      new ProjectApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "PROJECT_VERSION_CONFLICT",
+            field: "version",
+            message: "Projectが先に更新されています。",
+          },
+        ],
+      })
+    );
+    mocks.projectApi.getProject.mockRejectedValue(new ProjectApiError(status, null));
+    const dialog = useProjectSettingsDialog(projectRef, onProjectUpdated);
+    dialog.projectForm.value.name = "更新Project";
 
-      await dialog.saveProject();
+    await dialog.saveProject();
 
-      expect(dialog.errorMessages.value).toEqual([expectedMessage]);
-      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
-    }
-  );
+    expect(dialog.errorMessages.value).toEqual([expectedMessage]);
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
 
   it("409回復中の401は古い競合案内を破棄してSessionを失効させる", async () => {
     mocks.projectApi.updateProject.mockRejectedValue(

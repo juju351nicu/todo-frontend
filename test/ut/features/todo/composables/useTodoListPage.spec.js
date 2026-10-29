@@ -205,9 +205,7 @@ describe("useTodoListPage", () => {
 
     await page.search();
 
-    expect(page.errorMessages.value).toEqual([
-      "Todo情報を取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todo情報を取得できませんでした。"]);
   });
 
   it("本文なし403ではSessionを維持して古い一覧を破棄する", async () => {
@@ -219,9 +217,7 @@ describe("useTodoListPage", () => {
     await page.search();
 
     expect(page.todoList.value).toEqual([]);
-    expect(page.errorMessages.value).toEqual([
-      "Todoを参照するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todoを参照するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -272,9 +268,7 @@ describe("useTodoListPage", () => {
     await page.completeTodo(item);
 
     expect(mocks.todoStore.completeTodo).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "Todoを更新するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todoを更新するpermissionがありません。"]);
   });
 
   it("本人更新permissionでは他人のTodoを完了できない", async () => {

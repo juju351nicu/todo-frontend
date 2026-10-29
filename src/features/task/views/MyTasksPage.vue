@@ -39,7 +39,9 @@ const FILTER_OPTIONS = [
   <div class="max-w-360 p-4">
     <div class="mb-6 flex items-center justify-between">
       <div>
-        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">Work Management</div>
+        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">
+          Work Management
+        </div>
         <h1 class="text-[2.125rem] leading-10 font-bold tracking-[.0073529412em]">My Tasks</h1>
         <p class="mt-1 text-sm text-muted">自分が担当する未完了Taskを期限順に確認できます。</p>
       </div>
@@ -62,7 +64,9 @@ const FILTER_OPTIONS = [
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+    <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+      successMessage
+    }}</StatusAlert>
 
     <!-- 期間の切替は、どちらか1つを必ず選択した状態にする（選択を外せない切替）。 -->
     <UFieldGroup class="mb-4" role="group" aria-label="My Tasksの期間">
@@ -79,13 +83,24 @@ const FILTER_OPTIONS = [
       </UButton>
     </UFieldGroup>
 
-    <StatusAlert v-if="!isLoading && visibleTasks.length === 0" type="success" variant="soft" class="mb-6">
-      {{ myTasks.length === 0 ? "未完了の担当Taskはありません。" : "今週が期限のTaskはありません。" }}
+    <StatusAlert
+      v-if="!isLoading && visibleTasks.length === 0"
+      type="success"
+      variant="soft"
+      class="mb-6"
+    >
+      {{
+        myTasks.length === 0 ? "未完了の担当Taskはありません。" : "今週が期限のTaskはありません。"
+      }}
     </StatusAlert>
 
     <div class="-m-3 flex flex-wrap">
       <div v-for="group in groups" :key="group.key" class="w-full p-3 md:w-1/3">
-        <UCard variant="outline" class="h-full" :ui="{ header: 'border-b border-default', body: 'p-0 sm:p-0 not-first:pt-0' }">
+        <UCard
+          variant="outline"
+          class="h-full"
+          :ui="{ header: 'border-b border-default', body: 'p-0 sm:p-0 not-first:pt-0' }"
+        >
           <template #header>
             <div class="flex items-center text-base font-normal">
               <UIcon :name="group.icon" class="me-2 size-6" :class="`text-${group.color}`" />
@@ -94,7 +109,11 @@ const FILTER_OPTIONS = [
             </div>
           </template>
           <ul v-if="group.items.length" class="py-2">
-            <li v-for="task in group.items" :key="task.taskId" class="border-b border-default last:border-b-0">
+            <li
+              v-for="task in group.items"
+              :key="task.taskId"
+              class="border-b border-default last:border-b-0"
+            >
               <!--
                 行の中のTimer・完了ボタンでEnterを押したときに行のEnterまで動き、完了と同時にBoardへ移っていたため、
                 行自身にフォーカスがあるときだけ開く（.self）。
@@ -110,13 +129,19 @@ const FILTER_OPTIONS = [
                 <span class="min-w-0 flex-1">
                   <span class="block text-base font-medium">{{ task.title }}</span>
                   <span class="line-clamp-2 text-sm text-muted">
-                    {{ task.projectName }} ・ {{ task.statusName }} ・進捗 {{ Number(task.progressPercent) }}%
+                    {{ task.projectName }} ・ {{ task.statusName }} ・進捗
+                    {{ Number(task.progressPercent) }}%
                     <br />
                     期限 {{ task.dueDate }} ・ {{ formatRemainingDays(task.remainingDays) }}
                   </span>
                 </span>
                 <span class="flex items-center gap-1">
-                  <TaskTimerActionButton v-if="canStartTimers" :project-id="task.projectId" :task-id="task.taskId" compact />
+                  <TaskTimerActionButton
+                    v-if="canStartTimers"
+                    :project-id="task.projectId"
+                    :task-id="task.taskId"
+                    compact
+                  />
                   <UButton
                     v-if="canCompleteTasks"
                     icon="i-mdi-check"

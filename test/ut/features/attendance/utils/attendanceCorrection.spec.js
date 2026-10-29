@@ -30,9 +30,7 @@ describe("勤怠修正申請の画面変換と事前検証", () => {
     const form = buildAttendanceCorrectionForm(day);
     form.reason = " 退勤時刻訂正 ";
 
-    expect(toTokyoDateTimeInput("2026-09-05T00:00:00Z")).toBe(
-      "2026-09-05T09:00:00"
-    );
+    expect(toTokyoDateTimeInput("2026-09-05T00:00:00Z")).toBe("2026-09-05T09:00:00");
     expect(buildAttendanceCorrectionRequest(day, form)).toEqual({
       baseDayVersion: 3,
       note: "現在メモ",
@@ -48,12 +46,8 @@ describe("勤怠修正申請の画面変換と事前検証", () => {
   });
 
   it("datetime-localが秒を省略してもBackendで解釈できるInstant形式へ補完する", () => {
-    expect(toTokyoOffsetDateTime("2026-09-05T18:30")).toBe(
-      "2026-09-05T18:30:00+09:00"
-    );
-    expect(toTokyoOffsetDateTime("2026-09-05T18:30:45")).toBe(
-      "2026-09-05T18:30:45+09:00"
-    );
+    expect(toTokyoOffsetDateTime("2026-09-05T18:30")).toBe("2026-09-05T18:30:00+09:00");
+    expect(toTokyoOffsetDateTime("2026-09-05T18:30:45")).toBe("2026-09-05T18:30:45+09:00");
   });
 
   it("必須理由・逆転・勤務重複・勤務外休憩・日付違いを利用者向けに検出する", () => {
@@ -92,9 +86,7 @@ describe("勤怠修正申請の画面変換と事前検証", () => {
     expect(errors).toContain("修正理由を入力してください。");
     expect(errors).toContain("勤務区間1の休憩1は勤務時間内にしてください。");
     expect(errors).toContain("勤務区間2の終了時刻は開始時刻より後にしてください。");
-    expect(errors).toContain(
-      "勤務区間3の開始日時は選択した勤務日に合わせてください。"
-    );
+    expect(errors).toContain("勤務区間3の開始日時は選択した勤務日に合わせてください。");
     expect(errors).toContain("勤務区間が重複しています。");
   });
 

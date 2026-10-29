@@ -28,9 +28,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/task/api/taskCommentApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/task/api/taskCommentApi"
-  );
+  const actual = await vi.importActual("@/features/task/api/taskCommentApi");
   return { ...actual, default: mocks.taskCommentApi };
 });
 
@@ -53,8 +51,7 @@ const otherComment = {
   authorDisplayName: "別の投稿者",
 };
 
-const createPage = (disabled = false) =>
-  useTaskComments(ref(5), ref(31), ref(disabled));
+const createPage = (disabled = false) => useTaskComments(ref(5), ref(31), ref(disabled));
 
 const waitForInitialLoad = async () => {
   await vi.waitFor(() => {
@@ -95,7 +92,11 @@ describe("useTaskComments", () => {
   it("Taskを切り替えた後に前のTaskのコメントが届いても、今のTaskのコメントを上書きしない", async () => {
     let resolvePreviousTaskList;
     mocks.taskCommentApi.findComments
-      .mockReturnValueOnce(new Promise((resolve) => { resolvePreviousTaskList = resolve; }))
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolvePreviousTaskList = resolve;
+        })
+      )
       .mockResolvedValueOnce([{ ...ownComment, taskId: 40, body: "今のTaskのコメント" }]);
     const taskId = ref(31);
     const page = useTaskComments(ref(5), taskId, ref(false));
@@ -165,15 +166,8 @@ describe("useTaskComments", () => {
 
     await page.confirmDelete();
 
-    expect(mocks.taskCommentApi.deleteComment).toHaveBeenCalledWith(
-      5,
-      31,
-      41,
-      0
-    );
-    expect(page.comments.value.map((comment) => comment.commentId)).toEqual([
-      42,
-    ]);
+    expect(mocks.taskCommentApi.deleteComment).toHaveBeenCalledWith(5, 31, 41, 0);
+    expect(page.comments.value.map((comment) => comment.commentId)).toEqual([42]);
     expect(page.deletingComment.value).toBeNull();
   });
 
@@ -215,9 +209,7 @@ describe("useTaskComments", () => {
     mocks.taskCommentApi.findComments
       .mockResolvedValueOnce([structuredClone(ownComment)])
       .mockResolvedValueOnce([]);
-    mocks.taskCommentApi.deleteComment.mockRejectedValue(
-      new TaskCommentApiError(409, null)
-    );
+    mocks.taskCommentApi.deleteComment.mockRejectedValue(new TaskCommentApiError(409, null));
     const page = createPage();
     await waitForInitialLoad();
     page.openDeleteConfirm(page.comments.value[0]);
@@ -279,9 +271,7 @@ describe("useTaskComments", () => {
 
     await page.submitComment();
 
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.createFailed,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.createFailed]);
   });
 
   it("403ではBackend本文を表示せず操作用固定文言を表示してSessionを維持する", async () => {
@@ -302,9 +292,7 @@ describe("useTaskComments", () => {
 
     await page.submitComment();
 
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.operationForbidden,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.operationForbidden]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -332,9 +320,7 @@ describe("useTaskComments", () => {
 
     expect(page.comments.value).toEqual([]);
     expect(page.editingCommentId.value).toBeNull();
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.comments.readForbidden,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.comments.readForbidden]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -388,9 +374,7 @@ describe("useTaskComments", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.taskCommentApi.findComments.mockRejectedValue(
-      new TaskCommentApiError(401, null)
-    );
+    mocks.taskCommentApi.findComments.mockRejectedValue(new TaskCommentApiError(401, null));
 
     const page = createPage();
     await waitForInitialLoad();

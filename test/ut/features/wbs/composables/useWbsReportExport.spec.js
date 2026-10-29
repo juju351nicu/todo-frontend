@@ -36,20 +36,14 @@ describe("useWbsReportExport", () => {
 
     await page.downloadWbsReport("weekly", "2026-09-05");
 
-    expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledWith(
-      7,
-      "weekly",
-      "2026-09-05"
-    );
+    expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledWith(7, "weekly", "2026-09-05");
     expect(mocks.createObjectUrl).toHaveBeenCalledOnce();
     expect(mocks.appendDownloadAnchor).toHaveBeenCalledOnce();
     expect(mocks.clickDownloadAnchor).toHaveBeenCalledOnce();
     expect(mocks.removeDownloadAnchor).toHaveBeenCalledOnce();
     expect(mocks.revokeObjectUrl).toHaveBeenCalledWith("blob:wbs-report");
     expect(page.earnedValueStatusDate.value).toBe("2026-09-05");
-    expect(page.reportExportSuccessMessage.value).toBe(
-      "週次Excel帳票をダウンロードしました。"
-    );
+    expect(page.reportExportSuccessMessage.value).toBe("週次Excel帳票をダウンロードしました。");
     expect(page.exportingReportType.value).toBeNull();
   });
 
@@ -60,9 +54,7 @@ describe("useWbsReportExport", () => {
     await page.downloadWbsReport("monthly", "2026-02-29");
 
     expect(mocks.wbsApi.downloadWbsReport).not.toHaveBeenCalled();
-    expect(page.reportExportErrorMessages.value).toEqual([
-      "Excel帳票の基準日を入力してください。",
-    ]);
+    expect(page.reportExportErrorMessages.value).toEqual(["Excel帳票の基準日を入力してください。"]);
   });
 
   it("Excel生成中の再操作は無視して二重downloadを防ぐ", async () => {
@@ -106,16 +98,12 @@ describe("useWbsReportExport", () => {
 
     await page.downloadWbsReport("weekly", "2026-09-05");
 
-    expect(page.reportExportErrorMessages.value).toEqual([
-      "active baselineが必要です。",
-    ]);
+    expect(page.reportExportErrorMessages.value).toEqual(["active baselineが必要です。"]);
     expect(mocks.createObjectUrl).not.toHaveBeenCalled();
   });
 
   it("Excel downloadの本文なし403をSession失効にせず権限不足として表示する", async () => {
-    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
-      new WbsApiError(403, null)
-    );
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(new WbsApiError(403, null));
     const page = useWbsPage();
     await page.initialize();
 
@@ -153,9 +141,7 @@ describe("useWbsReportExport", () => {
   });
 
   it("Excel downloadの401ではSessionを破棄してログイン画面へ遷移する", async () => {
-    mocks.wbsApi.downloadWbsReport.mockRejectedValue(
-      new WbsApiError(401, null)
-    );
+    mocks.wbsApi.downloadWbsReport.mockRejectedValue(new WbsApiError(401, null));
     const page = useWbsPage();
     await page.initialize();
 
@@ -186,15 +172,9 @@ describe("useWbsReportExport", () => {
 
       await state.downloadWbsReport("monthly", "2026-09-30");
 
-      expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledWith(
-        7,
-        "monthly",
-        "2026-09-30"
-      );
+      expect(mocks.wbsApi.downloadWbsReport).toHaveBeenCalledWith(7, "monthly", "2026-09-30");
       expect(statusDate.value).toBe("2026-09-30");
-      expect(state.reportExportSuccessMessage.value).toBe(
-        "月次Excel帳票をダウンロードしました。"
-      );
+      expect(state.reportExportSuccessMessage.value).toBe("月次Excel帳票をダウンロードしました。");
     });
 
     it.each([

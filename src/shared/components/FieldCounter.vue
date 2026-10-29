@@ -10,5 +10,7 @@ defineProps<{
 </script>
 
 <template>
-  <span class="pointer-events-none absolute end-4 bottom-0.5 text-xs text-muted">{{ value?.length ?? 0 }} / {{ max }}</span>
+  <span class="pointer-events-none absolute end-4 bottom-0.5 text-xs text-muted"
+    >{{ value?.length ?? 0 }} / {{ max }}</span
+  >
 </template>

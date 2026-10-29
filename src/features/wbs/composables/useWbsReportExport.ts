@@ -38,10 +38,7 @@ const saveWbsReportDownload = (file: WbsReportDownload): void => {
  * @param context Project IDとSession失効処理を提供する画面共通context
  * @param statusDate EVMと共有するyyyy-MM-dd形式の基準日。download開始時に指定値へ更新する
  */
-export const useWbsReportExport = (
-  context: WbsPageContext,
-  statusDate: Ref<string>
-) => {
+export const useWbsReportExport = (context: WbsPageContext, statusDate: Ref<string>) => {
   /** download中の帳票種別。download中でなければnull。 */
   const exportingReportType = ref<WbsReportType | null>(null);
   const reportExportErrorMessages = ref<string[]>([]);
@@ -62,9 +59,7 @@ export const useWbsReportExport = (
       return;
     }
     if (validateEarnedValueStatusDate(requestedStatusDate).length > 0) {
-      reportExportErrorMessages.value = [
-        "Excel帳票の基準日を入力してください。",
-      ];
+      reportExportErrorMessages.value = ["Excel帳票の基準日を入力してください。"];
       return;
     }
 
@@ -73,11 +68,7 @@ export const useWbsReportExport = (
     reportExportErrorMessages.value = [];
     reportExportSuccessMessage.value = "";
     try {
-      const file = await WbsApi.downloadWbsReport(
-        projectId,
-        reportType,
-        requestedStatusDate
-      );
+      const file = await WbsApi.downloadWbsReport(projectId, reportType, requestedStatusDate);
       saveWbsReportDownload(file);
       reportExportSuccessMessage.value = `${reportType === "weekly" ? "週次" : "月次"}Excel帳票をダウンロードしました。`;
     } catch (error: unknown) {
@@ -88,9 +79,7 @@ export const useWbsReportExport = (
     // download中は両方のボタンがdisabledになりフォーカスがbodyへ外れるため、押したボタンへ戻す
     // downloadは利用者が押したときだけ動く。
     if (!context.isSessionInvalidated()) {
-      await focusFirstEnabledElement([
-        `[data-wbs-report-control="${reportType}"]`,
-      ]);
+      await focusFirstEnabledElement([`[data-wbs-report-control="${reportType}"]`]);
     }
   };
 

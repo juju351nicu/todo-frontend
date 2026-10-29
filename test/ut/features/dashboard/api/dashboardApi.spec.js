@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import DashboardApi, {
-  DashboardApiError,
-} from "@/features/dashboard/api/dashboardApi";
+import DashboardApi, { DashboardApiError } from "@/features/dashboard/api/dashboardApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -78,9 +76,9 @@ describe("Dashboard API", () => {
       json: vi.fn().mockResolvedValue(advancedResponse),
     });
 
-    await expect(
-      DashboardApi.getAdvancedDashboard("2026-09-21")
-    ).resolves.toEqual(advancedResponse);
+    await expect(DashboardApi.getAdvancedDashboard("2026-09-21")).resolves.toEqual(
+      advancedResponse
+    );
     expect(HttpClient.getRequest).toHaveBeenCalledWith(
       `${API_PATHS.DASHBOARD_ADVANCED}?statusDate=2026-09-21`
     );
@@ -103,12 +101,12 @@ describe("Dashboard API", () => {
         }),
       });
 
-    await expect(
-      DashboardApi.getAdvancedDashboard("2026-09-21")
-    ).resolves.toMatchObject({ projects: [] });
-    await expect(
-      DashboardApi.getAdvancedDashboard("2026-09-21")
-    ).resolves.toMatchObject({ projects: [{ warningCodes: [] }] });
+    await expect(DashboardApi.getAdvancedDashboard("2026-09-21")).resolves.toMatchObject({
+      projects: [],
+    });
+    await expect(DashboardApi.getAdvancedDashboard("2026-09-21")).resolves.toMatchObject({
+      projects: [{ warningCodes: [] }],
+    });
   });
 
   it("JSON本文のない401をstatus付きDashboardApiErrorへ変換する", async () => {
@@ -124,9 +122,7 @@ describe("Dashboard API", () => {
       status: 401,
       errorResponse: null,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(DashboardApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(DashboardApiError));
   });
 
   it("非JSONの403を本文なしのDashboardApiErrorへ変換する", async () => {
@@ -136,9 +132,7 @@ describe("Dashboard API", () => {
       json: vi.fn().mockRejectedValue(new SyntaxError("not JSON")),
     });
 
-    await expect(
-      DashboardApi.getAdvancedDashboard("2026-09-21")
-    ).rejects.toMatchObject({
+    await expect(DashboardApi.getAdvancedDashboard("2026-09-21")).rejects.toMatchObject({
       status: 403,
       errorResponse: null,
     });

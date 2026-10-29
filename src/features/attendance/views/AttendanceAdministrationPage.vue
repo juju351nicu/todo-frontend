@@ -83,7 +83,13 @@ onBeforeMount(initialize);
         </div>
         <div class="w-full p-1 sm:w-1/3 md:w-1/4">
           <UFormField label="状態" class="pb-0">
-            <USelect v-model="selectedStatus" :items="[...statusOptions]" label-key="title" value-key="value" class="w-full" />
+            <USelect
+              v-model="selectedStatus"
+              :items="[...statusOptions]"
+              label-key="title"
+              value-key="value"
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-1 sm:w-1/3 md:w-1/4">
@@ -170,14 +176,18 @@ onBeforeMount(initialize);
                     role="button"
                     tabindex="0"
                     :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
-                    :data-attendance-admin-control="buildAttendanceMonthRowControlKey(month.accountId)"
+                    :data-attendance-admin-control="
+                      buildAttendanceMonthRowControlKey(month.accountId)
+                    "
                     @click="selectMonth(month)"
                     @keydown.enter="selectMonth(month)"
                     @keydown.space.prevent="selectMonth(month)"
                   >
                     <td>
                       <strong>{{ month.displayName }}</strong>
-                      <div class="text-xs text-muted">{{ month.loginId || "OAuth account" }} / ID: {{ month.accountId }}</div>
+                      <div class="text-xs text-muted">
+                        {{ month.loginId || "OAuth account" }} / ID: {{ month.accountId }}
+                      </div>
                     </td>
                     <td>
                       <UBadge :color="getAttendanceMonthStatusColor(month.statusCode)" size="sm">
@@ -187,7 +197,9 @@ onBeforeMount(initialize);
                     <td>{{ formatAttendanceInstant(month.submittedAt) }}</td>
                   </tr>
                   <tr v-if="months.length === 0">
-                    <td colspan="3" class="py-6 text-center text-muted">条件に一致する勤怠月はありません。</td>
+                    <td colspan="3" class="py-6 text-center text-muted">
+                      条件に一致する勤怠月はありません。
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -196,7 +208,10 @@ onBeforeMount(initialize);
         </div>
 
         <div class="w-full p-3 lg:w-1/2">
-          <UCard variant="outline" class="attendance-administration-detail static lg:sticky lg:top-20">
+          <UCard
+            variant="outline"
+            class="attendance-administration-detail static lg:sticky lg:top-20"
+          >
             <template v-if="selectedDetail" #header>
               <div class="flex flex-wrap items-center gap-2">
                 {{ selectedListItem?.displayName || `Account ID: ${selectedDetail.accountId}` }}
@@ -211,26 +226,47 @@ onBeforeMount(initialize);
             <template v-if="selectedDetail">
               <div class="-m-1 mb-2 flex">
                 <div class="w-1/3 p-1">
-                  <span class="text-xs">総勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.grossWorkMinutes) }}</strong>
+                  <span class="text-xs">総勤務</span><br /><strong>{{
+                    formatAttendanceMinutes(selectedDetail.grossWorkMinutes)
+                  }}</strong>
                 </div>
                 <div class="w-1/3 p-1">
-                  <span class="text-xs">休憩</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.breakMinutes) }}</strong>
+                  <span class="text-xs">休憩</span><br /><strong>{{
+                    formatAttendanceMinutes(selectedDetail.breakMinutes)
+                  }}</strong>
                 </div>
                 <div class="w-1/3 p-1">
-                  <span class="text-xs">差引勤務</span><br /><strong>{{ formatAttendanceMinutes(selectedDetail.netWorkMinutes) }}</strong>
+                  <span class="text-xs">差引勤務</span><br /><strong>{{
+                    formatAttendanceMinutes(selectedDetail.netWorkMinutes)
+                  }}</strong>
                 </div>
               </div>
-              <StatusAlert v-if="selectedDetail.hasIncompletePeriod" type="warning" density="compact" class="mb-3">
+              <StatusAlert
+                v-if="selectedDetail.hasIncompletePeriod"
+                type="warning"
+                density="compact"
+                class="mb-3"
+              >
                 未終了の勤務・休憩区間があります。
               </StatusAlert>
-              <StatusAlert v-if="selectedDetail.reviewComment" type="info" density="compact" class="mb-3">
+              <StatusAlert
+                v-if="selectedDetail.reviewComment"
+                type="info"
+                density="compact"
+                class="mb-3"
+              >
                 審査コメント: {{ selectedDetail.reviewComment }}
               </StatusAlert>
 
               <template v-if="canApproveOrReject">
                 <div class="relative">
                   <UFormField label="承認コメント（任意）">
-                    <UTextarea v-model="reviewComment" :maxlength="ATTENDANCE_TEXT_MAX_LENGTH" :rows="2" class="w-full" />
+                    <UTextarea
+                      v-model="reviewComment"
+                      :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
+                      :rows="2"
+                      class="w-full"
+                    />
                   </UFormField>
                   <FieldCounter :value="reviewComment" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
@@ -244,7 +280,10 @@ onBeforeMount(initialize);
                   承認
                 </UButton>
                 <div class="relative">
-                  <UFormField label="差戻し理由（必須）" :error="monthRejectReasonError || undefined">
+                  <UFormField
+                    label="差戻し理由（必須）"
+                    :error="monthRejectReasonError || undefined"
+                  >
                     <UTextarea
                       v-model="rejectReason"
                       :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
@@ -255,7 +294,12 @@ onBeforeMount(initialize);
                   </UFormField>
                   <FieldCounter :value="rejectReason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
-                <UButton color="warning" :loading="processingAction === 'reject'" data-attendance-admin-control="reject" @click="reject">
+                <UButton
+                  color="warning"
+                  :loading="processingAction === 'reject'"
+                  data-attendance-admin-control="reject"
+                  @click="reject"
+                >
                   差戻し
                 </UButton>
               </template>
@@ -292,7 +336,9 @@ onBeforeMount(initialize);
                 </tbody>
               </table>
             </template>
-            <div v-else class="py-8 text-center text-muted">左の一覧から確認する利用者を選択してください。</div>
+            <div v-else class="py-8 text-center text-muted">
+              左の一覧から確認する利用者を選択してください。
+            </div>
           </UCard>
         </div>
       </div>

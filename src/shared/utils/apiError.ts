@@ -45,9 +45,7 @@ export const isUnauthorizedApiError = (error: unknown): error is ApiError =>
   error instanceof ApiError && error.status === 401;
 
 /** 競合回復中に旧エラーより優先する現在の認証・認可・公開範囲status。 */
-export const API_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
-  401, 403, 404,
-]);
+export const API_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([401, 403, 404]);
 
 /**
  * Backendの失敗Responseを共通ErrorResponseとして読み取る。
@@ -57,9 +55,7 @@ export const API_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
  * @param response Backendの非2xx Response
  * @returns JSON本文を解析できた場合はその値、空本文または非JSON本文の場合はnull
  */
-export const readErrorResponse = async (
-  response: Response
-): Promise<ErrorResponse | null> => {
+export const readErrorResponse = async (response: Response): Promise<ErrorResponse | null> => {
   try {
     return (await response.json()) as ErrorResponse;
   } catch (_error: unknown) {
@@ -77,10 +73,7 @@ export const readErrorResponse = async (
  */
 export const ensureApiSuccess = async (
   response: Response,
-  createError: (
-    status: number,
-    errorResponse: ErrorResponse | null
-  ) => Error
+  createError: (status: number, errorResponse: ErrorResponse | null) => Error
 ): Promise<void> => {
   if (!response.ok) {
     throw createError(response.status, await readErrorResponse(response));
@@ -125,10 +118,7 @@ export const resolveApiErrorMessages = (
   knownErrorCodes: ReadonlySet<string>,
   fallback: string
 ): string[] => {
-  if (
-    !Array.isArray(errorResponse?.fieldErrors) ||
-    errorResponse.fieldErrors.length === 0
-  ) {
+  if (!Array.isArray(errorResponse?.fieldErrors) || errorResponse.fieldErrors.length === 0) {
     return [fallback];
   }
 

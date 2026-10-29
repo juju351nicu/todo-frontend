@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import { buildChecklistControlKey, useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
+import {
+  buildChecklistControlKey,
+  useTaskChecklist,
+} from "@/features/task/composables/useTaskChecklist";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
@@ -26,7 +29,7 @@ const props = withDefaults(
      */
     disabled?: boolean;
   }>(),
-  { disabled: false },
+  { disabled: false }
 );
 
 const {
@@ -63,7 +66,9 @@ const {
   <USeparator class="my-4" />
   <div class="mb-2 flex items-center justify-between">
     <div class="text-base font-bold">チェックリスト</div>
-    <div v-if="items.length" class="text-xs text-muted">{{ completedCount }} / {{ items.length }}（{{ progressPercent }}%）</div>
+    <div v-if="items.length" class="text-xs text-muted">
+      {{ completedCount }} / {{ items.length }}（{{ progressPercent }}%）
+    </div>
   </div>
   <UProgress
     v-if="items.length"
@@ -75,12 +80,26 @@ const {
   <StatusAlert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </StatusAlert>
-  <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+  <StatusAlert
+    v-if="successMessage"
+    type="success"
+    density="compact"
+    closable
+    class="mb-3"
+    @close="successMessage = ''"
+  >
     {{ successMessage }}
   </StatusAlert>
   <UProgress v-if="isLoading" size="xs" class="mb-3" />
-  <ul v-if="items.length" class="mb-3 max-h-70 overflow-y-auto rounded-sm bg-muted py-2 text-default">
-    <li v-for="(item, index) in items" :key="item.checklistItemId" class="flex min-h-10 items-center gap-2 px-4">
+  <ul
+    v-if="items.length"
+    class="mb-3 max-h-70 overflow-y-auto rounded-sm bg-muted py-2 text-default"
+  >
+    <li
+      v-for="(item, index) in items"
+      :key="item.checklistItemId"
+      class="flex min-h-10 items-center gap-2 px-4"
+    >
       <UCheckbox
         :model-value="item.completed"
         :disabled="disabled || isMutating"
@@ -88,7 +107,10 @@ const {
         :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'toggle')"
         @update:model-value="toggleItem(item)"
       />
-      <div v-if="editingItemId === item.checklistItemId" class="flex flex-1 items-center gap-2 py-1">
+      <div
+        v-if="editingItemId === item.checklistItemId"
+        class="flex flex-1 items-center gap-2 py-1"
+      >
         <div class="relative flex-1">
           <UFormField label="チェック項目" class="pb-0">
             <!-- Escは編集の取消だけにする。preventDefaultしないとTask Dialog（UModal）もEscで閉じ、編集中の本文ごと失われるため。 -->
@@ -104,11 +126,27 @@ const {
             />
           </UFormField>
         </div>
-        <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="discardEditing">取消</UButton>
-        <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="saveEdit">保存</UButton>
+        <UButton
+          size="sm"
+          variant="ghost"
+          class="text-inherit"
+          :disabled="isUpdating"
+          @click="discardEditing"
+          >取消</UButton
+        >
+        <UButton
+          color="primary"
+          size="sm"
+          :loading="isUpdating"
+          :disabled="!canSaveEdit"
+          @click="saveEdit"
+          >保存</UButton
+        >
       </div>
       <template v-else>
-        <span class="flex-1 text-base" :class="{ 'line-through opacity-60': item.completed }">{{ item.content }}</span>
+        <span class="flex-1 text-base" :class="{ 'line-through opacity-60': item.completed }">{{
+          item.content
+        }}</span>
         <div v-if="!disabled" class="flex gap-1">
           <UButton
             icon="i-mdi-arrow-up"
@@ -172,9 +210,14 @@ const {
       </UFormField>
       <FieldCounter :value="newContent" :max="CHECKLIST_ITEM_MAX_LENGTH" />
     </div>
-    <UButton color="primary" :loading="isCreating" :disabled="!canAdd" @click="addItem">追加</UButton>
+    <UButton color="primary" :loading="isCreating" :disabled="!canAdd" @click="addItem"
+      >追加</UButton
+    >
   </div>
-  <div v-if="!disabled && items.length >= CHECKLIST_ITEM_MAX_COUNT" class="mt-1 text-xs text-warning">
+  <div
+    v-if="!disabled && items.length >= CHECKLIST_ITEM_MAX_COUNT"
+    class="mt-1 text-xs text-warning"
+  >
     チェック項目は最大{{ CHECKLIST_ITEM_MAX_COUNT }}件です。
   </div>
 
@@ -188,7 +231,9 @@ const {
     <template #body>{{ deletingItem?.content }}</template>
     <template #footer>
       <UButton variant="ghost" :disabled="isDeleting" @click="cancelDelete">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isDeleting" @click="confirmDelete">削除</UButton>
+      <UButton color="error" variant="ghost" :loading="isDeleting" @click="confirmDelete"
+        >削除</UButton
+      >
     </template>
   </UModal>
 </template>

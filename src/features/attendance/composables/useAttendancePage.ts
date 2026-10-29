@@ -1,9 +1,7 @@
 import { computed, ref } from "vue";
 import type { Ref } from "vue";
 
-import AttendanceApi, {
-  AttendanceApiError,
-} from "@/features/attendance/api/attendanceApi";
+import AttendanceApi, { AttendanceApiError } from "@/features/attendance/api/attendanceApi";
 import type {
   AttendanceCorrectionForm,
   AttendanceCorrectionResponse,
@@ -114,18 +112,12 @@ export const useAttendancePage = () => {
   const selectedWorkDate = ref(today);
   const successMessage = ref("");
 
-  const monthRows = computed(() =>
-    buildAttendanceMonthRows(selectedMonth.value, monthDays.value)
-  );
-  const selectedDaySummary = computed(() =>
-    summarizeAttendanceDay(selectedDay.value)
-  );
+  const monthRows = computed(() => buildAttendanceMonthRows(selectedMonth.value, monthDays.value));
+  const selectedDaySummary = computed(() => summarizeAttendanceDay(selectedDay.value));
   const currentUserDisplayName = computed(
     () => userStore.displayName || userStore.username || "ログイン利用者"
   );
-  const canWriteAttendance = computed(() =>
-    userStore.hasPermission("ATTENDANCE_WRITE_OWN")
-  );
+  const canWriteAttendance = computed(() => userStore.hasPermission("ATTENDANCE_WRITE_OWN"));
   const canClockIn = computed(
     () =>
       canWriteAttendance.value &&
@@ -133,20 +125,15 @@ export const useAttendancePage = () => {
       selectedDay.value?.punchState === "OFF_DUTY"
   );
   const canClockOut = computed(
-    () =>
-      canWriteAttendance.value && selectedDay.value?.punchState === "WORKING"
+    () => canWriteAttendance.value && selectedDay.value?.punchState === "WORKING"
   );
   const canStartBreak = computed(
-    () =>
-      canWriteAttendance.value && selectedDay.value?.punchState === "WORKING"
+    () => canWriteAttendance.value && selectedDay.value?.punchState === "WORKING"
   );
   const canEndBreak = computed(
-    () =>
-      canWriteAttendance.value && selectedDay.value?.punchState === "ON_BREAK"
+    () => canWriteAttendance.value && selectedDay.value?.punchState === "ON_BREAK"
   );
-  const isLoading = computed(
-    () => isLoadingMonth.value || isLoadingDay.value
-  );
+  const isLoading = computed(() => isLoadingMonth.value || isLoadingDay.value);
   const canSubmitMonth = computed(
     () =>
       canWriteAttendance.value &&
@@ -203,9 +190,7 @@ export const useAttendancePage = () => {
       await loadMonthAndSelectedDay();
     } catch (error: unknown) {
       errorMessages.value = [
-        error instanceof Error
-          ? error.message
-          : "表示月を変更できませんでした。",
+        error instanceof Error ? error.message : "表示月を変更できませんでした。",
       ];
     }
   };
@@ -236,10 +221,7 @@ export const useAttendancePage = () => {
       successMessage.value = PUNCH_SUCCESS_MESSAGES[action];
       await loadMonthDays();
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.punchFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.punchFailed);
       if (error instanceof AttendanceApiError && error.status === 409) {
         // 競合後のボタン状態を推測せず、Backendの最新状態へ戻す。
         await reloadAfterConflict(error);
@@ -248,9 +230,7 @@ export const useAttendancePage = () => {
       isPunching.value = false;
     }
     // 押したボタンが押せるまま（失敗等）ならそこへ、押せなくなったら画面の並び順で最初に押せるボタンへ戻す。
-    await focusFirstEnabledElement(
-      [action, ...PUNCH_FOCUS_ORDER].map(buildPunchButtonSelector)
-    );
+    await focusFirstEnabledElement([action, ...PUNCH_FOCUS_ORDER].map(buildPunchButtonSelector));
   };
 
   /** 表示月を最新versionで提出または再提出し、Backend確定状態へ同期する。 */
@@ -269,10 +249,7 @@ export const useAttendancePage = () => {
       monthDays.value = monthSummary.value.days;
       successMessage.value = "月次勤怠を提出しました。";
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.submitMonthFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.submitMonthFailed);
       if (error instanceof AttendanceApiError && error.status === 409) {
         await reloadAfterConflict(error);
       }
@@ -335,14 +312,8 @@ export const useAttendancePage = () => {
   };
 
   /** 指定勤務区間から指定順の休憩区間を削除する。 */
-  const removeCorrectionBreakPeriod = (
-    workIndex: number,
-    breakIndex: number
-  ): void => {
-    correctionForm.value.workPeriods[workIndex]?.breakPeriods.splice(
-      breakIndex,
-      1
-    );
+  const removeCorrectionBreakPeriod = (workIndex: number, breakIndex: number): void => {
+    correctionForm.value.workPeriods[workIndex]?.breakPeriods.splice(breakIndex, 1);
   };
 
   /** 指定勤務区間の開始または終了入力を、存在する行にだけ反映する。 */
@@ -364,8 +335,7 @@ export const useAttendancePage = () => {
     field: "startedAt" | "endedAt",
     value: string
   ): void => {
-    const breakPeriod =
-      correctionForm.value.workPeriods[workIndex]?.breakPeriods[breakIndex];
+    const breakPeriod = correctionForm.value.workPeriods[workIndex]?.breakPeriods[breakIndex];
     if (breakPeriod) {
       breakPeriod[field] = value;
     }
@@ -373,11 +343,7 @@ export const useAttendancePage = () => {
 
   /** 1勤務日全体の修正snapshotを検証し、審査待ちとして申請する。 */
   const submitCorrectionRequest = async (): Promise<void> => {
-    if (
-      isSubmittingCorrection.value ||
-      !canRequestCorrection.value ||
-      selectedDay.value === null
-    ) {
+    if (isSubmittingCorrection.value || !canRequestCorrection.value || selectedDay.value === null) {
       return;
     }
     const validationMessages = validateAttendanceCorrectionForm(
@@ -395,10 +361,7 @@ export const useAttendancePage = () => {
     try {
       await AttendanceApi.createCorrectionRequest(
         selectedWorkDate.value,
-        buildAttendanceCorrectionRequest(
-          selectedDay.value,
-          correctionForm.value
-        )
+        buildAttendanceCorrectionRequest(selectedDay.value, correctionForm.value)
       );
       await loadCorrectionRequests();
       isCorrectionDialogOpen.value = false;
@@ -424,13 +387,8 @@ export const useAttendancePage = () => {
   };
 
   /** 審査前の本人修正申請を最新versionで取り消す。 */
-  const cancelCorrectionRequest = async (
-    request: AttendanceCorrectionResponse
-  ): Promise<void> => {
-    if (
-      cancellingCorrectionId.value !== null ||
-      request.statusCode !== "PENDING"
-    ) {
+  const cancelCorrectionRequest = async (request: AttendanceCorrectionResponse): Promise<void> => {
+    if (cancellingCorrectionId.value !== null || request.statusCode !== "PENDING") {
       return;
     }
     cancellingCorrectionId.value = request.attendanceCorrectionRequestId;
@@ -449,10 +407,7 @@ export const useAttendancePage = () => {
         buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
       ]);
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.correctionCancelFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.correctionCancelFailed);
       if (error instanceof AttendanceApiError && error.status === 409) {
         await reloadAfterConflict(error);
       }
@@ -472,22 +427,18 @@ export const useAttendancePage = () => {
     successMessage.value = "";
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
-      const [listResponse, dayResponse, monthResponse, correctionResponse] =
-        await Promise.all([
-          AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
-          AttendanceApi.getDay(selectedWorkDate.value),
-          AttendanceApi.getMonth(selectedMonth.value),
-          AttendanceApi.getOwnCorrectionRequests(selectedWorkDate.value),
-        ]);
+      const [listResponse, dayResponse, monthResponse, correctionResponse] = await Promise.all([
+        AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
+        AttendanceApi.getDay(selectedWorkDate.value),
+        AttendanceApi.getMonth(selectedMonth.value),
+        AttendanceApi.getOwnCorrectionRequests(selectedWorkDate.value),
+      ]);
       monthDays.value = listResponse.days;
       selectedDay.value = dayResponse;
       monthSummary.value = monthResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.loadFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.loadFailed);
     } finally {
       isLoadingMonth.value = false;
       isLoadingDay.value = false;
@@ -506,10 +457,7 @@ export const useAttendancePage = () => {
       monthDays.value = listResponse.days;
       monthSummary.value = monthResponse;
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.monthRefreshFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.monthRefreshFailed);
     } finally {
       isLoadingMonth.value = false;
     }
@@ -531,10 +479,7 @@ export const useAttendancePage = () => {
       selectedDay.value = dayResponse;
       correctionRequests.value = correctionResponse.correctionRequests;
     } catch (error: unknown) {
-      await handleApiError(
-        error,
-        DISPLAY_MESSAGES.attendance.self.dayLoadFailed
-      );
+      await handleApiError(error, DISPLAY_MESSAGES.attendance.self.dayLoadFailed);
     } finally {
       isLoadingDay.value = false;
     }
@@ -542,9 +487,7 @@ export const useAttendancePage = () => {
 
   /** 選択日の本人修正申請履歴だけを再取得する。 */
   const loadCorrectionRequests = async (): Promise<void> => {
-    const response = await AttendanceApi.getOwnCorrectionRequests(
-      selectedWorkDate.value
-    );
+    const response = await AttendanceApi.getOwnCorrectionRequests(selectedWorkDate.value);
     correctionRequests.value = response.correctionRequests;
   };
 
@@ -562,13 +505,12 @@ export const useAttendancePage = () => {
   ): Promise<void> => {
     try {
       const dateRange = buildAttendanceMonthDateRange(selectedMonth.value);
-      const [listResponse, dayResponse, monthResponse, correctionResponse] =
-        await Promise.all([
-          AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
-          AttendanceApi.getDay(selectedWorkDate.value),
-          AttendanceApi.getMonth(selectedMonth.value),
-          AttendanceApi.getOwnCorrectionRequests(selectedWorkDate.value),
-        ]);
+      const [listResponse, dayResponse, monthResponse, correctionResponse] = await Promise.all([
+        AttendanceApi.getDays(dateRange.dateFrom, dateRange.dateTo),
+        AttendanceApi.getDay(selectedWorkDate.value),
+        AttendanceApi.getMonth(selectedMonth.value),
+        AttendanceApi.getOwnCorrectionRequests(selectedWorkDate.value),
+      ]);
       monthDays.value = listResponse.days;
       selectedDay.value = dayResponse;
       monthSummary.value = monthResponse;
@@ -585,10 +527,7 @@ export const useAttendancePage = () => {
         ATTENDANCE_RECOVERY_PRIORITY_STATUSES.has(refreshError.status)
       ) {
         // Session・permission・公開範囲の変化は、古い409より新しい取得結果を優先する。
-        await handleApiError(
-          refreshError,
-          DISPLAY_MESSAGES.attendance.self.loadFailed
-        );
+        await handleApiError(refreshError, DISPLAY_MESSAGES.attendance.self.loadFailed);
       }
     }
   };
@@ -621,9 +560,7 @@ export const useAttendancePage = () => {
       return;
     }
     if (error.status === 404) {
-      messageTarget.value = [
-        DISPLAY_MESSAGES.attendance.self.accountNotFound,
-      ];
+      messageTarget.value = [DISPLAY_MESSAGES.attendance.self.accountNotFound];
       return;
     }
     messageTarget.value = resolveApiErrorMessages(
@@ -639,7 +576,8 @@ export const useAttendancePage = () => {
    */
   const hasPendingCorrectionInReviewedMonth = computed<boolean>(
     () =>
-      (monthSummary.value?.statusCode === "APPROVED" || monthSummary.value?.statusCode === "CLOSED") &&
+      (monthSummary.value?.statusCode === "APPROVED" ||
+        monthSummary.value?.statusCode === "CLOSED") &&
       correctionRequests.value.some((request) => request.statusCode === "PENDING")
   );
 

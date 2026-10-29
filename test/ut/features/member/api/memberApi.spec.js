@@ -26,9 +26,7 @@ describe("Member API", () => {
 
     await expect(MemberApi.findList()).resolves.toEqual(payload);
 
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      API_PATHS.MEMBER_LIST
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(API_PATHS.MEMBER_LIST);
   });
 
   it("会員詳細取得のHTTPエラーをstatus付きのMemberApiErrorで通知する", async () => {
@@ -50,9 +48,7 @@ describe("Member API", () => {
 
     await expect(MemberApi.deleteMembers([1, "2"])).resolves.toEqual(payload);
 
-    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
-      `${API_PATHS.MEMBER_DELETE}?ids=1&ids=2`
-    );
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(`${API_PATHS.MEMBER_DELETE}?ids=1&ids=2`);
   });
 
   it("会員登録更新RequestをAPIへ渡す", async () => {
@@ -73,9 +69,6 @@ describe("Member API", () => {
 
     await MemberApi.upsert(request);
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.MEMBER_UPSERT,
-      request
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.MEMBER_UPSERT, request);
   });
 });

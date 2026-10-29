@@ -21,12 +21,17 @@ export const TASK_PRIORITY_OPTIONS: readonly TaskSelectOption<TaskPriority>[] = 
  */
 export const buildTaskStatusIdOptions = (
   statuses: readonly TaskStatus[],
-  excludeCompleted = false,
+  excludeCompleted = false
 ): TaskSelectOption<number>[] =>
   statuses
     .filter((status) => !excludeCompleted || !status.completed)
     .map((status) => ({ title: status.name, value: status.taskStatusId }));
 
 /** Board列をstatus code選択肢へ変換する。Templateのように列IDではなくcodeで保存する入力に使う。 */
-export const buildTaskStatusCodeOptions = (statuses: readonly TaskStatus[]): TaskSelectOption<string>[] =>
-  statuses.map((status) => ({ title: `${status.name}（${status.statusCode}）`, value: status.statusCode }));
+export const buildTaskStatusCodeOptions = (
+  statuses: readonly TaskStatus[]
+): TaskSelectOption<string>[] =>
+  statuses.map((status) => ({
+    title: `${status.name}（${status.statusCode}）`,
+    value: status.statusCode,
+  }));

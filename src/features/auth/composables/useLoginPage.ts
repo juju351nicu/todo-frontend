@@ -1,19 +1,14 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import {
-  AUTHENTICATED_HOME_ROUTE_NAME,
-  LOGIN_REQUIRED_QUERY,
-} from "@/app/router/authorization";
+import { AUTHENTICATED_HOME_ROUTE_NAME, LOGIN_REQUIRED_QUERY } from "@/app/router/authorization";
 import AuthApi, { AuthApiError } from "@/features/auth/api/authApi";
 import { useUserStore } from "@/features/auth/stores/user";
 import type { LoginRequest } from "@/features/auth/types/auth";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
-const LOGIN_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
-  "INVALID_REQUEST_BODY",
-]);
+const LOGIN_INPUT_ERROR_CODES: ReadonlySet<string> = new Set(["INVALID_REQUEST_BODY"]);
 
 const OAUTH_ERROR_MESSAGES: Readonly<Record<string, string>> = {
   email_required: DISPLAY_MESSAGES.auth.oauth.emailRequired,
@@ -73,8 +68,7 @@ export const useLoginPage = () => {
       return;
     }
 
-    const isLoginRequired =
-      readQueryValue(route.query.reason) === LOGIN_REQUIRED_QUERY.reason;
+    const isLoginRequired = readQueryValue(route.query.reason) === LOGIN_REQUIRED_QUERY.reason;
     const oauthError = readQueryValue(route.query.oauthError);
     if (!isLoginRequired && oauthError === undefined) {
       return;
@@ -84,9 +78,7 @@ export const useLoginPage = () => {
       loginNotice.value = DISPLAY_MESSAGES.auth.loginRequired;
     }
     if (oauthError !== undefined) {
-      showErrors([
-        OAUTH_ERROR_MESSAGES[oauthError] ?? OAUTH_ERROR_MESSAGES.login_failed,
-      ]);
+      showErrors([OAUTH_ERROR_MESSAGES[oauthError] ?? OAUTH_ERROR_MESSAGES.login_failed]);
     }
     await router.replace({ path: route.path, query: {} });
   };

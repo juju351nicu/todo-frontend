@@ -13,7 +13,10 @@ import {
 import type { ProjectDetail } from "@/features/project/types/project";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
-import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
+import {
+  getProjectStatusColor,
+  getProjectStatusLabel,
+} from "@/features/project/utils/projectStatus";
 import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
@@ -82,15 +85,32 @@ const {
 );
 
 const SECTION_TABS = [
-  { label: "基本情報", icon: "i-mdi-folder-edit-outline", value: "project", slot: "project" as const },
-  { label: "メンバー", icon: "i-mdi-account-multiple-outline", value: "members", slot: "members" as const },
+  {
+    label: "基本情報",
+    icon: "i-mdi-folder-edit-outline",
+    value: "project",
+    slot: "project" as const,
+  },
+  {
+    label: "メンバー",
+    icon: "i-mdi-account-multiple-outline",
+    value: "members",
+    slot: "members" as const,
+  },
 ];
 </script>
 
 <template>
-  <UButton v-if="canOpenSettings" variant="soft" icon="i-mdi-cog-outline" @click="openDialog">Project設定</UButton>
+  <UButton v-if="canOpenSettings" variant="soft" icon="i-mdi-cog-outline" @click="openDialog"
+    >Project設定</UButton
+  >
 
-  <UModal v-model:open="isDialogOpen" :dismissible="!isBusy" :description="project.projectKey" :ui="{ content: 'max-w-240' }">
+  <UModal
+    v-model:open="isDialogOpen"
+    :dismissible="!isBusy"
+    :description="project.projectKey"
+    :ui="{ content: 'max-w-240' }"
+  >
     <template #title>
       <span class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-folder-cog-outline" class="size-6" />
@@ -113,7 +133,12 @@ const SECTION_TABS = [
         <StatusAlert v-if="errorMessages.length" type="error">
           <div v-for="message in errorMessages" :key="message">{{ message }}</div>
         </StatusAlert>
-        <StatusAlert v-if="successMessage" type="success" :class="{ 'mt-2': errorMessages.length }">{{ successMessage }}</StatusAlert>
+        <StatusAlert
+          v-if="successMessage"
+          type="success"
+          :class="{ 'mt-2': errorMessages.length }"
+          >{{ successMessage }}</StatusAlert
+        >
       </div>
       <StatusAlert v-if="!isProjectActive" type="info" class="mb-4">
         アーカイブ済みProjectは履歴参照専用です。Project情報とメンバーは変更できません。
@@ -189,7 +214,10 @@ const SECTION_TABS = [
               <div class="text-base font-normal">メンバーを追加</div>
             </template>
             <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（他人のIDを知らなくても追加できる）。 -->
-            <form class="-m-3 mb-0 flex flex-wrap items-end" @submit.prevent="searchMemberCandidates">
+            <form
+              class="-m-3 mb-0 flex flex-wrap items-end"
+              @submit.prevent="searchMemberCandidates"
+            >
               <div class="w-full p-3 md:w-3/4">
                 <UFormField
                   label="名前・メールアドレス・ログインIDで探す"
@@ -216,7 +244,10 @@ const SECTION_TABS = [
                 </UButton>
               </div>
             </form>
-            <ul v-if="memberCandidates.length > 0" class="mt-3 divide-y divide-default rounded border border-default">
+            <ul
+              v-if="memberCandidates.length > 0"
+              class="mt-3 divide-y divide-default rounded border border-default"
+            >
               <li
                 v-for="candidate in memberCandidates"
                 :key="candidate.accountId"
@@ -225,13 +256,16 @@ const SECTION_TABS = [
                 <div class="min-w-0">
                   <div class="truncate">{{ candidate.displayName }}</div>
                   <div class="truncate text-sm text-muted">
-                    {{ candidate.email }}<template v-if="candidate.loginId"> ・ {{ candidate.loginId }}</template>
-                    ・ ID: {{ candidate.accountId }}
+                    {{ candidate.email
+                    }}<template v-if="candidate.loginId"> ・ {{ candidate.loginId }}</template> ・
+                    ID: {{ candidate.accountId }}
                   </div>
                 </div>
                 <UButton
                   size="sm"
-                  :variant="Number(addMemberAccountId) === candidate.accountId ? 'solid' : 'outline'"
+                  :variant="
+                    Number(addMemberAccountId) === candidate.accountId ? 'solid' : 'outline'
+                  "
                   :disabled="isBusy"
                   @click="selectMemberCandidate(candidate)"
                 >
@@ -243,7 +277,9 @@ const SECTION_TABS = [
               v-else-if="searchedMemberCandidateQuery !== '' && !isSearchingMemberCandidates"
               class="mt-3 text-sm text-muted"
             >
-              「{{ searchedMemberCandidateQuery }}」で始まる、追加できるアカウントは見つかりませんでした。
+              「{{
+                searchedMemberCandidateQuery
+              }}」で始まる、追加できるアカウントは見つかりませんでした。
             </p>
             <div class="-m-3 mt-3 flex flex-wrap items-center">
               <div class="w-full p-3 md:w-5/12">
@@ -304,7 +340,9 @@ const SECTION_TABS = [
                 <td>
                   <div class="font-medium">
                     {{ member.displayName }}
-                    <UBadge v-if="isCurrentMember(member)" size="xs" color="primary" class="ms-1">自分</UBadge>
+                    <UBadge v-if="isCurrentMember(member)" size="xs" color="primary" class="ms-1"
+                      >自分</UBadge
+                    >
                     <UBadge
                       v-if="member.accountStatus !== 'ACTIVE'"
                       size="xs"
@@ -316,7 +354,9 @@ const SECTION_TABS = [
                     </UBadge>
                   </div>
                   <div class="text-xs text-muted">ID: {{ member.accountId }}</div>
-                  <div class="text-xs text-muted">{{ getProjectRoleDescription(member.projectRole) }}</div>
+                  <div class="text-xs text-muted">
+                    {{ getProjectRoleDescription(member.projectRole) }}
+                  </div>
                 </td>
                 <td class="min-w-52.5">
                   <USelect
@@ -330,10 +370,15 @@ const SECTION_TABS = [
                     class="w-full"
                     :data-project-settings-control="buildMemberRoleControlKey(member.accountId)"
                   />
-                  <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
+                  <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">
+                    最後のOWNERは降格・除外できません。
+                  </div>
                 </td>
                 <td>
-                  <div class="text-xs">割当者: {{ resolveProjectMemberDisplayName(project.members, member.assignedBy) }}</div>
+                  <div class="text-xs">
+                    割当者:
+                    {{ resolveProjectMemberDisplayName(project.members, member.assignedBy) }}
+                  </div>
                   <div class="text-xs">参加日時: {{ formatShortDateTime(member.joinedAt) }}</div>
                 </td>
                 <td class="text-end">
@@ -380,7 +425,11 @@ const SECTION_TABS = [
     </template>
   </UModal>
 
-  <UModal v-model:open="isArchiveConfirmOpen" :dismissible="!isArchivingProject" :ui="{ content: 'max-w-140' }">
+  <UModal
+    v-model:open="isArchiveConfirmOpen"
+    :dismissible="!isArchivingProject"
+    :ui="{ content: 'max-w-140' }"
+  >
     <template #title>
       <span class="flex items-center text-error">
         <UIcon name="i-mdi-archive-alert-outline" class="me-2 size-6" />
@@ -394,12 +443,20 @@ const SECTION_TABS = [
       </StatusAlert>
     </template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isArchivingProject" @click="closeArchiveConfirm">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isArchivingProject" @click="archiveProject">アーカイブする</UButton>
+      <UButton variant="ghost" :disabled="isArchivingProject" @click="closeArchiveConfirm"
+        >キャンセル</UButton
+      >
+      <UButton color="error" variant="ghost" :loading="isArchivingProject" @click="archiveProject"
+        >アーカイブする</UButton
+      >
     </template>
   </UModal>
 
-  <UModal v-model:open="isRemoveConfirmOpen" :dismissible="!isSavingMember" :ui="{ content: 'max-w-140' }">
+  <UModal
+    v-model:open="isRemoveConfirmOpen"
+    :dismissible="!isSavingMember"
+    :ui="{ content: 'max-w-140' }"
+  >
     <template #title>
       <span class="flex items-center text-error">
         <UIcon name="i-mdi-account-remove-outline" class="me-2 size-6" />
@@ -407,14 +464,26 @@ const SECTION_TABS = [
       </span>
     </template>
     <template v-if="memberToRemove" #body>
-      <p>{{ memberToRemove.displayName }}（ID: {{ memberToRemove.accountId }}）のmembershipを削除します。</p>
-      <StatusAlert v-if="isCurrentMember(memberToRemove)" type="warning" variant="soft" class="mt-3">
+      <p>
+        {{ memberToRemove.displayName }}（ID:
+        {{ memberToRemove.accountId }}）のmembershipを削除します。
+      </p>
+      <StatusAlert
+        v-if="isCurrentMember(memberToRemove)"
+        type="warning"
+        variant="soft"
+        class="mt-3"
+      >
         自分を除外すると、このProjectを参照できなくなりProject一覧へ戻ります。
       </StatusAlert>
     </template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isSavingMember" @click="closeRemoveConfirm">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isSavingMember" @click="removeMember">除外する</UButton>
+      <UButton variant="ghost" :disabled="isSavingMember" @click="closeRemoveConfirm"
+        >キャンセル</UButton
+      >
+      <UButton color="error" variant="ghost" :loading="isSavingMember" @click="removeMember"
+        >除外する</UButton
+      >
     </template>
   </UModal>
 </template>

@@ -27,30 +27,20 @@ test("ロール変更で既存Sessionを失効し再ログイン後は閲覧権�
 
   try {
     await targetPage.goto("/dashboard");
-    await expect(
-      targetPage.getByRole("heading", { name: /Dashboard$/ })
-    ).toBeVisible();
+    await expect(targetPage.getByRole("heading", { name: /Dashboard$/ })).toBeVisible();
 
     await page.goto("/administration/accounts");
-    await expect(
-      page.getByText("アカウント・ロール管理", { exact: true })
-    ).toBeVisible();
-    await page
-      .getByPlaceholder("表示名・メール・ロール")
-      .fill(TARGET_EMAIL);
+    await expect(page.getByText("アカウント・ロール管理", { exact: true })).toBeVisible();
+    await page.getByPlaceholder("表示名・メール・ロール").fill(TARGET_EMAIL);
 
     const targetRow = page.getByRole("row").filter({ hasText: TARGET_EMAIL });
     await expect(targetRow).toHaveCount(1);
     await targetRow.getByRole("button", { name: "ロールを編集" }).click();
 
     const roleDialog = page.getByRole("dialog");
-    await expect(
-      roleDialog.getByText("ロール編集", { exact: true })
-    ).toBeVisible();
+    await expect(roleDialog.getByText("ロール編集", { exact: true })).toBeVisible();
     await roleDialog.getByLabel("ユーザー（USER）").uncheck();
-    await roleDialog
-      .getByLabel("閲覧管理者（READ_ONLY_ADMIN）")
-      .check();
+    await roleDialog.getByLabel("閲覧管理者（READ_ONLY_ADMIN）").check();
     await roleDialog.getByRole("button", { name: "保存", exact: true }).click();
 
     await expect(
@@ -61,9 +51,7 @@ test("ロール変更で既存Sessionを失効し再ログイン後は閲覧権�
 
     await targetPage.reload();
     await expect(targetPage).toHaveURL(/\/$/);
-    await expect(
-      targetPage.getByRole("button", { name: "ログイン", exact: true })
-    ).toBeVisible();
+    await expect(targetPage.getByRole("button", { name: "ログイン", exact: true })).toBeVisible();
 
     if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
       const invalidatedInspection = runBrowserRegressionFixture(
@@ -79,42 +67,29 @@ test("ロール変更で既存Sessionを失効し再ログイン後は閲覧権�
 
     await loginAsTarget(targetPage);
     await targetPage.goto("/administration/accounts");
-    await expect(
-      targetPage.getByText("アカウント・ロール管理", { exact: true })
-    ).toBeVisible();
+    await expect(targetPage.getByText("アカウント・ロール管理", { exact: true })).toBeVisible();
     await expect(
       targetPage.getByText(
         "現在のロールを参照できます。変更にはACCOUNT_ROLE_UPDATE permissionが必要です。",
         { exact: true }
       )
     ).toBeVisible();
-    await expect(
-      targetPage.getByRole("button", { name: "ロールを編集" })
-    ).toHaveCount(0);
+    await expect(targetPage.getByRole("button", { name: "ロールを編集" })).toHaveCount(0);
 
     await page.goto("/administration/authorization-audit-logs");
-    await expect(
-      page.getByText("権限変更監査ログ", { exact: true })
-    ).toBeVisible();
-    const targetAuditRows = page
-      .getByRole("row")
-      .filter({ hasText: "権限 対象者" });
+    await expect(page.getByText("権限変更監査ログ", { exact: true })).toBeVisible();
+    const targetAuditRows = page.getByRole("row").filter({ hasText: "権限 対象者" });
     await expect(targetAuditRows).toHaveCount(2);
     // 監査ログはロールをコードではなく表示名で出す（V1__baseline.sqlのrole_name）。
     await expect(
       targetAuditRows.filter({ hasText: "取消" }).filter({ hasText: "ユーザー" })
     ).toHaveCount(1);
     await expect(
-      targetAuditRows
-        .filter({ hasText: "付与" })
-        .filter({ hasText: "閲覧管理者" })
+      targetAuditRows.filter({ hasText: "付与" }).filter({ hasText: "閲覧管理者" })
     ).toHaveCount(1);
 
     if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
-      const reloginInspection = runBrowserRegressionFixture(
-        "authorization",
-        "inspect-stage10d2"
-      );
+      const reloginInspection = runBrowserRegressionFixture("authorization", "inspect-stage10d2");
       expect(reloginInspection).toContain("target_session_count=1");
     }
   } finally {

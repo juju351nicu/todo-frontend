@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import {
-  createDataAttributeSelector,
-  focusFirstEnabledElement,
-} from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 単体テストの実行環境にはDOMがないため、selectorごとの要素を返すdocumentへ差し替える。

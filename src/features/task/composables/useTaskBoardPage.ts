@@ -2,14 +2,8 @@ import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import ProjectApi, {
-  ProjectApiError,
-} from "@/features/project/api/projectApi";
-import type {
-  ProjectDetail,
-  TaskBoard,
-  TaskDetail,
-} from "@/features/project/types/project";
+import ProjectApi, { ProjectApiError } from "@/features/project/api/projectApi";
+import type { ProjectDetail, TaskBoard, TaskDetail } from "@/features/project/types/project";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { ProjectTaskApiError } from "@/features/task/api/projectTaskApi";
 import type {
@@ -59,9 +53,7 @@ export const useTaskBoardPage = () => {
   });
 
   const requestedTaskId = computed(() => {
-    const value = Array.isArray(route.query.taskId)
-      ? route.query.taskId[0]
-      : route.query.taskId;
+    const value = Array.isArray(route.query.taskId) ? route.query.taskId[0] : route.query.taskId;
     const parsed = Number(value);
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
   });
@@ -89,25 +81,13 @@ export const useTaskBoardPage = () => {
     const messagesBeforeReload = [...errorMessages.value];
     try {
       await loadBoardData();
-      errorMessages.value = [
-        ...messagesBeforeReload,
-        DISPLAY_MESSAGES.task.board.conflictReloaded,
-      ];
+      errorMessages.value = [...messagesBeforeReload, DISPLAY_MESSAGES.task.board.conflictReloaded];
     } catch (error: unknown) {
-      if (
-        isTaskBoardApiError(error) &&
-        TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)
-      ) {
-        await handleBoardReadError(
-          error,
-          DISPLAY_MESSAGES.task.board.reloadFailed
-        );
+      if (isTaskBoardApiError(error) && TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)) {
+        await handleBoardReadError(error, DISPLAY_MESSAGES.task.board.reloadFailed);
         return;
       }
-      errorMessages.value = [
-        ...messagesBeforeReload,
-        DISPLAY_MESSAGES.task.board.reloadFailed,
-      ];
+      errorMessages.value = [...messagesBeforeReload, DISPLAY_MESSAGES.task.board.reloadFailed];
     }
   };
 
@@ -128,21 +108,11 @@ export const useTaskBoardPage = () => {
   };
 
   /** Board再取得で参照不可になった場合に、古い画面状態を残さずreadエラーへ変換する。 */
-  const handleBoardReadError = async (
-    error: unknown,
-    fallbackMessage: string
-  ): Promise<void> => {
-    if (
-      isTaskBoardApiError(error) &&
-      (error.status === 403 || error.status === 404)
-    ) {
+  const handleBoardReadError = async (error: unknown, fallbackMessage: string): Promise<void> => {
+    if (isTaskBoardApiError(error) && (error.status === 403 || error.status === 404)) {
       clearBoardState();
     }
-    await handleApiError(
-      error,
-      fallbackMessage,
-      DISPLAY_MESSAGES.task.board.readForbidden
-    );
+    await handleApiError(error, fallbackMessage, DISPLAY_MESSAGES.task.board.readForbidden);
   };
 
   /** 確定済みTask操作後のBoard再取得失敗を、操作失敗と区別して表示する。 */
@@ -150,10 +120,7 @@ export const useTaskBoardPage = () => {
     error: unknown,
     fallbackMessage: string
   ): Promise<void> => {
-    if (
-      isTaskBoardApiError(error) &&
-      TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)
-    ) {
+    if (isTaskBoardApiError(error) && TASK_RECOVERY_PRIORITY_STATUSES.has(error.status)) {
       await handleBoardReadError(error, fallbackMessage);
       return;
     }

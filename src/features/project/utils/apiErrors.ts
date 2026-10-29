@@ -32,6 +32,4 @@ export const PROJECT_TEMPLATE_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 409回復中に古い競合案内より優先する認証・認可・公開範囲のHTTP status。 */
-export {
-  API_RECOVERY_PRIORITY_STATUSES as PROJECT_RECOVERY_PRIORITY_STATUSES,
-} from "@/shared/utils/apiError";
+export { API_RECOVERY_PRIORITY_STATUSES as PROJECT_RECOVERY_PRIORITY_STATUSES } from "@/shared/utils/apiError";

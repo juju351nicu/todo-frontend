@@ -17,9 +17,7 @@ import { isUnauthorizedApiError } from "@/shared/utils/apiError";
  *
  * @param memberId Routerから受け取った会員ID
  */
-export const useMemberDetailPage = (
-  memberId: Readonly<Ref<number | undefined>>
-) => {
+export const useMemberDetailPage = (memberId: Readonly<Ref<number | undefined>>) => {
   const memberStore = useMemberStore();
   const { expireSession } = useSessionExpiry();
 
@@ -55,9 +53,7 @@ export const useMemberDetailPage = (
     }
 
     try {
-      const detail = await memberStore.findMemberDetail(
-        normalizedMemberId.value
-      );
+      const detail = await memberStore.findMemberDetail(normalizedMemberId.value);
       Object.assign(memberForm, createMemberDetailForm(detail));
     } catch (error: unknown) {
       if (isUnauthorizedApiError(error)) {

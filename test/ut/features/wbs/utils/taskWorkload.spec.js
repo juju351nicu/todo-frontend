@@ -24,9 +24,7 @@ const buildWorkload = (overrides = {}) => ({
 
 describe("taskWorkload", () => {
   it("予定工数が稼働可能時間以下なら配賦内にする", () => {
-    expect(resolveWorkloadCapacityStatus(buildWorkload())).toBe(
-      "WITHIN_CAPACITY"
-    );
+    expect(resolveWorkloadCapacityStatus(buildWorkload())).toBe("WITHIN_CAPACITY");
   });
 
   it("予定工数が稼働可能時間を超えたら過配賦にする", () => {

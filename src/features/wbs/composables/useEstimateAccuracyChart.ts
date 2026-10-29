@@ -30,10 +30,7 @@ export const useEstimateAccuracyChart = (
   );
   /** tooltipを表示する点。再集計で対象Taskが消えた場合はnullになる。 */
   const activePoint = computed<EstimateAccuracyChartPoint | null>(
-    () =>
-      chart.value?.points.find(
-        (point) => point.task.taskId === activeTaskId.value
-      ) ?? null
+    () => chart.value?.points.find((point) => point.task.taskId === activeTaskId.value) ?? null
   );
 
   /**

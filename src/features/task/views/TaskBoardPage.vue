@@ -80,7 +80,11 @@ const {
 } = useTaskBoardPage();
 
 // Task cardの左線は優先度色と同じ色にする（getTaskPriorityColorと対応）。
-const PRIORITY_BORDER_CLASSES = { 1: "border-s-info", 2: "border-s-warning", 3: "border-s-error" } as const;
+const PRIORITY_BORDER_CLASSES = {
+  1: "border-s-info",
+  2: "border-s-warning",
+  3: "border-s-error",
+} as const;
 
 onBeforeMount(initialize);
 </script>
@@ -106,7 +110,12 @@ onBeforeMount(initialize);
           <span v-if="project.description">・{{ project.description }}</span>
         </div>
       </div>
-      <UBadge v-if="project" :color="getProjectStatusColor(project.status)" size="sm" class="ms-auto">
+      <UBadge
+        v-if="project"
+        :color="getProjectStatusColor(project.status)"
+        size="sm"
+        class="ms-auto"
+      >
         {{ getProjectStatusLabel(project.status) }}
       </UBadge>
       <UButton
@@ -117,7 +126,11 @@ onBeforeMount(initialize);
       >
         WBSを開く
       </UButton>
-      <ProjectCommentsDialog v-if="board" :project-id="board.projectId" @task-selected="openTaskEditor" />
+      <ProjectCommentsDialog
+        v-if="board"
+        :project-id="board.projectId"
+        @task-selected="openTaskEditor"
+      />
       <ProjectTemplateCaptureButton
         v-if="project && canCaptureProjectTemplate"
         :project-id="project.projectId"
@@ -144,14 +157,26 @@ onBeforeMount(initialize);
         :can-update="canUpdateTaskRecurrence"
         :project-active="isActiveProject(project)"
       />
-      <ProjectSettingsDialog v-if="project" :project="project" @project-updated="applyProjectDetail" />
-      <UButton v-if="canCreateTask" color="primary" icon="i-mdi-plus" @click="openTaskCreator()">Taskを追加</UButton>
+      <ProjectSettingsDialog
+        v-if="project"
+        :project="project"
+        @project-updated="applyProjectDetail"
+      />
+      <UButton v-if="canCreateTask" color="primary" icon="i-mdi-plus" @click="openTaskCreator()"
+        >Taskを追加</UButton
+      >
     </div>
 
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <StatusAlert v-if="successMessage" type="success" class="mb-4" closable @close="successMessage = ''">
+    <StatusAlert
+      v-if="successMessage"
+      type="success"
+      class="mb-4"
+      closable
+      @close="successMessage = ''"
+    >
       {{ successMessage }}
     </StatusAlert>
     <StatusAlert v-if="project?.status === 'ARCHIVED'" type="info" class="mb-4">
@@ -232,7 +257,9 @@ onBeforeMount(initialize);
                   <UBadge :color="getTaskPriorityColor(task.priority)" size="xs">
                     優先度: {{ getTaskPriorityLabel(task.priority) }}
                   </UBadge>
-                  <UBadge size="xs" icon="i-mdi-account-outline">{{ resolveAssigneeDisplayName(task.assigneeAccountId) }}</UBadge>
+                  <UBadge size="xs" icon="i-mdi-account-outline">{{
+                    resolveAssigneeDisplayName(task.assigneeAccountId)
+                  }}</UBadge>
                 </div>
                 <div class="mt-2 text-xs text-muted">{{ task.dateFrom }} ～ {{ task.dateTo }}</div>
               </div>
@@ -253,7 +280,9 @@ onBeforeMount(initialize);
       @update:open="handleEditorOpenChange"
     >
       <template #body>
-        <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>
+        <StatusAlert v-if="isReadonly" type="info" class="mb-4"
+          >このTaskは参照のみ可能です。</StatusAlert
+        >
         <!-- 画面上部のmessageはDialogの裏に隠れるため、入力チェックと保存・archiveの失敗はDialog内に出す。 -->
         <StatusAlert v-if="editorErrorMessages.length" type="error" class="mb-4">
           <div v-for="message in editorErrorMessages" :key="message">{{ message }}</div>
@@ -261,7 +290,13 @@ onBeforeMount(initialize);
         <form @submit.prevent="saveTask">
           <div class="relative mb-2">
             <UFormField label="タイトル">
-              <UInput v-model="form.title" :maxlength="TASK_TITLE_MAX_LENGTH" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+              <UInput
+                v-model="form.title"
+                :maxlength="TASK_TITLE_MAX_LENGTH"
+                :readonly="isReadonly"
+                :disabled="isSaving"
+                class="w-full"
+              />
             </UFormField>
             <FieldCounter :value="form.title" :max="TASK_TITLE_MAX_LENGTH" />
           </div>
@@ -281,12 +316,24 @@ onBeforeMount(initialize);
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="開始日">
-                <UInput v-model="form.dateFrom" type="date" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.dateFrom"
+                  type="date"
+                  :readonly="isReadonly"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
               <UFormField label="終了日">
-                <UInput v-model="form.dateTo" type="date" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+                <UInput
+                  v-model="form.dateTo"
+                  type="date"
+                  :readonly="isReadonly"
+                  :disabled="isSaving"
+                  class="w-full"
+                />
               </UFormField>
             </div>
             <div class="w-full p-3 sm:w-1/2">
@@ -327,8 +374,18 @@ onBeforeMount(initialize);
             />
           </UFormField>
           <div v-if="form.taskId !== null && board" class="my-4 flex flex-wrap items-center gap-2">
-            <TaskTimerActionButton v-if="canStartTaskTimer" :project-id="board.projectId" :task-id="form.taskId" />
-            <UButton v-if="canRecordTaskWork" icon="i-mdi-clock-edit-outline" variant="soft" size="sm" @click="openTaskWorkLogs">
+            <TaskTimerActionButton
+              v-if="canStartTaskTimer"
+              :project-id="board.projectId"
+              :task-id="form.taskId"
+            />
+            <UButton
+              v-if="canRecordTaskWork"
+              icon="i-mdi-clock-edit-outline"
+              variant="soft"
+              size="sm"
+              @click="openTaskWorkLogs"
+            >
               日別実績を入力
             </UButton>
             <TaskWorkLogAuditDialog :project-id="board.projectId" :task-id="form.taskId" />
@@ -368,13 +425,24 @@ onBeforeMount(initialize);
         <UButton variant="ghost" :disabled="isSaving || isArchiving" @click="closeTaskEditor">
           {{ isReadonly ? "閉じる" : "キャンセル" }}
         </UButton>
-        <UButton v-if="!isReadonly" color="primary" variant="ghost" :loading="isSaving" :disabled="!canSave" @click="saveTask">
+        <UButton
+          v-if="!isReadonly"
+          color="primary"
+          variant="ghost"
+          :loading="isSaving"
+          :disabled="!canSave"
+          @click="saveTask"
+        >
           保存
         </UButton>
       </template>
     </UModal>
 
-    <UModal v-model:open="isArchiveConfirmOpen" :dismissible="!isArchiving" :ui="{ content: 'max-w-130' }">
+    <UModal
+      v-model:open="isArchiveConfirmOpen"
+      :dismissible="!isArchiving"
+      :ui="{ content: 'max-w-130' }"
+    >
       <template #title>
         <span class="flex items-center text-error">
           <UIcon name="i-mdi-archive-alert-outline" class="me-2 size-6" />
@@ -383,11 +451,17 @@ onBeforeMount(initialize);
       </template>
       <template #body>
         <p class="mb-3">「{{ form.title }}」をProject Boardから除外します。</p>
-        <StatusAlert type="warning" variant="soft">この画面からアーカイブ解除はできません。内容を確認して実行してください。</StatusAlert>
+        <StatusAlert type="warning" variant="soft"
+          >この画面からアーカイブ解除はできません。内容を確認して実行してください。</StatusAlert
+        >
       </template>
       <template #footer>
-        <UButton variant="ghost" :disabled="isArchiving" @click="closeArchiveConfirm">キャンセル</UButton>
-        <UButton color="error" variant="ghost" :loading="isArchiving" @click="archiveTask">アーカイブする</UButton>
+        <UButton variant="ghost" :disabled="isArchiving" @click="closeArchiveConfirm"
+          >キャンセル</UButton
+        >
+        <UButton color="error" variant="ghost" :loading="isArchiving" @click="archiveTask"
+          >アーカイブする</UButton
+        >
       </template>
     </UModal>
   </div>

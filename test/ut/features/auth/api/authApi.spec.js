@@ -51,10 +51,7 @@ describe("Auth API", () => {
 
     await expect(AuthApi.login(payload)).resolves.toBeUndefined();
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.AUTH_LOGIN,
-      payload
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.AUTH_LOGIN, payload);
     expect(HttpClient.refreshCsrfToken).toHaveBeenCalledOnce();
   });
 
@@ -92,9 +89,9 @@ describe("Auth API", () => {
       json: vi.fn().mockResolvedValue(errorResponse),
     });
 
-    await expect(
-      AuthApi.login({ loginId: "", password: "password" })
-    ).rejects.toEqual(new AuthApiError(400, errorResponse));
+    await expect(AuthApi.login({ loginId: "", password: "password" })).rejects.toEqual(
+      new AuthApiError(400, errorResponse)
+    );
   });
 
   it("ログアウト成功後にCSRFトークンを作り直す", async () => {
@@ -104,10 +101,7 @@ describe("Auth API", () => {
 
     await expect(AuthApi.logout()).resolves.toBe(response);
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.LOGOUT,
-      null
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.LOGOUT, null);
     expect(HttpClient.clearCsrfToken).toHaveBeenCalledOnce();
     expect(HttpClient.refreshCsrfToken).toHaveBeenCalledOnce();
   });

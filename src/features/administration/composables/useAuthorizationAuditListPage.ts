@@ -104,8 +104,7 @@ export const useAuthorizationAuditListPage = () => {
   };
 
   /** ロールコードを表示名へ変換する。表示名がないコードはそのまま返す。 */
-  const formatRole = (roleCode: string): string =>
-    resolveRoleName(roleCode, roleNamesByCode.value);
+  const formatRole = (roleCode: string): string => resolveRoleName(roleCode, roleNamesByCode.value);
 
   /** ロールコード集合を読点区切りの表示名へ変換する。空集合は「なし」。 */
   const formatRoles = (roleCodes: readonly string[]): string =>
@@ -138,9 +137,7 @@ export const useAuthorizationAuditListPage = () => {
     }
     if (error.status === 403) {
       clearProtectedState();
-      errorMessages.value = [
-        DISPLAY_MESSAGES.administration.audit.readForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.administration.audit.readForbidden];
       return;
     }
     errorMessages.value = resolveApiErrorMessages(

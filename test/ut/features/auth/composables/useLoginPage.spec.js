@@ -127,9 +127,7 @@ describe("useLoginPage", () => {
     await page.submitForm();
 
     expect(page.isShowModal.value).toBe(true);
-    expect(page.errorMessages.value).toEqual([
-      "ログインIDまたはパスワードが正しくありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["ログインIDまたはパスワードが正しくありません。"]);
   });
 
   it("契約済みの入力エラーだけをBackend順で表示する", async () => {
@@ -175,9 +173,7 @@ describe("useLoginPage", () => {
 
     await page.submitForm();
 
-    expect(page.errorMessages.value).toEqual([
-      "ログイン情報を確認してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["ログイン情報を確認してください。"]);
   });
 
   it("本文なし403をSession失効とみなさず再読込案内へ変換する", async () => {
@@ -240,9 +236,7 @@ describe("useLoginPage", () => {
 
     page.submitGithub();
 
-    expect(assign).toHaveBeenCalledWith(
-      "http://localhost:8030/oauth2/authorization/github"
-    );
+    expect(assign).toHaveBeenCalledWith("http://localhost:8030/oauth2/authorization/github");
     vi.unstubAllGlobals();
   });
 });

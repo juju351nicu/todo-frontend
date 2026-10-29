@@ -33,20 +33,10 @@ describe("Project Template API", () => {
         json: vi.fn().mockResolvedValue(detail),
       });
 
-    await expect(ProjectTemplateApi.findOwnTemplates()).resolves.toEqual(
-      summaries
-    );
-    await expect(ProjectTemplateApi.getOwnTemplate(81)).resolves.toEqual(
-      detail
-    );
-    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(
-      1,
-      API_PATHS.PROJECT_TEMPLATES
-    );
-    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(
-      2,
-      "/api/v1/project-templates/81"
-    );
+    await expect(ProjectTemplateApi.findOwnTemplates()).resolves.toEqual(summaries);
+    await expect(ProjectTemplateApi.getOwnTemplate(81)).resolves.toEqual(detail);
+    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(1, API_PATHS.PROJECT_TEMPLATES);
+    expect(HttpClient.getRequest).toHaveBeenNthCalledWith(2, "/api/v1/project-templates/81");
   });
 
   it("ACTIVE Projectを名称と基準日付きでcaptureする", async () => {
@@ -58,10 +48,7 @@ describe("Project Template API", () => {
 
     await ProjectTemplateApi.capture(5, request);
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/templates",
-      request
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/projects/5/templates", request);
   });
 
   it("Template header更新とversion付きarchiveをBackend契約で送信する", async () => {
@@ -75,13 +62,8 @@ describe("Project Template API", () => {
     await ProjectTemplateApi.update(81, request);
     await expect(ProjectTemplateApi.archive(81, 3)).resolves.toBeUndefined();
 
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/project-templates/81",
-      request
-    );
-    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
-      "/api/v1/project-templates/81?version=3"
-    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/project-templates/81", request);
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith("/api/v1/project-templates/81?version=3");
   });
 
   it("member slot mapping付きでTemplateからProjectを生成する", async () => {
@@ -121,8 +103,6 @@ describe("Project Template API", () => {
       status: 403,
       errorResponse: null,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(ProjectTemplateApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(ProjectTemplateApiError));
   });
 });

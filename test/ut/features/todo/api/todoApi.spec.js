@@ -25,9 +25,7 @@ describe("Task API", () => {
 
     await expect(TodoApi.findDetail(42)).resolves.toEqual(payload);
 
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      `${API_PATHS.TODO_DETAIL}/42`
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(`${API_PATHS.TODO_DETAIL}/42`);
   });
 
   it("Todo詳細取得のHTTPエラーを通知する", async () => {
@@ -58,10 +56,7 @@ describe("Task API", () => {
 
     await expect(TodoApi.findList(request)).resolves.toEqual(payload);
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      API_PATHS.TODO_LIST,
-      request
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.TODO_LIST, request);
   });
 
   it("Todo一覧の既知Validationエラーをstatusと本文付きで通知する", async () => {
@@ -98,10 +93,7 @@ describe("Task API", () => {
 
     await expect(TodoApi.complete(42)).resolves.toBeUndefined();
 
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      `${API_PATHS.TODO_DONE}?todo_id=42`,
-      null
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(`${API_PATHS.TODO_DONE}?todo_id=42`, null);
   });
 
   it("Todo完了の本文なし404を安全なTaskApiErrorへ変換する", async () => {

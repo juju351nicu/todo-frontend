@@ -32,7 +32,7 @@ const emit = defineEmits<{
 }>();
 
 const { activePoint, chart, hidePoint, showPoint, tasksByAbsoluteError } = useEstimateAccuracyChart(
-  () => props.estimateAccuracy,
+  () => props.estimateAccuracy
 );
 
 /**
@@ -47,7 +47,10 @@ const toSvgY = (ratio: number): number => PLOT.top + (1 - ratio) * PLOT.size;
 
 /** 「見積もりどおり」の帯を描くSVG polygonの頂点列。 */
 const toleranceBandPoints = computed(
-  () => chart.value?.toleranceBand.map((vertex) => `${toSvgX(vertex.x)},${toSvgY(vertex.y)}`).join(" ") ?? "",
+  () =>
+    chart.value?.toleranceBand
+      .map((vertex) => `${toSvgX(vertex.x)},${toSvgY(vertex.y)}`)
+      .join(" ") ?? ""
 );
 </script>
 
@@ -57,17 +60,28 @@ const toleranceBandPoints = computed(
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-chart-scatter-plot" class="size-6" />
         見積もり精度
-        <UBadge size="sm" variant="outline" class="ms-auto">完了Task {{ estimateAccuracy?.completedTaskCount ?? 0 }}件</UBadge>
+        <UBadge size="sm" variant="outline" class="ms-auto"
+          >完了Task {{ estimateAccuracy?.completedTaskCount ?? 0 }}件</UBadge
+        >
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">
       完了した通常Taskの予定工数と、日別実績の合計を比べます。予定どおりなら点は対角線の上に並びます。
-      帯の中は誤差が予定工数の±{{ estimateAccuracy?.tolerancePercent ?? 20 }}%以内です。AIの利用による短縮効果は表しません。
+      帯の中は誤差が予定工数の±{{
+        estimateAccuracy?.tolerancePercent ?? 20
+      }}%以内です。AIの利用による短縮効果は表しません。
     </p>
     <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
       <div v-for="message in errorMessages" :key="message">{{ message }}</div>
     </StatusAlert>
-    <UButton icon="i-mdi-refresh" color="primary" variant="soft" :loading="isLoading" @click="emit('load')">再集計</UButton>
+    <UButton
+      icon="i-mdi-refresh"
+      color="primary"
+      variant="soft"
+      :loading="isLoading"
+      @click="emit('load')"
+      >再集計</UButton
+    >
 
     <div v-if="isLoading" class="mt-4 flex flex-col gap-3">
       <USkeleton class="h-16 w-full" />
@@ -82,7 +96,9 @@ const toleranceBandPoints = computed(
           </dd>
         </div>
         <div>
-          <dt class="text-xs text-muted">見積もりどおり（±{{ estimateAccuracy.tolerancePercent }}%以内）</dt>
+          <dt class="text-xs text-muted">
+            見積もりどおり（±{{ estimateAccuracy.tolerancePercent }}%以内）
+          </dt>
           <dd class="text-xl font-medium">{{ formatWithinToleranceRate(estimateAccuracy) }}</dd>
         </div>
         <div>
@@ -90,7 +106,9 @@ const toleranceBandPoints = computed(
           <dd class="text-xl font-medium">
             {{ formatOptionalSignedEffortMinutes(estimateAccuracy.medianSignedVarianceMinutes) }}
           </dd>
-          <dd class="text-xs text-muted">{{ describeEstimateBias(estimateAccuracy.medianSignedVarianceMinutes) }}</dd>
+          <dd class="text-xs text-muted">
+            {{ describeEstimateBias(estimateAccuracy.medianSignedVarianceMinutes) }}
+          </dd>
         </div>
       </dl>
 
@@ -100,13 +118,16 @@ const toleranceBandPoints = computed(
         variant="soft"
         class="mt-4"
       >
-        比較できたTaskが{{ estimateAccuracy.sampleCount }}件のため参考値です。{{ estimateAccuracy.minimumSampleCount }}件以上で傾向として読めます。
+        比較できたTaskが{{ estimateAccuracy.sampleCount }}件のため参考値です。{{
+          estimateAccuracy.minimumSampleCount
+        }}件以上で傾向として読めます。
       </StatusAlert>
       <p
         v-if="estimateAccuracy.missingPlanTaskCount || estimateAccuracy.missingActualTaskCount"
         class="mt-3 mb-0 text-xs text-muted"
       >
-        予定工数が未入力のため除外: {{ estimateAccuracy.missingPlanTaskCount }}件／実績が未入力のため除外:
+        予定工数が未入力のため除外:
+        {{ estimateAccuracy.missingPlanTaskCount }}件／実績が未入力のため除外:
         {{ estimateAccuracy.missingActualTaskCount }}件
       </p>
 
@@ -135,10 +156,16 @@ const toleranceBandPoints = computed(
                   :y2="toSvgY(1)"
                   stroke="var(--ui-border)"
                 />
-                <text :x="toSvgX(0) - 8" :y="toSvgY(tick.ratio) + 4" text-anchor="end">{{ tick.label }}</text>
-                <text :x="toSvgX(tick.ratio)" :y="toSvgY(0) + 18" text-anchor="middle">{{ tick.label }}</text>
+                <text :x="toSvgX(0) - 8" :y="toSvgY(tick.ratio) + 4" text-anchor="end">
+                  {{ tick.label }}
+                </text>
+                <text :x="toSvgX(tick.ratio)" :y="toSvgY(0) + 18" text-anchor="middle">
+                  {{ tick.label }}
+                </text>
               </template>
-              <text :x="toSvgX(0.5)" :y="PLOT.height - 6" text-anchor="middle" font-size="12">予定工数</text>
+              <text :x="toSvgX(0.5)" :y="PLOT.height - 6" text-anchor="middle" font-size="12">
+                予定工数
+              </text>
               <text
                 :x="14"
                 :y="toSvgY(0.5)"
@@ -149,11 +176,7 @@ const toleranceBandPoints = computed(
                 実績工数
               </text>
             </g>
-            <polygon
-              :points="toleranceBandPoints"
-              fill="var(--ui-primary)"
-              fill-opacity="0.08"
-            />
+            <polygon :points="toleranceBandPoints" fill="var(--ui-primary)" fill-opacity="0.08" />
             <line
               :x1="toSvgX(0)"
               :y1="toSvgY(0)"
@@ -195,7 +218,9 @@ const toleranceBandPoints = computed(
             }"
             role="tooltip"
           >
-            <div class="mb-1 font-medium">{{ formatEstimateAccuracyTaskLabel(activePoint.task) }}</div>
+            <div class="mb-1 font-medium">
+              {{ formatEstimateAccuracyTaskLabel(activePoint.task) }}
+            </div>
             <div>予定 {{ formatEffortMinutes(activePoint.task.plannedEffortMinutes) }}</div>
             <div>実績 {{ formatEffortMinutes(activePoint.task.actualEffortMinutes) }}</div>
             <div>差 {{ formatSignedEffortMinutes(activePoint.task.signedVarianceMinutes) }}</div>
@@ -204,7 +229,15 @@ const toleranceBandPoints = computed(
           <figcaption class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-muted">
             <span class="inline-flex items-center gap-2">
               <svg width="24" height="8" aria-hidden="true">
-                <line x1="0" y1="4" x2="24" y2="4" stroke="var(--ui-border-accented)" stroke-width="2" stroke-dasharray="6 4" />
+                <line
+                  x1="0"
+                  y1="4"
+                  x2="24"
+                  y2="4"
+                  stroke="var(--ui-border-accented)"
+                  stroke-width="2"
+                  stroke-dasharray="6 4"
+                />
               </svg>
               予定どおり（実績 = 予定）
             </span>
@@ -217,7 +250,9 @@ const toleranceBandPoints = computed(
 
         <div class="overflow-x-auto">
           <table class="app-table app-table-hover min-w-120 [&_td]:h-11 [&_th]:h-11">
-            <caption class="pb-2 text-start text-sm text-muted">誤差の大きいTask順</caption>
+            <caption class="pb-2 text-start text-sm text-muted">
+              誤差の大きいTask順
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Task</th>
@@ -230,12 +265,26 @@ const toleranceBandPoints = computed(
             <tbody>
               <tr v-for="task in tasksByAbsoluteError" :key="task.taskId">
                 <td>{{ formatEstimateAccuracyTaskLabel(task) }}</td>
-                <td class="whitespace-nowrap">{{ formatEffortMinutes(task.plannedEffortMinutes) }}</td>
-                <td class="whitespace-nowrap">{{ formatEffortMinutes(task.actualEffortMinutes) }}</td>
-                <td class="whitespace-nowrap">{{ formatSignedEffortMinutes(task.signedVarianceMinutes) }}</td>
                 <td class="whitespace-nowrap">
-                  <UBadge v-if="task.withinTolerance" size="sm" variant="outline" icon="i-mdi-check">範囲内</UBadge>
-                  <UBadge v-else size="sm" variant="outline" color="neutral" icon="i-mdi-arrow-expand-horizontal">
+                  {{ formatEffortMinutes(task.plannedEffortMinutes) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatEffortMinutes(task.actualEffortMinutes) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  {{ formatSignedEffortMinutes(task.signedVarianceMinutes) }}
+                </td>
+                <td class="whitespace-nowrap">
+                  <UBadge v-if="task.withinTolerance" size="sm" variant="outline" icon="i-mdi-check"
+                    >範囲内</UBadge
+                  >
+                  <UBadge
+                    v-else
+                    size="sm"
+                    variant="outline"
+                    color="neutral"
+                    icon="i-mdi-arrow-expand-horizontal"
+                  >
                     範囲外
                   </UBadge>
                 </td>

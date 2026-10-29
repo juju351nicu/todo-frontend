@@ -12,6 +12,4 @@ export const AUTHORIZATION_AUDIT_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 404／409回復中に元の操作エラーより優先する現在の参照状態。 */
-export {
-  API_RECOVERY_PRIORITY_STATUSES as ADMINISTRATION_RECOVERY_PRIORITY_STATUSES,
-} from "@/shared/utils/apiError";
+export { API_RECOVERY_PRIORITY_STATUSES as ADMINISTRATION_RECOVERY_PRIORITY_STATUSES } from "@/shared/utils/apiError";

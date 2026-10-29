@@ -9,7 +9,11 @@ import type { SemanticColor } from "@/shared/types/color";
  * @param task 対象Task。未選択の場合は機能名だけを返す
  * @param includeWbsCode trueの場合、WBS codeがあればTask名の前に付ける
  */
-export const formatWbsTaskDialogTitle = (prefix: string, task: WbsTask | null, includeWbsCode = true): string => {
+export const formatWbsTaskDialogTitle = (
+  prefix: string,
+  task: WbsTask | null,
+  includeWbsCode = true
+): string => {
   if (task === null) {
     return prefix;
   }
@@ -24,7 +28,10 @@ export const formatWbsTaskDialogTitle = (prefix: string, task: WbsTask | null, i
  * @param options 利用者が選べるアカウントの選択肢
  * @returns 選択肢がない場合はnull
  */
-export const resolveDefaultAccountId = (task: WbsTask | null, options: readonly { value: number }[]): number | null => {
+export const resolveDefaultAccountId = (
+  task: WbsTask | null,
+  options: readonly { value: number }[]
+): number | null => {
   const taskAssigneeId = task?.assigneeAccountId ?? null;
   if (options.some((option) => option.value === taskAssigneeId)) {
     return taskAssigneeId;
@@ -66,5 +73,5 @@ export const canMutateOwnedEntry = (
   canEdit: boolean,
   canManageAny: boolean,
   ownerAccountId: number,
-  currentAccountId: number | null,
+  currentAccountId: number | null
 ): boolean => canEdit && (canManageAny || ownerAccountId === currentAccountId);

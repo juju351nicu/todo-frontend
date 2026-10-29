@@ -28,7 +28,7 @@ const RANGE_PADDING_AFTER_DAYS = 7;
 export const useWbsGanttChart = (
   container: Readonly<Ref<HTMLElement | null>>,
   rows: () => readonly WbsTreeRow[],
-  dependencies: () => readonly TaskDependency[],
+  dependencies: () => readonly TaskDependency[]
 ) => {
   const ganttInstance = shallowRef<GanttStatic | null>(null);
   const ganttData = computed(() => buildWbsGanttData(rows()));
@@ -37,8 +37,10 @@ export const useWbsGanttChart = (
   /** API再読込で予定期間が変わっても、全Taskを含むtimeline範囲へ更新する。 */
   const updateGanttRange = (instance: GanttStatic): void => {
     const { rangeStart, rangeEnd } = ganttData.value;
-    instance.config.start_date = rangeStart === null ? undefined : addGanttRangePadding(rangeStart, RANGE_PADDING_BEFORE_DAYS);
-    instance.config.end_date = rangeEnd === null ? undefined : addGanttRangePadding(rangeEnd, RANGE_PADDING_AFTER_DAYS);
+    instance.config.start_date =
+      rangeStart === null ? undefined : addGanttRangePadding(rangeStart, RANGE_PADDING_BEFORE_DAYS);
+    instance.config.end_date =
+      rangeEnd === null ? undefined : addGanttRangePadding(rangeEnd, RANGE_PADDING_AFTER_DAYS);
   };
 
   /** 最新のWBS行と依存関係を既存Gantt instanceへ再投入する。初回はinstanceを作成して初期化する。 */

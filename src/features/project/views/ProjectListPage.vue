@@ -2,7 +2,10 @@
 import { onBeforeMount } from "vue";
 
 import { useProjectListPage } from "@/features/project/composables/useProjectListPage";
-import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
+import {
+  getProjectStatusColor,
+  getProjectStatusLabel,
+} from "@/features/project/utils/projectStatus";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import SearchField from "@/shared/components/SearchField.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -39,7 +42,12 @@ onBeforeMount(initialize);
           Project一覧
           <SearchField v-model="searchText" label="Projectを検索" class="ms-auto w-80" />
           <!-- Templateを使わずにProjectを作る。Projectがない利用者も最初のProjectを作れる。 -->
-          <UButton v-if="canCreateProject" color="primary" icon="i-mdi-folder-plus-outline" @click="openCreateDialog">
+          <UButton
+            v-if="canCreateProject"
+            color="primary"
+            icon="i-mdi-folder-plus-outline"
+            @click="openCreateDialog"
+          >
             Projectを作成
           </UButton>
         </div>
@@ -50,18 +58,31 @@ onBeforeMount(initialize);
       </StatusAlert>
 
       <div v-if="filteredProjects.length" class="-m-3 flex flex-wrap">
-        <div v-for="project in filteredProjects" :key="project.projectId" class="w-full p-3 md:w-1/2 lg:w-1/3">
+        <div
+          v-for="project in filteredProjects"
+          :key="project.projectId"
+          class="w-full p-3 md:w-1/2 lg:w-1/3"
+        >
           <!-- E2Eはarticle roleとProject keyで対象Projectのcardを特定する。 -->
-          <UCard as="article" variant="outline" class="flex h-full flex-col" :aria-label="project.name">
+          <UCard
+            as="article"
+            variant="outline"
+            class="flex h-full flex-col"
+            :aria-label="project.name"
+          >
             <template #header>
               <div>{{ project.name }}</div>
-              <div class="text-sm font-normal tracking-normal text-muted">{{ project.projectKey }}</div>
+              <div class="text-sm font-normal tracking-normal text-muted">
+                {{ project.projectKey }}
+              </div>
             </template>
             <div class="flex flex-wrap gap-2">
               <UBadge :color="getProjectStatusColor(project.status)" size="sm">
                 {{ getProjectStatusLabel(project.status) }}
               </UBadge>
-              <UBadge v-if="project.projectRole" size="sm" variant="outline">{{ project.projectRole }}</UBadge>
+              <UBadge v-if="project.projectRole" size="sm" variant="outline">{{
+                project.projectRole
+              }}</UBadge>
             </div>
             <template #footer>
               <UButton
@@ -101,19 +122,31 @@ onBeforeMount(initialize);
             help="大文字英数字をハイフンで区切ります（例：SALES-2026）。作成後は変更できません。"
             :error="createFormErrors.projectKey || undefined"
           >
-            <UInput v-model="createForm.projectKey" :disabled="isCreatingProject" class="w-full" autofocus />
+            <UInput
+              v-model="createForm.projectKey"
+              :disabled="isCreatingProject"
+              class="w-full"
+              autofocus
+            />
           </UFormField>
           <UFormField label="名前" required :error="createFormErrors.name || undefined">
             <UInput v-model="createForm.name" :disabled="isCreatingProject" class="w-full" />
           </UFormField>
           <UFormField label="説明" :error="createFormErrors.description || undefined">
-            <UTextarea v-model="createForm.description" :rows="3" :disabled="isCreatingProject" class="w-full" />
+            <UTextarea
+              v-model="createForm.description"
+              :rows="3"
+              :disabled="isCreatingProject"
+              class="w-full"
+            />
           </UFormField>
         </form>
       </template>
       <template #footer>
         <div class="flex w-full justify-end gap-2">
-          <UButton variant="ghost" :disabled="isCreatingProject" @click="closeCreateDialog">キャンセル</UButton>
+          <UButton variant="ghost" :disabled="isCreatingProject" @click="closeCreateDialog"
+            >キャンセル</UButton
+          >
           <UButton
             type="submit"
             form="project-create-form"

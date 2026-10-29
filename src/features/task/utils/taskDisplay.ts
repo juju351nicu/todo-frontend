@@ -21,10 +21,16 @@ export const formatRemainingDays = (value: number): string => {
 const TASK_PRIORITY_LABELS: Readonly<Record<TaskPriority, string>> = { 1: "低", 2: "中", 3: "高" };
 
 // Backendの`TaskPriority`はLOW=1、MEDIUM=2、HIGH=3。高いほど注意を引く色にする。
-const TASK_PRIORITY_COLORS: Readonly<Record<TaskPriority, SemanticColor>> = { 1: "info", 2: "warning", 3: "error" };
+const TASK_PRIORITY_COLORS: Readonly<Record<TaskPriority, SemanticColor>> = {
+  1: "info",
+  2: "warning",
+  3: "error",
+};
 
 /** Project TaskとWBS Taskの優先度コード（1:低、2:中、3:高）を表示名へ変換する。 */
-export const getTaskPriorityLabel = (priority: TaskPriority): string => TASK_PRIORITY_LABELS[priority];
+export const getTaskPriorityLabel = (priority: TaskPriority): string =>
+  TASK_PRIORITY_LABELS[priority];
 
 /** Project TaskとWBS Taskの優先度コードを表示色へ変換する。高=error、中=warning、低=info。 */
-export const getTaskPriorityColor = (priority: TaskPriority): SemanticColor => TASK_PRIORITY_COLORS[priority];
+export const getTaskPriorityColor = (priority: TaskPriority): SemanticColor =>
+  TASK_PRIORITY_COLORS[priority];

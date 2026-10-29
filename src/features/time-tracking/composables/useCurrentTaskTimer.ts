@@ -30,8 +30,14 @@ const TIMER_HISTORY_SELECTOR = `[data-task-timer-control="${TASK_TIMER_HISTORY_C
 export const useCurrentTaskTimer = () => {
   const userStore = useUserStore();
   const timerStore = useTaskTimerStore();
-  const { currentTimer, errorMessages, isLoading, pendingMutation, receivedAtMilliseconds, successMessage } =
-    storeToRefs(timerStore);
+  const {
+    currentTimer,
+    errorMessages,
+    isLoading,
+    pendingMutation,
+    receivedAtMilliseconds,
+    successMessage,
+  } = storeToRefs(timerStore);
 
   /** 取消確認dialogを開いている場合はtrue。 */
   const isCancelConfirmOpen = ref<boolean>(false);
@@ -45,9 +51,9 @@ export const useCurrentTaskTimer = () => {
           calculateDisplayedElapsedSeconds(
             currentTimer.value.elapsedSeconds,
             receivedAtMilliseconds.value,
-            nowMilliseconds.value,
-          ),
-        ),
+            nowMilliseconds.value
+          )
+        )
   );
 
   /**
@@ -96,7 +102,7 @@ export const useCurrentTaskTimer = () => {
         timerStore.resetForLogout();
       }
     },
-    { immediate: true },
+    { immediate: true }
   );
 
   const elapsedTimer = setInterval(() => {

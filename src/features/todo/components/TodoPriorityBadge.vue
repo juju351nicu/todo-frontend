@@ -11,12 +11,18 @@ withDefaults(
     priority: number | string;
     size?: "xs" | "sm" | "md";
   }>(),
-  { size: "sm" },
+  { size: "sm" }
 );
 </script>
 
 <template>
-  <UBadge color="neutral" variant="soft" :size="size" class="bg-current/12" :style="{ color: getTodoPriorityColor(priority) }">
+  <UBadge
+    color="neutral"
+    variant="soft"
+    :size="size"
+    class="bg-current/12"
+    :style="{ color: getTodoPriorityColor(priority) }"
+  >
     {{ getTodoPriorityLabel(priority) }}
   </UBadge>
 </template>

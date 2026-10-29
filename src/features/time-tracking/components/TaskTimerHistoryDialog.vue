@@ -84,7 +84,9 @@ const {
             <tr v-for="session in history.sessions" :key="session.timerSessionId">
               <td>
                 <div>{{ session.taskTitle }}</div>
-                <div class="text-xs text-muted">{{ session.projectKey }} / Task {{ session.taskId }}</div>
+                <div class="text-xs text-muted">
+                  {{ session.projectKey }} / Task {{ session.taskId }}
+                </div>
               </td>
               <td>
                 <UBadge :color="getTimerSessionStatusColor(session.statusCode)" size="sm">
@@ -92,15 +94,23 @@ const {
                 </UBadge>
               </td>
               <td class="whitespace-nowrap">{{ formatJstDateTime(session.startedAt) }}</td>
-              <td class="whitespace-nowrap">{{ session.stoppedAt ? formatJstDateTime(session.stoppedAt) : "—" }}</td>
               <td class="whitespace-nowrap">
-                {{ session.durationSeconds === null ? "—" : formatElapsedSeconds(session.durationSeconds) }}
+                {{ session.stoppedAt ? formatJstDateTime(session.stoppedAt) : "—" }}
+              </td>
+              <td class="whitespace-nowrap">
+                {{
+                  session.durationSeconds === null
+                    ? "—"
+                    : formatElapsedSeconds(session.durationSeconds)
+                }}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <StatusAlert v-else-if="history" type="info" variant="soft">指定期間のTimer履歴はありません。</StatusAlert>
+      <StatusAlert v-else-if="history" type="info" variant="soft"
+        >指定期間のTimer履歴はありません。</StatusAlert
+      >
 
       <div v-if="history" class="mt-4 flex items-center justify-center gap-3">
         <UButton
@@ -113,8 +123,9 @@ const {
           @click="loadPreviousPage"
         />
         <span class="text-sm">
-          {{ history.totalPages === 0 ? 0 : history.page + 1 }} / {{ history.totalPages }}
-          （{{ history.totalElements }}件）
+          {{ history.totalPages === 0 ? 0 : history.page + 1 }} / {{ history.totalPages }} （{{
+            history.totalElements
+          }}件）
         </span>
         <UButton
           icon="i-mdi-chevron-right"

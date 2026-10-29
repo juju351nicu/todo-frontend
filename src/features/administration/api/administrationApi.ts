@@ -93,9 +93,7 @@ const getAuthorizationAuditLogs = async (
     page: String(page),
     size: String(size),
   });
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.AUTHORIZATION_AUDIT_LOGS}?${query}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.AUTHORIZATION_AUDIT_LOGS}?${query}`);
   await ensureSuccess(response);
   return (await response.json()) as AuthorizationAuditLogListResponse;
 };

@@ -52,7 +52,9 @@ const handleOpenChange = (open: boolean): void => {
     </template>
     <template #footer>
       <UButton variant="ghost" @click="emit('close-modal')">戻る</UButton>
-      <UButton color="primary" @click="emit('confirm-submit')">{{ isUpdate ? "更新" : "登録" }}</UButton>
+      <UButton color="primary" @click="emit('confirm-submit')">{{
+        isUpdate ? "更新" : "登録"
+      }}</UButton>
     </template>
   </UModal>
 </template>

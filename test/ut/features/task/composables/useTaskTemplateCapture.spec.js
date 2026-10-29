@@ -37,9 +37,7 @@ describe("useTaskTemplateCapture", () => {
       name: "API実装",
     });
     expect(state.isOpen.value).toBe(false);
-    expect(state.successMessage.value).toBe(
-      "TaskをTemplateとして保存しました。"
-    );
+    expect(state.successMessage.value).toBe("TaskをTemplateとして保存しました。");
   });
 
   it("参照専用ではDialogを開かずcapture APIも呼ばない", async () => {
@@ -76,9 +74,7 @@ describe("useTaskTemplateCapture", () => {
   });
 
   it("本文なしのpermission 403では固定文言を表示してSessionを維持する", async () => {
-    mocks.taskTemplateApi.capture.mockRejectedValue(
-      new TaskTemplateApiError(403, null)
-    );
+    mocks.taskTemplateApi.capture.mockRejectedValue(new TaskTemplateApiError(403, null));
     const state = useTaskTemplateCapture(ref(5), ref(31), ref(false));
     state.open();
     state.name.value = "API実装";
@@ -110,15 +106,11 @@ describe("useTaskTemplateCapture", () => {
 
     await state.capture();
 
-    expect(state.errorMessage.value).toBe(
-      "TaskをTemplateとして保存できませんでした。"
-    );
+    expect(state.errorMessage.value).toBe("TaskをTemplateとして保存できませんでした。");
   });
 
   it("401では入力とDialogを破棄してLoginへ戻す", async () => {
-    mocks.taskTemplateApi.capture.mockRejectedValue(
-      new TaskTemplateApiError(401, null)
-    );
+    mocks.taskTemplateApi.capture.mockRejectedValue(new TaskTemplateApiError(401, null));
     const state = useTaskTemplateCapture(ref(5), ref(31), ref(false));
     state.open();
     state.name.value = "API実装";

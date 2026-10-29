@@ -12,7 +12,11 @@ const headers = [
 
 /** id 1〜count の行を作る。 */
 const buildItems = (count) =>
-  Array.from({ length: count }, (_, index) => ({ id: index + 1, name: `行${index + 1}`, amount: index * 10 }));
+  Array.from({ length: count }, (_, index) => ({
+    id: index + 1,
+    name: `行${index + 1}`,
+    amount: index * 10,
+  }));
 
 /**
  * テスト用の`useDataTable`を作る。propsはrefで持ち、getter経由で渡す（componentと同じ渡し方）。
@@ -41,8 +45,15 @@ describe("useDataTable", () => {
   it("列定義へ見出し・並べ替え可否・文字揃えclassを写し、selectableなら先頭に選択列を加える", () => {
     const { table, selectable } = setup();
 
-    expect(table.columns.value.map((column) => column.accessorKey)).toEqual(["id", "name", "amount"]);
-    expect(table.columns.value[0]).toMatchObject({ enableSorting: false, meta: { class: { th: "text-center" } } });
+    expect(table.columns.value.map((column) => column.accessorKey)).toEqual([
+      "id",
+      "name",
+      "amount",
+    ]);
+    expect(table.columns.value[0]).toMatchObject({
+      enableSorting: false,
+      meta: { class: { th: "text-center" } },
+    });
     expect(table.columns.value[2].meta.class.td).toBe("text-end");
     expect(table.sortableHeaders.value.map((header) => header.key)).toEqual(["name", "amount"]);
 

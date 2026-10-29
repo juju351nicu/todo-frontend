@@ -38,22 +38,24 @@ export const useTaskTimerAction = (target: TaskTimerActionTarget) => {
 
   /** 対象Taskで現在Timerが計測中の場合はtrue。 */
   const isThisTaskRunning = computed<boolean>(() =>
-    timerStore.isTaskRunning(toValue(target.projectId), toValue(target.taskId)),
+    timerStore.isTaskRunning(toValue(target.projectId), toValue(target.taskId))
   );
   /** 対象以外のTaskで現在Timerが計測中の場合はtrue。 */
-  const isAnotherTaskRunning = computed<boolean>(() => currentTimer.value !== null && !isThisTaskRunning.value);
+  const isAnotherTaskRunning = computed<boolean>(
+    () => currentTimer.value !== null && !isThisTaskRunning.value
+  );
   const isDisabled = computed<boolean>(
     () =>
       toValue(target.disabled ?? false) ||
       !initialized.value ||
       isLoading.value ||
       pendingMutation.value !== null ||
-      isAnotherTaskRunning.value,
+      isAnotherTaskRunning.value
   );
 
   /** 対象Taskのbuttonへ付ける`data-task-timer-action`属性の値。 */
   const actionKey = computed<string>(() =>
-    buildTaskTimerActionKey(toValue(target.projectId), toValue(target.taskId)),
+    buildTaskTimerActionKey(toValue(target.projectId), toValue(target.taskId))
   );
 
   /**

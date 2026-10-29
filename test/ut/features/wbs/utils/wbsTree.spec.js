@@ -99,14 +99,8 @@ describe("WBS表示変換", () => {
 
   it("nullableな実績期間を未着手・作業中・完了として表示する", () => {
     expect(formatActualPeriod(null, null)).toBe("未着手");
-    expect(formatActualPeriod("2026-08-22", null)).toBe(
-      "2026-08-22 ～ 作業中"
-    );
-    expect(formatActualPeriod("2026-08-22", "2026-08-24")).toBe(
-      "2026-08-22 ～ 2026-08-24"
-    );
-    expect(formatActualPeriod(null, "2026-08-24")).toBe(
-      "開始日未設定 ～ 2026-08-24"
-    );
+    expect(formatActualPeriod("2026-08-22", null)).toBe("2026-08-22 ～ 作業中");
+    expect(formatActualPeriod("2026-08-22", "2026-08-24")).toBe("2026-08-22 ～ 2026-08-24");
+    expect(formatActualPeriod(null, "2026-08-24")).toBe("開始日未設定 ～ 2026-08-24");
   });
 });

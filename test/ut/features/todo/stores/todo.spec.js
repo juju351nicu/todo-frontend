@@ -53,14 +53,10 @@ describe("Todo store", () => {
   });
 
   it("Todo詳細APIが失敗しても処理中フラグを解除する", async () => {
-    TodoApi.findDetail.mockRejectedValue(
-      new Error("Task APIの実行に失敗しました。status=404")
-    );
+    TodoApi.findDetail.mockRejectedValue(new Error("Task APIの実行に失敗しました。status=404"));
     const store = useTodoStore();
 
-    await expect(store.findTodoDetail(999)).rejects.toThrow(
-      "Task APIの実行に失敗しました"
-    );
+    await expect(store.findTodoDetail(999)).rejects.toThrow("Task APIの実行に失敗しました");
     expect(store.isLoading).toBe(false);
   });
 });

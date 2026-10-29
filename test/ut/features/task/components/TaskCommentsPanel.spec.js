@@ -54,22 +54,35 @@ describe("TaskCommentsPanel", () => {
       permissionCodes: ["TASK_READ"],
     });
     mocks.findComments.mockResolvedValue([comment(1, 7), comment(2, 8)]);
-    wrapper = mountWithUi(TaskCommentsPanel, { pinia, props: { projectId: 1, taskId: 10, disabled } });
+    wrapper = mountWithUi(TaskCommentsPanel, {
+      pinia,
+      props: { projectId: 1, taskId: 10, disabled },
+    });
     await flushPromises();
   };
 
   it("投稿できるときは、本人のコメントにだけ編集ボタンを出し、投稿欄を使える", async () => {
     await mountPanel(false);
 
-    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(1)}"]`).exists()).toBe(true);
-    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(2)}"]`).exists()).toBe(false);
-    expect(wrapper.find(`[data-comment-control="${COMMENT_COMPOSER_CONTROL}"]`).attributes("disabled")).toBeUndefined();
+    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(1)}"]`).exists()).toBe(
+      true
+    );
+    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(2)}"]`).exists()).toBe(
+      false
+    );
+    expect(
+      wrapper.find(`[data-comment-control="${COMMENT_COMPOSER_CONTROL}"]`).attributes("disabled")
+    ).toBeUndefined();
   });
 
   it("投稿できないとき（disabled）は、本人のコメントにも編集ボタンを出さず、投稿欄を使えない", async () => {
     await mountPanel(true);
 
-    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(1)}"]`).exists()).toBe(false);
-    expect(wrapper.find(`[data-comment-control="${COMMENT_COMPOSER_CONTROL}"]`).attributes("disabled")).toBeDefined();
+    expect(wrapper.find(`[data-comment-control="${buildCommentEditControlKey(1)}"]`).exists()).toBe(
+      false
+    );
+    expect(
+      wrapper.find(`[data-comment-control="${COMMENT_COMPOSER_CONTROL}"]`).attributes("disabled")
+    ).toBeDefined();
   });
 });

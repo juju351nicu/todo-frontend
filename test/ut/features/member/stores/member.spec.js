@@ -83,14 +83,10 @@ describe("Member store", () => {
   });
 
   it("会員詳細APIが失敗しても処理中フラグを解除する", async () => {
-    MemberApi.findDetail.mockRejectedValue(
-      new Error("会員詳細の取得に失敗しました。status=404")
-    );
+    MemberApi.findDetail.mockRejectedValue(new Error("会員詳細の取得に失敗しました。status=404"));
     const store = useMemberStore();
 
-    await expect(store.findMemberDetail(999)).rejects.toThrow(
-      "会員詳細の取得に失敗しました"
-    );
+    await expect(store.findMemberDetail(999)).rejects.toThrow("会員詳細の取得に失敗しました");
     expect(store.isLoading).toBe(false);
   });
 });

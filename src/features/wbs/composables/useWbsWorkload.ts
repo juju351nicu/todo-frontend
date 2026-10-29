@@ -1,10 +1,7 @@
 import { ref } from "vue";
 
 import WbsApi from "@/features/wbs/api/wbsApi";
-import type {
-  TaskWorkloadDateRange,
-  TaskWorkloadResponse,
-} from "@/features/wbs/types/wbs";
+import type { TaskWorkloadDateRange, TaskWorkloadResponse } from "@/features/wbs/types/wbs";
 import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
 import {
   buildDefaultWorkloadDateRange,
@@ -37,9 +34,7 @@ export const useWbsWorkload = (context: WbsPageContext) => {
   /** 最後に取得成功したworkload。取得失敗時も直前の確定値を残し、初期表示の失敗時だけ画面側でnullへ戻す。 */
   const workload = ref<TaskWorkloadResponse | null>(null);
   /** 最後に取得を開始した集計期間。初期値はブラウザー現在月の初日・末日。 */
-  const workloadDateRange = ref<TaskWorkloadDateRange>(
-    buildDefaultWorkloadDateRange()
-  );
+  const workloadDateRange = ref<TaskWorkloadDateRange>(buildDefaultWorkloadDateRange());
   const workloadErrorMessages = ref<string[]>([]);
   const isLoadingWorkload = ref(false);
 
@@ -49,9 +44,7 @@ export const useWbsWorkload = (context: WbsPageContext) => {
    *
    * @param dateRange yyyy-MM-dd形式の集計開始日・終了日（最大366日）
    */
-  const loadTaskWorkload = async (
-    dateRange: TaskWorkloadDateRange
-  ): Promise<void> => {
+  const loadTaskWorkload = async (dateRange: TaskWorkloadDateRange): Promise<void> => {
     const projectId = context.projectId.value;
     if (projectId === null || isLoadingWorkload.value) {
       return;
@@ -84,20 +77,15 @@ export const useWbsWorkload = (context: WbsPageContext) => {
    *
    * @param dateRange yyyy-MM-dd形式の集計開始日・終了日
    */
-  const submitTaskWorkload = async (
-    dateRange: TaskWorkloadDateRange
-  ): Promise<void> => {
+  const submitTaskWorkload = async (dateRange: TaskWorkloadDateRange): Promise<void> => {
     await loadTaskWorkload(dateRange);
     if (!context.isSessionInvalidated()) {
-      await focusFirstEnabledElement([
-        `[data-workload-control="${WORKLOAD_CONTROL.submit}"]`,
-      ]);
+      await focusFirstEnabledElement([`[data-workload-control="${WORKLOAD_CONTROL.submit}"]`]);
     }
   };
 
   /** 他領域の変更後に、利用者が最後に指定した集計期間でworkloadを再取得する。 */
-  const reloadTaskWorkload = (): Promise<void> =>
-    loadTaskWorkload(workloadDateRange.value);
+  const reloadTaskWorkload = (): Promise<void> => loadTaskWorkload(workloadDateRange.value);
 
   /** workload参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。 */
   const handleWorkloadReadError = async (error: unknown): Promise<void> => {

@@ -98,12 +98,7 @@ export const useTaskBoardMove = (
     nextTask: TaskCard | null,
     snapshot: TaskBoard | null
   ): Promise<void> => {
-    if (
-      !canMoveTask.value ||
-      isMoving.value ||
-      projectId.value === null ||
-      board.value === null
-    ) {
+    if (!canMoveTask.value || isMoving.value || projectId.value === null || board.value === null) {
       restoreBoardSnapshot(snapshot);
       return;
     }
@@ -112,16 +107,12 @@ export const useTaskBoardMove = (
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      board.value = await ProjectTaskApi.moveTask(
-        projectId.value,
-        movedTask.taskId,
-        {
-          destinationStatusId,
-          previousTaskId: previousTask?.taskId ?? null,
-          nextTaskId: nextTask?.taskId ?? null,
-          version: movedTask.version,
-        }
-      );
+      board.value = await ProjectTaskApi.moveTask(projectId.value, movedTask.taskId, {
+        destinationStatusId,
+        previousTaskId: previousTask?.taskId ?? null,
+        nextTaskId: nextTask?.taskId ?? null,
+        version: movedTask.version,
+      });
       successMessage.value = "Taskを移動しました。";
     } catch (error: unknown) {
       restoreBoardSnapshot(snapshot);
@@ -147,12 +138,7 @@ export const useTaskBoardMove = (
     if (change === undefined) {
       return;
     }
-    if (
-      !canMoveTask.value ||
-      isMoving.value ||
-      projectId.value === null ||
-      board.value === null
-    ) {
+    if (!canMoveTask.value || isMoving.value || projectId.value === null || board.value === null) {
       restoreBoardSnapshot(dragSnapshot.value);
       return;
     }
@@ -162,11 +148,7 @@ export const useTaskBoardMove = (
     const movedTaskIndex = destinationColumn?.tasks.findIndex(
       (task) => task.taskId === change.element.taskId
     );
-    if (
-      destinationColumn === undefined ||
-      movedTaskIndex === undefined ||
-      movedTaskIndex < 0
-    ) {
+    if (destinationColumn === undefined || movedTaskIndex === undefined || movedTaskIndex < 0) {
       restoreBoardSnapshot(dragSnapshot.value);
       errorMessages.value = ["Taskの移動先を特定できませんでした。"];
       return;
@@ -212,14 +194,8 @@ export const useTaskBoardMove = (
       column.tasks.some((task) => task.taskId === taskId)
     );
     const sourceColumn = board.value.columns[sourceColumnIndex];
-    const sourceTaskIndex = sourceColumn?.tasks.findIndex(
-      (task) => task.taskId === taskId
-    );
-    if (
-      sourceColumn === undefined ||
-      sourceTaskIndex === undefined ||
-      sourceTaskIndex < 0
-    ) {
+    const sourceTaskIndex = sourceColumn?.tasks.findIndex((task) => task.taskId === taskId);
+    if (sourceColumn === undefined || sourceTaskIndex === undefined || sourceTaskIndex < 0) {
       errorMessages.value = ["Taskの現在位置を特定できませんでした。"];
       return;
     }
@@ -237,12 +213,8 @@ export const useTaskBoardMove = (
     const destinationTasks = [...destinationColumn.tasks];
     let destinationTaskIndex: number;
     if (isVertical) {
-      destinationTaskIndex =
-        sourceTaskIndex + (direction === "UP" ? -1 : 1);
-      if (
-        destinationTaskIndex < 0 ||
-        destinationTaskIndex >= sourceColumn.tasks.length
-      ) {
+      destinationTaskIndex = sourceTaskIndex + (direction === "UP" ? -1 : 1);
+      if (destinationTaskIndex < 0 || destinationTaskIndex >= sourceColumn.tasks.length) {
         return;
       }
       destinationTasks.splice(sourceTaskIndex, 1);

@@ -14,10 +14,7 @@ import {
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  DATA_TABLE_PAGE_OPTIONS,
-  DEFAULT_ITEMS_PER_PAGE,
-} from "@/shared/constants/ui";
+import { DATA_TABLE_PAGE_OPTIONS, DEFAULT_ITEMS_PER_PAGE } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
@@ -30,8 +27,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
  * @param accountId 行のaccount ID
  * @returns 属性の値
  */
-export const buildAccountRoleEditControlKey = (accountId: number): string =>
-  `edit:${accountId}`;
+export const buildAccountRoleEditControlKey = (accountId: number): string => `edit:${accountId}`;
 
 const ACCOUNT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "ID", align: "end", key: "accountId" },
@@ -43,10 +39,7 @@ const ACCOUNT_TABLE_HEADERS: DataTableHeader[] = [
 ];
 
 /** ロールコード集合が順序にかかわらず一致するか判定する。 */
-const hasSameRoleCodes = (
-  first: readonly string[],
-  second: readonly string[]
-): boolean => {
+const hasSameRoleCodes = (first: readonly string[], second: readonly string[]): boolean => {
   const firstSorted = [...first].sort();
   const secondSorted = [...second].sort();
   return (
@@ -77,9 +70,7 @@ export const useAccountAdministrationPage = () => {
   const selectedRoleCodes = ref<string[]>([]);
   const successMessage = ref("");
 
-  const canEditRoles = computed(() =>
-    userStore.hasPermission("ACCOUNT_ROLE_UPDATE")
-  );
+  const canEditRoles = computed(() => userStore.hasPermission("ACCOUNT_ROLE_UPDATE"));
 
   const canSaveRoles = computed(
     () =>
@@ -102,9 +93,7 @@ export const useAccountAdministrationPage = () => {
         account.status,
         ...account.roleCodes,
         ...account.roleCodes.map(
-          (roleCode) =>
-            roles.value.find((role) => role.roleCode === roleCode)?.roleName ??
-            roleCode
+          (roleCode) => roles.value.find((role) => role.roleCode === roleCode)?.roleName ?? roleCode
         ),
       ].some((value) => value.toLocaleLowerCase().includes(keyword))
     );
@@ -162,9 +151,7 @@ export const useAccountAdministrationPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     if (!canEditRoles.value) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.administration.account.operationForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.administration.account.operationForbidden];
       return;
     }
     selectedAccount.value = account;
@@ -196,39 +183,27 @@ export const useAccountAdministrationPage = () => {
       return;
     }
     if (!canEditRoles.value) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.administration.account.operationForbidden,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.administration.account.operationForbidden];
       return;
     }
     if (account === null) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.administration.account.targetRequired,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.administration.account.targetRequired];
       return;
     }
     if (selectedRoleCodes.value.length === 0) {
-      errorMessages.value = [
-        DISPLAY_MESSAGES.administration.account.roleSelectionRequired,
-      ];
+      errorMessages.value = [DISPLAY_MESSAGES.administration.account.roleSelectionRequired];
       return;
     }
 
     isSaving.value = true;
     errorMessages.value = [];
     successMessage.value = "";
-    const rolesChanged = !hasSameRoleCodes(
-      account.roleCodes,
-      selectedRoleCodes.value
-    );
+    const rolesChanged = !hasSameRoleCodes(account.roleCodes, selectedRoleCodes.value);
     try {
-      const updatedAccount = await AdministrationApi.updateAccountRoles(
-        account.accountId,
-        {
-          roleCodes: [...selectedRoleCodes.value],
-          version: account.version,
-        }
-      );
+      const updatedAccount = await AdministrationApi.updateAccountRoles(account.accountId, {
+        roleCodes: [...selectedRoleCodes.value],
+        version: account.version,
+      });
       accounts.value = accounts.value.map((value) =>
         value.accountId === updatedAccount.accountId ? updatedAccount : value
       );
@@ -293,10 +268,7 @@ export const useAccountAdministrationPage = () => {
       const reloadedAccount = accounts.value.find(
         (value) => value.accountId === attemptedAccount.accountId
       );
-      if (
-        reloadedAccount !== undefined &&
-        reloadedAccount.version !== attemptedAccount.version
-      ) {
+      if (reloadedAccount !== undefined && reloadedAccount.version !== attemptedAccount.version) {
         errorMessages.value = [
           ...operationMessages,
           DISPLAY_MESSAGES.administration.account.conflictReloaded,
@@ -359,11 +331,7 @@ export const useAccountAdministrationPage = () => {
     if (await handleUnauthorized(error)) {
       return;
     }
-    errorMessages.value = getErrorMessages(
-      error,
-      fallbackMessage,
-      forbiddenMessage
-    );
+    errorMessages.value = getErrorMessages(error, fallbackMessage, forbiddenMessage);
   };
 
   return {

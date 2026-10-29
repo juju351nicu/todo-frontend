@@ -13,11 +13,14 @@ describe("useExpandableNotificationMessages", () => {
 
     expect(canExpandNotification(announcement)).toBe(true);
     expect(canExpandNotification(taskAssigned)).toBe(false);
-    expect(canExpandNotification({ notificationEventId: 3, navigationPath: "https://example.com" })).toBe(true);
+    expect(
+      canExpandNotification({ notificationEventId: 3, navigationPath: "https://example.com" })
+    ).toBe(true);
   });
 
   it("遷移先がなければ押すたびに全文表示を切り替え、遷移処理は呼ばない", async () => {
-    const { isNotificationExpanded, openOrToggleNotification } = useExpandableNotificationMessages();
+    const { isNotificationExpanded, openOrToggleNotification } =
+      useExpandableNotificationMessages();
     const navigate = vi.fn(async () => {});
 
     await openOrToggleNotification(announcement, navigate);
@@ -28,7 +31,8 @@ describe("useExpandableNotificationMessages", () => {
   });
 
   it("遷移先があれば遷移し、全文表示の状態は変えない", async () => {
-    const { isNotificationExpanded, openOrToggleNotification } = useExpandableNotificationMessages();
+    const { isNotificationExpanded, openOrToggleNotification } =
+      useExpandableNotificationMessages();
     const navigate = vi.fn(async () => {});
 
     await openOrToggleNotification(taskAssigned, navigate);
@@ -38,7 +42,8 @@ describe("useExpandableNotificationMessages", () => {
   });
 
   it("複数の通知の開閉状態をそれぞれ保つ", () => {
-    const { isNotificationExpanded, toggleNotificationExpanded } = useExpandableNotificationMessages();
+    const { isNotificationExpanded, toggleNotificationExpanded } =
+      useExpandableNotificationMessages();
 
     toggleNotificationExpanded(1);
     toggleNotificationExpanded(5);

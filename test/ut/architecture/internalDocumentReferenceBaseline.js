@@ -4,5 +4,4 @@
  * コメントを業務上の意味と理由の文へ書き直して件数が減ったら、同じ変更でこの値も減らす（0になった行は消す）。
  * 新しいファイル・行を足してはいけない（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
-export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
-});
+export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({});

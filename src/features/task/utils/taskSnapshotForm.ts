@@ -54,7 +54,9 @@ export const validateTaskSnapshot = (snapshot: TaskSnapshotInput): string => {
   }
   if (
     checklistContents.length > CHECKLIST_ITEM_MAX_COUNT ||
-    checklistContents.some((content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH)
+    checklistContents.some(
+      (content) => content.length === 0 || content.length > CHECKLIST_ITEM_MAX_LENGTH
+    )
   ) {
     return `チェック項目は1〜${CHECKLIST_ITEM_MAX_LENGTH}文字、最大${CHECKLIST_ITEM_MAX_COUNT}件で入力してください。`;
   }

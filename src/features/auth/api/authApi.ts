@@ -1,7 +1,4 @@
-import type {
-  LoginRequest,
-  SessionUserResponse,
-} from "@/features/auth/types/auth";
+import type { LoginRequest, SessionUserResponse } from "@/features/auth/types/auth";
 import HttpClient from "@/shared/api/httpClient";
 import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
@@ -36,10 +33,7 @@ const getSession = async (): Promise<SessionUserResponse | null> => {
  * @throws Error ログイン成功後にCSRF Cookieを取得できない場合
  */
 const login = async (payload: LoginRequest): Promise<void> => {
-  const response = await HttpClient.postRequest(
-    API_PATHS.AUTH_LOGIN,
-    payload
-  );
+  const response = await HttpClient.postRequest(API_PATHS.AUTH_LOGIN, payload);
   await ensureApiSuccess(
     response,
     (status, errorResponse) => new AuthApiError(status, errorResponse)
@@ -69,8 +63,7 @@ const logout = async (): Promise<Response> => {
  *
  * @returns BackendのGitHub認可開始URL
  */
-const getGitHubAuthorizationUrl = (): string =>
-  `${API_BASE_URL}/oauth2/authorization/github`;
+const getGitHubAuthorizationUrl = (): string => `${API_BASE_URL}/oauth2/authorization/github`;
 
 export default {
   getGitHubAuthorizationUrl,

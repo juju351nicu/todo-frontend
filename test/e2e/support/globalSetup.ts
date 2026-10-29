@@ -1,8 +1,5 @@
 import { removeAuthStates, resetAuthStates } from "./authState";
-import {
-  runBrowserRegressionFixture,
-  type BrowserRegressionFixture,
-} from "./databaseFixture";
+import { runBrowserRegressionFixture, type BrowserRegressionFixture } from "./databaseFixture";
 
 const FIXTURES: readonly BrowserRegressionFixture[] = [
   "dashboard",

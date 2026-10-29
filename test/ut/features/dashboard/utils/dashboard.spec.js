@@ -9,9 +9,7 @@ import {
 
 describe("Dashboard表示utility", () => {
   it("Backend業務日を端末timezoneに依存せず曜日付きで表示する", () => {
-    expect(formatDashboardBusinessDate("2026-09-21")).toBe(
-      "2026年9月21日(月)"
-    );
+    expect(formatDashboardBusinessDate("2026-09-21")).toBe("2026年9月21日(月)");
     expect(formatDashboardBusinessDate("invalid")).toBe("invalid");
   });
 
@@ -30,9 +28,7 @@ describe("Dashboard表示utility", () => {
   });
 
   it("高度Dashboardの既知警告を表示文言へ変換し未知codeを隠さない", () => {
-    expect(
-      getAdvancedDashboardWarningLabel("BASELINE_PLAN_UNALLOCATED")
-    ).toContain("未配賦");
+    expect(getAdvancedDashboardWarningLabel("BASELINE_PLAN_UNALLOCATED")).toContain("未配賦");
     // 利用者向けの文言に英語の用語（baseline・AC単独）を出さない。
     for (const code of [
       "BASELINE_PLAN_UNALLOCATED",
@@ -43,8 +39,6 @@ describe("Dashboard表示utility", () => {
       expect(getAdvancedDashboardWarningLabel(code)).toContain("基準計画");
       expect(getAdvancedDashboardWarningLabel(code)).not.toContain("baseline");
     }
-    expect(getAdvancedDashboardWarningLabel("FUTURE_WARNING")).toBe(
-      "FUTURE_WARNING"
-    );
+    expect(getAdvancedDashboardWarningLabel("FUTURE_WARNING")).toBe("FUTURE_WARNING");
   });
 });

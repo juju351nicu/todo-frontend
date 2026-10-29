@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  getAccountStatusColor,
-  getAccountStatusLabel,
-} from "@/shared/utils/accountStatus";
+import { getAccountStatusColor, getAccountStatusLabel } from "@/shared/utils/accountStatus";
 
 describe("Account status display", () => {
   it.each([

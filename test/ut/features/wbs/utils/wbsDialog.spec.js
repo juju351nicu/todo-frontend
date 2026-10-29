@@ -13,7 +13,9 @@ describe("wbsDialog", () => {
   it("Dialog見出しにWBS codeとTask名を付け、未選択なら機能名だけにする", () => {
     expect(formatWbsTaskDialogTitle("Task日別予定工数", task)).toBe("Task日別予定工数: 1.2 設計");
     expect(formatWbsTaskDialogTitle("WBS Taskを編集", task, false)).toBe("WBS Taskを編集: 設計");
-    expect(formatWbsTaskDialogTitle("Task日別予定工数", { ...task, wbsCode: null })).toBe("Task日別予定工数: 設計");
+    expect(formatWbsTaskDialogTitle("Task日別予定工数", { ...task, wbsCode: null })).toBe(
+      "Task日別予定工数: 設計"
+    );
     expect(formatWbsTaskDialogTitle("Task日別予定工数", null)).toBe("Task日別予定工数");
   });
 

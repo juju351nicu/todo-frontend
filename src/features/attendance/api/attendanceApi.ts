@@ -58,13 +58,10 @@ const resolveAttendanceExportFileName = (
  * @param payload Backendから返された本人勤怠日
  * @returns 配列とnullable項目を確定した本人勤怠日
  */
-const normalizeAttendanceDay = (
-  payload: AttendanceDayResponse
-): AttendanceDayResponse => {
+const normalizeAttendanceDay = (payload: AttendanceDayResponse): AttendanceDayResponse => {
   const netWorkMinutes = payload.netWorkMinutes ?? 0;
   const taskActualMinutes = payload.taskActualMinutes ?? 0;
-  const unallocatedMinutes =
-    payload.unallocatedMinutes ?? netWorkMinutes - taskActualMinutes;
+  const unallocatedMinutes = payload.unallocatedMinutes ?? netWorkMinutes - taskActualMinutes;
   return {
     ...payload,
     attendanceDayId: payload.attendanceDayId ?? null,
@@ -114,15 +111,11 @@ const normalizeAttendanceCorrection = (
 const normalizeAttendanceCorrections = (
   payload: AttendanceCorrectionListResponse
 ): AttendanceCorrectionListResponse => ({
-  correctionRequests: (payload.correctionRequests ?? []).map(
-    normalizeAttendanceCorrection
-  ),
+  correctionRequests: (payload.correctionRequests ?? []).map(normalizeAttendanceCorrection),
 });
 
 /** 月次Responseのnullable項目と日別配列を画面用確定値へ正規化する。 */
-const normalizeAttendanceMonth = (
-  payload: AttendanceMonthResponse
-): AttendanceMonthResponse => ({
+const normalizeAttendanceMonth = (payload: AttendanceMonthResponse): AttendanceMonthResponse => ({
   ...payload,
   attendanceMonthId: payload.attendanceMonthId ?? null,
   submittedBy: payload.submittedBy ?? null,
@@ -143,14 +136,9 @@ const normalizeAttendanceMonth = (
  * @returns 指定期間と勤務日順の登録済み勤怠日
  * @throws AttendanceApiError 入力不正、認証・認可不足またはBackendエラーの場合
  */
-const getDays = async (
-  dateFrom: string,
-  dateTo: string
-): Promise<AttendanceDayListResponse> => {
+const getDays = async (dateFrom: string, dateTo: string): Promise<AttendanceDayListResponse> => {
   const query = new URLSearchParams({ dateFrom, dateTo });
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.ATTENDANCE}/days?${query.toString()}`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.ATTENDANCE}/days?${query.toString()}`);
   await ensureSuccess(response);
   const payload = (await response.json()) as AttendanceDayListResponse;
   return {
@@ -171,9 +159,7 @@ const getDay = async (workDate: string): Promise<AttendanceDayResponse> => {
     `${API_PATHS.ATTENDANCE}/days/${encodeURIComponent(workDate)}`
   );
   await ensureSuccess(response);
-  return normalizeAttendanceDay(
-    (await response.json()) as AttendanceDayResponse
-  );
+  return normalizeAttendanceDay((await response.json()) as AttendanceDayResponse);
 };
 
 /** 指定勤務日の本人修正申請履歴を新しい順で取得する。 */
@@ -200,9 +186,7 @@ const createCorrectionRequest = async (
     request
   );
   await ensureSuccess(response);
-  return normalizeAttendanceCorrection(
-    (await response.json()) as AttendanceCorrectionResponse
-  );
+  return normalizeAttendanceCorrection((await response.json()) as AttendanceCorrectionResponse);
 };
 
 /** PENDING状態の本人修正申請を最新versionで取り消す。 */
@@ -215,9 +199,7 @@ const cancelCorrectionRequest = async (
     { version }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceCorrection(
-    (await response.json()) as AttendanceCorrectionResponse
-  );
+  return normalizeAttendanceCorrection((await response.json()) as AttendanceCorrectionResponse);
 };
 
 /**
@@ -227,17 +209,10 @@ const cancelCorrectionRequest = async (
  * @returns 打刻後の最新本人勤怠日詳細
  * @throws AttendanceApiError 認証・認可不足、状態競合またはBackendエラーの場合
  */
-const punch = async (
-  action: AttendancePunchAction
-): Promise<AttendanceDayResponse> => {
-  const response = await HttpClient.postRequest(
-    `${API_PATHS.ATTENDANCE}/punches/${action}`,
-    null
-  );
+const punch = async (action: AttendancePunchAction): Promise<AttendanceDayResponse> => {
+  const response = await HttpClient.postRequest(`${API_PATHS.ATTENDANCE}/punches/${action}`, null);
   await ensureSuccess(response);
-  return normalizeAttendanceDay(
-    (await response.json()) as AttendanceDayResponse
-  );
+  return normalizeAttendanceDay((await response.json()) as AttendanceDayResponse);
 };
 
 /** 指定月の本人月次状態、合計、登録済み日別明細を取得する。 */
@@ -246,9 +221,7 @@ const getMonth = async (yearMonth: string): Promise<AttendanceMonthResponse> => 
     `${API_PATHS.ATTENDANCE}/months/${encodeURIComponent(yearMonth)}`
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 /** DRAFTまたはREJECTEDの本人月次勤怠を最新versionで提出する。 */
@@ -261,9 +234,7 @@ const submitMonth = async (
     { version }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 /** 管理対象月の永続化済み勤怠月を任意の状態で絞り込む。 */
@@ -292,9 +263,7 @@ const getAdministrationMonth = async (
     `${API_PATHS.ATTENDANCE}/administration/accounts/${accountId}/months/${encodeURIComponent(yearMonth)}`
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 /**
@@ -348,9 +317,7 @@ const approveCorrectionRequest = async (
     { version, reviewComment }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceCorrection(
-    (await response.json()) as AttendanceCorrectionResponse
-  );
+  return normalizeAttendanceCorrection((await response.json()) as AttendanceCorrectionResponse);
 };
 
 /** 管理者がPENDING修正申請を必須理由付きで却下する。 */
@@ -364,9 +331,7 @@ const rejectCorrectionRequest = async (
     { version, reason }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceCorrection(
-    (await response.json()) as AttendanceCorrectionResponse
-  );
+  return normalizeAttendanceCorrection((await response.json()) as AttendanceCorrectionResponse);
 };
 
 /** SUBMITTED月を任意コメント付きで承認する。 */
@@ -380,9 +345,7 @@ const approveMonth = async (
     { version, reviewComment }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 /** SUBMITTED月を必須理由付きで本人へ差し戻す。 */
@@ -396,9 +359,7 @@ const rejectMonth = async (
     { version, reason }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 /** APPROVED月を最新versionで締める。 */
@@ -411,9 +372,7 @@ const closeMonth = async (
     { version }
   );
   await ensureSuccess(response);
-  return normalizeAttendanceMonth(
-    (await response.json()) as AttendanceMonthResponse
-  );
+  return normalizeAttendanceMonth((await response.json()) as AttendanceMonthResponse);
 };
 
 export default {

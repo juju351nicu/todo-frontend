@@ -5,30 +5,14 @@ export type TaskRecurrenceFrequency = "DAILY" | "WEEKLY" | "MONTHLY";
 
 /** 週次規則で選択できる曜日。 */
 export type TaskRecurrenceWeekday =
-  | "MONDAY"
-  | "TUESDAY"
-  | "WEDNESDAY"
-  | "THURSDAY"
-  | "FRIDAY"
-  | "SATURDAY"
-  | "SUNDAY";
+  "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
 
 /** 繰り返し規則のlifecycle状態。 */
-export type TaskRecurrenceStatus =
-  | "ACTIVE"
-  | "PAUSED"
-  | "BLOCKED"
-  | "ENDED"
-  | "ARCHIVED";
+export type TaskRecurrenceStatus = "ACTIVE" | "PAUSED" | "BLOCKED" | "ENDED" | "ARCHIVED";
 
 /** 発生日単位のTask生成状態。 */
 export type TaskRecurrenceGenerationStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "RETRY_WAIT"
-  | "SUCCEEDED"
-  | "FAILED"
-  | "SKIPPED";
+  "PENDING" | "PROCESSING" | "RETRY_WAIT" | "SUCCEEDED" | "FAILED" | "SKIPPED";
 
 /** 規則に固定されたchecklist snapshot。 */
 export interface TaskRecurrenceChecklistItem {
@@ -85,8 +69,7 @@ export interface TaskRecurrenceSnapshotRequest {
 }
 
 /** Task snapshotを直接指定する繰り返し規則作成Request。 */
-export interface TaskRecurrenceCreateRequest
-  extends TaskRecurrenceSnapshotRequest {
+export interface TaskRecurrenceCreateRequest extends TaskRecurrenceSnapshotRequest {
   firstOccurrenceDate: string;
 }
 
@@ -105,8 +88,7 @@ export interface TaskRecurrenceFromTemplateRequest {
 }
 
 /** 未生成Task snapshot、schedule、pause状態の全置換Request。 */
-export interface TaskRecurrenceUpdateRequest
-  extends TaskRecurrenceSnapshotRequest {
+export interface TaskRecurrenceUpdateRequest extends TaskRecurrenceSnapshotRequest {
   status: "ACTIVE" | "PAUSED";
   version: number;
 }

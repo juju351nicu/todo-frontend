@@ -15,9 +15,7 @@ describe("notification表示utility", () => {
   });
 
   it("Frontend内の絶対pathだけを遷移先として許可する", () => {
-    expect(normalizeNotificationNavigationPath("/projects/1/board")).toBe(
-      "/projects/1/board"
-    );
+    expect(normalizeNotificationNavigationPath("/projects/1/board")).toBe("/projects/1/board");
     expect(normalizeNotificationNavigationPath("https://example.com")).toBeNull();
     expect(normalizeNotificationNavigationPath("//example.com")).toBeNull();
     expect(normalizeNotificationNavigationPath("/\\example.com")).toBeNull();
@@ -25,23 +23,11 @@ describe("notification表示utility", () => {
   });
 
   it("すべての通知種別へ用途を表すMaterial Design iconを割り当てる", () => {
-    expect(getNotificationEventIcon("ADMIN_ANNOUNCEMENT")).toBe(
-      "i-mdi-bullhorn-outline"
-    );
-    expect(getNotificationEventIcon("TASK_ASSIGNED")).toBe(
-      "i-mdi-account-arrow-left-outline"
-    );
-    expect(getNotificationEventIcon("ATTENDANCE_REJECTED")).toBe(
-      "i-mdi-file-undo-outline"
-    );
-    expect(getNotificationAlertIcon("TASK_OVERDUE")).toBe(
-      "i-mdi-calendar-alert"
-    );
-    expect(getNotificationAlertIcon("PUNCH_MISSING")).toBe(
-      "i-mdi-clock-alert-outline"
-    );
-    expect(getNotificationAlertIcon("APPROVAL_PENDING")).toBe(
-      "i-mdi-file-clock-outline"
-    );
+    expect(getNotificationEventIcon("ADMIN_ANNOUNCEMENT")).toBe("i-mdi-bullhorn-outline");
+    expect(getNotificationEventIcon("TASK_ASSIGNED")).toBe("i-mdi-account-arrow-left-outline");
+    expect(getNotificationEventIcon("ATTENDANCE_REJECTED")).toBe("i-mdi-file-undo-outline");
+    expect(getNotificationAlertIcon("TASK_OVERDUE")).toBe("i-mdi-calendar-alert");
+    expect(getNotificationAlertIcon("PUNCH_MISSING")).toBe("i-mdi-clock-alert-outline");
+    expect(getNotificationAlertIcon("APPROVAL_PENDING")).toBe("i-mdi-file-clock-outline");
   });
 });

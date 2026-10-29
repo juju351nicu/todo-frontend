@@ -43,10 +43,7 @@ export interface UseTaskEffortPlansOptions {
  * @param context Project ID、WBS Task、Project member、権限、画面上部message、Session失効処理を提供する画面共通context
  * @param options 変更後のworkload再取得
  */
-export const useTaskEffortPlans = (
-  context: WbsPageContext,
-  options: UseTaskEffortPlansOptions
-) => {
+export const useTaskEffortPlans = (context: WbsPageContext, options: UseTaskEffortPlansOptions) => {
   const userStore = useUserStore();
 
   /** 更新Formへ読み込んだ日別予定と取得時点version。新規登録Formの場合はnull。 */
@@ -78,15 +75,12 @@ export const useTaskEffortPlans = (
    * 予定担当者の候補。Project管理権限がなければ本人だけ。
    * Backendは停止中アカウントを予定担当者に指定できない（400）ため、ACTIVEな参加者だけを表示名付きで出す。
    */
-  const effortPlanAssigneeOptions = computed<TaskEffortPlanAssigneeOption[]>(
-    () =>
-      buildProjectMemberOptions(
-        (context.project.value?.members ?? []).filter(
-          (member) =>
-            canManageAnyEffortPlan.value ||
-            member.accountId === userStore.accountId
-        )
+  const effortPlanAssigneeOptions = computed<TaskEffortPlanAssigneeOption[]>(() =>
+    buildProjectMemberOptions(
+      (context.project.value?.members ?? []).filter(
+        (member) => canManageAnyEffortPlan.value || member.accountId === userStore.accountId
       )
+    )
   );
   const isEffortPlanMutating = computed(
     () => isSavingEffortPlan.value || isDeletingEffortPlan.value
@@ -104,17 +98,13 @@ export const useTaskEffortPlans = (
     }
     context.errorMessages.value = [];
     context.successMessage.value = "";
-    const task = context.wbs.value?.tasks.find(
-      (candidate) => candidate.taskId === taskId
-    );
+    const task = context.wbs.value?.tasks.find((candidate) => candidate.taskId === taskId);
     if (task === undefined) {
       context.errorMessages.value = ["予定工数を参照するTaskが見つかりません。"];
       return;
     }
     if (task.taskType !== "TASK") {
-      context.errorMessages.value = [
-        "日別予定工数を登録できるのは通常Taskだけです。",
-      ];
+      context.errorMessages.value = ["日別予定工数を登録できるのは通常Taskだけです。"];
       return;
     }
 
@@ -137,10 +127,7 @@ export const useTaskEffortPlans = (
     }
     isLoadingEffortPlans.value = true;
     try {
-      effortPlanList.value = await WbsApi.getTaskEffortPlans(
-        projectId,
-        task.taskId
-      );
+      effortPlanList.value = await WbsApi.getTaskEffortPlans(projectId, task.taskId);
     } catch (error: unknown) {
       await handleEffortPlanReadError(error);
     } finally {
@@ -186,8 +173,7 @@ export const useTaskEffortPlans = (
   /** 現在のProject roleと予定担当者IDから日別予定を変更できるか画面上で判定する。 */
   const canMutateEffortPlan = (effortPlan: TaskEffortPlan): boolean =>
     canEditSelectedEffortPlanTask.value &&
-    (canManageAnyEffortPlan.value ||
-      effortPlan.assigneeAccountId === userStore.accountId);
+    (canManageAnyEffortPlan.value || effortPlan.assigneeAccountId === userStore.accountId);
 
   /**
    * 取得済み日別予定を複製し、取得時点versionを保持した編集状態へ移す。
@@ -201,15 +187,11 @@ export const useTaskEffortPlans = (
       (candidate) => candidate.effortPlanId === effortPlanId
     );
     if (effortPlan === undefined) {
-      effortPlanEditorErrorMessages.value = [
-        "編集対象の日別予定工数が見つかりません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["編集対象の日別予定工数が見つかりません。"];
       return;
     }
     if (!canMutateEffortPlan(effortPlan)) {
-      effortPlanEditorErrorMessages.value = [
-        "この日別予定工数を更新する権限がありません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["この日別予定工数を更新する権限がありません。"];
       return;
     }
     editingEffortPlan.value = { ...effortPlan };
@@ -237,27 +219,20 @@ export const useTaskEffortPlans = (
       return;
     }
     if (!canEditSelectedEffortPlanTask.value) {
-      effortPlanEditorErrorMessages.value = [
-        "このTaskの日別予定を更新する権限がありません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["このTaskの日別予定を更新する権限がありません。"];
       return;
     }
     const allowedAssigneeIds = new Set(
       effortPlanAssigneeOptions.value.map((option) => option.value)
     );
-    const validationMessages = validateTaskEffortPlanForm(
-      form,
-      allowedAssigneeIds
-    );
+    const validationMessages = validateTaskEffortPlanForm(form, allowedAssigneeIds);
     if (validationMessages.length > 0) {
       effortPlanEditorErrorMessages.value = validationMessages;
       return;
     }
     const currentEffortPlan = editingEffortPlan.value;
     if (currentEffortPlan !== null && !canMutateEffortPlan(currentEffortPlan)) {
-      effortPlanEditorErrorMessages.value = [
-        "この日別予定工数を更新する権限がありません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["この日別予定工数を更新する権限がありません。"];
       return;
     }
 
@@ -292,13 +267,9 @@ export const useTaskEffortPlans = (
   };
 
   /** 登録・更新APIのstatusを入力案内、競合再読込またはSession動作へ変換する。 */
-  const handleEffortPlanMutationError = async (
-    error: unknown
-  ): Promise<void> => {
+  const handleEffortPlanMutationError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
+      effortPlanEditorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -306,9 +277,7 @@ export const useTaskEffortPlans = (
       return;
     }
     if (error.status === 403) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.effortPlan.updateForbidden,
-      ];
+      effortPlanEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.effortPlan.updateForbidden];
       return;
     }
     if (error.status === 404 || error.status === 409) {
@@ -342,10 +311,7 @@ export const useTaskEffortPlans = (
     // 例外を内部で案内へ変換するloadSelectedTaskEffortPlansは使わない。競合理由を上書きせず、
     // 401等の後にworkloadを再取得しないよう、再取得の失敗をここで判定する。
     try {
-      effortPlanList.value = await WbsApi.getTaskEffortPlans(
-        projectId,
-        task.taskId
-      );
+      effortPlanList.value = await WbsApi.getTaskEffortPlans(projectId, task.taskId);
       await options.reloadWorkload();
     } catch (refreshError: unknown) {
       if (
@@ -356,9 +322,7 @@ export const useTaskEffortPlans = (
         await handleEffortPlanReadError(refreshError);
         return;
       }
-      effortPlanEditorErrorMessages.value.push(
-        DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed
-      );
+      effortPlanEditorErrorMessages.value.push(DISPLAY_MESSAGES.wbs.effortPlan.reloadFailed);
     }
   };
 
@@ -374,15 +338,11 @@ export const useTaskEffortPlans = (
       (candidate) => candidate.effortPlanId === effortPlanId
     );
     if (effortPlan === undefined) {
-      effortPlanEditorErrorMessages.value = [
-        "削除対象の日別予定工数が見つかりません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["削除対象の日別予定工数が見つかりません。"];
       return;
     }
     if (!canMutateEffortPlan(effortPlan)) {
-      effortPlanEditorErrorMessages.value = [
-        "この日別予定工数を削除する権限がありません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["この日別予定工数を削除する権限がありません。"];
       return;
     }
     effortPlanPendingDelete.value = { ...effortPlan };
@@ -400,18 +360,11 @@ export const useTaskEffortPlans = (
     const task = effortPlanTask.value;
     const effortPlan = effortPlanPendingDelete.value;
     const projectId = context.projectId.value;
-    if (
-      task === null ||
-      effortPlan === null ||
-      projectId === null ||
-      isDeletingEffortPlan.value
-    ) {
+    if (task === null || effortPlan === null || projectId === null || isDeletingEffortPlan.value) {
       return;
     }
     if (!canMutateEffortPlan(effortPlan)) {
-      effortPlanEditorErrorMessages.value = [
-        "この日別予定工数を削除する権限がありません。",
-      ];
+      effortPlanEditorErrorMessages.value = ["この日別予定工数を削除する権限がありません。"];
       return;
     }
 
@@ -438,8 +391,7 @@ export const useTaskEffortPlans = (
           ...effortPlanList.value,
           totalDailyPlannedEffortMinutes,
           unallocatedEffortMinutes:
-            effortPlanList.value.taskPlannedEffortMinutes -
-            totalDailyPlannedEffortMinutes,
+            effortPlanList.value.taskPlannedEffortMinutes - totalDailyPlannedEffortMinutes,
           effortPlans: remainingEffortPlans,
         };
       }
@@ -460,9 +412,7 @@ export const useTaskEffortPlans = (
   /** 日別予定削除APIのstatusを競合再読込、認可案内またはSession動作へ変換する。 */
   const handleEffortPlanDeleteError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
+      effortPlanEditorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -470,9 +420,7 @@ export const useTaskEffortPlans = (
       return;
     }
     if (error.status === 403) {
-      effortPlanEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.effortPlan.deleteForbidden,
-      ];
+      effortPlanEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.effortPlan.deleteForbidden];
       return;
     }
     if (error.status === 404 || error.status === 409) {
@@ -485,9 +433,7 @@ export const useTaskEffortPlans = (
       await reloadEffortPlansAfterConflict();
       return;
     }
-    effortPlanEditorErrorMessages.value = [
-      DISPLAY_MESSAGES.wbs.effortPlan.deleteFailed,
-    ];
+    effortPlanEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.effortPlan.deleteFailed];
   };
 
   /**

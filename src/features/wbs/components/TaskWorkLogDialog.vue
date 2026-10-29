@@ -9,7 +9,11 @@ import type {
   WbsTask,
 } from "@/features/wbs/types/wbs";
 import { buildTaskWorkLogForm, formatTaskWorkLogEffort } from "@/features/wbs/utils/taskWorkLog";
-import { canMutateOwnedEntry, formatWbsTaskDialogTitle, resolveDefaultAccountId } from "@/features/wbs/utils/wbsDialog";
+import {
+  canMutateOwnedEntry,
+  formatWbsTaskDialogTitle,
+  resolveDefaultAccountId,
+} from "@/features/wbs/utils/wbsDialog";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useDialogForm } from "@/shared/composables/useDialogForm";
 
@@ -47,7 +51,12 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
   initialForm: buildTaskWorkLogForm(null),
   syncSources: [() => props.open, () => props.editingWorkLog, () => props.workLogList],
   buildForm: () =>
-    props.open ? buildTaskWorkLogForm(resolveDefaultAccountId(props.task, props.workerOptions), props.editingWorkLog) : undefined,
+    props.open
+      ? buildTaskWorkLogForm(
+          resolveDefaultAccountId(props.task, props.workerOptions),
+          props.editingWorkLog
+        )
+      : undefined,
   isBusy: isMutating,
   canSubmit: () => props.canEdit,
   onClose: () => emit("close"),
@@ -67,7 +76,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
       <StatusAlert v-if="errorMessages.length" type="error" class="mb-4">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
+      <StatusAlert v-if="successMessage" type="success" class="mb-4">{{
+        successMessage
+      }}</StatusAlert>
 
       <div v-if="isLoading" class="flex flex-col gap-3">
         <USkeleton class="h-6 w-1/3" />
@@ -77,13 +88,20 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
       <template v-else-if="task">
         <UCard v-if="canEdit" variant="outline" class="mb-5">
           <template #header>
-            <div class="text-base font-normal">{{ editingWorkLog ? "日別実績を編集" : "日別実績を登録" }}</div>
+            <div class="text-base font-normal">
+              {{ editingWorkLog ? "日別実績を編集" : "日別実績を登録" }}
+            </div>
           </template>
           <form @submit.prevent="submitForm">
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 md:w-1/3">
                 <UFormField label="業務日">
-                  <UInput v-model="form.workDate" type="date" :disabled="isMutating" class="w-full" />
+                  <UInput
+                    v-model="form.workDate"
+                    type="date"
+                    :disabled="isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 md:w-1/3">
@@ -115,7 +133,13 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
             </div>
           </form>
           <template #footer>
-            <UButton v-if="editingWorkLog" variant="ghost" :disabled="isMutating" @click="emit('cancelEdit')">新規登録へ戻る</UButton>
+            <UButton
+              v-if="editingWorkLog"
+              variant="ghost"
+              :disabled="isMutating"
+              @click="emit('cancelEdit')"
+              >新規登録へ戻る</UButton
+            >
             <UButton
               color="primary"
               variant="ghost"
@@ -131,7 +155,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <h2 class="text-base">登録済み日別実績</h2>
-          <UBadge color="info">合計 {{ formatTaskWorkLogEffort(workLogList?.totalActualEffortMinutes ?? 0) }}</UBadge>
+          <UBadge color="info"
+            >合計 {{ formatTaskWorkLogEffort(workLogList?.totalActualEffortMinutes ?? 0) }}</UBadge
+          >
           <UBadge size="sm" variant="outline">{{ workLogList?.workLogs.length ?? 0 }}件</UBadge>
         </div>
 
@@ -153,11 +179,20 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
                   {{ workLog.workerDisplayName }}
                   <div class="text-xs text-muted">アカウントID: {{ workLog.workerAccountId }}</div>
                 </td>
-                <td class="whitespace-nowrap">{{ formatTaskWorkLogEffort(workLog.actualEffortMinutes) }}</td>
+                <td class="whitespace-nowrap">
+                  {{ formatTaskWorkLogEffort(workLog.actualEffortMinutes) }}
+                </td>
                 <td>{{ workLog.version }}</td>
                 <td v-if="canEdit">
                   <div
-                    v-if="canMutateOwnedEntry(canEdit, canManageAnyWorkLog, workLog.workerAccountId, currentAccountId)"
+                    v-if="
+                      canMutateOwnedEntry(
+                        canEdit,
+                        canManageAnyWorkLog,
+                        workLog.workerAccountId,
+                        currentAccountId
+                      )
+                    "
                     class="flex gap-1"
                   >
                     <UButton
@@ -186,7 +221,9 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
             </tbody>
           </table>
         </div>
-        <StatusAlert v-else type="info" variant="soft">このTaskの日別実績工数はまだ登録されていません。</StatusAlert>
+        <StatusAlert v-else type="info" variant="soft"
+          >このTaskの日別実績工数はまだ登録されていません。</StatusAlert
+        >
       </template>
     </template>
     <template #footer>

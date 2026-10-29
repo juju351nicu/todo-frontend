@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import { DASHBOARD_CONTROL, useDashboardPage } from "@/features/dashboard/composables/useDashboardPage";
+import {
+  DASHBOARD_CONTROL,
+  useDashboardPage,
+} from "@/features/dashboard/composables/useDashboardPage";
 import {
   formatDashboardBusinessDate,
   getAdvancedDashboardWarningLabel,
@@ -66,8 +69,12 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
   <div class="max-w-360 p-4 max-sm:px-3 md:p-6">
     <div class="mb-6 flex items-start justify-between gap-4 sm:items-center">
       <div>
-        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">Work Management</div>
-        <h1 class="text-[2.125rem] leading-10 font-bold tracking-[.0073529412em]">{{ displayName }}さんのDashboard</h1>
+        <div class="text-xs leading-8 font-medium tracking-[.1666666667em] text-muted uppercase">
+          Work Management
+        </div>
+        <h1 class="text-[2.125rem] leading-10 font-bold tracking-[.0073529412em]">
+          {{ displayName }}さんのDashboard
+        </h1>
         <p v-if="dashboard" class="mt-1 mb-0 text-sm text-muted">
           {{ formatDashboardBusinessDate(dashboard.businessDate) }} ・
           {{ dashboard.businessZoneId }}
@@ -110,7 +117,9 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <div class="w-1/2 p-1 sm:w-1/4">
                 <div class="min-h-19 rounded-sm bg-error/10 p-3">
                   <div class="text-xs text-muted">期限超過</div>
-                  <div class="text-2xl font-bold text-error">{{ dashboard.myTasks.overdueCount }}</div>
+                  <div class="text-2xl font-bold text-error">
+                    {{ dashboard.myTasks.overdueCount }}
+                  </div>
                 </div>
               </div>
               <div class="w-1/2 p-1 sm:w-1/4">
@@ -134,7 +143,11 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             </div>
 
             <ul v-if="dashboard.myTasks.items.length" class="py-2">
-              <li v-for="task in dashboard.myTasks.items" :key="task.taskId" class="border-b border-default last:border-b-0">
+              <li
+                v-for="task in dashboard.myTasks.items"
+                :key="task.taskId"
+                class="border-b border-default last:border-b-0"
+              >
                 <button
                   type="button"
                   class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
@@ -153,9 +166,13 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 </button>
               </li>
             </ul>
-            <StatusAlert v-else type="success" variant="soft">未完了の担当Taskはありません。</StatusAlert>
+            <StatusAlert v-else type="success" variant="soft"
+              >未完了の担当Taskはありません。</StatusAlert
+            >
           </template>
-          <StatusAlert v-else type="info" variant="soft">My Tasksを参照するpermissionがありません。</StatusAlert>
+          <StatusAlert v-else type="info" variant="soft"
+            >My Tasksを参照するpermissionがありません。</StatusAlert
+          >
           <template v-if="dashboard.myTasks.available" #footer>
             <UButton
               color="primary"
@@ -176,12 +193,16 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             <div class="flex flex-wrap items-center gap-2">
               <UIcon name="i-mdi-bell-outline" class="size-6 text-deep-purple" />
               通知
-              <UBadge color="deep-purple" size="sm" class="ms-auto">{{ dashboard.notifications.badgeCount }}件</UBadge>
+              <UBadge color="deep-purple" size="sm" class="ms-auto"
+                >{{ dashboard.notifications.badgeCount }}件</UBadge
+              >
             </div>
           </template>
           <div class="mb-3 flex flex-wrap gap-2">
             <UBadge size="sm">未読 {{ dashboard.notifications.unreadEventCount }}件</UBadge>
-            <UBadge color="warning" size="sm">未解決 {{ dashboard.notifications.unresolvedAlertCount }}件</UBadge>
+            <UBadge color="warning" size="sm"
+              >未解決 {{ dashboard.notifications.unresolvedAlertCount }}件</UBadge
+            >
           </div>
           <ul v-if="dashboard.notifications.recentEvents.length" class="py-2">
             <li
@@ -193,23 +214,43 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               <button
                 type="button"
                 class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
-                :aria-expanded="canExpandNotification(event) ? isNotificationExpanded(event.notificationEventId) : undefined"
+                :aria-expanded="
+                  canExpandNotification(event)
+                    ? isNotificationExpanded(event.notificationEventId)
+                    : undefined
+                "
                 @click="openNotificationEvent(event)"
               >
-                <UIcon :name="getNotificationEventIcon(event.eventType)" class="me-3 size-6 shrink-0" />
+                <UIcon
+                  :name="getNotificationEventIcon(event.eventType)"
+                  class="me-3 size-6 shrink-0"
+                />
                 <span class="min-w-0 flex-1">
-                  <span class="block text-base" :class="{ 'font-bold': !event.read }">{{ event.title }}</span>
+                  <span class="block text-base" :class="{ 'font-bold': !event.read }">{{
+                    event.title
+                  }}</span>
                   <span
                     class="text-sm whitespace-pre-line text-muted"
-                    :class="isNotificationExpanded(event.notificationEventId) ? 'block' : 'line-clamp-2'"
+                    :class="
+                      isNotificationExpanded(event.notificationEventId) ? 'block' : 'line-clamp-2'
+                    "
                     >{{ event.message }}</span
                   >
                   <span class="flex items-center gap-1 text-sm text-muted">
                     {{ formatNotificationOccurredAt(event.occurredAt) }}
-                    <span v-if="canExpandNotification(event)" class="ms-auto inline-flex items-center text-xs">
-                      {{ isNotificationExpanded(event.notificationEventId) ? "閉じる" : "全文を表示" }}
+                    <span
+                      v-if="canExpandNotification(event)"
+                      class="ms-auto inline-flex items-center text-xs"
+                    >
+                      {{
+                        isNotificationExpanded(event.notificationEventId) ? "閉じる" : "全文を表示"
+                      }}
                       <UIcon
-                        :name="isNotificationExpanded(event.notificationEventId) ? 'i-mdi-chevron-up' : 'i-mdi-chevron-down'"
+                        :name="
+                          isNotificationExpanded(event.notificationEventId)
+                            ? 'i-mdi-chevron-up'
+                            : 'i-mdi-chevron-down'
+                        "
                         class="size-4"
                       />
                     </span>
@@ -218,7 +259,9 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               </button>
             </li>
           </ul>
-          <StatusAlert v-else type="success" variant="soft">新しいイベント通知はありません。</StatusAlert>
+          <StatusAlert v-else type="success" variant="soft"
+            >新しいイベント通知はありません。</StatusAlert
+          >
         </UCard>
       </div>
 
@@ -235,7 +278,11 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
           </template>
           <template v-if="dashboard.projects.available">
             <div v-if="dashboard.projects.cards.length" class="-m-1 flex flex-wrap">
-              <div v-for="project in dashboard.projects.cards" :key="project.projectId" class="w-full p-1 md:w-1/2">
+              <div
+                v-for="project in dashboard.projects.cards"
+                :key="project.projectId"
+                class="w-full p-1 md:w-1/2"
+              >
                 <button
                   type="button"
                   class="block h-full w-full rounded-sm bg-teal/12 text-start text-teal hover:bg-teal/16"
@@ -243,7 +290,8 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 >
                   <span class="block px-4 pt-2 text-base font-bold">{{ project.projectName }}</span>
                   <span class="block px-4 text-sm opacity-60">
-                    {{ project.projectKey }} ・ {{ getDashboardProjectRoleLabel(project.projectRole) }}
+                    {{ project.projectKey }} ・
+                    {{ getDashboardProjectRoleLabel(project.projectRole) }}
                   </span>
                   <span class="block p-4">
                     <span class="mb-1 flex justify-between text-sm">
@@ -251,7 +299,9 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                       <strong>{{ Number(project.averageProgressPercent) }}%</strong>
                     </span>
                     <UProgress
-                      :model-value="normalizeDashboardProgress(Number(project.averageProgressPercent))"
+                      :model-value="
+                        normalizeDashboardProgress(Number(project.averageProgressPercent))
+                      "
                       color="teal"
                       size="md"
                       class="mb-3"
@@ -269,11 +319,21 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 </button>
               </div>
             </div>
-            <StatusAlert v-else type="info" variant="soft">参照できる利用中のProjectはありません。</StatusAlert>
+            <StatusAlert v-else type="info" variant="soft"
+              >参照できる利用中のProjectはありません。</StatusAlert
+            >
           </template>
-          <StatusAlert v-else type="info" variant="soft">Project進捗を参照するpermissionがありません。</StatusAlert>
+          <StatusAlert v-else type="info" variant="soft"
+            >Project進捗を参照するpermissionがありません。</StatusAlert
+          >
           <template v-if="dashboard.projects.available" #footer>
-            <UButton color="teal" variant="ghost" trailing-icon="i-mdi-arrow-right" class="ms-auto" @click="openProjects">
+            <UButton
+              color="teal"
+              variant="ghost"
+              trailing-icon="i-mdi-arrow-right"
+              class="ms-auto"
+              @click="openProjects"
+            >
               Project一覧を開く
             </UButton>
           </template>
@@ -292,7 +352,10 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             <template v-if="dashboard.attendance.status">
               <div class="mb-4 flex flex-wrap items-center gap-2">
                 <span class="text-xl font-medium">{{ dashboard.attendance.yearMonth }}</span>
-                <UBadge :color="getAttendanceMonthStatusColor(dashboard.attendance.status)" size="sm">
+                <UBadge
+                  :color="getAttendanceMonthStatusColor(dashboard.attendance.status)"
+                  size="sm"
+                >
                   {{ getAttendanceMonthStatusLabel(dashboard.attendance.status) }}
                 </UBadge>
               </div>
@@ -300,7 +363,9 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 <li class="flex min-h-10 items-center gap-8 px-4">
                   <UIcon name="i-mdi-briefcase-clock-outline" class="size-6 opacity-60" />
                   <span class="flex-1">実勤務</span>
-                  <strong>{{ formatAttendanceMinutes(dashboard.attendance.netWorkMinutes ?? 0) }}</strong>
+                  <strong>{{
+                    formatAttendanceMinutes(dashboard.attendance.netWorkMinutes ?? 0)
+                  }}</strong>
                 </li>
                 <li class="flex min-h-10 items-center gap-8 px-4">
                   <UIcon name="i-mdi-timer-outline" class="size-6 opacity-60" />
@@ -323,11 +388,21 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                 未終了の勤務または休憩があります。
               </StatusAlert>
             </template>
-            <StatusAlert v-else type="warning" variant="soft">当月の勤怠状態を取得できませんでした。</StatusAlert>
+            <StatusAlert v-else type="warning" variant="soft"
+              >当月の勤怠状態を取得できませんでした。</StatusAlert
+            >
           </template>
-          <StatusAlert v-else type="info" variant="soft">本人勤怠を参照するpermissionがありません。</StatusAlert>
+          <StatusAlert v-else type="info" variant="soft"
+            >本人勤怠を参照するpermissionがありません。</StatusAlert
+          >
           <template v-if="dashboard.attendance.available" #footer>
-            <UButton color="indigo" variant="ghost" trailing-icon="i-mdi-arrow-right" class="ms-auto" @click="openAttendance">
+            <UButton
+              color="indigo"
+              variant="ghost"
+              trailing-icon="i-mdi-arrow-right"
+              class="ms-auto"
+              @click="openAttendance"
+            >
               勤怠を開く
             </UButton>
           </template>
@@ -371,7 +446,13 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
               </UFormField>
             </div>
             <div class="w-full p-1 sm:w-1/4 md:w-1/6">
-              <UButton type="submit" color="amber-darken-3" icon="i-mdi-calculator-variant-outline" :loading="isAdvancedLoading" block>
+              <UButton
+                type="submit"
+                color="amber-darken-3"
+                icon="i-mdi-calculator-variant-outline"
+                :loading="isAdvancedLoading"
+                block
+              >
                 集計
               </UButton>
             </div>
@@ -393,11 +474,16 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             <span class="flex-1">
               Project横断EVMと本人の週次予定負荷を利用する場合は、利用プランについてお問い合わせください。
             </span>
-            <UButton variant="ghost" color="primary" @click="openAdvancedAccessInquiry">問い合わせる</UButton>
+            <UButton variant="ghost" color="primary" @click="openAdvancedAccessInquiry"
+              >問い合わせる</UButton
+            >
           </div>
         </StatusAlert>
 
-        <div v-else-if="isAdvancedLoading && advancedDashboard === null" class="flex flex-col gap-3">
+        <div
+          v-else-if="isAdvancedLoading && advancedDashboard === null"
+          class="flex flex-col gap-3"
+        >
           <USkeleton class="h-6 w-1/3" />
           <USkeleton class="h-4 w-full" />
           <USkeleton class="h-4 w-2/3" />
@@ -407,7 +493,11 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
         <template v-else-if="advancedDashboard">
           <div class="mb-4 flex flex-wrap gap-2">
             <UBadge variant="outline">{{ advancedDashboard.projects.length }} Project</UBadge>
-            <UBadge :color="advancedDashboard.projectsWithoutActiveBaselineCount > 0 ? 'warning' : 'success'">
+            <UBadge
+              :color="
+                advancedDashboard.projectsWithoutActiveBaselineCount > 0 ? 'warning' : 'success'
+              "
+            >
               基準計画なし
               {{ advancedDashboard.projectsWithoutActiveBaselineCount }}件
             </UBadge>
@@ -447,7 +537,8 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                     </td>
                     <td class="whitespace-nowrap">
                       BAC {{ formatEarnedValueMinutes(project.bac) }}<br />
-                      PV {{ formatEarnedValueMinutes(project.pv) }} ・ EV {{ formatEarnedValueMinutes(project.ev) }}<br />
+                      PV {{ formatEarnedValueMinutes(project.pv) }} ・ EV
+                      {{ formatEarnedValueMinutes(project.ev) }}<br />
                       AC {{ formatEarnedValueMinutes(project.ac) }}
                     </td>
                     <td class="whitespace-nowrap">
@@ -477,22 +568,40 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                     <td class="whitespace-nowrap">
                       {{ project.workloadWeekStartDate }} ～ {{ project.workloadWeekEndDate }}<br />
                       {{ formatAttendanceMinutes(project.ownPlannedWorkloadMinutes) }}
-                      <UBadge v-if="project.ownOverEightHourDayCount > 0" color="warning" size="xs" class="ms-1">
+                      <UBadge
+                        v-if="project.ownOverEightHourDayCount > 0"
+                        color="warning"
+                        size="xs"
+                        class="ms-1"
+                      >
                         8時間超 {{ project.ownOverEightHourDayCount }}日
                       </UBadge>
                     </td>
                     <td>
-                      <div v-if="project.warningCodes.length" class="flex flex-col items-start gap-1">
-                        <UBadge v-for="warningCode in project.warningCodes" :key="warningCode" color="warning" size="sm">
+                      <div
+                        v-if="project.warningCodes.length"
+                        class="flex flex-col items-start gap-1"
+                      >
+                        <UBadge
+                          v-for="warningCode in project.warningCodes"
+                          :key="warningCode"
+                          color="warning"
+                          size="sm"
+                        >
                           {{ getAdvancedDashboardWarningLabel(warningCode) }}
                         </UBadge>
                       </div>
                       <span v-else class="text-muted">なし</span>
                       <div class="mt-1 text-xs text-muted">
                         基準計画との配賦差
-                        {{ formatSignedEarnedValueMinutes(project.baselineAllocationVarianceMinutes) }}
+                        {{
+                          formatSignedEarnedValueMinutes(project.baselineAllocationVarianceMinutes)
+                        }}
                       </div>
-                      <div v-if="project.excludedActualEffortMinutes > 0" class="text-xs text-warning">
+                      <div
+                        v-if="project.excludedActualEffortMinutes > 0"
+                        class="text-xs text-warning"
+                      >
                         AC除外 {{ formatEarnedValueMinutes(project.excludedActualEffortMinutes) }}
                       </div>
                     </td>
@@ -502,7 +611,11 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
             </div>
 
             <div class="-m-1 flex flex-col md:hidden">
-              <div v-for="project in advancedDashboard.projects" :key="project.projectId" class="p-1">
+              <div
+                v-for="project in advancedDashboard.projects"
+                :key="project.projectId"
+                class="p-1"
+              >
                 <button
                   type="button"
                   class="block w-full rounded-sm bg-amber-darken-3/12 text-start text-amber-darken-3 hover:bg-amber-darken-3/16"
@@ -531,16 +644,20 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                       </UBadge>
                     </span>
                     <span class="block text-sm">
-                      計画 {{ formatEarnedValuePercent(project.plannedProgressPercent) }} ・
-                      出来高 {{ formatEarnedValuePercent(project.earnedProgressPercent) }}
+                      計画 {{ formatEarnedValuePercent(project.plannedProgressPercent) }} ・ 出来高
+                      {{ formatEarnedValuePercent(project.earnedProgressPercent) }}
                     </span>
                     <span class="mt-1 block text-sm">
-                      BAC {{ formatEarnedValueMinutes(project.bac) }} ・ PV {{ formatEarnedValueMinutes(project.pv) }} ・
-                      EV {{ formatEarnedValueMinutes(project.ev) }} ・ AC {{ formatEarnedValueMinutes(project.ac) }}
+                      BAC {{ formatEarnedValueMinutes(project.bac) }} ・ PV
+                      {{ formatEarnedValueMinutes(project.pv) }} ・ EV
+                      {{ formatEarnedValueMinutes(project.ev) }} ・ AC
+                      {{ formatEarnedValueMinutes(project.ac) }}
                     </span>
                     <span class="mt-1 block text-sm">
-                      本人予定 {{ formatAttendanceMinutes(project.ownPlannedWorkloadMinutes) }}
-                      （{{ project.workloadWeekStartDate }} ～ {{ project.workloadWeekEndDate }}）
+                      本人予定 {{ formatAttendanceMinutes(project.ownPlannedWorkloadMinutes) }} （{{
+                        project.workloadWeekStartDate
+                      }}
+                      ～ {{ project.workloadWeekEndDate }}）
                     </span>
                     <StatusAlert
                       v-if="project.ownOverEightHourDayCount > 0"

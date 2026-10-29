@@ -3,9 +3,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import NotificationApi, {
-  NotificationApiError,
-} from "@/features/notification/api/notificationApi";
+import NotificationApi, { NotificationApiError } from "@/features/notification/api/notificationApi";
 import type {
   NotificationAlert,
   NotificationEvent,
@@ -128,10 +126,7 @@ export const useNotificationCenter = () => {
   };
 
   /** 401はSession表示を破棄してログインへ戻し、それ以外はベル内メッセージへ変換する。 */
-  const handleApiError = async (
-    error: unknown,
-    fallbackMessage: string
-  ): Promise<void> => {
+  const handleApiError = async (error: unknown, fallbackMessage: string): Promise<void> => {
     if (error instanceof NotificationApiError && error.status === 401) {
       await expireSession();
       return;

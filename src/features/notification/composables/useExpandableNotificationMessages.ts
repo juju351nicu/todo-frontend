@@ -66,7 +66,7 @@ export const useExpandableNotificationMessages = () => {
    */
   const openOrToggleNotification = async (
     notification: ExpandableNotification,
-    navigate: (navigationPath: string) => Promise<void>,
+    navigate: (navigationPath: string) => Promise<void>
   ): Promise<void> => {
     const navigationPath = normalizeNotificationNavigationPath(notification.navigationPath);
     if (navigationPath === null) {

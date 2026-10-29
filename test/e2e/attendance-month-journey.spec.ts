@@ -10,10 +10,7 @@ import {
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:8081";
 
 /** 保存済み認証状態から、月次確認用の独立browser contextを作る。 */
-const createContext = async (
-  browser: Browser,
-  storageState: string
-): Promise<BrowserContext> =>
+const createContext = async (browser: Browser, storageState: string): Promise<BrowserContext> =>
   browser.newContext({
     baseURL: BASE_URL,
     locale: "ja-JP",
@@ -39,80 +36,47 @@ test("本人提出から差戻し・再提出・承認・締めまで月次状�
   browser,
   page: employeePage,
 }) => {
-  const reviewerContext = await createContext(
-    browser,
-    ATTENDANCE_MONTH_REVIEWER_AUTH_STATE_PATH
-  );
-  const closerContext = await createContext(
-    browser,
-    ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH
-  );
+  const reviewerContext = await createContext(browser, ATTENDANCE_MONTH_REVIEWER_AUTH_STATE_PATH);
+  const closerContext = await createContext(browser, ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH);
   const reviewerPage = await reviewerContext.newPage();
   const closerPage = await closerContext.newPage();
 
   try {
     await employeePage.goto("/attendance");
     await expect(employeePage.getByText("月次申請")).toBeVisible();
-    await expect(
-      employeePage.getByText("下書き", { exact: true })
-    ).toBeVisible();
-    await employeePage
-      .getByRole("button", { name: "提出", exact: true })
-      .click();
-    await expect(
-      employeePage.getByText("月次勤怠を提出しました。", { exact: true })
-    ).toBeVisible();
+    await expect(employeePage.getByText("下書き", { exact: true })).toBeVisible();
+    await employeePage.getByRole("button", { name: "提出", exact: true }).click();
+    await expect(employeePage.getByText("月次勤怠を提出しました。", { exact: true })).toBeVisible();
     await employeePage.reload();
-    await expect(
-      employeePage.getByText("提出済み", { exact: true })
-    ).toBeVisible();
+    await expect(employeePage.getByText("提出済み", { exact: true })).toBeVisible();
 
     await reviewerPage.goto("/attendance/administration");
     await expect(
       reviewerPage.getByRole("heading", { name: "勤怠月次確認", exact: true })
     ).toBeVisible();
     await selectEmployeeMonth(reviewerPage);
-    await reviewerPage
-      .getByRole("button", { name: "差戻し", exact: true })
-      .click();
+    await reviewerPage.getByRole("button", { name: "差戻し", exact: true }).click();
     await expect(
       reviewerPage.getByText("差戻し理由を入力してください。", {
         exact: true,
       })
     ).toBeVisible();
-    await reviewerPage
-      .getByLabel("差戻し理由（必須）")
-      .fill("退勤時刻を確認してください");
-    await reviewerPage
-      .getByRole("button", { name: "差戻し", exact: true })
-      .click();
-    await expect(
-      reviewerPage.getByText("勤怠月を差し戻しました。", { exact: true })
-    ).toBeVisible();
+    await reviewerPage.getByLabel("差戻し理由（必須）").fill("退勤時刻を確認してください");
+    await reviewerPage.getByRole("button", { name: "差戻し", exact: true }).click();
+    await expect(reviewerPage.getByText("勤怠月を差し戻しました。", { exact: true })).toBeVisible();
 
     await employeePage.reload();
     await expect(
-      employeePage.getByText(
-        "差戻し理由: 退勤時刻を確認してください",
-        { exact: true }
-      )
+      employeePage.getByText("差戻し理由: 退勤時刻を確認してください", { exact: true })
     ).toBeVisible();
-    await employeePage
-      .getByRole("button", { name: "再提出", exact: true })
-      .click();
-    await expect(
-      employeePage.getByText("月次勤怠を提出しました。", { exact: true })
-    ).toBeVisible();
+    await employeePage.getByRole("button", { name: "再提出", exact: true }).click();
+    await expect(employeePage.getByText("月次勤怠を提出しました。", { exact: true })).toBeVisible();
 
     await reviewerPage.reload();
     await selectEmployeeMonth(reviewerPage);
     await reviewerPage.getByLabel("承認コメント（任意）").fill("確認済み");
-    await reviewerPage
-      .getByRole("button", { name: "承認", exact: true })
-      .click();
-    await expect(
-      reviewerPage.getByText("勤怠月を承認しました。", { exact: true })
-    ).toBeVisible();
+    await reviewerPage.getByRole("button", { name: "承認", exact: true }).click();
+    await expect(reviewerPage.getByText("勤怠月を承認しました。", { exact: true })).toBeVisible();
     await expect(
       reviewerPage.getByRole("button", {
         name: "月次を締める",
@@ -122,25 +86,16 @@ test("本人提出から差戻し・再提出・承認・締めまで月次状�
 
     await closerPage.goto("/attendance/administration");
     await selectEmployeeMonth(closerPage);
-    await closerPage
-      .getByRole("button", { name: "月次を締める", exact: true })
-      .click();
-    await expect(
-      closerPage.getByText("勤怠月を締めました。", { exact: true })
-    ).toBeVisible();
+    await closerPage.getByRole("button", { name: "月次を締める", exact: true }).click();
+    await expect(closerPage.getByText("勤怠月を締めました。", { exact: true })).toBeVisible();
     await closerPage.reload();
     await selectEmployeeMonth(closerPage);
     await expect(
-      closerPage
-        .locator(".attendance-administration-detail")
-        .getByText(/version 5/)
+      closerPage.locator(".attendance-administration-detail").getByText(/version 5/)
     ).toBeVisible();
 
     if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
-      const inspection = runBrowserRegressionFixture(
-        "attendance-month",
-        "inspect-stage10d2"
-      );
+      const inspection = runBrowserRegressionFixture("attendance-month", "inspect-stage10d2");
       expect(inspection).toContain("month_contract=1");
       expect(inspection).toContain("audit_contract=1");
       expect(inspection).toContain("work_contract=1");

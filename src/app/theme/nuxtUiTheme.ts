@@ -85,8 +85,20 @@ const outlinedFieldClass =
 
 /** ラベルを入力欄の外（上）に出すため、入力欄の中にラベルの高さを確保しない。`md`は40px、`sm`は36px。 */
 const fieldSizeVariants = {
-  sm: { base: "min-h-9 px-3 text-sm gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-5", trailingIcon: "size-5" },
-  md: { base: "min-h-10 px-3 text-sm gap-2", leading: "ps-3", trailing: "pe-3", leadingIcon: "size-5", trailingIcon: "size-5" },
+  sm: {
+    base: "min-h-9 px-3 text-sm gap-2",
+    leading: "ps-3",
+    trailing: "pe-3",
+    leadingIcon: "size-5",
+    trailingIcon: "size-5",
+  },
+  md: {
+    base: "min-h-10 px-3 text-sm gap-2",
+    leading: "ps-3",
+    trailing: "pe-3",
+    leadingIcon: "size-5",
+    trailingIcon: "size-5",
+  },
 };
 
 const fieldTheme = {
@@ -171,7 +183,11 @@ export const nuxtUiTheme = {
     variants: {
       // 高さは固定せず、上下の余白で決める（文言が折り返しても文字がはみ出さない）。
       size: {
-        xs: { base: "px-2 py-0.5 text-[0.625rem] gap-1", leadingIcon: "size-3.5", trailingIcon: "size-3.5" },
+        xs: {
+          base: "px-2 py-0.5 text-[0.625rem] gap-1",
+          leadingIcon: "size-3.5",
+          trailingIcon: "size-3.5",
+        },
         sm: { base: "px-3 py-1.5 text-xs gap-1.5", leadingIcon: "size-4", trailingIcon: "size-4" },
         md: { base: "px-4 py-2 text-sm gap-2", leadingIcon: "size-4.5", trailingIcon: "size-4.5" },
         lg: { base: "px-5 py-2.5 text-base gap-2", leadingIcon: "size-5", trailingIcon: "size-5" },
@@ -187,10 +203,19 @@ export const nuxtUiTheme = {
       {
         color: "neutral" as const,
         variant: "solid" as const,
-        class: "bg-default text-default ring ring-inset ring-accented hover:bg-elevated active:bg-accented",
+        class:
+          "bg-default text-default ring ring-inset ring-accented hover:bg-elevated active:bg-accented",
       },
-      { color: "neutral" as const, variant: "outline" as const, class: "ring-current bg-transparent" },
-      { color: "neutral" as const, variant: "soft" as const, class: "bg-inverted/12 hover:bg-inverted/16" },
+      {
+        color: "neutral" as const,
+        variant: "outline" as const,
+        class: "ring-current bg-transparent",
+      },
+      {
+        color: "neutral" as const,
+        variant: "soft" as const,
+        class: "bg-inverted/12 hover:bg-inverted/16",
+      },
       // Vuetifyのicon buttonは正方形ではなく円形で、寸法はsizeの高さと同じになる。
       { square: true, size: "xs" as const, class: "size-5 p-0 rounded-full" },
       { square: true, size: "sm" as const, class: "size-7 p-0 rounded-full" },
@@ -302,7 +327,11 @@ export const nuxtUiTheme = {
       ...badgeSoftVariants,
       ...badgeOutlineVariants,
       { color: "neutral" as const, variant: "soft" as const, class: "bg-inverted/12 text-default" },
-      { color: "neutral" as const, variant: "outline" as const, class: "ring-current text-default" },
+      {
+        color: "neutral" as const,
+        variant: "outline" as const,
+        class: "ring-current text-default",
+      },
     ],
     // 色指定なしのbadgeは、前景色12%の薄い背景（soft）で表示する。
     defaultVariants: {

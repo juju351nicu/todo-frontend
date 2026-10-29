@@ -37,10 +37,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/attendance/administration",
     name: ROUTE_NAMES.attendanceAdministration,
-    component: () =>
-      import(
-        "@/features/attendance/views/AttendanceAdministrationPage.vue"
-      ),
+    component: () => import("@/features/attendance/views/AttendanceAdministrationPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
@@ -49,10 +46,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/administration/accounts",
     name: ROUTE_NAMES.accountAdministration,
-    component: () =>
-      import(
-        "@/features/administration/views/AccountAdministrationPage.vue"
-      ),
+    component: () => import("@/features/administration/views/AccountAdministrationPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ["ACCOUNT_READ"],
@@ -61,10 +55,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/administration/authorization-audit-logs",
     name: ROUTE_NAMES.authorizationAuditList,
-    component: () =>
-      import(
-        "@/features/administration/views/AuthorizationAuditListPage.vue"
-      ),
+    component: () => import("@/features/administration/views/AuthorizationAuditListPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ["AUTHORIZATION_AUDIT_READ"],
@@ -73,8 +64,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/administration/notifications",
     name: ROUTE_NAMES.notificationAdministration,
-    component: () =>
-      import("@/features/notification/views/AnnouncementManagementPage.vue"),
+    component: () => import("@/features/notification/views/AnnouncementManagementPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ["NOTIFICATION_ANNOUNCEMENT_CREATE"],
@@ -112,8 +102,7 @@ export const routes: RouteRecordRaw[] = [
   {
     path: "/project-templates",
     name: ROUTE_NAMES.projectTemplates,
-    component: () =>
-      import("@/features/project/views/ProjectTemplatePage.vue"),
+    component: () => import("@/features/project/views/ProjectTemplatePage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: ["PROJECT_READ"],

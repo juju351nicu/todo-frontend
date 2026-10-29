@@ -36,8 +36,7 @@ export const MY_TASKS_RELOAD_CONTROL = "reload";
  * @param taskId Task ID
  * @returns `"complete:{taskId}"`形式の属性値
  */
-export const buildMyTaskCompleteControlKey = (taskId: number): string =>
-  `complete:${taskId}`;
+export const buildMyTaskCompleteControlKey = (taskId: number): string => `complete:${taskId}`;
 
 /** `data-my-task-control`属性の値から、その要素を探すselectorを作る。 */
 const buildMyTaskControlSelector = createDataAttributeSelector("data-my-task-control");
@@ -70,15 +69,9 @@ export const useMyTasksPage = () => {
   });
 
   const groups = computed<MyTaskGroup[]>(() => {
-    const overdue = visibleTasks.value.filter(
-      (task) => task.dueGroup === "OVERDUE"
-    );
-    const todayTasks = visibleTasks.value.filter(
-      (task) => task.dueGroup === "TODAY"
-    );
-    const upcoming = visibleTasks.value.filter(
-      (task) => task.dueGroup === "UPCOMING"
-    );
+    const overdue = visibleTasks.value.filter((task) => task.dueGroup === "OVERDUE");
+    const todayTasks = visibleTasks.value.filter((task) => task.dueGroup === "TODAY");
+    const upcoming = visibleTasks.value.filter((task) => task.dueGroup === "UPCOMING");
     return [
       {
         key: "overdue",
@@ -161,10 +154,7 @@ export const useMyTasksPage = () => {
       await replaceTasks();
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
-        if (
-          error instanceof MyTaskApiError &&
-          (error.status === 403 || error.status === 404)
-        ) {
+        if (error instanceof MyTaskApiError && (error.status === 403 || error.status === 404)) {
           clearProtectedState();
         }
         setErrors(
@@ -211,7 +201,9 @@ export const useMyTasksPage = () => {
       tasksNow[Math.min(index, tasksNow.length) - 1]?.taskId,
     ].filter((candidate): candidate is number => candidate !== undefined);
     return focusFirstEnabledElement([
-      ...candidates.map((candidate) => buildMyTaskControlSelector(buildMyTaskCompleteControlKey(candidate))),
+      ...candidates.map((candidate) =>
+        buildMyTaskControlSelector(buildMyTaskCompleteControlKey(candidate))
+      ),
       buildMyTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
     ]);
   };
@@ -291,10 +283,7 @@ export const useMyTasksPage = () => {
           );
           return;
         }
-        setErrors([
-          ...operationMessages,
-          DISPLAY_MESSAGES.task.myTasks.reloadFailed,
-        ]);
+        setErrors([...operationMessages, DISPLAY_MESSAGES.task.myTasks.reloadFailed]);
       }
     } finally {
       isLoading.value = false;

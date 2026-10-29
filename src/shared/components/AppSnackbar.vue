@@ -16,7 +16,7 @@ const props = withDefaults(
     /** 自動で閉じるまでのミリ秒。0以下の場合は自動で閉じない。 */
     timeout?: number;
   }>(),
-  { timeout: 5000 },
+  { timeout: 5000 }
 );
 
 const emit = defineEmits<{
@@ -48,7 +48,7 @@ watch(
       closeTimer = setTimeout(() => emit("update:open", false), props.timeout);
     }
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 onScopeDispose(clearCloseTimer);

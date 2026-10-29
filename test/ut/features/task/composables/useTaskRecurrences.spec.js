@@ -82,13 +82,13 @@ describe("useTaskRecurrences", () => {
     vi.setSystemTime(new Date(2026, 8, 21, 12, 0, 0));
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.taskRecurrenceApi.findRules.mockResolvedValue([
-      structuredClone(rule),
-    ]);
-    mocks.taskRecurrenceApi.findGenerations.mockResolvedValue([
-      structuredClone(failedGeneration),
-    ]);
-    mocks.taskRecurrenceApi.create.mockResolvedValue({ ...rule, taskRecurrenceRuleId: 72, version: 0 });
+    mocks.taskRecurrenceApi.findRules.mockResolvedValue([structuredClone(rule)]);
+    mocks.taskRecurrenceApi.findGenerations.mockResolvedValue([structuredClone(failedGeneration)]);
+    mocks.taskRecurrenceApi.create.mockResolvedValue({
+      ...rule,
+      taskRecurrenceRuleId: 72,
+      version: 0,
+    });
     mocks.taskRecurrenceApi.createFromTemplate.mockResolvedValue({
       ...rule,
       taskRecurrenceRuleId: 73,
@@ -257,9 +257,7 @@ describe("useTaskRecurrences", () => {
 
     await page.createRule();
 
-    expect(page.errorMessage.value).toBe(
-      "この繰り返しTask操作を実行するpermissionがありません。"
-    );
+    expect(page.errorMessage.value).toBe("この繰り返しTask操作を実行するpermissionがありません。");
     expect(page.isCreating.value).toBe(true);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
@@ -289,9 +287,7 @@ describe("useTaskRecurrences", () => {
 
     await page.createRule();
 
-    expect(page.errorMessage.value).toBe(
-      "間隔が不正です。\n終了日が不正です。"
-    );
+    expect(page.errorMessage.value).toBe("間隔が不正です。\n終了日が不正です。");
   });
 
   it("BLOCKED規則を修正するとACTIVEと取得時点versionを送信する", async () => {
@@ -361,12 +357,7 @@ describe("useTaskRecurrences", () => {
 
     await page.retryGeneration(page.generations.value[0]);
 
-    expect(mocks.taskRecurrenceApi.retryGeneration).toHaveBeenCalledWith(
-      5,
-      71,
-      91,
-      3
-    );
+    expect(mocks.taskRecurrenceApi.retryGeneration).toHaveBeenCalledWith(5, 71, 91, 3);
     expect(page.selectedRule.value.version).toBe(4);
     expect(page.generations.value[0].status).toBe("PENDING");
   });
@@ -419,9 +410,7 @@ describe("useTaskRecurrences", () => {
 
     await page.saveRule();
 
-    expect(page.errorMessage.value).toBe(
-      "繰り返しTask規則を更新できませんでした。"
-    );
+    expect(page.errorMessage.value).toBe("繰り返しTask規則を更新できませんでした。");
     expect(page.isEditing.value).toBe(true);
   });
 
@@ -505,9 +494,7 @@ describe("useTaskRecurrences", () => {
 
     await page.saveRule();
 
-    expect(page.errorMessage.value).toBe(
-      "繰り返しTask規則を参照するpermissionがありません。"
-    );
+    expect(page.errorMessage.value).toBe("繰り返しTask規則を参照するpermissionがありません。");
     expect(page.rules.value).toEqual([]);
     expect(page.selectedRule.value).toBeNull();
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
@@ -546,9 +533,7 @@ describe("useTaskRecurrences", () => {
     const page = createPage();
     await page.loadRules();
     await page.selectRule(page.rules.value[0]);
-    mocks.taskRecurrenceApi.findRules.mockRejectedValueOnce(
-      new TypeError("Network error")
-    );
+    mocks.taskRecurrenceApi.findRules.mockRejectedValueOnce(new TypeError("Network error"));
 
     await page.archiveRule();
 
@@ -566,9 +551,7 @@ describe("useTaskRecurrences", () => {
     const page = createPage();
     await page.loadRules();
     await page.selectRule(page.rules.value[0]);
-    mocks.taskRecurrenceApi.findRules.mockRejectedValueOnce(
-      new TaskRecurrenceApiError(401, null)
-    );
+    mocks.taskRecurrenceApi.findRules.mockRejectedValueOnce(new TaskRecurrenceApiError(401, null));
 
     await page.retryGeneration(page.generations.value[0]);
 
@@ -583,22 +566,16 @@ describe("useTaskRecurrences", () => {
   it("一覧の403では取得済み規則を破棄して参照用固定文言を表示する", async () => {
     const page = createPage();
     await page.loadRules();
-    mocks.taskRecurrenceApi.findRules.mockRejectedValue(
-      new TaskRecurrenceApiError(403, null)
-    );
+    mocks.taskRecurrenceApi.findRules.mockRejectedValue(new TaskRecurrenceApiError(403, null));
 
     await page.loadRules();
 
     expect(page.rules.value).toEqual([]);
-    expect(page.errorMessage.value).toBe(
-      "繰り返しTask規則を参照するpermissionがありません。"
-    );
+    expect(page.errorMessage.value).toBe("繰り返しTask規則を参照するpermissionがありません。");
   });
 
   it("一覧取得の401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.taskRecurrenceApi.findRules.mockRejectedValue(
-      new TaskRecurrenceApiError(401, null)
-    );
+    mocks.taskRecurrenceApi.findRules.mockRejectedValue(new TaskRecurrenceApiError(401, null));
     const page = createPage();
 
     await page.loadRules();

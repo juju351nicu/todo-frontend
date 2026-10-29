@@ -20,9 +20,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/time-tracking/api/timeTrackingApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/time-tracking/api/timeTrackingApi"
-  );
+  const actual = await vi.importActual("@/features/time-tracking/api/timeTrackingApi");
   return { ...actual, default: mocks.api };
 });
 
@@ -263,9 +261,7 @@ describe("useTaskTimerStore", () => {
         ],
       })
     );
-    mocks.api.getCurrentTimer.mockRejectedValue(
-      new TimeTrackingApiError(401, null)
-    );
+    mocks.api.getCurrentTimer.mockRejectedValue(new TimeTrackingApiError(401, null));
     const store = useTaskTimerStore();
 
     await store.startTimer(12, 345);
@@ -345,24 +341,18 @@ describe("useTaskTimerStore", () => {
 
     await store.startTimer(12, 345);
 
-    expect(store.errorMessages).toEqual([
-      "TaskのTimerを開始できませんでした。",
-    ]);
+    expect(store.errorMessages).toEqual(["TaskのTimerを開始できませんでした。"]);
     expect(mocks.api.getCurrentTimer).not.toHaveBeenCalled();
   });
 
   it("本文なし403ではSessionを維持してTimer操作の権限不足を表示する", async () => {
-    mocks.api.stopCurrentTimer.mockRejectedValue(
-      new TimeTrackingApiError(403, null)
-    );
+    mocks.api.stopCurrentTimer.mockRejectedValue(new TimeTrackingApiError(403, null));
     const store = useTaskTimerStore();
     store.applyCurrentResponse(currentResponse);
 
     await store.stopCurrentTimer();
 
-    expect(store.errorMessages).toEqual([
-      "このTaskでTimerを操作する権限がありません。",
-    ]);
+    expect(store.errorMessages).toEqual(["このTaskでTimerを操作する権限がありません。"]);
     expect(store.currentTimer).toEqual(timer);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
@@ -385,9 +375,7 @@ describe("useTaskTimerStore", () => {
 
     await store.cancelCurrentTimer();
 
-    expect(store.errorMessages).toEqual([
-      "対象のProjectまたはTaskが見つかりません。",
-    ]);
+    expect(store.errorMessages).toEqual(["対象のProjectまたはTaskが見つかりません。"]);
   });
 
   it("取消は実績を作らず現在Timerをnullへ更新する", async () => {
@@ -401,9 +389,7 @@ describe("useTaskTimerStore", () => {
   });
 
   it("401ではTimerとSession表示を破棄してLoginへ戻す", async () => {
-    mocks.api.getCurrentTimer.mockRejectedValue(
-      new TimeTrackingApiError(401, null)
-    );
+    mocks.api.getCurrentTimer.mockRejectedValue(new TimeTrackingApiError(401, null));
     const store = useTaskTimerStore();
 
     await store.initialize();

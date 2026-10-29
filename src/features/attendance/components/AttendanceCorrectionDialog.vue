@@ -75,7 +75,12 @@ defineEmits<{
         <FieldCounter :value="form.note" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
       </div>
 
-      <UCard v-for="(workPeriod, workIndex) in form.workPeriods" :key="workIndex" variant="outline" class="mb-4">
+      <UCard
+        v-for="(workPeriod, workIndex) in form.workPeriods"
+        :key="workIndex"
+        variant="outline"
+        class="mb-4"
+      >
         <template #header>
           <div class="flex items-center text-base font-normal">
             勤務区間 {{ workIndex + 1 }}
@@ -141,7 +146,9 @@ defineEmits<{
                   type="datetime-local"
                   step="1"
                   class="w-full"
-                  @update:model-value="$emit('updateBreakStartedAt', workIndex, breakIndex, String($event ?? ''))"
+                  @update:model-value="
+                    $emit('updateBreakStartedAt', workIndex, breakIndex, String($event ?? ''))
+                  "
                 />
               </UFormField>
             </div>
@@ -152,7 +159,9 @@ defineEmits<{
                   type="datetime-local"
                   step="1"
                   class="w-full"
-                  @update:model-value="$emit('updateBreakEndedAt', workIndex, breakIndex, String($event ?? ''))"
+                  @update:model-value="
+                    $emit('updateBreakEndedAt', workIndex, breakIndex, String($event ?? ''))
+                  "
                 />
               </UFormField>
             </div>
@@ -179,7 +188,13 @@ defineEmits<{
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="submitting" @click="$emit('close')">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="submitting" icon="i-mdi-send" @click="$emit('submit')">
+      <UButton
+        color="primary"
+        variant="ghost"
+        :loading="submitting"
+        icon="i-mdi-send"
+        @click="$emit('submit')"
+      >
         申請する
       </UButton>
     </template>

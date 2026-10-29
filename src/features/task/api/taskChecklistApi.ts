@@ -28,10 +28,7 @@ const ensureSuccess = (response: Response): Promise<void> =>
   );
 
 /** Taskのchecklistを表示順で取得する。 */
-const findItems = async (
-  projectId: number,
-  taskId: number
-): Promise<TaskChecklistItem[]> => {
+const findItems = async (projectId: number, taskId: number): Promise<TaskChecklistItem[]> => {
   const response = await HttpClient.getRequest(createPath(projectId, taskId));
   await ensureSuccess(response);
   return (await response.json()) as TaskChecklistItem[];
@@ -43,10 +40,7 @@ const createItem = async (
   taskId: number,
   payload: TaskChecklistItemCreateRequest
 ): Promise<TaskChecklistItem> => {
-  const response = await HttpClient.postRequest(
-    createPath(projectId, taskId),
-    payload
-  );
+  const response = await HttpClient.postRequest(createPath(projectId, taskId), payload);
   await ensureSuccess(response);
   return (await response.json()) as TaskChecklistItem;
 };
@@ -72,10 +66,7 @@ const reorderItems = async (
   taskId: number,
   payload: TaskChecklistOrderRequest
 ): Promise<TaskChecklistItem[]> => {
-  const response = await HttpClient.putRequest(
-    `${createPath(projectId, taskId)}/order`,
-    payload
-  );
+  const response = await HttpClient.putRequest(`${createPath(projectId, taskId)}/order`, payload);
   await ensureSuccess(response);
   return (await response.json()) as TaskChecklistItem[];
 };

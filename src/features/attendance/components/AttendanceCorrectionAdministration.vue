@@ -96,13 +96,17 @@ defineEmits<{
               :key="request.attendanceCorrectionRequestId"
               class="cursor-pointer"
               :class="{
-                'bg-primary/12': request.attendanceCorrectionRequestId === selectedCorrection?.attendanceCorrectionRequestId,
+                'bg-primary/12':
+                  request.attendanceCorrectionRequestId ===
+                  selectedCorrection?.attendanceCorrectionRequestId,
               }"
               role="button"
               tabindex="0"
               :aria-label="`${request.displayName || 'Account ' + request.accountId}の${formatAttendanceDate(request.workDate)}修正申請を表示`"
               aria-keyshortcuts="Enter Space"
-              :data-attendance-admin-control="buildAttendanceCorrectionRowControlKey(request.attendanceCorrectionRequestId)"
+              :data-attendance-admin-control="
+                buildAttendanceCorrectionRowControlKey(request.attendanceCorrectionRequestId)
+              "
               @click="$emit('select', request)"
               @keydown.enter="$emit('select', request)"
               @keydown.space.prevent="$emit('select', request)"
@@ -119,7 +123,9 @@ defineEmits<{
               <td>{{ formatAttendanceInstant(request.requestedAt) }}</td>
             </tr>
             <tr v-if="correctionRequests.length === 0">
-              <td colspan="3" class="py-6 text-center text-muted">条件に一致する修正申請はありません。</td>
+              <td colspan="3" class="py-6 text-center text-muted">
+                条件に一致する修正申請はありません。
+              </td>
             </tr>
           </tbody>
         </table>
@@ -128,27 +134,40 @@ defineEmits<{
       <div class="w-full p-3 lg:w-7/12">
         <div v-if="selectedCorrection" class="rounded-sm bg-muted p-4 text-default">
           <div class="mb-3 flex flex-wrap items-center gap-2">
-            <strong>{{ selectedCorrection.displayName || `Account ${selectedCorrection.accountId}` }}</strong>
+            <strong>{{
+              selectedCorrection.displayName || `Account ${selectedCorrection.accountId}`
+            }}</strong>
             <span>{{ formatAttendanceDate(selectedCorrection.workDate) }}</span>
-            <UBadge :color="getAttendanceCorrectionStatusColor(selectedCorrection.statusCode)" size="sm">
+            <UBadge
+              :color="getAttendanceCorrectionStatusColor(selectedCorrection.statusCode)"
+              size="sm"
+            >
               {{ getAttendanceCorrectionStatusLabel(selectedCorrection.statusCode) }}
             </UBadge>
           </div>
-          <StatusAlert type="info" density="compact" class="mb-3">修正理由: {{ selectedCorrection.reason }}</StatusAlert>
+          <StatusAlert type="info" density="compact" class="mb-3"
+            >修正理由: {{ selectedCorrection.reason }}</StatusAlert
+          >
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 md:w-1/2">
               <div class="mb-2 text-sm font-medium">現在勤怠</div>
               <div v-if="currentDay?.workPeriods.length">
-                <div v-for="(period, index) in currentDay.workPeriods" :key="period.attendanceWorkPeriodId" class="mb-2">
-                  勤務 {{ index + 1 }}:
-                  {{ formatAttendanceTime(period.startedAt) }}〜{{ formatAttendanceTime(period.endedAt) }}
+                <div
+                  v-for="(period, index) in currentDay.workPeriods"
+                  :key="period.attendanceWorkPeriodId"
+                  class="mb-2"
+                >
+                  勤務 {{ index + 1 }}: {{ formatAttendanceTime(period.startedAt) }}〜{{
+                    formatAttendanceTime(period.endedAt)
+                  }}
                   <div
                     v-for="(breakPeriod, breakIndex) in period.breakPeriods"
                     :key="breakPeriod.attendanceBreakPeriodId"
                     class="text-xs"
                   >
-                    休憩 {{ breakIndex + 1 }}:
-                    {{ formatAttendanceTime(breakPeriod.startedAt) }}〜{{ formatAttendanceTime(breakPeriod.endedAt) }}
+                    休憩 {{ breakIndex + 1 }}: {{ formatAttendanceTime(breakPeriod.startedAt) }}〜{{
+                      formatAttendanceTime(breakPeriod.endedAt)
+                    }}
                   </div>
                 </div>
               </div>
@@ -157,21 +176,30 @@ defineEmits<{
             <div class="w-full p-3 md:w-1/2">
               <div class="mb-2 text-sm font-medium">申請snapshot</div>
               <div v-if="selectedCorrection.workPeriods.length">
-                <div v-for="period in selectedCorrection.workPeriods" :key="period.attendanceCorrectionWorkPeriodId" class="mb-2">
-                  勤務 {{ period.sequenceNo }}:
-                  {{ formatAttendanceTime(period.startedAt) }}〜{{ formatAttendanceTime(period.endedAt) }}
+                <div
+                  v-for="period in selectedCorrection.workPeriods"
+                  :key="period.attendanceCorrectionWorkPeriodId"
+                  class="mb-2"
+                >
+                  勤務 {{ period.sequenceNo }}: {{ formatAttendanceTime(period.startedAt) }}〜{{
+                    formatAttendanceTime(period.endedAt)
+                  }}
                   <div
                     v-for="breakPeriod in period.breakPeriods"
                     :key="breakPeriod.attendanceCorrectionBreakPeriodId"
                     class="text-xs"
                   >
                     休憩 {{ breakPeriod.sequenceNo }}:
-                    {{ formatAttendanceTime(breakPeriod.startedAt) }}〜{{ formatAttendanceTime(breakPeriod.endedAt) }}
+                    {{ formatAttendanceTime(breakPeriod.startedAt) }}〜{{
+                      formatAttendanceTime(breakPeriod.endedAt)
+                    }}
                   </div>
                 </div>
               </div>
               <div v-else class="opacity-70">勤務区間を空にする申請です。</div>
-              <div class="mt-2 text-xs">承認後メモ: {{ selectedCorrection.proposedNote || "なし" }}</div>
+              <div class="mt-2 text-xs">
+                承認後メモ: {{ selectedCorrection.proposedNote || "なし" }}
+              </div>
             </div>
           </div>
 
@@ -222,7 +250,12 @@ defineEmits<{
               修正を却下
             </UButton>
           </template>
-          <StatusAlert v-else-if="selectedCorrection.reviewComment" type="info" density="compact" class="mt-3">
+          <StatusAlert
+            v-else-if="selectedCorrection.reviewComment"
+            type="info"
+            density="compact"
+            class="mt-3"
+          >
             審査コメント: {{ selectedCorrection.reviewComment }}
           </StatusAlert>
         </div>

@@ -1,7 +1,4 @@
-import type {
-  InquiryRequest,
-  InquiryResponse,
-} from "@/features/inquiry/types/inquiry";
+import type { InquiryRequest, InquiryResponse } from "@/features/inquiry/types/inquiry";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
@@ -22,10 +19,7 @@ export class InquiryApiError extends ApiError {
  * @throws InquiryApiError 入力不正、CSRF拒否、送信基盤停止またはBackendエラーの場合
  */
 const send = async (payload: InquiryRequest): Promise<InquiryResponse> => {
-  const response = await HttpClient.postRequest(
-    API_PATHS.INQUIRY_SEND_MAIL,
-    payload
-  );
+  const response = await HttpClient.postRequest(API_PATHS.INQUIRY_SEND_MAIL, payload);
   await ensureApiSuccess(
     response,
     (status, errorResponse) => new InquiryApiError(status, errorResponse)

@@ -34,10 +34,7 @@ describe("Project Task API", () => {
     });
 
     await expect(ProjectTaskApi.createTask(5, request)).resolves.toEqual(created);
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks",
-      request
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks", request);
   });
 
   it("Task編集前に詳細を取得する", async () => {
@@ -48,9 +45,7 @@ describe("Project Task API", () => {
     });
 
     await expect(ProjectTaskApi.getTask(5, 31)).resolves.toEqual(task);
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31"
-    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31");
   });
 
   it("Task種別がない古いBackendの詳細はTASKとして扱う", async () => {
@@ -71,9 +66,7 @@ describe("Project Task API", () => {
 
     await expect(ProjectTaskApi.archiveTask(5, 31, 4)).resolves.toBeUndefined();
 
-    expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31?version=4"
-    );
+    expect(HttpClient.deleteRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31?version=4");
   });
 
   it("Task更新値と楽観ロックversionを送信する", async () => {
@@ -93,10 +86,7 @@ describe("Project Task API", () => {
 
     await ProjectTaskApi.updateTask(5, 31, request);
 
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31",
-      request
-    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31", request);
     expect(request).not.toHaveProperty("taskStatusId");
   });
 
@@ -113,9 +103,7 @@ describe("Project Task API", () => {
       json: vi.fn().mockResolvedValue(movedBoard),
     });
 
-    await expect(ProjectTaskApi.moveTask(5, 31, request)).resolves.toEqual(
-      movedBoard
-    );
+    await expect(ProjectTaskApi.moveTask(5, 31, request)).resolves.toEqual(movedBoard);
     expect(HttpClient.putRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/tasks/31/position",
       request

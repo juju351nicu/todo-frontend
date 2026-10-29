@@ -9,10 +9,7 @@ import type { ProjectTemplate } from "@/features/project/types/projectTemplate";
 import { PROJECT_TEMPLATE_ERROR_CODES } from "@/features/project/utils/apiErrors";
 import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
@@ -78,7 +75,9 @@ export const useProjectTemplateCapture = (
     const normalizedName = name.value.trim();
     if (disabled.value || isSaving.value) return null;
     if (!normalizedName || normalizedName.length > PROJECT_TEMPLATE_NAME_MAX_LENGTH) {
-      errorMessages.value = [`Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`];
+      errorMessages.value = [
+        `Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`,
+      ];
       return null;
     }
     if (!isValidLocalDateInput(baseDate.value)) {
@@ -124,9 +123,7 @@ export const useProjectTemplateCapture = (
         return null;
       }
       if (error.status === 404) {
-        errorMessages.value = [
-          DISPLAY_MESSAGES.project.template.resourceNotFound,
-        ];
+        errorMessages.value = [DISPLAY_MESSAGES.project.template.resourceNotFound];
         return null;
       }
       errorMessages.value = resolveApiErrorMessages(

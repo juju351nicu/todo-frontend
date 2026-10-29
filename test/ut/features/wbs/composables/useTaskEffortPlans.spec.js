@@ -63,9 +63,7 @@ describe("useTaskEffortPlans", () => {
 
     expect(mocks.wbsApi.getTaskEffortPlans).not.toHaveBeenCalled();
     expect(page.isEffortPlanDialogOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "日別予定工数を登録できるのは通常Taskだけです。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["日別予定工数を登録できるのは通常Taskだけです。"]);
   });
 
   it("予定日・予定工数・予定担当者を送信しworkloadも再取得する", async () => {
@@ -83,9 +81,7 @@ describe("useTaskEffortPlans", () => {
 
     expect(mocks.wbsApi.createTaskEffortPlan).toHaveBeenCalledWith(7, 2, form);
     expect(page.effortPlanList.value).toEqual(effortPlanList);
-    expect(page.effortPlanSuccessMessage.value).toBe(
-      "Task日別予定を登録しました。"
-    );
+    expect(page.effortPlanSuccessMessage.value).toBe("Task日別予定を登録しました。");
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledWith(
       7,
       page.workloadDateRange.value.dateFrom,
@@ -113,9 +109,7 @@ describe("useTaskEffortPlans", () => {
     });
     expect(page.effortPlanList.value).toEqual(updatedEffortPlanList);
     expect(page.editingEffortPlan.value).toBeNull();
-    expect(page.effortPlanSuccessMessage.value).toBe(
-      "Task日別予定を更新しました。"
-    );
+    expect(page.effortPlanSuccessMessage.value).toBe("Task日別予定を更新しました。");
   });
 
   it("入力不正ではTask日別予定APIを呼ばずDialogへ全理由を表示する", async () => {
@@ -164,9 +158,7 @@ describe("useTaskEffortPlans", () => {
     });
 
     expect(page.editingEffortPlan.value).toBeNull();
-    expect(page.effortPlanEditorErrorMessages.value).toEqual([
-      "更新されています。",
-    ]);
+    expect(page.effortPlanEditorErrorMessages.value).toEqual(["更新されています。"]);
     expect(mocks.wbsApi.getTaskEffortPlans).toHaveBeenCalledTimes(2);
     expect(page.effortPlanList.value).toEqual(updatedEffortPlanList);
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
@@ -188,9 +180,7 @@ describe("useTaskEffortPlans", () => {
       effortPlans: [],
     });
     expect(page.effortPlanPendingDelete.value).toBeNull();
-    expect(page.effortPlanSuccessMessage.value).toBe(
-      "Task日別予定を削除しました。"
-    );
+    expect(page.effortPlanSuccessMessage.value).toBe("Task日別予定を削除しました。");
   });
 
   it("管理者は全Project memberを予定担当者にでき通常memberは他者予定を変更しない", async () => {
@@ -202,9 +192,7 @@ describe("useTaskEffortPlans", () => {
     await ownerPage.openEffortPlanDialog(2);
 
     expect(ownerPage.canManageAnyEffortPlan.value).toBe(true);
-    expect(
-      ownerPage.effortPlanAssigneeOptions.value.map((option) => option.value)
-    ).toEqual([1, 2]);
+    expect(ownerPage.effortPlanAssigneeOptions.value.map((option) => option.value)).toEqual([1, 2]);
 
     const otherEffortPlanList = structuredClone(effortPlanList);
     otherEffortPlanList.effortPlans[0].assigneeAccountId = 1;
@@ -222,9 +210,7 @@ describe("useTaskEffortPlans", () => {
   });
 
   it("日別予定参照APIの401はDialogとSessionを破棄してログインへ戻す", async () => {
-    mocks.wbsApi.getTaskEffortPlans.mockRejectedValue(
-      new WbsApiError(401, null)
-    );
+    mocks.wbsApi.getTaskEffortPlans.mockRejectedValue(new WbsApiError(401, null));
     const page = useWbsPage();
     await page.initialize();
 
@@ -337,7 +323,9 @@ describe("useTaskEffortPlans", () => {
           unallocatedEffortMinutes: 360,
         })
       );
-      expect(state.effortPlanList.value?.effortPlans.map((plan) => plan.effortPlanId)).toEqual([52]);
+      expect(state.effortPlanList.value?.effortPlans.map((plan) => plan.effortPlanId)).toEqual([
+        52,
+      ]);
       expect(state.editingEffortPlan.value?.effortPlanId).toBe(52);
     });
 

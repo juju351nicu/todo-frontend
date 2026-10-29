@@ -37,9 +37,7 @@ describe("User store", () => {
     expect(store.accountId).toBe(1);
     expect(store.hasRole("SYSTEM_ADMIN")).toBe(true);
     expect(store.hasPermission("TASK_READ_ALL")).toBe(true);
-    expect(store.hasAnyPermission(["TASK_WRITE_ALL", "TASK_WRITE_OWN"])).toBe(
-      true
-    );
+    expect(store.hasAnyPermission(["TASK_WRITE_ALL", "TASK_WRITE_OWN"])).toBe(true);
   });
 
   it("ログイン成功後にCSRFを更新してSessionを読み直す", async () => {
@@ -47,8 +45,7 @@ describe("User store", () => {
     AuthApi.getSession.mockResolvedValue(sessionUser);
     const store = useUserStore();
 
-    await expect(store.authLogin({ loginId: "user01", password: "password" }))
-      .resolves.toBe(true);
+    await expect(store.authLogin({ loginId: "user01", password: "password" })).resolves.toBe(true);
 
     expect(AuthApi.login).toHaveBeenCalledWith({
       loginId: "user01",
@@ -62,8 +59,7 @@ describe("User store", () => {
     AuthApi.getSession.mockResolvedValue(null);
     const store = useUserStore();
 
-    await expect(store.authLogin({ loginId: "user01", password: "password" }))
-      .resolves.toBe(false);
+    await expect(store.authLogin({ loginId: "user01", password: "password" })).resolves.toBe(false);
 
     expect(store.isAuthenticated).toBe(false);
     expect(store.sessionChecked).toBe(true);

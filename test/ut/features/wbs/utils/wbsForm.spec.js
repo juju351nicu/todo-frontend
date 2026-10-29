@@ -106,9 +106,7 @@ describe("WBS Task編集フォーム", () => {
     const form = buildWbsTaskEditForm(buildTask());
     form.plannedStartDate = "2026-02-30";
 
-    expect(validateWbsTaskEditForm(form)).toContain(
-      "予定開始日と予定終了日を入力してください。"
-    );
+    expect(validateWbsTaskEditForm(form)).toContain("予定開始日と予定終了日を入力してください。");
   });
 
   it("Milestoneは同日かつ予定工数0分だけを許可する", () => {
@@ -145,14 +143,10 @@ describe("WBS Task編集フォーム", () => {
     );
 
     form.actualStartDate = "2026-02-30";
-    expect(validateWbsTaskEditForm(form)).toContain(
-      "実績開始日は正しい日付を入力してください。"
-    );
+    expect(validateWbsTaskEditForm(form)).toContain("実績開始日は正しい日付を入力してください。");
 
     form.actualStartDate = "2026-08-25";
-    expect(validateWbsTaskEditForm(form)).toContain(
-      "実績終了日は実績開始日以降にしてください。"
-    );
+    expect(validateWbsTaskEditForm(form)).toContain("実績終了日は実績開始日以降にしてください。");
   });
 
   it("検証済みフォームの空白WBSコードをnullへ正規化してversionを保持する", () => {
@@ -178,9 +172,7 @@ describe("WBS Task編集フォーム", () => {
   });
 
   it("空の実績期間をBackendのnullable項目へ正規化する", () => {
-    const request = buildWbsTaskUpdateRequest(
-      buildWbsTaskEditForm(buildTask())
-    );
+    const request = buildWbsTaskUpdateRequest(buildWbsTaskEditForm(buildTask()));
 
     expect(request.actualStartDate).toBeNull();
     expect(request.actualEndDate).toBeNull();

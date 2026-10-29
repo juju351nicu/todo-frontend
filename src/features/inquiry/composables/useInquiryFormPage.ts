@@ -1,8 +1,6 @@
 import { ref } from "vue";
 
-import InquiryApi, {
-  InquiryApiError,
-} from "@/features/inquiry/api/inquiryApi";
+import InquiryApi, { InquiryApiError } from "@/features/inquiry/api/inquiryApi";
 import type { InquiryRequest } from "@/features/inquiry/types/inquiry";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";

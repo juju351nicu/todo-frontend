@@ -12,14 +12,12 @@ const ACTION_COLORS: Readonly<Record<AuthorizationAuditAction, SemanticColor>> =
 };
 
 /** Backendの権限変更操作コードを日本語表示へ変換する。 */
-export const getAuthorizationAuditActionLabel = (
-  action: AuthorizationAuditAction
-): string => ACTION_LABELS[action];
+export const getAuthorizationAuditActionLabel = (action: AuthorizationAuditAction): string =>
+  ACTION_LABELS[action];
 
 /** Backendの権限変更操作コードに対応する表示色を返す。 */
-export const getAuthorizationAuditActionColor = (
-  action: AuthorizationAuditAction
-): SemanticColor => ACTION_COLORS[action];
+export const getAuthorizationAuditActionColor = (action: AuthorizationAuditAction): SemanticColor =>
+  ACTION_COLORS[action];
 
 /**
  * BackendのUTC Instantを利用端末の日時表示へ変換する。
@@ -27,9 +25,7 @@ export const getAuthorizationAuditActionColor = (
  * @param occurredAt ISO 8601形式の操作時刻
  * @returns 日本語ロケールの日時。不正値の場合は確認可能な元文字列
  */
-export const formatAuthorizationAuditOccurredAt = (
-  occurredAt: string
-): string => {
+export const formatAuthorizationAuditOccurredAt = (occurredAt: string): string => {
   const date = new Date(occurredAt);
   if (Number.isNaN(date.getTime())) {
     return occurredAt;
@@ -69,6 +65,4 @@ export const formatRoleNames = (
 ): string =>
   roleCodes.length === 0
     ? "なし"
-    : roleCodes
-        .map((roleCode) => resolveRoleName(roleCode, roleNamesByCode))
-        .join("、");
+    : roleCodes.map((roleCode) => resolveRoleName(roleCode, roleNamesByCode)).join("、");

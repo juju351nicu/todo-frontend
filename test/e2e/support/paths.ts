@@ -1,19 +1,13 @@
 import { resolve } from "node:path";
 
 /** Dashboard専用accountのSession Cookieを保存するGit管理外path。 */
-export const DASHBOARD_AUTH_STATE_PATH = resolve(
-  "playwright/.auth/dashboard-browser.json"
-);
+export const DASHBOARD_AUTH_STATE_PATH = resolve("playwright/.auth/dashboard-browser.json");
 
 /** My Tasks主要journey専用accountのSession Cookieを保存するGit管理外path。 */
-export const MY_TASKS_AUTH_STATE_PATH = resolve(
-  "playwright/.auth/my-tasks-browser.json"
-);
+export const MY_TASKS_AUTH_STATE_PATH = resolve("playwright/.auth/my-tasks-browser.json");
 
 /** Board主要journey専用accountのSession Cookieを保存するGit管理外path。 */
-export const BOARD_AUTH_STATE_PATH = resolve(
-  "playwright/.auth/board-browser.json"
-);
+export const BOARD_AUTH_STATE_PATH = resolve("playwright/.auth/board-browser.json");
 
 /** Project Template主要journey専用accountのSession Cookieを保存するGit管理外path。 */
 export const PROJECT_TEMPLATE_AUTH_STATE_PATH = resolve(
@@ -21,9 +15,7 @@ export const PROJECT_TEMPLATE_AUTH_STATE_PATH = resolve(
 );
 
 /** 繰り返しTask主要journey専用accountのSession Cookieを保存するGit管理外path。 */
-export const TASK_RECURRENCE_AUTH_STATE_PATH = resolve(
-  "playwright/.auth/recurrence-owner.json"
-);
+export const TASK_RECURRENCE_AUTH_STATE_PATH = resolve("playwright/.auth/recurrence-owner.json");
 
 /** 権限変更journeyの管理者Session Cookieを保存するGit管理外path。 */
 export const AUTHORIZATION_ADMIN_AUTH_STATE_PATH = resolve(
@@ -69,6 +61,4 @@ export const AUTH_STATE_PATHS = [
 ] as const;
 
 /** Playwrightから参照するBackend repositoryのpath。CIではcheckout先を環境変数で指定する。 */
-export const BACKEND_PATH = resolve(
-  process.env.E2E_BACKEND_PATH ?? "../todo-backend"
-);
+export const BACKEND_PATH = resolve(process.env.E2E_BACKEND_PATH ?? "../todo-backend");

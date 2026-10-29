@@ -1,9 +1,4 @@
-import type {
-  WbsTask,
-  WbsTaskPriority,
-  WbsTaskType,
-  WbsTreeRow,
-} from "@/features/wbs/types/wbs";
+import type { WbsTask, WbsTaskPriority, WbsTaskType, WbsTreeRow } from "@/features/wbs/types/wbs";
 import { getTaskPriorityColor } from "@/features/task/utils/taskDisplay";
 import type { SemanticColor } from "@/shared/types/color";
 
@@ -62,9 +57,7 @@ export const buildWbsTreeRows = (tasks: readonly WbsTask[]): WbsTreeRow[] => {
   };
 
   roots.forEach((root) => appendNode(root, 0));
-  [...nodesById.values()]
-    .sort(compareNodes)
-    .forEach((node) => appendNode(node, 0));
+  [...nodesById.values()].sort(compareNodes).forEach((node) => appendNode(node, 0));
   return rows;
 };
 
@@ -78,9 +71,7 @@ export const formatPlannedEffort = (minutes: number): string => {
   if (hours === 0) {
     return `${remainingMinutes}分`;
   }
-  return remainingMinutes === 0
-    ? `${hours}時間`
-    : `${hours}時間${remainingMinutes}分`;
+  return remainingMinutes === 0 ? `${hours}時間` : `${hours}時間${remainingMinutes}分`;
 };
 
 /** API外部入力の進捗率をProgress Barで扱える0から100へ制限する。 */
@@ -94,7 +85,10 @@ export const normalizeProgressPercent = (progressPercent: number): number => {
 /** 進捗率を小数第2位までの百分率表示へ変換する。 */
 export const formatProgressPercent = (progressPercent: number): string => {
   const normalized = normalizeProgressPercent(progressPercent);
-  return normalized.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+  return normalized
+    .toFixed(2)
+    .replace(/\.00$/, "")
+    .replace(/(\.\d)0$/, "$1");
 };
 
 /**
@@ -137,4 +131,5 @@ export const getWbsPriorityLabel = (priority: WbsTaskPriority): string =>
   ({ 1: "低", 2: "中", 3: "高" })[priority];
 
 /** Task優先度を表示色へ変換する。Board表示と同じく高=error、中=warning、低=info。 */
-export const getWbsPriorityColor = (priority: WbsTaskPriority): SemanticColor => getTaskPriorityColor(priority);
+export const getWbsPriorityColor = (priority: WbsTaskPriority): SemanticColor =>
+  getTaskPriorityColor(priority);

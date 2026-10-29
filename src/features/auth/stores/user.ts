@@ -54,9 +54,7 @@ export const useUserStore = defineStore("user", {
     hasAnyPermission:
       (state) =>
       (permissionCodes: readonly PermissionCode[]): boolean =>
-        permissionCodes.some((permissionCode) =>
-          state.permissionCodes.includes(permissionCode)
-        ),
+        permissionCodes.some((permissionCode) => state.permissionCodes.includes(permissionCode)),
   },
   actions: {
     /** Session APIの利用者情報を、画面遷移をまたぐ認証状態へ保存する。 */

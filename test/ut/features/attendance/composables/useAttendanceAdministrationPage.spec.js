@@ -39,9 +39,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/attendance/api/attendanceApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/attendance/api/attendanceApi"
-  );
+  const actual = await vi.importActual("@/features/attendance/api/attendanceApi");
   return { ...actual, default: mocks.attendanceApi };
 });
 
@@ -104,19 +102,13 @@ describe("useAttendanceAdministrationPage", () => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.userStore.hasPermission.mockImplementation((permission) =>
-      [
-        "ATTENDANCE_REVIEW",
-        "ATTENDANCE_CLOSE",
-        "ATTENDANCE_EXPORT",
-      ].includes(permission)
+      ["ATTENDANCE_REVIEW", "ATTENDANCE_CLOSE", "ATTENDANCE_EXPORT"].includes(permission)
     );
     mocks.attendanceApi.getAdministrationMonths.mockResolvedValue({
       yearMonth: "2026-09",
       months: [listItem],
     });
-    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(
-      buildDetail()
-    );
+    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(buildDetail());
     mocks.attendanceApi.getAdministrationCorrectionRequests.mockResolvedValue({
       correctionRequests: [correctionRequest],
     });
@@ -161,10 +153,7 @@ describe("useAttendanceAdministrationPage", () => {
       "2026-09",
       "SUBMITTED"
     );
-    expect(mocks.attendanceApi.getAdministrationMonth).toHaveBeenCalledWith(
-      21,
-      "2026-09"
-    );
+    expect(mocks.attendanceApi.getAdministrationMonth).toHaveBeenCalledWith(21, "2026-09");
     expect(page.canApproveOrReject.value).toBe(true);
   });
 
@@ -175,10 +164,7 @@ describe("useAttendanceAdministrationPage", () => {
     await page.search();
 
     expect(page.selectedStatus.value).toBe("ALL");
-    expect(mocks.attendanceApi.getAdministrationMonths).toHaveBeenCalledWith(
-      "2026-09",
-      null
-    );
+    expect(mocks.attendanceApi.getAdministrationMonths).toHaveBeenCalledWith("2026-09", null);
   });
 
   it("空白だけの差戻し理由ではAPIを呼ばない", async () => {
@@ -223,9 +209,7 @@ describe("useAttendanceAdministrationPage", () => {
     const page = useAttendanceAdministrationPage();
     await page.selectMonth(listItem);
     page.rejectReason.value = "退勤時刻を確認してください";
-    mocks.attendanceApi.rejectMonth.mockResolvedValue(
-      buildDetail("REJECTED", 2)
-    );
+    mocks.attendanceApi.rejectMonth.mockResolvedValue(buildDetail("REJECTED", 2));
 
     await page.reject();
 
@@ -240,12 +224,8 @@ describe("useAttendanceAdministrationPage", () => {
   });
 
   it("ATTENDANCE_CLOSEがある管理者だけAPPROVED月を締められる", async () => {
-    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(
-      buildDetail("APPROVED", 2)
-    );
-    mocks.attendanceApi.closeMonth.mockResolvedValue(
-      buildDetail("CLOSED", 3)
-    );
+    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(buildDetail("APPROVED", 2));
+    mocks.attendanceApi.closeMonth.mockResolvedValue(buildDetail("CLOSED", 3));
     const page = useAttendanceAdministrationPage();
     await page.selectMonth({ ...listItem, statusCode: "APPROVED", version: 2 });
 
@@ -274,9 +254,7 @@ describe("useAttendanceAdministrationPage", () => {
     await page.initialize();
 
     expect(page.canReview.value).toBe(false);
-    expect(
-      mocks.attendanceApi.getAdministrationCorrectionRequests
-    ).not.toHaveBeenCalled();
+    expect(mocks.attendanceApi.getAdministrationCorrectionRequests).not.toHaveBeenCalled();
   });
 
   it("修正申請と現在勤怠を比較し最新versionで承認して一覧を更新する", async () => {
@@ -304,11 +282,7 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.approveCorrectionRequest();
 
-    expect(mocks.attendanceApi.approveCorrectionRequest).toHaveBeenCalledWith(
-      41,
-      2,
-      "確認済み"
-    );
+    expect(mocks.attendanceApi.approveCorrectionRequest).toHaveBeenCalledWith(41, 2, "確認済み");
     expect(page.successMessage.value).toBe("勤怠修正申請を承認しました。");
     expect(mocks.attendanceApi.getAdministrationCorrectionRequests).toHaveBeenCalledTimes(2);
     expect(page.selectedCorrectionCurrentDay.value).toEqual(currentDay);
@@ -341,9 +315,7 @@ describe("useAttendanceAdministrationPage", () => {
         ],
       })
     );
-    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(
-      buildDetail("APPROVED", 2)
-    );
+    mocks.attendanceApi.getAdministrationMonth.mockResolvedValue(buildDetail("APPROVED", 2));
 
     await page.approve();
 
@@ -420,9 +392,7 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.search();
 
-    expect(page.errorMessages.value).toEqual([
-      "勤怠月一覧を取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["勤怠月一覧を取得できませんでした。"]);
   });
 
   it("本文なし403ではSessionを維持して管理勤怠の権限不足を表示する", async () => {
@@ -456,9 +426,7 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.selectMonth(listItem);
 
-    expect(page.errorMessages.value).toEqual([
-      "対象のアカウントまたは勤怠月が見つかりません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["対象のアカウントまたは勤怠月が見つかりません。"]);
   });
 
   it("月次409後の再取得で401になった場合は競合案内を残さずSessionを破棄する", async () => {
@@ -520,19 +488,13 @@ describe("useAttendanceAdministrationPage", () => {
     await page.downloadMonthlyCsv();
 
     expect(page.canExport.value).toBe(true);
-    expect(
-      mocks.attendanceApi.downloadAdministrationMonthlyCsv
-    ).toHaveBeenCalledWith("2026-09");
+    expect(mocks.attendanceApi.downloadAdministrationMonthlyCsv).toHaveBeenCalledWith("2026-09");
     expect(mocks.createObjectUrl).toHaveBeenCalledOnce();
     expect(mocks.appendDownloadAnchor).toHaveBeenCalledOnce();
     expect(mocks.clickDownloadAnchor).toHaveBeenCalledOnce();
     expect(mocks.removeDownloadAnchor).toHaveBeenCalledOnce();
-    expect(mocks.revokeObjectUrl).toHaveBeenCalledWith(
-      "blob:attendance-export"
-    );
-    expect(page.successMessage.value).toBe(
-      "月次勤怠CSVをダウンロードしました。"
-    );
+    expect(mocks.revokeObjectUrl).toHaveBeenCalledWith("blob:attendance-export");
+    expect(page.successMessage.value).toBe("月次勤怠CSVをダウンロードしました。");
     expect(page.isExportingMonthlyCsv.value).toBe(false);
   });
 
@@ -542,12 +504,8 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.downloadMonthlyCsv();
 
-    expect(
-      mocks.attendanceApi.downloadAdministrationMonthlyCsv
-    ).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "実在する表示月を指定してください。",
-    ]);
+    expect(mocks.attendanceApi.downloadAdministrationMonthlyCsv).not.toHaveBeenCalled();
+    expect(page.errorMessages.value).toEqual(["実在する表示月を指定してください。"]);
   });
 
   it("月次CSVの出力の後は「月次CSV」へフォーカスを戻す", async () => {
@@ -576,9 +534,7 @@ describe("useAttendanceAdministrationPage", () => {
     await page.downloadMonthlyCsv();
 
     expect(page.isExportingMonthlyCsv.value).toBe(true);
-    expect(
-      mocks.attendanceApi.downloadAdministrationMonthlyCsv
-    ).toHaveBeenCalledTimes(1);
+    expect(mocks.attendanceApi.downloadAdministrationMonthlyCsv).toHaveBeenCalledTimes(1);
     resolveDownload({
       content: new Blob(["attendance-csv"]),
       fileName: "work-management-attendance-2026-09.csv",
@@ -608,9 +564,7 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.downloadMonthlyCsv();
 
-    expect(page.errorMessages.value).toEqual([
-      "月次勤怠CSVを出力するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["月次勤怠CSVを出力するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
@@ -650,9 +604,7 @@ describe("useAttendanceAdministrationPage", () => {
 
     await page.downloadMonthlyCsv();
 
-    expect(page.errorMessages.value).toEqual([
-      "月次勤怠CSVを出力できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["月次勤怠CSVを出力できませんでした。"]);
   });
 
   it("ATTENDANCE_EXPORTがない利用者は月次CSV APIを呼べない", async () => {
@@ -664,8 +616,6 @@ describe("useAttendanceAdministrationPage", () => {
     await page.downloadMonthlyCsv();
 
     expect(page.canExport.value).toBe(false);
-    expect(
-      mocks.attendanceApi.downloadAdministrationMonthlyCsv
-    ).not.toHaveBeenCalled();
+    expect(mocks.attendanceApi.downloadAdministrationMonthlyCsv).not.toHaveBeenCalled();
   });
 });

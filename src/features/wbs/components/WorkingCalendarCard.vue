@@ -47,7 +47,7 @@ const emit = defineEmits<{
 // 親composableで確定した期間・対象を、初期表示・再取得・競合回復後に検索欄へ同期する。
 const dateRangeForm = useSyncedDraft(
   () => props.dateRange,
-  (dateRange) => ({ ...dateRange }),
+  (dateRange) => ({ ...dateRange })
 );
 const targetKeyForm = useSyncedDraft(() => props.selectedTargetKey);
 
@@ -74,7 +74,9 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-calendar-cog-outline" class="size-6" />
         稼働日calendar
-        <UBadge size="sm" variant="outline" class="ms-auto">{{ calendar?.days.length ?? 0 }}日</UBadge>
+        <UBadge size="sm" variant="outline" class="ms-auto"
+          >{{ calendar?.days.length ?? 0 }}日</UBadge
+        >
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">
@@ -85,7 +87,10 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
       月末の行で登録・削除すると、card上端のmessageが画面外になり結果が分からないため。
       負のmarginとpaddingでcard本文の左右の余白（nuxtUiTheme.ts の card.body の p-4）まで覆い、下を流れる表が透けないようにする。
     -->
-    <div v-if="errorMessages.length || successMessage" class="sticky top-16 z-10 -mx-4 flex flex-col gap-4 bg-default px-4 pt-2 pb-4">
+    <div
+      v-if="errorMessages.length || successMessage"
+      class="sticky top-16 z-10 -mx-4 flex flex-col gap-4 bg-default px-4 pt-2 pb-4"
+    >
       <StatusAlert v-if="errorMessages.length" type="error">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>
@@ -108,12 +113,22 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
         </div>
         <div class="w-full p-3 sm:w-5/12 md:w-1/4">
           <UFormField label="開始日" class="pb-0">
-            <UInput v-model="dateRangeForm.dateFrom" type="date" :disabled="isLoading || isMutating" class="w-full" />
+            <UInput
+              v-model="dateRangeForm.dateFrom"
+              type="date"
+              :disabled="isLoading || isMutating"
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-5/12 md:w-1/4">
           <UFormField label="終了日" class="pb-0">
-            <UInput v-model="dateRangeForm.dateTo" type="date" :disabled="isLoading || isMutating" class="w-full" />
+            <UInput
+              v-model="dateRangeForm.dateTo"
+              type="date"
+              :disabled="isLoading || isMutating"
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/6">
@@ -132,7 +147,9 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
       </div>
     </form>
 
-    <StatusAlert v-if="readOnlyMessage" type="info" variant="soft" class="mt-4">{{ readOnlyMessage }}</StatusAlert>
+    <StatusAlert v-if="readOnlyMessage" type="info" variant="soft" class="mt-4">{{
+      readOnlyMessage
+    }}</StatusAlert>
 
     <div v-if="isLoading" class="mt-4 flex flex-col gap-3">
       <USkeleton v-for="row in 5" :key="row" class="h-8 w-full" />
@@ -167,13 +184,17 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
               </td>
               <td class="whitespace-nowrap">
                 <template v-if="day.projectOverride">
-                  {{ getWorkingDayTypeLabel(day.projectOverride.dayType) }}・{{ formatEffortMinutes(day.projectOverride.availableMinutes) }}
+                  {{ getWorkingDayTypeLabel(day.projectOverride.dayType) }}・{{
+                    formatEffortMinutes(day.projectOverride.availableMinutes)
+                  }}
                 </template>
                 <span v-else class="text-muted">未設定</span>
               </td>
               <td v-if="calendar.accountId !== null" class="whitespace-nowrap">
                 <template v-if="day.memberOverride">
-                  {{ getWorkingDayTypeLabel(day.memberOverride.dayType) }}・{{ formatEffortMinutes(day.memberOverride.availableMinutes) }}
+                  {{ getWorkingDayTypeLabel(day.memberOverride.dayType) }}・{{
+                    formatEffortMinutes(day.memberOverride.availableMinutes)
+                  }}
                 </template>
                 <span v-else class="text-muted">未設定</span>
               </td>
@@ -207,7 +228,9 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
           </tbody>
         </table>
       </div>
-      <StatusAlert v-else type="info" variant="soft" class="mt-4">指定期間のcalendar日付はありません。</StatusAlert>
+      <StatusAlert v-else type="info" variant="soft" class="mt-4"
+        >指定期間のcalendar日付はありません。</StatusAlert
+      >
     </template>
   </UCard>
 </template>

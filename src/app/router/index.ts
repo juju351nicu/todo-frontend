@@ -1,9 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import {
-  hasAnyPermission,
-  LOGIN_REQUIRED_QUERY,
-} from "@/app/router/authorization";
+import { hasAnyPermission, LOGIN_REQUIRED_QUERY } from "@/app/router/authorization";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { routes } from "@/app/router/routes";
 import { useUserStore } from "@/features/auth/stores/user";

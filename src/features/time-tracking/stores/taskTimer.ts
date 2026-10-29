@@ -17,10 +17,7 @@ import {
 } from "@/features/time-tracking/utils/apiErrors";
 import { formatEffortMinutes } from "@/features/time-tracking/utils/timeTracking";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 type TaskTimerMutation = "START" | "STOP" | "CANCEL";
 
@@ -39,49 +36,19 @@ interface TaskTimerState {
 /** Time Trackingの409 codeを、現在状態から再操作できる利用者向け案内へ変換する。 */
 const getConflictMessage = (error: TimeTrackingApiError): string => {
   const response = error.errorResponse;
-  if (
-    hasApiFieldError(
-      response,
-      TIME_TRACKING_ERROR_CODE.timerAlreadyRunning,
-      "timer"
-    )
-  ) {
+  if (hasApiFieldError(response, TIME_TRACKING_ERROR_CODE.timerAlreadyRunning, "timer")) {
     return DISPLAY_MESSAGES.timeTracking.conflict.alreadyRunning;
   }
-  if (
-    hasApiFieldError(
-      response,
-      TIME_TRACKING_ERROR_CODE.timerNotRunning,
-      "timer"
-    )
-  ) {
+  if (hasApiFieldError(response, TIME_TRACKING_ERROR_CODE.timerNotRunning, "timer")) {
     return DISPLAY_MESSAGES.timeTracking.conflict.notRunning;
   }
-  if (
-    hasApiFieldError(
-      response,
-      TIME_TRACKING_ERROR_CODE.timerVersionConflict,
-      "version"
-    )
-  ) {
+  if (hasApiFieldError(response, TIME_TRACKING_ERROR_CODE.timerVersionConflict, "version")) {
     return DISPLAY_MESSAGES.timeTracking.conflict.version;
   }
-  if (
-    hasApiFieldError(
-      response,
-      TIME_TRACKING_ERROR_CODE.timerDurationExceeded,
-      "timer"
-    )
-  ) {
+  if (hasApiFieldError(response, TIME_TRACKING_ERROR_CODE.timerDurationExceeded, "timer")) {
     return DISPLAY_MESSAGES.timeTracking.conflict.durationExceeded;
   }
-  if (
-    hasApiFieldError(
-      response,
-      TIME_TRACKING_ERROR_CODE.timerDailyLimitExceeded,
-      "workDate"
-    )
-  ) {
+  if (hasApiFieldError(response, TIME_TRACKING_ERROR_CODE.timerDailyLimitExceeded, "workDate")) {
     return DISPLAY_MESSAGES.timeTracking.conflict.dailyLimitExceeded;
   }
   return DISPLAY_MESSAGES.timeTracking.conflict.changed;
@@ -110,8 +77,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
     isTaskRunning:
       (state) =>
       (projectId: number, taskId: number): boolean =>
-        state.currentTimer?.projectId === projectId &&
-        state.currentTimer.taskId === taskId,
+        state.currentTimer?.projectId === projectId && state.currentTimer.taskId === taskId,
   },
   actions: {
     /** Backendの現在Timer Responseを受信時刻とともに共有状態へ反映する。 */
@@ -160,11 +126,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.applyCurrentResponse(await TimeTrackingApi.getCurrentTimer());
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(
-          error,
-          DISPLAY_MESSAGES.timeTracking.currentLoadFailed,
-          false
-        );
+        await this.handleApiError(error, DISPLAY_MESSAGES.timeTracking.currentLoadFailed, false);
         return false;
       } finally {
         if (showLoading) {
@@ -192,17 +154,11 @@ export const useTaskTimerStore = defineStore("taskTimer", {
 
       this.pendingMutation = "START";
       try {
-        this.applyCurrentResponse(
-          await TimeTrackingApi.startTimer(projectId, taskId)
-        );
+        this.applyCurrentResponse(await TimeTrackingApi.startTimer(projectId, taskId));
         this.successMessage = "TaskのTimerを開始しました。";
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(
-          error,
-          DISPLAY_MESSAGES.timeTracking.startFailed,
-          true
-        );
+        await this.handleApiError(error, DISPLAY_MESSAGES.timeTracking.startFailed, true);
         return false;
       } finally {
         this.pendingMutation = null;
@@ -239,11 +195,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
             : `Timerを停止し、日別実績へ${formatEffortMinutes(creditedMinutes)}加算しました。`;
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(
-          error,
-          DISPLAY_MESSAGES.timeTracking.stopFailed,
-          true
-        );
+        await this.handleApiError(error, DISPLAY_MESSAGES.timeTracking.stopFailed, true);
         return false;
       } finally {
         this.pendingMutation = null;
@@ -268,11 +220,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         this.successMessage = "Timerを実績へ反映せず取消しました。";
         return true;
       } catch (error: unknown) {
-        await this.handleApiError(
-          error,
-          DISPLAY_MESSAGES.timeTracking.cancelFailed,
-          true
-        );
+        await this.handleApiError(error, DISPLAY_MESSAGES.timeTracking.cancelFailed, true);
         return false;
       } finally {
         this.pendingMutation = null;
@@ -310,9 +258,7 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         return;
       }
       if (error.status === 403) {
-        this.errorMessages = [
-          DISPLAY_MESSAGES.timeTracking.operationForbidden,
-        ];
+        this.errorMessages = [DISPLAY_MESSAGES.timeTracking.operationForbidden];
         return;
       }
       if (error.status === 404) {

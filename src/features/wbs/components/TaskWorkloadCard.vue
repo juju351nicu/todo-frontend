@@ -29,12 +29,12 @@ const emit = defineEmits<{
 // 親composableが確定した検索期間を、再読込・競合回復後も入力欄へ同期する。
 const form = useSyncedDraft(
   () => props.dateRange,
-  (dateRange) => ({ ...dateRange }),
+  (dateRange) => ({ ...dateRange })
 );
 
 /** 同名の担当者が複数いる表示名。該当する行だけアカウントIDを添える。 */
 const duplicatedDisplayNames = computed<ReadonlySet<string>>(() =>
-  findDuplicatedWorkloadDisplayNames(props.workload?.workloads ?? []),
+  findDuplicatedWorkloadDisplayNames(props.workload?.workloads ?? [])
 );
 
 /** 入力中の期間を複製し、検証とAPI取得を担当する親composableへ渡す。 */
@@ -51,7 +51,9 @@ const submit = (): void => {
       <div class="flex flex-wrap items-center gap-2">
         <UIcon name="i-mdi-account-clock-outline" class="size-6" />
         担当者別workload
-        <UBadge size="sm" variant="outline" class="ms-auto">{{ workload?.workloads.length ?? 0 }}行</UBadge>
+        <UBadge size="sm" variant="outline" class="ms-auto"
+          >{{ workload?.workloads.length ?? 0 }}行</UBadge
+        >
       </div>
     </template>
     <p class="mb-4 text-sm text-muted">
@@ -93,8 +95,12 @@ const submit = (): void => {
     </div>
     <template v-else-if="workload">
       <div class="mt-5 mb-3 flex flex-wrap gap-2">
-        <UBadge color="info">予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge>
-        <UBadge color="secondary">実績 {{ formatEffortMinutes(workload.totalActualEffortMinutes) }}</UBadge>
+        <UBadge color="info"
+          >予定 {{ formatEffortMinutes(workload.totalPlannedEffortMinutes) }}</UBadge
+        >
+        <UBadge color="secondary"
+          >実績 {{ formatEffortMinutes(workload.totalActualEffortMinutes) }}</UBadge
+        >
         <UBadge :color="getWorkloadVarianceColor(workload.totalVarianceEffortMinutes)">
           差分 {{ formatSignedEffortMinutes(workload.totalVarianceEffortMinutes) }}
         </UBadge>
@@ -119,15 +125,22 @@ const submit = (): void => {
               <td class="whitespace-nowrap">{{ row.workDate }}</td>
               <td>
                 {{ row.accountDisplayName }}
-                <div v-if="duplicatedDisplayNames.has(row.accountDisplayName)" class="text-xs text-muted">
+                <div
+                  v-if="duplicatedDisplayNames.has(row.accountDisplayName)"
+                  class="text-xs text-muted"
+                >
                   アカウントID: {{ row.accountId }}
                 </div>
               </td>
               <td class="whitespace-nowrap">{{ formatEffortMinutes(row.plannedEffortMinutes) }}</td>
               <td class="whitespace-nowrap">{{ formatEffortMinutes(row.availableMinutes) }}</td>
-              <td class="whitespace-nowrap">{{ formatSignedEffortMinutes(row.remainingMinutes) }}</td>
               <td class="whitespace-nowrap">
-                <UBadge :color="getWorkloadCapacityColor(row)" size="sm">{{ getWorkloadCapacityLabel(row) }}</UBadge>
+                {{ formatSignedEffortMinutes(row.remainingMinutes) }}
+              </td>
+              <td class="whitespace-nowrap">
+                <UBadge :color="getWorkloadCapacityColor(row)" size="sm">{{
+                  getWorkloadCapacityLabel(row)
+                }}</UBadge>
               </td>
               <td class="whitespace-nowrap">{{ formatEffortMinutes(row.actualEffortMinutes) }}</td>
               <td class="whitespace-nowrap">
@@ -139,7 +152,9 @@ const submit = (): void => {
           </tbody>
         </table>
       </div>
-      <StatusAlert v-else type="info" variant="soft" class="mt-4">指定期間の日別予定・実績工数はありません。</StatusAlert>
+      <StatusAlert v-else type="info" variant="soft" class="mt-4"
+        >指定期間の日別予定・実績工数はありません。</StatusAlert
+      >
     </template>
   </UCard>
 </template>

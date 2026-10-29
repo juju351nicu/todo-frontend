@@ -15,9 +15,7 @@ export const useHomeNavigation = (): { goHome: () => Promise<void> } => {
   const userStore = useUserStore();
 
   const goHome = async (): Promise<void> => {
-    const routeName = userStore.isAuthenticated
-      ? AUTHENTICATED_HOME_ROUTE_NAME
-      : ROUTE_NAMES.login;
+    const routeName = userStore.isAuthenticated ? AUTHENTICATED_HOME_ROUTE_NAME : ROUTE_NAMES.login;
     await router.push({ name: routeName });
   };
 

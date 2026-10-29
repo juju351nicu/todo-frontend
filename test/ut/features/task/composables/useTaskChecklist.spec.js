@@ -25,9 +25,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/task/api/taskChecklistApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/task/api/taskChecklistApi"
-  );
+  const actual = await vi.importActual("@/features/task/api/taskChecklistApi");
   return { ...actual, default: mocks.taskChecklistApi };
 });
 
@@ -50,8 +48,7 @@ const secondItem = {
   position: 2000,
 };
 
-const createPage = (disabled = false) =>
-  useTaskChecklist(ref(5), ref(31), ref(disabled));
+const createPage = (disabled = false) => useTaskChecklist(ref(5), ref(31), ref(disabled));
 
 const waitForInitialLoad = async () => {
   await vi.waitFor(() => {
@@ -73,9 +70,8 @@ describe("useTaskChecklist", () => {
       content: "レビューする",
       position: 3000,
     });
-    mocks.taskChecklistApi.updateItem.mockImplementation(
-      (_projectId, _taskId, _itemId, request) =>
-        Promise.resolve({ ...firstItem, ...request, version: 1 })
+    mocks.taskChecklistApi.updateItem.mockImplementation((_projectId, _taskId, _itemId, request) =>
+      Promise.resolve({ ...firstItem, ...request, version: 1 })
     );
     mocks.taskChecklistApi.reorderItems.mockResolvedValue([
       { ...secondItem, position: 1000, version: 1 },
@@ -96,7 +92,11 @@ describe("useTaskChecklist", () => {
   it("Taskを切り替えた後に前のTaskのchecklistが届いても、今のTaskのchecklistを上書きしない", async () => {
     let resolvePreviousTaskList;
     mocks.taskChecklistApi.findItems
-      .mockReturnValueOnce(new Promise((resolve) => { resolvePreviousTaskList = resolve; }))
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolvePreviousTaskList = resolve;
+        })
+      )
       .mockResolvedValueOnce([{ ...firstItem, taskId: 40, content: "今のTaskのchecklist" }]);
     const taskId = ref(31);
     const page = useTaskChecklist(ref(5), taskId, ref(false));
@@ -152,9 +152,7 @@ describe("useTaskChecklist", () => {
         { checklistItemId: 41, version: 0 },
       ],
     });
-    expect(page.items.value.map((item) => item.checklistItemId)).toEqual([
-      42, 41,
-    ]);
+    expect(page.items.value.map((item) => item.checklistItemId)).toEqual([42, 41]);
   });
 
   it("削除確認対象のversionを送り204成功後だけ一覧から除外する", async () => {
@@ -164,12 +162,7 @@ describe("useTaskChecklist", () => {
 
     await page.confirmDelete();
 
-    expect(mocks.taskChecklistApi.deleteItem).toHaveBeenCalledWith(
-      5,
-      31,
-      41,
-      0
-    );
+    expect(mocks.taskChecklistApi.deleteItem).toHaveBeenCalledWith(5, 31, 41, 0);
     expect(page.items.value.map((item) => item.checklistItemId)).toEqual([42]);
   });
 
@@ -210,9 +203,7 @@ describe("useTaskChecklist", () => {
     mocks.taskChecklistApi.findItems
       .mockResolvedValueOnce([structuredClone(firstItem)])
       .mockResolvedValueOnce([structuredClone(firstItem)]);
-    mocks.taskChecklistApi.updateItem.mockRejectedValue(
-      new TaskChecklistApiError(409, null)
-    );
+    mocks.taskChecklistApi.updateItem.mockRejectedValue(new TaskChecklistApiError(409, null));
     const page = createPage();
     await waitForInitialLoad();
 
@@ -269,9 +260,7 @@ describe("useTaskChecklist", () => {
 
     await page.toggleItem(page.items.value[0]);
 
-    expect(page.errorMessages.value).toEqual([
-      DISPLAY_MESSAGES.task.checklist.toggleFailed,
-    ]);
+    expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.task.checklist.toggleFailed]);
   });
 
   it("409回復中の401を古い競合より優先し一覧を破棄してLoginへ戻す", async () => {
@@ -346,9 +335,7 @@ describe("useTaskChecklist", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.taskChecklistApi.findItems.mockRejectedValue(
-      new TaskChecklistApiError(401, null)
-    );
+    mocks.taskChecklistApi.findItems.mockRejectedValue(new TaskChecklistApiError(401, null));
 
     const page = createPage();
     await waitForInitialLoad();
@@ -413,7 +400,10 @@ describe("useTaskChecklist", () => {
     const page = createPage();
     await waitForInitialLoad();
     page.newContent.value = "追加項目";
-    page.items.value = Array.from({ length: 50 }, (_, index) => ({ ...firstItem, checklistItemId: index + 1 }));
+    page.items.value = Array.from({ length: 50 }, (_, index) => ({
+      ...firstItem,
+      checklistItemId: index + 1,
+    }));
 
     expect(page.canAdd.value).toBe(false);
   });

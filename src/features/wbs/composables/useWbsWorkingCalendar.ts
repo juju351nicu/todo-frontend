@@ -42,8 +42,7 @@ import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/
  * @param workDate 行の日付（yyyy-MM-dd）
  * @returns 属性の値
  */
-export const buildWorkingDayEditControlKey = (workDate: string): string =>
-  `day:${workDate}:edit`;
+export const buildWorkingDayEditControlKey = (workDate: string): string => `day:${workDate}:edit`;
 
 /**
  * 稼働日calendar cardの「表示」ボタンに付ける`data-working-calendar-control`属性の値。
@@ -52,7 +51,9 @@ export const buildWorkingDayEditControlKey = (workDate: string): string =>
 export const WORKING_CALENDAR_SUBMIT_CONTROL = "submit";
 
 /** `data-working-calendar-control`属性の値から、その要素を探すselectorを作る。 */
-const buildWorkingCalendarControlSelector = createDataAttributeSelector("data-working-calendar-control");
+const buildWorkingCalendarControlSelector = createDataAttributeSelector(
+  "data-working-calendar-control"
+);
 
 /**
  * Backendの文言が「最新状態を取得してください。」で終わる409のerror code
@@ -113,16 +114,12 @@ export const useWbsWorkingCalendar = (
   const isSavingWorkingDay = ref(false);
   const isWorkingDayEditorOpen = ref(false);
 
-  const workingCalendarTargetOptions = computed<
-    WorkingCalendarTargetOption[]
-  >(() => {
+  const workingCalendarTargetOptions = computed<WorkingCalendarTargetOption[]>(() => {
     const targetOptions: WorkingCalendarTargetOption[] = [
       { title: "Project共通", value: "PROJECT" },
     ];
     const members = (context.project.value?.members ?? []).filter(
-      (member) =>
-        context.canManageProject.value ||
-        member.accountId === userStore.accountId
+      (member) => context.canManageProject.value || member.accountId === userStore.accountId
     );
     return targetOptions.concat(
       members.map((member) => ({
@@ -142,10 +139,7 @@ export const useWbsWorkingCalendar = (
   const selectedWorkingCalendarTargetDisplayName = computed(() => {
     const target = selectedWorkingCalendarTarget.value;
     return target?.kind === "MEMBER"
-      ? resolveProjectMemberDisplayName(
-          context.project.value?.members ?? [],
-          target.accountId
-        )
+      ? resolveProjectMemberDisplayName(context.project.value?.members ?? [], target.accountId)
       : null;
   });
   /**
@@ -174,13 +168,10 @@ export const useWbsWorkingCalendar = (
     }
     return target.kind === "PROJECT"
       ? context.canManageProject.value
-      : context.canManageProject.value ||
-          target.accountId === userStore.accountId;
+      : context.canManageProject.value || target.accountId === userStore.accountId;
   });
   const canEditSelectedWorkingCalendarTarget = computed(
-    () =>
-      hasWorkingCalendarTargetPermission.value &&
-      !isSelectedTargetInactiveMember.value
+    () => hasWorkingCalendarTargetPermission.value && !isSelectedTargetInactiveMember.value
   );
   /**
    * 変更できない理由の案内。変更できる場合はnull。
@@ -191,10 +182,7 @@ export const useWbsWorkingCalendar = (
     if (canEditSelectedWorkingCalendarTarget.value) {
       return null;
     }
-    if (
-      context.project.value !== null &&
-      context.project.value.status !== "ACTIVE"
-    ) {
+    if (context.project.value !== null && context.project.value.status !== "ACTIVE") {
       return DISPLAY_MESSAGES.wbs.workingCalendar.archivedReadOnly;
     }
     return hasWorkingCalendarTargetPermission.value
@@ -224,9 +212,7 @@ export const useWbsWorkingCalendar = (
     const target = parseWorkingCalendarTargetKey(targetKey);
     if (
       target === null ||
-      !workingCalendarTargetOptions.value.some(
-        (option) => option.value === targetKey
-      )
+      !workingCalendarTargetOptions.value.some((option) => option.value === targetKey)
     ) {
       validationMessages.push("calendarの表示対象を選択してください。");
     }
@@ -257,10 +243,7 @@ export const useWbsWorkingCalendar = (
 
   /** 画面の再読込時に、利用者が最後に指定した期間・対象でcalendarを取得する。 */
   const loadCurrentWorkingCalendar = (): Promise<void> =>
-    loadWorkingCalendar(
-      workingCalendarDateRange.value,
-      workingCalendarSelectedTargetKey.value
-    );
+    loadWorkingCalendar(workingCalendarDateRange.value, workingCalendarSelectedTargetKey.value);
 
   /** calendar参照APIの失敗を検索欄の案内またはSession失効処理へ変換する。 */
   const handleWorkingCalendarReadError = async (error: unknown): Promise<void> => {
@@ -285,26 +268,18 @@ export const useWbsWorkingCalendar = (
     workingCalendarEditorErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
     if (!canEditSelectedWorkingCalendarTarget.value) {
-      workingCalendarErrorMessages.value = [
-        "このcalendar設定を更新する権限がありません。",
-      ];
+      workingCalendarErrorMessages.value = ["このcalendar設定を更新する権限がありません。"];
       return;
     }
-    const day = workingCalendar.value?.days.find(
-      (candidate) => candidate.workDate === workDate
-    );
+    const day = workingCalendar.value?.days.find((candidate) => candidate.workDate === workDate);
     if (day === undefined) {
-      workingCalendarErrorMessages.value = [
-        "編集対象のcalendar日付が見つかりません。",
-      ];
+      workingCalendarErrorMessages.value = ["編集対象のcalendar日付が見つかりません。"];
       return;
     }
     workingDayEditingDay.value = {
       ...day,
-      projectOverride:
-        day.projectOverride === null ? null : { ...day.projectOverride },
-      memberOverride:
-        day.memberOverride === null ? null : { ...day.memberOverride },
+      projectOverride: day.projectOverride === null ? null : { ...day.projectOverride },
+      memberOverride: day.memberOverride === null ? null : { ...day.memberOverride },
     };
     isWorkingDayEditorOpen.value = true;
   };
@@ -333,18 +308,11 @@ export const useWbsWorkingCalendar = (
     const projectId = context.projectId.value;
     const target = selectedWorkingCalendarTarget.value;
     const day = workingDayEditingDay.value;
-    if (
-      isSavingWorkingDay.value ||
-      projectId === null ||
-      target === null ||
-      day === null
-    ) {
+    if (isSavingWorkingDay.value || projectId === null || target === null || day === null) {
       return;
     }
     if (!canEditSelectedWorkingCalendarTarget.value) {
-      workingCalendarEditorErrorMessages.value = [
-        "このcalendar設定を更新する権限がありません。",
-      ];
+      workingCalendarEditorErrorMessages.value = ["このcalendar設定を更新する権限がありません。"];
       return;
     }
     const validationMessages = validateWorkingDayForm(form);
@@ -361,10 +329,7 @@ export const useWbsWorkingCalendar = (
     try {
       if (target.kind === "PROJECT") {
         if (currentOverride === null) {
-          await WbsApi.createProjectWorkingDay(
-            projectId,
-            buildWorkingDayCreateRequest(form)
-          );
+          await WbsApi.createProjectWorkingDay(projectId, buildWorkingDayCreateRequest(form));
         } else {
           await WbsApi.updateProjectWorkingDay(
             projectId,
@@ -388,9 +353,7 @@ export const useWbsWorkingCalendar = (
       }
       closeWorkingDayEditorAfterOperation();
       workingCalendarSuccessMessage.value =
-        currentOverride === null
-          ? "稼働日例外を登録しました。"
-          : "稼働日例外を更新しました。";
+        currentOverride === null ? "稼働日例外を登録しました。" : "稼働日例外を更新しました。";
       await reloadWorkingCalendarAndWorkload();
     } catch (error: unknown) {
       await handleWorkingDayMutationError(error);
@@ -400,13 +363,9 @@ export const useWbsWorkingCalendar = (
   };
 
   /** 稼働日例外登録・更新APIのstatusを入力案内、競合再取得またはSession動作へ変換する。 */
-  const handleWorkingDayMutationError = async (
-    error: unknown
-  ): Promise<void> => {
+  const handleWorkingDayMutationError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workingCalendarEditorErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
+      workingCalendarEditorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -446,23 +405,15 @@ export const useWbsWorkingCalendar = (
     workingCalendarErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
     const target = selectedWorkingCalendarTarget.value;
-    const day = workingCalendar.value?.days.find(
-      (candidate) => candidate.workDate === workDate
-    );
+    const day = workingCalendar.value?.days.find((candidate) => candidate.workDate === workDate);
     const override =
-      target === null || day === undefined
-        ? null
-        : getWorkingDayOverride(day, target);
+      target === null || day === undefined ? null : getWorkingDayOverride(day, target);
     if (override === null) {
-      workingCalendarErrorMessages.value = [
-        "削除対象の稼働日例外が見つかりません。",
-      ];
+      workingCalendarErrorMessages.value = ["削除対象の稼働日例外が見つかりません。"];
       return;
     }
     if (!canEditSelectedWorkingCalendarTarget.value) {
-      workingCalendarErrorMessages.value = [
-        "このcalendar設定を削除する権限がありません。",
-      ];
+      workingCalendarErrorMessages.value = ["このcalendar設定を削除する権限がありません。"];
       return;
     }
     workingDayPendingDelete.value = { ...override };
@@ -480,18 +431,11 @@ export const useWbsWorkingCalendar = (
     const projectId = context.projectId.value;
     const target = selectedWorkingCalendarTarget.value;
     const override = workingDayPendingDelete.value;
-    if (
-      projectId === null ||
-      target === null ||
-      override === null ||
-      isDeletingWorkingDay.value
-    ) {
+    if (projectId === null || target === null || override === null || isDeletingWorkingDay.value) {
       return;
     }
     if (!canEditSelectedWorkingCalendarTarget.value) {
-      workingCalendarErrorMessages.value = [
-        "このcalendar設定を削除する権限がありません。",
-      ];
+      workingCalendarErrorMessages.value = ["このcalendar設定を削除する権限がありません。"];
       return;
     }
 
@@ -504,11 +448,7 @@ export const useWbsWorkingCalendar = (
     );
     try {
       if (target.kind === "PROJECT") {
-        await WbsApi.deleteProjectWorkingDay(
-          projectId,
-          override.workingDayId,
-          override.version
-        );
+        await WbsApi.deleteProjectWorkingDay(projectId, override.workingDayId, override.version);
       } else {
         await WbsApi.deleteMemberWorkingDay(
           projectId,
@@ -531,13 +471,9 @@ export const useWbsWorkingCalendar = (
   };
 
   /** 稼働日例外削除APIのstatusを競合再取得、認可案内またはSession動作へ変換する。 */
-  const handleWorkingDayDeleteError = async (
-    error: unknown
-  ): Promise<void> => {
+  const handleWorkingDayDeleteError = async (error: unknown): Promise<void> => {
     if (!(error instanceof WbsApiError)) {
-      workingCalendarErrorMessages.value = [
-        DISPLAY_MESSAGES.common.connectionFailed,
-      ];
+      workingCalendarErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
       return;
     }
     if (error.status === 401) {
@@ -545,9 +481,7 @@ export const useWbsWorkingCalendar = (
       return;
     }
     if (error.status === 403) {
-      workingCalendarErrorMessages.value = [
-        DISPLAY_MESSAGES.wbs.workingCalendar.deleteForbidden,
-      ];
+      workingCalendarErrorMessages.value = [DISPLAY_MESSAGES.wbs.workingCalendar.deleteForbidden];
       return;
     }
     if (error.status === 404 || error.status === 409) {
@@ -559,9 +493,7 @@ export const useWbsWorkingCalendar = (
       await reloadAfterStaleOperation(error);
       return;
     }
-    workingCalendarErrorMessages.value = [
-      DISPLAY_MESSAGES.wbs.workingCalendar.deleteFailed,
-    ];
+    workingCalendarErrorMessages.value = [DISPLAY_MESSAGES.wbs.workingCalendar.deleteFailed];
   };
 
   /**

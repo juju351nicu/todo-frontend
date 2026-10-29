@@ -46,12 +46,8 @@ const calendarDay = {
 
 describe("稼働日calendar変換", () => {
   it("Project共通とmember固有のselect値を相互変換する", () => {
-    expect(
-      buildWorkingCalendarTargetKey({ kind: "PROJECT", accountId: null })
-    ).toBe("PROJECT");
-    expect(
-      buildWorkingCalendarTargetKey({ kind: "MEMBER", accountId: 2 })
-    ).toBe("MEMBER:2");
+    expect(buildWorkingCalendarTargetKey({ kind: "PROJECT", accountId: null })).toBe("PROJECT");
+    expect(buildWorkingCalendarTargetKey({ kind: "MEMBER", accountId: 2 })).toBe("MEMBER:2");
     expect(parseWorkingCalendarTargetKey("PROJECT")).toEqual({
       kind: "PROJECT",
       accountId: null,
@@ -129,9 +125,7 @@ describe("稼働日calendar変換", () => {
         dayType: "WORKING_DAY",
         availableMinutes: 0,
       })
-    ).toEqual([
-      "稼働日の稼働可能時間は1分以上1440分以下で入力してください。",
-    ]);
+    ).toEqual(["稼働日の稼働可能時間は1分以上1440分以下で入力してください。"]);
   });
 
   it("検証済みFormを登録・version付き更新Requestへ変換する", () => {

@@ -129,9 +129,7 @@ describe("useMemberListPage", () => {
 
 describe("formatMemberDateTime", () => {
   it("BackendのISO日時を短い日付・時刻にする", () => {
-    expect(formatMemberDateTime("2026-10-27T16:14:59.244")).toBe(
-      "2026/10/27 16:14"
-    );
+    expect(formatMemberDateTime("2026-10-27T16:14:59.244")).toBe("2026/10/27 16:14");
   });
 
   it("未ログイン等のnullは空欄にする", () => {

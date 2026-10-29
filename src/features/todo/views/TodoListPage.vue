@@ -4,7 +4,10 @@ import { onBeforeMount } from "vue";
 import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import TodoPriorityBadge from "@/features/todo/components/TodoPriorityBadge.vue";
 import TodoSearchCard from "@/features/todo/components/TodoSearchCard.vue";
-import { buildTodoEditControlKey, useTodoListPage } from "@/features/todo/composables/useTodoListPage";
+import {
+  buildTodoEditControlKey,
+  useTodoListPage,
+} from "@/features/todo/composables/useTodoListPage";
 import { truncateTodoDetail } from "@/features/todo/utils/todoDisplay";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -36,7 +39,11 @@ onBeforeMount(initialize);
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </StatusAlert>
   <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
-  <TodoSearchCard v-model:search-title="searchTitle" v-model:selected-done-flag="selectedDoneFlag" @search="search" />
+  <TodoSearchCard
+    v-model:search-title="searchTitle"
+    v-model:selected-done-flag="selectedDoneFlag"
+    @search="search"
+  />
   <br />
   <AppDataTable
     v-model:items-per-page="itemsPerPage"

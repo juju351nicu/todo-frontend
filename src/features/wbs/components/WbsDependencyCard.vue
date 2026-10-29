@@ -49,7 +49,10 @@ const emit = defineEmits<{
     </template>
 
     <!-- 依存関係cardは画面の下部にあるため、操作結果は画面上部ではなくcard内に出す。 -->
-    <div v-if="errorMessages.length || successMessage" class="flex flex-col gap-3 px-4 pt-4 sm:px-6">
+    <div
+      v-if="errorMessages.length || successMessage"
+      class="flex flex-col gap-3 px-4 pt-4 sm:px-6"
+    >
       <StatusAlert v-if="errorMessages.length" type="error">
         <div v-for="message in errorMessages" :key="message">{{ message }}</div>
       </StatusAlert>

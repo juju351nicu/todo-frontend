@@ -14,9 +14,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/time-tracking/api/timeTrackingApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/time-tracking/api/timeTrackingApi"
-  );
+  const actual = await vi.importActual("@/features/time-tracking/api/timeTrackingApi");
   return { ...actual, default: mocks.api };
 });
 
@@ -60,17 +58,13 @@ describe("useTaskTimerHistory", () => {
     await history.loadHistory();
 
     expect(mocks.api.getSessions).not.toHaveBeenCalled();
-    expect(history.errorMessages.value).toEqual([
-      "実在する開始日と終了日を入力してください。",
-    ]);
+    expect(history.errorMessages.value).toEqual(["実在する開始日と終了日を入力してください。"]);
 
     history.dateFrom.value = "2025-01-01";
     history.dateTo.value = "2026-01-02";
     await history.loadHistory();
     expect(mocks.api.getSessions).not.toHaveBeenCalled();
-    expect(history.errorMessages.value).toEqual([
-      "検索期間は366日以内にしてください。",
-    ]);
+    expect(history.errorMessages.value).toEqual(["検索期間は366日以内にしてください。"]);
   });
 
   it("最終ページより先ではAPIを呼ばず前ページは取得する", async () => {
@@ -88,9 +82,7 @@ describe("useTaskTimerHistory", () => {
     expect(mocks.api.getSessions).not.toHaveBeenCalled();
 
     await history.loadPreviousPage();
-    expect(mocks.api.getSessions).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 0 })
-    );
+    expect(mocks.api.getSessions).toHaveBeenCalledWith(expect.objectContaining({ page: 0 }));
   });
 
   it("契約済み400の複数messageをBackend順で表示する", async () => {
@@ -136,31 +128,23 @@ describe("useTaskTimerHistory", () => {
 
     await history.openDialog();
 
-    expect(history.errorMessages.value).toEqual([
-      "Timer履歴を取得できませんでした。",
-    ]);
+    expect(history.errorMessages.value).toEqual(["Timer履歴を取得できませんでした。"]);
   });
 
   it("本文なし403ではSessionとDialogを維持して履歴用fallbackを表示する", async () => {
-    mocks.api.getSessions.mockRejectedValue(
-      new TimeTrackingApiError(403, null)
-    );
+    mocks.api.getSessions.mockRejectedValue(new TimeTrackingApiError(403, null));
     const history = useTaskTimerHistory();
 
     await history.openDialog();
 
-    expect(history.errorMessages.value).toEqual([
-      "Timer履歴を取得できませんでした。",
-    ]);
+    expect(history.errorMessages.value).toEqual(["Timer履歴を取得できませんでした。"]);
     expect(history.isOpen.value).toBe(true);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
 
   it("401ではDialogとSession表示を破棄してLoginへ戻す", async () => {
-    mocks.api.getSessions.mockRejectedValue(
-      new TimeTrackingApiError(401, null)
-    );
+    mocks.api.getSessions.mockRejectedValue(new TimeTrackingApiError(401, null));
     const history = useTaskTimerHistory();
 
     await history.openDialog();

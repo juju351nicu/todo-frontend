@@ -22,8 +22,9 @@ export const getProjectTemplateTaskTypeLabel = (taskType: ProjectTemplateTaskTyp
   TASK_TYPE_LABELS[taskType];
 
 /** Template Taskの優先度コード（1:低、2:中、3:高）を日本語表示へ変換する。 */
-export const getProjectTemplatePriorityLabel = (priority: ProjectTemplateTask["priority"]): string =>
-  PRIORITY_LABELS[priority];
+export const getProjectTemplatePriorityLabel = (
+  priority: ProjectTemplateTask["priority"]
+): string => PRIORITY_LABELS[priority];
 
 /**
  * Templateの基準日からの符号付き日数を表示へ変換する。
@@ -45,7 +46,10 @@ export const formatProjectTemplateOffset = (offsetDays: number): string => {
  * @param taskId 依存関係が参照するsnapshot Task ID
  * @returns WBS codeがあれば先頭に付けたTask名。snapshot内に見つからない場合は`ID: <taskId>`
  */
-export const formatProjectTemplateTaskTitle = (tasks: readonly ProjectTemplateTask[], taskId: number): string => {
+export const formatProjectTemplateTaskTitle = (
+  tasks: readonly ProjectTemplateTask[],
+  taskId: number
+): string => {
   const task = tasks.find((candidate) => candidate.projectTemplateTaskId === taskId);
   if (!task) {
     return `ID: ${taskId}`;
@@ -92,5 +96,7 @@ export const formatProjectTemplateParent = (
     return "";
   }
   const parent = tasks.find((task) => task.projectTemplateTaskId === parentProjectTemplateTaskId);
-  return parent === undefined ? "" : `親: ${[parent.wbsCode, parent.title].filter(Boolean).join(" ")}`;
+  return parent === undefined
+    ? ""
+    : `親: ${[parent.wbsCode, parent.title].filter(Boolean).join(" ")}`;
 };

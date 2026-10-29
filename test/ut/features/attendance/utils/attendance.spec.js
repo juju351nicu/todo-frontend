@@ -26,9 +26,7 @@ const buildDay = (overrides = {}) => ({
 
 describe("本人勤怠表示utility", () => {
   it("打刻パネルの現在時刻をAsia/Tokyoの24時間制秒表示へ変換する", () => {
-    expect(
-      formatAttendanceClockTime(new Date("2026-09-11T15:05:06Z"))
-    ).toBe("00:05:06");
+    expect(formatAttendanceClockTime(new Date("2026-09-11T15:05:06Z"))).toBe("00:05:06");
   });
 
   it("通常月と閏年2月の月初・月末をAPI検索範囲へ変換する", () => {
@@ -36,12 +34,8 @@ describe("本人勤怠表示utility", () => {
       dateFrom: "2026-09-01",
       dateTo: "2026-09-30",
     });
-    expect(buildAttendanceMonthDateRange("2028-02").dateTo).toBe(
-      "2028-02-29"
-    );
-    expect(() => buildAttendanceMonthDateRange("2026-13")).toThrow(
-      "実在する表示月"
-    );
+    expect(buildAttendanceMonthDateRange("2028-02").dateTo).toBe("2028-02-29");
+    expect(() => buildAttendanceMonthDateRange("2026-13")).toThrow("実在する表示月");
   });
 
   it("複数勤務・休憩区間から総勤務、休憩、差引時間を算出する", () => {

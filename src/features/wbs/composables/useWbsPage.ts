@@ -5,9 +5,7 @@ import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
-import ProjectApi, {
-  ProjectApiError,
-} from "@/features/project/api/projectApi";
+import ProjectApi, { ProjectApiError } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { canManageProjectTasks, findProjectRole } from "@/features/project/utils/projectRole";
 import { isActiveProject } from "@/features/project/utils/projectStatus";
@@ -43,9 +41,7 @@ const getFirstRouteValue = (
  *
  * @returns 正の安全な整数ならその値、それ以外（未指定、数値でない、0以下、小数）はnull
  */
-const parsePositiveId = (
-  value: string | null | (string | null)[] | undefined
-): number | null => {
+const parsePositiveId = (value: string | null | (string | null)[] | undefined): number | null => {
   const parsed = Number(getFirstRouteValue(value));
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 };
@@ -95,9 +91,7 @@ export const useWbsPage = () => {
       : null
   );
   const rows = computed(() => buildWbsTreeRows(wbs.value?.tasks ?? []));
-  const taskCount = computed(
-    () => rows.value.filter((row) => row.taskType === "TASK").length
-  );
+  const taskCount = computed(() => rows.value.filter((row) => row.taskType === "TASK").length);
   const summaryCount = computed(
     () => rows.value.filter((row) => row.taskType === "SUMMARY").length
   );
@@ -105,9 +99,7 @@ export const useWbsPage = () => {
     () => rows.value.filter((row) => row.taskType === "MILESTONE").length
   );
   const canEditWbs = computed(() => userStore.hasPermission("TASK_UPDATE"));
-  const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.accountId)
-  );
+  const currentProjectRole = computed(() => findProjectRole(project.value, userStore.accountId));
   /** WBSの管理操作（baseline等）へ進めるか。SYSTEM_ADMIN、またはProjectのOWNER・MANAGER。 */
   const canManageProject = computed(() =>
     canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
@@ -165,10 +157,7 @@ export const useWbsPage = () => {
     onDialogClosed: () => void removeWorkLogPanelQuery(),
   });
   const earnedValueState = useWbsEarnedValue(context);
-  const reportExportState = useWbsReportExport(
-    context,
-    earnedValueState.earnedValueStatusDate
-  );
+  const reportExportState = useWbsReportExport(context, earnedValueState.earnedValueStatusDate);
   const baselineState = useWbsBaselines(context, {
     onActiveBaselineChanged: () => earnedValueState.clearEarnedValue(),
   });

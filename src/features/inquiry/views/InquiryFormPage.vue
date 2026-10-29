@@ -3,15 +3,8 @@ import { useInquiryFormPage } from "@/features/inquiry/composables/useInquiryFor
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
-const {
-  email,
-  errorMessages,
-  fullName,
-  isLoading,
-  message,
-  submit,
-  successMessage,
-} = useInquiryFormPage();
+const { email, errorMessages, fullName, isLoading, message, submit, successMessage } =
+  useInquiryFormPage();
 </script>
 
 <template>

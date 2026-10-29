@@ -1,9 +1,6 @@
 import type { AttendanceMonthStatus } from "@/features/attendance/types/attendance";
 import type { NotificationEventType } from "@/features/notification/types/notification";
-import type {
-  ProjectRole,
-  TaskPriority,
-} from "@/features/project/types/project";
+import type { ProjectRole, TaskPriority } from "@/features/project/types/project";
 import type { MyTaskDueGroup } from "@/features/task/types/myTask";
 
 /** DashboardのMy Tasks previewへ表示する本人担当Task。 */

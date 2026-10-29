@@ -59,10 +59,7 @@ const normalizeTaskBoard = (board: TaskBoard): TaskBoard => ({
 
 /** 非2xx ResponseをProjectApiErrorへ変換する。 */
 const ensureSuccess = (response: Response): Promise<void> =>
-  ensureApiSuccess(
-    response,
-    (status, errorResponse) => new ProjectApiError(status, errorResponse)
-  );
+  ensureApiSuccess(response, (status, errorResponse) => new ProjectApiError(status, errorResponse));
 
 /**
  * 現在のSession利用者が参照できるProjectを取得する。
@@ -98,9 +95,7 @@ const getProject = async (projectId: number): Promise<ProjectDetail> => {
  * @throws ProjectApiError 未認証、参照不可または未検出の場合
  */
 const getTaskBoard = async (projectId: number): Promise<TaskBoard> => {
-  const response = await HttpClient.getRequest(
-    `${API_PATHS.PROJECTS}/${projectId}/board`
-  );
+  const response = await HttpClient.getRequest(`${API_PATHS.PROJECTS}/${projectId}/board`);
   await ensureSuccess(response);
   return normalizeTaskBoard((await response.json()) as TaskBoard);
 };
@@ -117,10 +112,7 @@ const updateProject = async (
   projectId: number,
   request: ProjectUpdateRequest
 ): Promise<ProjectDetail> => {
-  const response = await HttpClient.putRequest(
-    `${API_PATHS.PROJECTS}/${projectId}`,
-    request
-  );
+  const response = await HttpClient.putRequest(`${API_PATHS.PROJECTS}/${projectId}`, request);
   await ensureSuccess(response);
   return normalizeProjectDetail((await response.json()) as ProjectDetail);
 };

@@ -7,7 +7,8 @@ const PROJECT_ROLE_DESCRIPTIONS: Readonly<Record<ProjectRole, string>> = {
 };
 
 /** Project roleコードを、そのroleでできる操作の説明へ変換する。実際の操作可否はBackendが判定する。 */
-export const getProjectRoleDescription = (role: ProjectRole): string => PROJECT_ROLE_DESCRIPTIONS[role];
+export const getProjectRoleDescription = (role: ProjectRole): string =>
+  PROJECT_ROLE_DESCRIPTIONS[role];
 
 /**
  * Project詳細の参加者から、アカウントのProject roleを探す。
@@ -30,8 +31,10 @@ export const findProjectRole = (
  * @param projectRole ログイン中のアカウントのProject role。参加していなければnull
  * @returns 管理できる場合true
  */
-export const canManageProject = (isSystemAdmin: boolean, projectRole: ProjectRole | null): boolean =>
-  isSystemAdmin || projectRole === "OWNER";
+export const canManageProject = (
+  isSystemAdmin: boolean,
+  projectRole: ProjectRole | null
+): boolean => isSystemAdmin || projectRole === "OWNER";
 
 /**
  * Project内のTaskを管理できるか（SYSTEM_ADMIN、またはProjectのOWNER・MANAGER）。

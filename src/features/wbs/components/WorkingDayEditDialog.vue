@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { DAY_TYPE_OPTIONS, useWorkingDayEditForm } from "@/features/wbs/composables/useWorkingDayEditForm";
-import type { WorkingCalendarDay, WorkingCalendarTarget, WorkingDayForm } from "@/features/wbs/types/wbs";
+import {
+  DAY_TYPE_OPTIONS,
+  useWorkingDayEditForm,
+} from "@/features/wbs/composables/useWorkingDayEditForm";
+import type {
+  WorkingCalendarDay,
+  WorkingCalendarTarget,
+  WorkingDayForm,
+} from "@/features/wbs/types/wbs";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 /** 稼働日例外Dialogへ親画面から渡す選択日、対象階層、処理状態。 */
@@ -21,16 +28,23 @@ const emit = defineEmits<{
 }>();
 
 // Formの作り直し・種別切替時の補正・表示文言は composable が持ち、ここは描画だけを行う。
-const { closeDialog, dialogTitle, editingOverride, form, handleDialogVisibility, submitForm, targetLabel } =
-  useWorkingDayEditForm({
-    open: () => props.open,
-    day: () => props.day,
-    target: () => props.target,
-    targetDisplayName: () => props.targetDisplayName,
-    isSaving: () => props.isSaving,
-    onClose: () => emit("close"),
-    onSave: (value) => emit("save", value),
-  });
+const {
+  closeDialog,
+  dialogTitle,
+  editingOverride,
+  form,
+  handleDialogVisibility,
+  submitForm,
+  targetLabel,
+} = useWorkingDayEditForm({
+  open: () => props.open,
+  day: () => props.day,
+  target: () => props.target,
+  targetDisplayName: () => props.targetDisplayName,
+  isSaving: () => props.isSaving,
+  onClose: () => emit("close"),
+  onSave: (value) => emit("save", value),
+});
 </script>
 
 <template>
@@ -86,7 +100,9 @@ const { closeDialog, dialogTitle, editingOverride, form, handleDialogVisibility,
     </template>
     <template #footer>
       <UButton variant="ghost" :disabled="isSaving" @click="closeDialog">キャンセル</UButton>
-      <UButton color="primary" variant="ghost" :loading="isSaving" @click="submitForm">{{ editingOverride ? "更新" : "登録" }}</UButton>
+      <UButton color="primary" variant="ghost" :loading="isSaving" @click="submitForm">{{
+        editingOverride ? "更新" : "登録"
+      }}</UButton>
     </template>
   </UModal>
 </template>

@@ -16,8 +16,7 @@ export interface TaskSearchFilters {
 }
 
 /** Saved View取得時の検索条件。Backendで未指定のkeywordはnullとなる。 */
-export interface TaskSearchSavedFilters
-  extends Omit<TaskSearchFilters, "keyword"> {
+export interface TaskSearchSavedFilters extends Omit<TaskSearchFilters, "keyword"> {
   keyword: string | null;
 }
 

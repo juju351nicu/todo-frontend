@@ -29,9 +29,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/project/api/projectTemplateApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/project/api/projectTemplateApi"
-  );
+  const actual = await vi.importActual("@/features/project/api/projectTemplateApi");
   return { ...actual, default: mocks.projectTemplateApi };
 });
 
@@ -99,12 +97,8 @@ describe("useProjectTemplatePage", () => {
     mocks.permissions.add("PROJECT_UPDATE");
     mocks.userStore.accountId = 7;
     mocks.router.push.mockResolvedValue(undefined);
-    mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([
-      structuredClone(summary),
-    ]);
-    mocks.projectTemplateApi.getOwnTemplate.mockResolvedValue(
-      structuredClone(template)
-    );
+    mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([structuredClone(summary)]);
+    mocks.projectTemplateApi.getOwnTemplate.mockResolvedValue(structuredClone(template));
     mocks.projectTemplateApi.update.mockImplementation((_id, request) =>
       Promise.resolve({ ...structuredClone(template), ...request, version: 2 })
     );
@@ -215,9 +209,7 @@ describe("useProjectTemplatePage", () => {
     await page.applyTemplate();
 
     expect(mocks.projectTemplateApi.apply).not.toHaveBeenCalled();
-    expect(page.errorMessages.value).toEqual([
-      "Project開始日を正しく入力してください。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Project開始日を正しく入力してください。"]);
   });
 
   it("同じaccountの複数slot割当はAPI送信前に拒否する", async () => {
@@ -391,7 +383,10 @@ describe("useProjectTemplatePage", () => {
       page.cancelEditing();
       await vi.waitFor(() => expect(focused).toHaveLength(2));
 
-      expect(focused).toEqual([PROJECT_TEMPLATE_CONTROL.editName, PROJECT_TEMPLATE_CONTROL.editButton]);
+      expect(focused).toEqual([
+        PROJECT_TEMPLATE_CONTROL.editName,
+        PROJECT_TEMPLATE_CONTROL.editButton,
+      ]);
     });
 
     it("保存できた後は、編集フォームが閉じるので「編集」へ戻す", async () => {
@@ -463,9 +458,7 @@ describe("useProjectTemplatePage", () => {
 
     await page.initialize();
 
-    expect(page.errorMessages.value).toEqual([
-      "Project Template一覧を取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Project Template一覧を取得できませんでした。"]);
   });
 
   it("機能資格403だけはBackendのupgrade案内を表示する", async () => {
@@ -486,9 +479,7 @@ describe("useProjectTemplatePage", () => {
 
     await page.saveTemplate();
 
-    expect(page.errorMessages.value).toEqual([
-      "現在のPlanでは利用できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["現在のPlanでは利用できません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
@@ -577,34 +568,31 @@ describe("useProjectTemplatePage", () => {
   it.each([
     [403, "Project Templateを参照するpermissionがありません。"],
     [404, "対象のProjectまたはProject Templateが見つかりません。"],
-  ])(
-    "409回復中の%sは古い競合案内より現在の参照状態を優先する",
-    async (status, expectedMessage) => {
-      mocks.projectTemplateApi.getOwnTemplate
-        .mockResolvedValueOnce(structuredClone(template))
-        .mockRejectedValueOnce(new ProjectTemplateApiError(status, null));
-      mocks.projectTemplateApi.update.mockRejectedValue(
-        new ProjectTemplateApiError(409, {
-          fieldErrors: [
-            {
-              field: "version",
-              errorCode: "PROJECT_TEMPLATE_VERSION_CONFLICT",
-              message: "古い競合案内",
-            },
-          ],
-        })
-      );
-      const page = useProjectTemplatePage();
-      await page.initialize();
-      page.beginEditing();
+  ])("409回復中の%sは古い競合案内より現在の参照状態を優先する", async (status, expectedMessage) => {
+    mocks.projectTemplateApi.getOwnTemplate
+      .mockResolvedValueOnce(structuredClone(template))
+      .mockRejectedValueOnce(new ProjectTemplateApiError(status, null));
+    mocks.projectTemplateApi.update.mockRejectedValue(
+      new ProjectTemplateApiError(409, {
+        fieldErrors: [
+          {
+            field: "version",
+            errorCode: "PROJECT_TEMPLATE_VERSION_CONFLICT",
+            message: "古い競合案内",
+          },
+        ],
+      })
+    );
+    const page = useProjectTemplatePage();
+    await page.initialize();
+    page.beginEditing();
 
-      await page.saveTemplate();
+    await page.saveTemplate();
 
-      expect(page.errorMessages.value).toEqual([expectedMessage]);
-      expect(page.selectedTemplate.value).toBeNull();
-      expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
-    }
-  );
+    expect(page.errorMessages.value).toEqual([expectedMessage]);
+    expect(page.selectedTemplate.value).toBeNull();
+    expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
+  });
 
   it("409回復の通信失敗では競合理由を維持して再取得失敗を追加する", async () => {
     mocks.projectTemplateApi.findOwnTemplates

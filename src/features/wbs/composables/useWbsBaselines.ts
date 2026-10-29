@@ -78,10 +78,7 @@ export interface UseWbsBaselinesOptions {
  * @param context Project ID、WBS Task、権限、Session失効処理を提供する画面共通context
  * @param options active baseline変更をEVMへ伝えるcallback
  */
-export const useWbsBaselines = (
-  context: WbsPageContext,
-  options: UseWbsBaselinesOptions
-) => {
+export const useWbsBaselines = (context: WbsPageContext, options: UseWbsBaselinesOptions) => {
   /** 最後に取得したbaseline一覧。未取得・初期表示の取得失敗時はnull。 */
   const baselineList = ref<WbsBaselineListResponse | null>(null);
   /** 現在計画と比較するactive baselineの詳細。active baselineがない場合はnull。 */
@@ -131,9 +128,7 @@ export const useWbsBaselines = (
     }
     const loadedList = await WbsApi.getWbsBaselines(projectId);
     baselineList.value = loadedList;
-    const loadedActiveBaseline = loadedList.baselines.find(
-      (baseline) => baseline.active
-    );
+    const loadedActiveBaseline = loadedList.baselines.find((baseline) => baseline.active);
     activeBaselineDetail.value = loadedActiveBaseline
       ? await WbsApi.getWbsBaseline(projectId, loadedActiveBaseline.baselineId)
       : null;
@@ -191,9 +186,7 @@ export const useWbsBaselines = (
         );
         return false;
       }
-      baselineErrorMessages.value.push(
-        DISPLAY_MESSAGES.wbs.baseline.reloadFailed
-      );
+      baselineErrorMessages.value.push(DISPLAY_MESSAGES.wbs.baseline.reloadFailed);
       return false;
     }
   };
@@ -230,19 +223,14 @@ export const useWbsBaselines = (
       return;
     }
     if (error.status === 409) {
-      messageTarget.value = resolveWbsErrorMessages(
-        error,
-        DISPLAY_MESSAGES.wbs.baseline.conflict
-      );
+      messageTarget.value = resolveWbsErrorMessages(error, DISPLAY_MESSAGES.wbs.baseline.conflict);
       const reloaded = await reloadWbsBaselines();
       // version競合等で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに取り直し済みの案内を添える
       // （Project設定・Project Templateの409と同じ書き方）。
       if (
         reloaded &&
         !context.isSessionInvalidated() &&
-        RELOAD_GUIDANCE_ERROR_CODES.some((code) =>
-          hasApiFieldError(error.errorResponse, code)
-        )
+        RELOAD_GUIDANCE_ERROR_CODES.some((code) => hasApiFieldError(error.errorResponse, code))
       ) {
         messageTarget.value = [
           ...messageTarget.value,
@@ -260,15 +248,9 @@ export const useWbsBaselines = (
    *
    * @param form baseline名と説明の未検証入力
    */
-  const saveWbsBaseline = async (
-    form: Readonly<WbsBaselineCreateForm>
-  ): Promise<void> => {
+  const saveWbsBaseline = async (form: Readonly<WbsBaselineCreateForm>): Promise<void> => {
     const projectId = context.projectId.value;
-    if (
-      isCreatingBaseline.value ||
-      !isBaselineCreateDialogOpen.value ||
-      projectId === null
-    ) {
+    if (isCreatingBaseline.value || !isBaselineCreateDialogOpen.value || projectId === null) {
       return;
     }
     if (!canManageBaselines.value) {
@@ -317,9 +299,7 @@ export const useWbsBaselines = (
    *
    * @param baseline 一覧で選択したbaseline。`version`を楽観ロックに使う
    */
-  const activateWbsBaseline = async (
-    baseline: Readonly<WbsBaselineSummary>
-  ): Promise<void> => {
+  const activateWbsBaseline = async (baseline: Readonly<WbsBaselineSummary>): Promise<void> => {
     const projectId = context.projectId.value;
     if (baseline.active || isBaselineMutating.value || projectId === null) {
       return;
@@ -337,11 +317,9 @@ export const useWbsBaselines = (
     const previousActiveBaselineId = activeBaseline.value?.baselineId ?? null;
     activatingBaselineId.value = baseline.baselineId;
     try {
-      const activated = await WbsApi.activateWbsBaseline(
-        projectId,
-        baseline.baselineId,
-        { version: baseline.version }
-      );
+      const activated = await WbsApi.activateWbsBaseline(projectId, baseline.baselineId, {
+        version: baseline.version,
+      });
       baselineSuccessMessage.value = `baseline「${activated.name}」を有効化しました。`;
       // 切替前baselineの指標は意味が変わるため、利用者が新しい基準日で再集計するまで破棄する。
       options.onActiveBaselineChanged();
@@ -361,7 +339,11 @@ export const useWbsBaselines = (
         buildBaselineControlSelector(buildBaselineActivateControlKey(baseline.baselineId)),
         ...(previousActiveBaselineId === null
           ? []
-          : [buildBaselineControlSelector(buildBaselineActivateControlKey(previousActiveBaselineId))]),
+          : [
+              buildBaselineControlSelector(
+                buildBaselineActivateControlKey(previousActiveBaselineId)
+              ),
+            ]),
         buildBaselineControlSelector(WBS_BASELINE_CONTROL.create),
       ]);
     }

@@ -30,7 +30,13 @@ const props = withDefaults(
      */
     restrictedAssigneeAccountId?: number | null;
   }>(),
-  { canApply: false, canEdit: false, canArchive: false, projectActive: false, restrictedAssigneeAccountId: null },
+  {
+    canApply: false,
+    canEdit: false,
+    canArchive: false,
+    projectActive: false,
+    restrictedAssigneeAccountId: null,
+  }
 );
 const emit = defineEmits<{
   taskCreated: [task: TaskDetail];
@@ -94,8 +100,17 @@ const {
     <template #body>
       <!-- Templateの編集フォームを開いている間は、エラーを「更新」ボタンのすぐ上に出す（下のform内）。
            フォームは縦に長く、ここ（Dialogの上端）に出すとボタンを押した位置から見えないため。 -->
-      <StatusAlert v-if="errorMessage && !isEditing" type="error" density="compact" class="mb-3">{{ errorMessage }}</StatusAlert>
-      <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+      <StatusAlert v-if="errorMessage && !isEditing" type="error" density="compact" class="mb-3">{{
+        errorMessage
+      }}</StatusAlert>
+      <StatusAlert
+        v-if="successMessage"
+        type="success"
+        density="compact"
+        closable
+        class="mb-3"
+        @close="successMessage = ''"
+      >
         {{ successMessage }}
       </StatusAlert>
       <UProgress v-if="isLoading" size="xs" class="mb-3" />
@@ -108,7 +123,11 @@ const {
               <button
                 type="button"
                 class="flex w-full items-center gap-2 px-4 py-1.5 text-start"
-                :class="selectedTemplate?.taskTemplateId === template.taskTemplateId ? 'bg-primary/12 text-primary' : 'hover:bg-elevated'"
+                :class="
+                  selectedTemplate?.taskTemplateId === template.taskTemplateId
+                    ? 'bg-primary/12 text-primary'
+                    : 'hover:bg-elevated'
+                "
                 @click="selectTemplate(template)"
               >
                 <span class="min-w-0 flex-1">
@@ -155,8 +174,15 @@ const {
             </div>
             <div class="mb-1 text-base">{{ selectedTemplate.title }}</div>
             <p class="mb-4 text-sm whitespace-pre-wrap text-muted">{{ selectedTemplate.detail }}</p>
-            <ul v-if="selectedTemplate.checklistItems.length" class="mb-4 rounded-sm border border-default py-2">
-              <li v-for="item in selectedTemplate.checklistItems" :key="item.position" class="flex items-center gap-8 px-4 py-1.5">
+            <ul
+              v-if="selectedTemplate.checklistItems.length"
+              class="mb-4 rounded-sm border border-default py-2"
+            >
+              <li
+                v-for="item in selectedTemplate.checklistItems"
+                :key="item.position"
+                class="flex items-center gap-8 px-4 py-1.5"
+              >
                 <UIcon name="i-mdi-checkbox-blank-outline" class="size-6 opacity-60" />
                 <span class="text-base">{{ item.content }}</span>
               </li>
@@ -170,13 +196,22 @@ const {
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="開始日">
-                  <UInput v-model="applyDateFrom" type="date" :disabled="!canApply || !projectActive || isMutating" class="w-full" />
+                  <UInput
+                    v-model="applyDateFrom"
+                    type="date"
+                    :disabled="!canApply || !projectActive || isMutating"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField
                   label="担当者上書き"
-                  :help="restrictedAssigneeAccountId === null ? '未指定時はTemplate既定値' : 'MEMBERは自分だけを担当者にできます'"
+                  :help="
+                    restrictedAssigneeAccountId === null
+                      ? '未指定時はTemplate既定値'
+                      : 'MEMBERは自分だけを担当者にできます'
+                  "
                 >
                   <USelectMenu
                     :model-value="applyAssigneeAccountId ?? undefined"
@@ -226,26 +261,45 @@ const {
             <div class="mb-3 text-base font-bold">Templateを編集</div>
             <div class="relative">
               <UFormField label="Template名">
-                <UInput v-model="editForm.name" :maxlength="TASK_TEMPLATE_NAME_MAX_LENGTH" class="w-full" />
+                <UInput
+                  v-model="editForm.name"
+                  :maxlength="TASK_TEMPLATE_NAME_MAX_LENGTH"
+                  class="w-full"
+                />
               </UFormField>
               <FieldCounter :value="editForm.name" :max="TASK_TEMPLATE_NAME_MAX_LENGTH" />
             </div>
             <div class="relative">
               <UFormField label="Taskタイトル">
-                <UInput v-model="editForm.title" :maxlength="TASK_TITLE_MAX_LENGTH" class="w-full" />
+                <UInput
+                  v-model="editForm.title"
+                  :maxlength="TASK_TITLE_MAX_LENGTH"
+                  class="w-full"
+                />
               </UFormField>
               <FieldCounter :value="editForm.title" :max="TASK_TITLE_MAX_LENGTH" />
             </div>
             <div class="relative">
               <UFormField label="Task詳細">
-                <UTextarea v-model="editForm.detail" :maxlength="TASK_DETAIL_MAX_LENGTH" :rows="3" class="w-full" />
+                <UTextarea
+                  v-model="editForm.detail"
+                  :maxlength="TASK_DETAIL_MAX_LENGTH"
+                  :rows="3"
+                  class="w-full"
+                />
               </UFormField>
               <FieldCounter :value="editForm.detail" :max="TASK_DETAIL_MAX_LENGTH" />
             </div>
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 sm:w-1/2">
                 <UFormField label="優先度">
-                  <USelect v-model="editForm.priority" :items="[...TASK_PRIORITY_OPTIONS]" label-key="title" value-key="value" class="w-full" />
+                  <USelect
+                    v-model="editForm.priority"
+                    :items="[...TASK_PRIORITY_OPTIONS]"
+                    label-key="title"
+                    value-key="value"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/2">
@@ -261,12 +315,23 @@ const {
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="期限オフセット（日）">
-                  <UInput v-model.number="editForm.dueOffsetDays" type="number" min="0" :max="TASK_DUE_OFFSET_MAX_DAYS" class="w-full" />
+                  <UInput
+                    v-model.number="editForm.dueOffsetDays"
+                    type="number"
+                    min="0"
+                    :max="TASK_DUE_OFFSET_MAX_DAYS"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="予定工数（分）">
-                  <UInput v-model.number="editForm.plannedEffortMinutes" type="number" min="0" class="w-full" />
+                  <UInput
+                    v-model.number="editForm.plannedEffortMinutes"
+                    type="number"
+                    min="0"
+                    class="w-full"
+                  />
                 </UFormField>
               </div>
               <div class="w-full p-3 sm:w-1/3">
@@ -285,10 +350,19 @@ const {
                 </UFormField>
               </div>
             </div>
-            <UFormField label="チェック項目" :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`">
-              <UInputTags v-model="editForm.checklistContents" :max="CHECKLIST_ITEM_MAX_COUNT" class="w-full" />
+            <UFormField
+              label="チェック項目"
+              :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`"
+            >
+              <UInputTags
+                v-model="editForm.checklistContents"
+                :max="CHECKLIST_ITEM_MAX_COUNT"
+                class="w-full"
+              />
             </UFormField>
-            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{ errorMessage }}</StatusAlert>
+            <StatusAlert v-if="errorMessage" type="error" density="compact" class="mt-4">{{
+              errorMessage
+            }}</StatusAlert>
             <div class="mt-4 flex justify-end gap-2">
               <UButton :disabled="isSaving" @click="cancelEditing">キャンセル</UButton>
               <UButton type="submit" color="primary" :loading="isSaving">更新</UButton>
@@ -309,8 +383,12 @@ const {
   >
     <template #body>{{ selectedTemplate?.name }}</template>
     <template #footer>
-      <UButton variant="ghost" :disabled="isArchiving" @click="isArchiveConfirmOpen = false">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isArchiving" @click="confirmArchive">アーカイブ</UButton>
+      <UButton variant="ghost" :disabled="isArchiving" @click="isArchiveConfirmOpen = false"
+        >キャンセル</UButton
+      >
+      <UButton color="error" variant="ghost" :loading="isArchiving" @click="confirmArchive"
+        >アーカイブ</UButton
+      >
     </template>
   </UModal>
 </template>

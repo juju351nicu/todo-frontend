@@ -40,10 +40,7 @@ const create = async (
   projectId: number,
   payload: TaskRecurrenceCreateRequest
 ): Promise<TaskRecurrence> => {
-  const response = await HttpClient.postRequest(
-    buildRecurrencePath(projectId),
-    payload
-  );
+  const response = await HttpClient.postRequest(buildRecurrencePath(projectId), payload);
   await ensureSuccess(response);
   return (await response.json()) as TaskRecurrence;
 };

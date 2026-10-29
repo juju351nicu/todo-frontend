@@ -48,9 +48,7 @@ const WBS_ERROR_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /** 409回復中に古い競合案内より優先する認証・認可・公開範囲のHTTP status。 */
-export {
-  API_RECOVERY_PRIORITY_STATUSES as WBS_RECOVERY_PRIORITY_STATUSES,
-} from "@/shared/utils/apiError";
+export { API_RECOVERY_PRIORITY_STATUSES as WBS_RECOVERY_PRIORITY_STATUSES } from "@/shared/utils/apiError";
 
 /**
  * WBS APIのエラーResponseから、`WBS_ERROR_CODES`に含まれるcodeのBackend messageだけを表示用に取り出す。
@@ -60,10 +58,7 @@ export {
  * @param fallbackMessage 契約済みmessageがない場合に表示する案内
  * @returns Backendの項目エラー順のmessage。該当がなければ`fallbackMessage`だけの配列
  */
-export const resolveWbsErrorMessages = (
-  error: WbsApiError,
-  fallbackMessage: string
-): string[] =>
+export const resolveWbsErrorMessages = (error: WbsApiError, fallbackMessage: string): string[] =>
   resolveApiErrorMessages(error.errorResponse, WBS_ERROR_CODES, fallbackMessage);
 
 /**
@@ -88,8 +83,7 @@ export interface WbsStandardErrorMessages {
  * WBS APIの失敗を、401（Session失効処理が必要）か、画面へ表示するmessageのどちらかに分類した結果。
  */
 export type WbsStandardErrorResult =
-  | { type: "unauthorized" }
-  | { type: "messages"; messages: string[] };
+  { type: "unauthorized" } | { type: "messages"; messages: string[] };
 
 /**
  * 回復処理（Dialogを閉じる、再取得する等）を伴わない標準的なWBS APIの失敗を、表示messageへ変換する。

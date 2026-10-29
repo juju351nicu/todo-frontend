@@ -33,10 +33,7 @@ describe("Task依存関係の表示名", () => {
 
   it("候補は渡されたTaskの並びを保ってTask IDを値にする", () => {
     expect(
-      buildDependencyTaskOptions([
-        buildTask(3, "1.2", "完了判定"),
-        buildTask(1, null, "Phase 1"),
-      ])
+      buildDependencyTaskOptions([buildTask(3, "1.2", "完了判定"), buildTask(1, null, "Phase 1")])
     ).toEqual([
       { title: "1.2 完了判定", value: 3 },
       { title: "Phase 1", value: 1 },

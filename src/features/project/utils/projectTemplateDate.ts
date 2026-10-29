@@ -17,8 +17,6 @@ export const isValidLocalDateInput = (value: string): boolean => {
   date.setUTCFullYear(year, month - 1, day);
   date.setUTCHours(0, 0, 0, 0);
   return (
-    date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   );
 };

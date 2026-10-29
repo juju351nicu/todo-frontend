@@ -110,9 +110,7 @@ describe("API error表示utility", () => {
     const expectedError = new Error("feature固有例外");
     const createError = vi.fn(() => expectedError);
 
-    await expect(ensureApiSuccess(response, createError)).rejects.toBe(
-      expectedError
-    );
+    await expect(ensureApiSuccess(response, createError)).rejects.toBe(expectedError);
     expect(createError).toHaveBeenCalledWith(409, responseBody);
   });
 
@@ -132,9 +130,7 @@ describe("API error表示utility", () => {
       ],
     };
 
-    expect(
-      resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")
-    ).toEqual([
+    expect(resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")).toEqual([
       "タイトルを入力してください。",
       "期限を確認してください。",
     ]);
@@ -158,31 +154,25 @@ describe("API error表示utility", () => {
     [
       "null code",
       {
-        fieldErrors: [
-          { errorCode: null, field: "request", message: "未契約文言" },
-        ],
+        fieldErrors: [{ errorCode: null, field: "request", message: "未契約文言" }],
       },
     ],
     [
       "空message",
       {
-        fieldErrors: [
-          { errorCode: "KNOWN_ERROR", field: "request", message: "   " },
-        ],
+        fieldErrors: [{ errorCode: "KNOWN_ERROR", field: "request", message: "   " }],
       },
     ],
     [
       "field欠落",
       {
-        fieldErrors: [
-          { errorCode: "KNOWN_ERROR", message: "未契約の構造です。" },
-        ],
+        fieldErrors: [{ errorCode: "KNOWN_ERROR", message: "未契約の構造です。" }],
       },
     ],
   ])("%sでは安全なfallbackだけを返す", (_condition, response) => {
-    expect(
-      resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")
-    ).toEqual(["処理に失敗しました。"]);
+    expect(resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")).toEqual([
+      "処理に失敗しました。",
+    ]);
   });
 
   it("未知codeが混在する場合は既知messageも部分表示しない", () => {
@@ -201,9 +191,9 @@ describe("API error表示utility", () => {
       ],
     };
 
-    expect(
-      resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")
-    ).toEqual(["処理に失敗しました。"]);
+    expect(resolveApiErrorMessages(response, KNOWN_CODES, "処理に失敗しました。")).toEqual([
+      "処理に失敗しました。",
+    ]);
   });
 
   it("message本文ではなくcodeとfieldの組み合わせで判定する", () => {
@@ -234,36 +224,38 @@ describe("resolveStandardErrorMessages", () => {
     expect(resolveStandardErrorMessages(new Error("network"), ProjectApiError, options)).toEqual([
       DISPLAY_MESSAGES.common.connectionFailed,
     ]);
-    expect(resolveStandardErrorMessages(new TodoApiError(500, null), ProjectApiError, options)).toEqual([
-      DISPLAY_MESSAGES.common.connectionFailed,
-    ]);
+    expect(
+      resolveStandardErrorMessages(new TodoApiError(500, null), ProjectApiError, options)
+    ).toEqual([DISPLAY_MESSAGES.common.connectionFailed]);
   });
 
   it("403・404は画面の文言にし、それ以外は既知codeのBackendの文言、なければfallbackにする", () => {
-    expect(resolveStandardErrorMessages(new ProjectApiError(403, null), ProjectApiError, options)).toEqual([
-      "権限がありません。",
-    ]);
-    expect(resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, options)).toEqual([
-      "対象がありません。",
-    ]);
+    expect(
+      resolveStandardErrorMessages(new ProjectApiError(403, null), ProjectApiError, options)
+    ).toEqual(["権限がありません。"]);
+    expect(
+      resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, options)
+    ).toEqual(["対象がありません。"]);
     expect(
       resolveStandardErrorMessages(
         new ProjectApiError(400, {
-          fieldErrors: [{ errorCode: "KNOWN_ERROR", field: "name", message: "名前を入力してください。" }],
+          fieldErrors: [
+            { errorCode: "KNOWN_ERROR", field: "name", message: "名前を入力してください。" },
+          ],
         }),
         ProjectApiError,
         options
       )
     ).toEqual(["名前を入力してください。"]);
-    expect(resolveStandardErrorMessages(new ProjectApiError(500, null), ProjectApiError, options)).toEqual([
-      "処理できませんでした。",
-    ]);
+    expect(
+      resolveStandardErrorMessages(new ProjectApiError(500, null), ProjectApiError, options)
+    ).toEqual(["処理できませんでした。"]);
   });
 
   it("404の文言を渡さなければ、404もBackendの本文から文言を選ぶ", () => {
     const { notFound: _notFound, ...withoutNotFound } = options;
-    expect(resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, withoutNotFound)).toEqual([
-      "処理できませんでした。",
-    ]);
+    expect(
+      resolveStandardErrorMessages(new ProjectApiError(404, null), ProjectApiError, withoutNotFound)
+    ).toEqual(["処理できませんでした。"]);
   });
 });

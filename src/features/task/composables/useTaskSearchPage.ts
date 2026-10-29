@@ -111,9 +111,7 @@ export const useTaskSearchPage = () => {
   const savedViews = ref<TaskSavedView[]>([]);
   const selectedSavedViewId = ref<number | null>(null);
   const savedViewName = ref("");
-  const visibleColumns = ref<TaskSearchColumn[]>([
-    ...DEFAULT_VISIBLE_COLUMNS,
-  ]);
+  const visibleColumns = ref<TaskSearchColumn[]>([...DEFAULT_VISIBLE_COLUMNS]);
   const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isInitializing = ref(false);
@@ -123,10 +121,7 @@ export const useTaskSearchPage = () => {
   const isDeleteConfirmationOpen = ref(false);
 
   const activeSavedView = computed(
-    () =>
-      savedViews.value.find(
-        (view) => view.savedViewId === selectedSavedViewId.value
-      ) ?? null
+    () => savedViews.value.find((view) => view.savedViewId === selectedSavedViewId.value) ?? null
   );
   const isBusy = computed(
     () =>
@@ -234,9 +229,7 @@ export const useTaskSearchPage = () => {
   };
 
   /** Project選択に応じた担当者・状態候補を再取得し、利用できない現在値を解除する。 */
-  const refreshOptions = async (
-    preserveSelection = false
-  ): Promise<boolean> => {
+  const refreshOptions = async (preserveSelection = false): Promise<boolean> => {
     if (isOptionsLoading.value) return false;
     isOptionsLoading.value = true;
     try {
@@ -258,10 +251,7 @@ export const useTaskSearchPage = () => {
       filters.assigneeAccountId = null;
       filters.statusCode = null;
       if (!(await handleUnauthorized(error))) {
-        if (
-          error instanceof TaskSearchApiError &&
-          (error.status === 403 || error.status === 404)
-        ) {
+        if (error instanceof TaskSearchApiError && (error.status === 403 || error.status === 404)) {
           clearSearchResults();
         }
         setErrors(
@@ -323,9 +313,7 @@ export const useTaskSearchPage = () => {
   /** Saved View条件・表示列を画面へ復元し、Project候補更新後に検索する。 */
   const applySavedView = async (savedViewId: number | null): Promise<void> => {
     selectedSavedViewId.value = savedViewId;
-    const view = savedViews.value.find(
-      (item) => item.savedViewId === savedViewId
-    );
+    const view = savedViews.value.find((item) => item.savedViewId === savedViewId);
     if (!view) {
       selectedSavedViewId.value = null;
       savedViewName.value = "";
@@ -398,15 +386,14 @@ export const useTaskSearchPage = () => {
     preferredId: number,
     fallback: string
   ): Promise<void> => {
-    const mutationMessages = getErrorMessages(
-      error,
-      fallback,
-      TASK_SAVED_VIEW_ERROR_CODES
-    );
+    const mutationMessages = getErrorMessages(error, fallback, TASK_SAVED_VIEW_ERROR_CODES);
     clearSavedViewState();
     try {
       await reloadSavedViews(preferredId);
-      const recoveryMessages = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
+      const recoveryMessages = hasApiFieldError(
+        error.errorResponse,
+        "TASK_SAVED_VIEW_VERSION_CONFLICT"
+      )
         ? [...mutationMessages, DISPLAY_MESSAGES.task.search.conflictReloaded]
         : mutationMessages;
       // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す。
@@ -434,10 +421,7 @@ export const useTaskSearchPage = () => {
         );
         return;
       }
-      setErrors([
-        ...mutationMessages,
-        DISPLAY_MESSAGES.task.search.reloadFailed,
-      ]);
+      setErrors([...mutationMessages, DISPLAY_MESSAGES.task.search.reloadFailed]);
     }
   };
 
@@ -461,10 +445,7 @@ export const useTaskSearchPage = () => {
         filters: { ...filters },
         visibleColumns: [...visibleColumns.value],
       });
-      await refreshSavedViewsAfterMutation(
-        created.savedViewId,
-        "Saved Viewを登録しました。"
-      );
+      await refreshSavedViewsAfterMutation(created.savedViewId, "Saved Viewを登録しました。");
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
         setErrors(
@@ -498,22 +479,18 @@ export const useTaskSearchPage = () => {
         visibleColumns: [...visibleColumns.value],
         version: current.version,
       });
-      await refreshSavedViewsAfterMutation(
-        updated.savedViewId,
-        "Saved Viewを更新しました。"
-      );
+      await refreshSavedViewsAfterMutation(updated.savedViewId, "Saved Viewを更新しました。");
     } catch (error: unknown) {
-      if (
-        error instanceof TaskSearchApiError &&
-        (error.status === 404 || error.status === 409)
-      ) {
+      if (error instanceof TaskSearchApiError && (error.status === 404 || error.status === 409)) {
         await recoverSavedViews(
           error,
           current.savedViewId,
           DISPLAY_MESSAGES.task.search.updateFailed
         );
         // 取り直しの間「更新」はdisabledになりフォーカスが外れるため、名前の入力欄へ戻す。
-        await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
+        await focusFirstEnabledElement([
+          buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName),
+        ]);
         return;
       }
       if (!(await handleUnauthorized(error))) {
@@ -540,17 +517,13 @@ export const useTaskSearchPage = () => {
     successMessage.value = "";
     try {
       await deleteTaskSavedView(current.savedViewId, current.version);
-      await refreshSavedViewsAfterMutation(
-        null,
-        "Saved Viewを削除しました。"
-      );
+      await refreshSavedViewsAfterMutation(null, "Saved Viewを削除しました。");
       // 削除の後は選択がなくなり「削除」がdisabledになるため、「保存した条件」へ戻す。
-      await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
+      await focusFirstEnabledElement([
+        buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect),
+      ]);
     } catch (error: unknown) {
-      if (
-        error instanceof TaskSearchApiError &&
-        (error.status === 404 || error.status === 409)
-      ) {
+      if (error instanceof TaskSearchApiError && (error.status === 404 || error.status === 409)) {
         await recoverSavedViews(
           error,
           current.savedViewId,

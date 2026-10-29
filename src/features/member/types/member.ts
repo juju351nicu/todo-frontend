@@ -2,11 +2,7 @@
 export type AccountRole = 0 | 1 | 2;
 
 /** Backendの既存会員APIで使用している認証プロバイダーコード。 */
-export type AuthProviderCode =
-  | "local"
-  | "facebook"
-  | "google"
-  | "github";
+export type AuthProviderCode = "local" | "facebook" | "google" | "github";
 
 /** 会員一覧APIに含まれる会員情報。パスワードは返却されない。 */
 export interface MemberListItem {

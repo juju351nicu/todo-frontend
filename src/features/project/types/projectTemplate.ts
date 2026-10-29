@@ -1,8 +1,4 @@
-import type {
-  ProjectDetail,
-  ProjectRole,
-  TaskPriority,
-} from "@/features/project/types/project";
+import type { ProjectDetail, ProjectRole, TaskPriority } from "@/features/project/types/project";
 
 /** Project Templateへ保存するWBS Task種別。 */
 export type ProjectTemplateTaskType = "SUMMARY" | "TASK" | "MILESTONE";

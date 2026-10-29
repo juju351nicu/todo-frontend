@@ -1,8 +1,6 @@
 import { expect, test } from "./fixtures/test";
 
-test("認証済みSessionでDashboardを再読込しても表示を維持する", async ({
-  page,
-}) => {
+test("認証済みSessionでDashboardを再読込しても表示を維持する", async ({ page }) => {
   await page.goto("/dashboard");
 
   await expect(

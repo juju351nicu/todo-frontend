@@ -59,10 +59,7 @@ const update = async (
 };
 
 /** 本人所有Templateを取得時点version付きでarchiveする。 */
-const archive = async (
-  taskTemplateId: number,
-  version: number
-): Promise<void> => {
+const archive = async (taskTemplateId: number, version: number): Promise<void> => {
   const query = new URLSearchParams({ version: String(version) });
   const response = await HttpClient.deleteRequest(
     `${API_PATHS.TASK_TEMPLATES}/${taskTemplateId}?${query}`

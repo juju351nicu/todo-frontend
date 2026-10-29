@@ -44,9 +44,7 @@ export const createMemberDetailForm = (
 });
 
 /** 会員編集フォームをBackendの登録更新Requestへ変換する。 */
-export const buildMemberUpsertRequest = (
-  form: MemberDetailForm
-): MemberUpsertRequest => ({
+export const buildMemberUpsertRequest = (form: MemberDetailForm): MemberUpsertRequest => ({
   memberId: form.memberId,
   lastName: form.lastName,
   firstName: form.firstName,

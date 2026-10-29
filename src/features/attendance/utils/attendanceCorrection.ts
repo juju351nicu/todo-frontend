@@ -14,11 +14,8 @@ import {
   BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS,
 } from "@/shared/utils/businessDate";
 
-
 /** 勤怠修正申請状態を画面表示用の日本語へ変換する。 */
-export const getAttendanceCorrectionStatusLabel = (
-  status: AttendanceCorrectionStatus
-): string =>
+export const getAttendanceCorrectionStatusLabel = (status: AttendanceCorrectionStatus): string =>
   ({
     PENDING: "審査待ち",
     APPROVED: "承認済み",
@@ -30,12 +27,14 @@ export const getAttendanceCorrectionStatusLabel = (
 export const getAttendanceCorrectionStatusColor = (
   status: AttendanceCorrectionStatus
 ): SemanticColor =>
-  ({
-    PENDING: "warning",
-    APPROVED: "success",
-    REJECTED: "error",
-    CANCELLED: "neutral",
-  } satisfies Record<string, SemanticColor>)[status];
+  (
+    ({
+      PENDING: "warning",
+      APPROVED: "success",
+      REJECTED: "error",
+      CANCELLED: "neutral",
+    }) satisfies Record<string, SemanticColor>
+  )[status];
 
 /** APIのInstantを東京時刻のdatetime-local入力値へ変換する。 */
 export const toTokyoDateTimeInput = (instant: string): string => {
@@ -62,14 +61,10 @@ export const buildAttendanceCorrectionForm = (
   reason: "",
   workPeriods: day.workPeriods.map((workPeriod) => ({
     startedAt: toTokyoDateTimeInput(workPeriod.startedAt),
-    endedAt: workPeriod.endedAt
-      ? toTokyoDateTimeInput(workPeriod.endedAt)
-      : "",
+    endedAt: workPeriod.endedAt ? toTokyoDateTimeInput(workPeriod.endedAt) : "",
     breakPeriods: workPeriod.breakPeriods.map((breakPeriod) => ({
       startedAt: toTokyoDateTimeInput(breakPeriod.startedAt),
-      endedAt: breakPeriod.endedAt
-        ? toTokyoDateTimeInput(breakPeriod.endedAt)
-        : "",
+      endedAt: breakPeriod.endedAt ? toTokyoDateTimeInput(breakPeriod.endedAt) : "",
     })),
   })),
 });
@@ -140,11 +135,10 @@ export const validateAttendanceCorrectionForm = (
       );
       if (breakRange !== null) {
         breakRanges.push(breakRange);
-        if (
-          range !== null &&
-          (breakRange.start < range.start || breakRange.end > range.end)
-        ) {
-          errors.push(`勤務区間${workIndex + 1}の休憩${breakIndex + 1}は勤務時間内にしてください。`);
+        if (range !== null && (breakRange.start < range.start || breakRange.end > range.end)) {
+          errors.push(
+            `勤務区間${workIndex + 1}の休憩${breakIndex + 1}は勤務時間内にしてください。`
+          );
         }
       }
     });

@@ -27,9 +27,7 @@ export const createDataAttributeSelector =
  *
  * @param selectors フォーカスを移す要素のselector（優先順）
  */
-export const focusFirstEnabledElement = async (
-  selectors: readonly string[]
-): Promise<void> => {
+export const focusFirstEnabledElement = async (selectors: readonly string[]): Promise<void> => {
   await nextTick();
   if (typeof document === "undefined") {
     return;

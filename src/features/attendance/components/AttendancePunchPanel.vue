@@ -60,7 +60,9 @@ const { currentTime, currentTimeAriaLabel } = useAttendanceClock();
         >
           {{ currentTime }}
         </time>
-        <p class="mt-2 mb-0 text-xs text-muted">現在時刻は表示用です。打刻時刻はサーバーで確定します。</p>
+        <p class="mt-2 mb-0 text-xs text-muted">
+          現在時刻は表示用です。打刻時刻はサーバーで確定します。
+        </p>
       </div>
 
       <div class="mx-auto mt-6 grid max-w-140 grid-cols-2 gap-2.5 sm:gap-3">

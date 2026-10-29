@@ -142,9 +142,7 @@ describe("useDashboardPage", () => {
     vi.clearAllMocks();
     mocks.router.push.mockResolvedValue(undefined);
     mocks.dashboardApi.getBasicDashboard.mockResolvedValue(dashboard);
-    mocks.dashboardApi.getAdvancedDashboard.mockResolvedValue(
-      advancedDashboard
-    );
+    mocks.dashboardApi.getAdvancedDashboard.mockResolvedValue(advancedDashboard);
     mocks.userStore.displayName = "新谷 健";
     mocks.userStore.username = "ken";
   });
@@ -155,9 +153,7 @@ describe("useDashboardPage", () => {
     await page.loadDashboard();
 
     expect(mocks.dashboardApi.getBasicDashboard).toHaveBeenCalledOnce();
-    expect(mocks.dashboardApi.getAdvancedDashboard).toHaveBeenCalledWith(
-      "2026-09-21"
-    );
+    expect(mocks.dashboardApi.getAdvancedDashboard).toHaveBeenCalledWith("2026-09-21");
     expect(page.dashboard.value).toEqual(dashboard);
     expect(page.advancedDashboard.value).toEqual(advancedDashboard);
     expect(page.advancedStatusDate.value).toBe("2026-09-21");
@@ -220,9 +216,7 @@ describe("useDashboardPage", () => {
 
     await page.loadDashboard();
 
-    expect(page.errorMessages.value).toEqual([
-      "この機能は現在の契約では利用できません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["この機能は現在の契約では利用できません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
@@ -269,24 +263,18 @@ describe("useDashboardPage", () => {
 
     expect(page.isAdvancedNotEntitled.value).toBe(false);
     expect(page.advancedDashboard.value).toBeNull();
-    expect(page.advancedErrorMessages.value).toEqual([
-      "高度Dashboardを取得できませんでした。",
-    ]);
+    expect(page.advancedErrorMessages.value).toEqual(["高度Dashboardを取得できませんでした。"]);
   });
 
   it("高度Dashboardの本文なし403はSessionを維持して安全なfallbackを表示する", async () => {
     const page = useDashboardPage();
     await page.loadDashboard();
-    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(
-      new DashboardApiError(403, null)
-    );
+    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(new DashboardApiError(403, null));
 
     await page.loadAdvancedDashboard("2026-09-22");
 
     expect(page.advancedDashboard.value).toBeNull();
-    expect(page.advancedErrorMessages.value).toEqual([
-      "高度Dashboardを取得できませんでした。",
-    ]);
+    expect(page.advancedErrorMessages.value).toEqual(["高度Dashboardを取得できませんでした。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
     expect(mocks.router.push).not.toHaveBeenCalled();
   });
@@ -324,9 +312,7 @@ describe("useDashboardPage", () => {
     await page.loadAdvancedDashboard("2026-02-30");
 
     expect(mocks.dashboardApi.getAdvancedDashboard).not.toHaveBeenCalled();
-    expect(page.advancedErrorMessages.value).toEqual([
-      "EVM基準日を入力してください。",
-    ]);
+    expect(page.advancedErrorMessages.value).toEqual(["EVM基準日を入力してください。"]);
 
     let resolveRequest;
     mocks.dashboardApi.getAdvancedDashboard.mockImplementation(
@@ -336,9 +322,7 @@ describe("useDashboardPage", () => {
     const secondLoad = page.loadAdvancedDashboard("2026-09-23");
 
     expect(mocks.dashboardApi.getAdvancedDashboard).toHaveBeenCalledOnce();
-    expect(mocks.dashboardApi.getAdvancedDashboard).toHaveBeenCalledWith(
-      "2026-09-22"
-    );
+    expect(mocks.dashboardApi.getAdvancedDashboard).toHaveBeenCalledWith("2026-09-22");
     resolveRequest(advancedDashboard);
     await Promise.all([firstLoad, secondLoad]);
   });
@@ -346,16 +330,12 @@ describe("useDashboardPage", () => {
   it("高度Dashboard再集計の通信失敗では直前snapshotを維持する", async () => {
     const page = useDashboardPage();
     await page.loadDashboard();
-    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(
-      new Error("offline")
-    );
+    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(new Error("offline"));
 
     await page.loadAdvancedDashboard("2026-09-22");
 
     expect(page.advancedDashboard.value).toEqual(advancedDashboard);
-    expect(page.advancedErrorMessages.value).toEqual([
-      "高度Dashboardへ接続できませんでした。",
-    ]);
+    expect(page.advancedErrorMessages.value).toEqual(["高度Dashboardへ接続できませんでした。"]);
   });
 
   it("高度Dashboardの404では参照不能になった以前のsnapshotを破棄する", async () => {
@@ -376,9 +356,7 @@ describe("useDashboardPage", () => {
     await page.loadAdvancedDashboard("2026-09-22");
 
     expect(page.advancedDashboard.value).toBeNull();
-    expect(page.advancedErrorMessages.value).toEqual([
-      "Projectを参照できません。",
-    ]);
+    expect(page.advancedErrorMessages.value).toEqual(["Projectを参照できません。"]);
   });
 
   it("高度Dashboardの409では直前snapshotを維持して再集計を案内する", async () => {
@@ -405,9 +383,7 @@ describe("useDashboardPage", () => {
   });
 
   it("401ではSession表示を破棄してLoginへ戻す", async () => {
-    mocks.dashboardApi.getBasicDashboard.mockRejectedValue(
-      new DashboardApiError(401, null)
-    );
+    mocks.dashboardApi.getBasicDashboard.mockRejectedValue(new DashboardApiError(401, null));
     const page = useDashboardPage();
 
     await page.loadDashboard();
@@ -417,9 +393,7 @@ describe("useDashboardPage", () => {
   });
 
   it("高度Dashboardの401でもSession表示を破棄してLoginへ戻す", async () => {
-    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(
-      new DashboardApiError(401, null)
-    );
+    mocks.dashboardApi.getAdvancedDashboard.mockRejectedValue(new DashboardApiError(401, null));
     const page = useDashboardPage();
 
     await page.loadDashboard();
@@ -481,9 +455,7 @@ describe("useDashboardPage", () => {
     });
 
     expect(mocks.router.push).toHaveBeenCalledOnce();
-    expect(mocks.router.push).toHaveBeenCalledWith(
-      "/projects/7/board?taskId=15"
-    );
+    expect(mocks.router.push).toHaveBeenCalledWith("/projects/7/board?taskId=15");
   });
 
   it("遷移先のないお知らせは遷移せず、押すたびに本文の全文表示を切り替える", async () => {

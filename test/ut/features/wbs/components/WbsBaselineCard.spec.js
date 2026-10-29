@@ -46,9 +46,13 @@ describe("WbsBaselineCard", () => {
 
     const create = wrapper.find(`[data-wbs-baseline-control="${WBS_BASELINE_CONTROL.create}"]`);
     expect(create.exists()).toBe(true);
-    const activate = wrapper.find(`[data-wbs-baseline-control="${buildBaselineActivateControlKey(2)}"]`);
+    const activate = wrapper.find(
+      `[data-wbs-baseline-control="${buildBaselineActivateControlKey(2)}"]`
+    );
     expect(activate.exists()).toBe(true);
-    expect(wrapper.find(`[data-wbs-baseline-control="${buildBaselineActivateControlKey(1)}"]`).exists()).toBe(false);
+    expect(
+      wrapper.find(`[data-wbs-baseline-control="${buildBaselineActivateControlKey(1)}"]`).exists()
+    ).toBe(false);
 
     await activate.trigger("click");
     expect(wrapper.emitted("activate")[0][0].baselineId).toBe(2);
@@ -57,13 +61,21 @@ describe("WbsBaselineCard", () => {
   it("管理できないときは、保存・切替のボタンを出さない", () => {
     wrapper = mountWithUi(WbsBaselineCard, { props: { ...baseProps, canManage: false } });
 
-    expect(wrapper.find(`[data-wbs-baseline-control="${WBS_BASELINE_CONTROL.create}"]`).exists()).toBe(false);
-    expect(wrapper.find(`[data-wbs-baseline-control="${buildBaselineActivateControlKey(2)}"]`).exists()).toBe(false);
+    expect(
+      wrapper.find(`[data-wbs-baseline-control="${WBS_BASELINE_CONTROL.create}"]`).exists()
+    ).toBe(false);
+    expect(
+      wrapper.find(`[data-wbs-baseline-control="${buildBaselineActivateControlKey(2)}"]`).exists()
+    ).toBe(false);
   });
 
   it("baselineがないときは、状況に合った案内を出す（archive済みでは保存を促さない）", () => {
     wrapper = mountWithUi(WbsBaselineCard, {
-      props: { ...baseProps, baselineList: { projectId: 1, baselines: [] }, isProjectActive: false },
+      props: {
+        ...baseProps,
+        baselineList: { projectId: 1, baselines: [] },
+        isProjectActive: false,
+      },
     });
 
     expect(wrapper.text()).toContain("archive済みのProjectでは保存できません。");

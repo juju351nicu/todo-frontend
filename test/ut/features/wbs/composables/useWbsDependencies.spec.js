@@ -135,16 +135,12 @@ describe("useWbsDependencies", () => {
       lagMinutes: 0,
     });
 
-    expect(page.dependencyEditorErrorMessages.value).toEqual([
-      "循環するため登録できません。",
-    ]);
+    expect(page.dependencyEditorErrorMessages.value).toEqual(["循環するため登録できません。"]);
     expect(page.isDependencyEditorOpen.value).toBe(true);
   });
 
   it("作成APIの403と404をpermission不足・対象なしとして区別する", async () => {
-    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(
-      new WbsApiError(403, null)
-    );
+    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(new WbsApiError(403, null));
     const forbiddenPage = useWbsPage();
     await forbiddenPage.initialize();
     forbiddenPage.openDependencyEditor();
@@ -154,9 +150,7 @@ describe("useWbsDependencies", () => {
       lagMinutes: 0,
     });
 
-    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(
-      new WbsApiError(404, null)
-    );
+    mocks.wbsApi.createTaskDependency.mockRejectedValueOnce(new WbsApiError(404, null));
     const missingPage = useWbsPage();
     await missingPage.initialize();
     missingPage.openDependencyEditor();
@@ -323,9 +317,7 @@ describe("useWbsDependencies", () => {
   });
 
   it("削除APIの401は確認対象とSessionを破棄してログインへ戻す", async () => {
-    mocks.wbsApi.deleteTaskDependency.mockRejectedValue(
-      new WbsApiError(401, null)
-    );
+    mocks.wbsApi.deleteTaskDependency.mockRejectedValue(new WbsApiError(401, null));
     const page = useWbsPage();
     await page.initialize();
     page.requestDependencyDelete(31);
@@ -402,12 +394,17 @@ describe("useWbsDependencies", () => {
       expect(state.dependencyRows.value[0].canDelete).toBe(false);
       state.requestDependencyDelete(31);
       expect(state.dependencyPendingDelete.value).toBeNull();
-      expect(state.dependencyErrorMessages.value).toEqual([DISPLAY_MESSAGES.wbs.dependency.forbidden]);
+      expect(state.dependencyErrorMessages.value).toEqual([
+        DISPLAY_MESSAGES.wbs.dependency.forbidden,
+      ]);
     });
 
     it("Project管理権限があれば担当者に関係なく全Taskを候補にし、全行を削除できる", () => {
       const { context, state } = buildDependencies({ canManageProject: computed(() => true) });
-      context.wbs.value.tasks = context.wbs.value.tasks.map((task) => ({ ...task, assigneeAccountId: 9 }));
+      context.wbs.value.tasks = context.wbs.value.tasks.map((task) => ({
+        ...task,
+        assigneeAccountId: 9,
+      }));
 
       expect(state.dependencyTaskOptions.value.map((option) => option.value)).toEqual([1, 2, 3]);
       expect(state.dependencyRows.value[0].canDelete).toBe(true);

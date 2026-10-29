@@ -14,9 +14,7 @@ vi.mock("@/features/auth/stores/user", () => ({
   useUserStore: () => mocks.userStore,
 }));
 vi.mock("@/features/time-tracking/api/timeTrackingApi", async () => {
-  const actual = await vi.importActual(
-    "@/features/time-tracking/api/timeTrackingApi"
-  );
+  const actual = await vi.importActual("@/features/time-tracking/api/timeTrackingApi");
   return { ...actual, default: mocks.api };
 });
 
@@ -59,9 +57,7 @@ describe("useTaskWorkLogAudits", () => {
   });
 
   it("403を工数履歴の参照権限不足として案内する", async () => {
-    mocks.api.getWorkLogAudits.mockRejectedValue(
-      new TimeTrackingApiError(403, null)
-    );
+    mocks.api.getWorkLogAudits.mockRejectedValue(new TimeTrackingApiError(403, null));
     const audits = useTaskWorkLogAudits(12, 345);
 
     await audits.openDialog();
@@ -114,9 +110,7 @@ describe("useTaskWorkLogAudits", () => {
 
     await audits.openDialog();
 
-    expect(audits.errorMessages.value).toEqual([
-      "Task実績工数の変更履歴を取得できませんでした。",
-    ]);
+    expect(audits.errorMessages.value).toEqual(["Task実績工数の変更履歴を取得できませんでした。"]);
   });
 
   it("404ではBackend本文に依存せず対象なしを表示する", async () => {
@@ -135,15 +129,11 @@ describe("useTaskWorkLogAudits", () => {
 
     await audits.openDialog();
 
-    expect(audits.errorMessages.value).toEqual([
-      "対象のProjectまたはTaskが見つかりません。",
-    ]);
+    expect(audits.errorMessages.value).toEqual(["対象のProjectまたはTaskが見つかりません。"]);
   });
 
   it("401ではDialogとSession表示を破棄してLoginへ戻す", async () => {
-    mocks.api.getWorkLogAudits.mockRejectedValue(
-      new TimeTrackingApiError(401, null)
-    );
+    mocks.api.getWorkLogAudits.mockRejectedValue(new TimeTrackingApiError(401, null));
     const audits = useTaskWorkLogAudits(12, 345);
 
     await audits.openDialog();

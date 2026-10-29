@@ -59,9 +59,7 @@ describe("useTaskWorkLogs", () => {
     expect(page.isWorkLogDialogOpen.value).toBe(true);
     expect(page.workLogTask.value).toMatchObject({ taskId: 2, taskType: "TASK" });
     expect(page.workLogList.value).toEqual(workLogList);
-    expect(page.workLogWorkerOptions.value).toEqual([
-      { title: "参加 二郎（MEMBER）", value: 2 },
-    ]);
+    expect(page.workLogWorkerOptions.value).toEqual([{ title: "参加 二郎（MEMBER）", value: 2 }]);
   });
 
   it("Summaryでは日別実績APIを呼ばず通常Taskだけが対象だと案内する", async () => {
@@ -72,9 +70,7 @@ describe("useTaskWorkLogs", () => {
 
     expect(mocks.wbsApi.getTaskWorkLogs).not.toHaveBeenCalled();
     expect(page.isWorkLogDialogOpen.value).toBe(false);
-    expect(page.errorMessages.value).toEqual([
-      "日別実績工数を登録できるのは通常Taskだけです。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["日別実績工数を登録できるのは通常Taskだけです。"]);
   });
 
   it("業務日・工数・作業者を送信してBackendの確定一覧へ差し替える", async () => {
@@ -91,9 +87,7 @@ describe("useTaskWorkLogs", () => {
 
     expect(mocks.wbsApi.createTaskWorkLog).toHaveBeenCalledWith(7, 2, form);
     expect(page.workLogList.value).toEqual(workLogList);
-    expect(page.workLogSuccessMessage.value).toBe(
-      "Task日別実績を登録しました。"
-    );
+    expect(page.workLogSuccessMessage.value).toBe("Task日別実績を登録しました。");
   });
 
   it("取得時点version付きで日別実績を更新する", async () => {
@@ -116,9 +110,7 @@ describe("useTaskWorkLogs", () => {
     });
     expect(page.workLogList.value).toEqual(updatedWorkLogList);
     expect(page.editingWorkLog.value).toBeNull();
-    expect(page.workLogSuccessMessage.value).toBe(
-      "Task日別実績を更新しました。"
-    );
+    expect(page.workLogSuccessMessage.value).toBe("Task日別実績を更新しました。");
   });
 
   it("入力不正では日別実績APIを呼ばずDialogへ全理由を表示する", async () => {
@@ -189,9 +181,7 @@ describe("useTaskWorkLogs", () => {
     });
 
     expect(page.editingWorkLog.value).toBeNull();
-    expect(page.workLogEditorErrorMessages.value).toEqual([
-      "更新されています。",
-    ]);
+    expect(page.workLogEditorErrorMessages.value).toEqual(["更新されています。"]);
     expect(mocks.wbsApi.getTaskWorkLogs).toHaveBeenCalledTimes(2);
     expect(page.workLogList.value).toEqual(updatedWorkLogList);
   });
@@ -205,10 +195,7 @@ describe("useTaskWorkLogs", () => {
     await ownerPage.openWorkLogDialog(2);
 
     expect(ownerPage.canManageAnyWorkLog.value).toBe(true);
-    expect(ownerPage.workLogWorkerOptions.value.map((option) => option.value)).toEqual([
-      1,
-      2,
-    ]);
+    expect(ownerPage.workLogWorkerOptions.value.map((option) => option.value)).toEqual([1, 2]);
 
     const otherWorkLogList = structuredClone(workLogList);
     otherWorkLogList.workLogs[0].workerAccountId = 1;
@@ -247,9 +234,7 @@ describe("useTaskWorkLogs", () => {
   });
 
   it("日別実績参照APIの401はDialogとSessionを破棄してログインへ戻す", async () => {
-    mocks.wbsApi.getTaskWorkLogs.mockRejectedValue(
-      new WbsApiError(401, null)
-    );
+    mocks.wbsApi.getTaskWorkLogs.mockRejectedValue(new WbsApiError(401, null));
     const page = useWbsPage();
     await page.initialize();
 
@@ -274,9 +259,7 @@ describe("useTaskWorkLogs", () => {
       workLogs: [],
     });
     expect(page.workLogPendingDelete.value).toBeNull();
-    expect(page.workLogSuccessMessage.value).toBe(
-      "Task日別実績を削除しました。"
-    );
+    expect(page.workLogSuccessMessage.value).toBe("Task日別実績を削除しました。");
   });
 
   describe("contextを直接渡した場合", () => {
@@ -346,7 +329,11 @@ describe("useTaskWorkLogs", () => {
       state.editWorkLog(41);
       mocks.wbsApi.getTaskWorkLogs.mockRejectedValue(new WbsApiError(500, null));
 
-      await state.saveWorkLog({ workDate: "2026-08-22", actualEffortMinutes: 510, workerAccountId: 2 });
+      await state.saveWorkLog({
+        workDate: "2026-08-22",
+        actualEffortMinutes: 510,
+        workerAccountId: 2,
+      });
 
       expect(state.editingWorkLog.value).toBeNull();
       expect(state.workLogEditorErrorMessages.value).toEqual([
@@ -391,7 +378,11 @@ describe("useTaskWorkLogs", () => {
         })
       );
       state.editWorkLog(41);
-      const saving = state.saveWorkLog({ workDate: "2026-08-22", actualEffortMinutes: 510, workerAccountId: 2 });
+      const saving = state.saveWorkLog({
+        workDate: "2026-08-22",
+        actualEffortMinutes: 510,
+        workerAccountId: 2,
+      });
       state.cancelWorkLogEdit();
       expect(state.editingWorkLog.value?.workLogId).toBe(41);
       resolveUpdate(structuredClone(updatedWorkLogList));

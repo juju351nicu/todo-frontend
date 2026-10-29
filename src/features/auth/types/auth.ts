@@ -5,11 +5,7 @@ export interface LoginRequest {
 }
 
 /** Backendで定義している初期ロールコード。 */
-export type RoleCode =
-  | "SYSTEM_ADMIN"
-  | "READ_ONLY_ADMIN"
-  | "ATTENDANCE_MANAGER"
-  | "USER";
+export type RoleCode = "SYSTEM_ADMIN" | "READ_ONLY_ADMIN" | "ATTENDANCE_MANAGER" | "USER";
 
 /** Backendの認可テーブルで管理するpermissionコード。 */
 export type PermissionCode =

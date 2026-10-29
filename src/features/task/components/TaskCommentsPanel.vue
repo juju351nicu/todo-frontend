@@ -28,7 +28,7 @@ const props = withDefaults(
      */
     disabled?: boolean;
   }>(),
-  { disabled: false },
+  { disabled: false }
 );
 
 const {
@@ -64,12 +64,30 @@ const {
   <StatusAlert v-if="errorMessages.length" type="error" density="compact" class="mb-3">
     <div v-for="message in errorMessages" :key="message">{{ message }}</div>
   </StatusAlert>
-  <StatusAlert v-if="successMessage" type="success" density="compact" closable class="mb-3" @close="successMessage = ''">
+  <StatusAlert
+    v-if="successMessage"
+    type="success"
+    density="compact"
+    closable
+    class="mb-3"
+    @close="successMessage = ''"
+  >
     {{ successMessage }}
   </StatusAlert>
-  <ul v-if="comments.length" class="mb-3 max-h-60 overflow-y-auto rounded-sm bg-muted py-2 text-default">
-    <li v-for="comment in comments" :key="comment.commentId" class="flex items-start gap-4 px-4 py-2">
-      <UAvatar :text="comment.authorDisplayName.slice(0, 1)" size="md" class="bg-primary text-xs text-white" />
+  <ul
+    v-if="comments.length"
+    class="mb-3 max-h-60 overflow-y-auto rounded-sm bg-muted py-2 text-default"
+  >
+    <li
+      v-for="comment in comments"
+      :key="comment.commentId"
+      class="flex items-start gap-4 px-4 py-2"
+    >
+      <UAvatar
+        :text="comment.authorDisplayName.slice(0, 1)"
+        size="md"
+        class="bg-primary text-xs text-white"
+      />
       <div class="min-w-0 flex-1">
         <div class="flex justify-between gap-2 text-base">
           <span>
@@ -106,15 +124,31 @@ const {
             <FieldCounter :value="editBody" :max="TASK_COMMENT_MAX_LENGTH" />
           </div>
           <div class="flex justify-end gap-2">
-            <UButton size="sm" variant="ghost" class="text-inherit" :disabled="isUpdating" @click="discardEditing">
+            <UButton
+              size="sm"
+              variant="ghost"
+              class="text-inherit"
+              :disabled="isUpdating"
+              @click="discardEditing"
+            >
               キャンセル
             </UButton>
-            <UButton color="primary" size="sm" :loading="isUpdating" :disabled="!canSaveEdit" @click="submitEdit">更新</UButton>
+            <UButton
+              color="primary"
+              size="sm"
+              :loading="isUpdating"
+              :disabled="!canSaveEdit"
+              @click="submitEdit"
+              >更新</UButton
+            >
           </div>
         </div>
         <div v-else class="text-sm whitespace-pre-wrap opacity-70">{{ comment.body }}</div>
       </div>
-      <div v-if="canModifyComment(comment) && editingCommentId !== comment.commentId" class="ms-2 flex gap-1">
+      <div
+        v-if="canModifyComment(comment) && editingCommentId !== comment.commentId"
+        class="ms-2 flex gap-1"
+      >
         <UButton
           icon="i-mdi-pencil-outline"
           size="xs"
@@ -157,7 +191,9 @@ const {
     <FieldCounter :value="commentBody" :max="TASK_COMMENT_MAX_LENGTH" />
   </div>
   <div class="flex justify-end">
-    <UButton color="primary" :loading="isSubmitting" :disabled="!canSubmit" @click="submitComment">コメントを投稿</UButton>
+    <UButton color="primary" :loading="isSubmitting" :disabled="!canSubmit" @click="submitComment"
+      >コメントを投稿</UButton
+    >
   </div>
 
   <UModal
@@ -167,10 +203,18 @@ const {
     :ui="{ content: 'max-w-120' }"
     @update:open="handleDeleteDialogVisibility"
   >
-    <template #body>削除したコメントは元に戻せません。投稿時に送信済みのメンション通知は履歴として残ります。</template>
+    <template #body
+      >削除したコメントは元に戻せません。投稿時に送信済みのメンション通知は履歴として残ります。</template
+    >
     <template #footer>
       <UButton variant="ghost" :disabled="isDeleting" @click="cancelDelete">キャンセル</UButton>
-      <UButton color="error" variant="ghost" :loading="isDeleting" :disabled="isUpdating || isSubmitting" @click="confirmDelete">
+      <UButton
+        color="error"
+        variant="ghost"
+        :loading="isDeleting"
+        :disabled="isUpdating || isSubmitting"
+        @click="confirmDelete"
+      >
         削除
       </UButton>
     </template>

@@ -130,9 +130,7 @@ describe("useTodoCalendarPage", () => {
 
     await page.search();
 
-    expect(page.errorMessages.value).toEqual([
-      "Todoカレンダーを取得できませんでした。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todoカレンダーを取得できませんでした。"]);
   });
 
   it("本文なし403ではSessionを維持して古いEventを破棄する", async () => {
@@ -145,16 +143,12 @@ describe("useTodoCalendarPage", () => {
     await page.search();
 
     expect(page.calendarOptions.events).toEqual([]);
-    expect(page.errorMessages.value).toEqual([
-      "Todoを参照するpermissionがありません。",
-    ]);
+    expect(page.errorMessages.value).toEqual(["Todoを参照するpermissionがありません。"]);
     expect(mocks.userStore.clearSession).not.toHaveBeenCalled();
   });
 
   it("401ではEventとSession表示を破棄してLoginへ戻す", async () => {
-    mocks.todoStore.findCalendarList.mockRejectedValue(
-      new TodoApiError(401, null)
-    );
+    mocks.todoStore.findCalendarList.mockRejectedValue(new TodoApiError(401, null));
     const page = useTodoCalendarPage();
 
     await page.search();

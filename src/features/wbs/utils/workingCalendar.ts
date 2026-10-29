@@ -28,21 +28,15 @@ const parseIsoLocalDate = (value: string): Date => {
  * 初期calendar検索期間として、業務日（Asia/Tokyo）の今月の初日・末日を返す。
  * 稼働日例外は業務日で保存されるため、利用端末のタイムゾーンでは月初・月末に1日ずれる。
  */
-export const buildDefaultWorkingCalendarDateRange =
-  (): WorkingCalendarDateRange => getBusinessMonthRange();
+export const buildDefaultWorkingCalendarDateRange = (): WorkingCalendarDateRange =>
+  getBusinessMonthRange();
 
 /** Project共通またはmember固有の対象をselectへ保存できる一意な文字列へ変換する。 */
-export const buildWorkingCalendarTargetKey = (
-  target: Readonly<WorkingCalendarTarget>
-): string =>
-  target.kind === "PROJECT"
-    ? PROJECT_TARGET_KEY
-    : `${MEMBER_TARGET_PREFIX}${target.accountId}`;
+export const buildWorkingCalendarTargetKey = (target: Readonly<WorkingCalendarTarget>): string =>
+  target.kind === "PROJECT" ? PROJECT_TARGET_KEY : `${MEMBER_TARGET_PREFIX}${target.accountId}`;
 
 /** select値を検証し、API queryと認可判定で使うcalendar対象へ復元する。 */
-export const parseWorkingCalendarTargetKey = (
-  targetKey: string
-): WorkingCalendarTarget | null => {
+export const parseWorkingCalendarTargetKey = (targetKey: string): WorkingCalendarTarget | null => {
   if (targetKey === PROJECT_TARGET_KEY) {
     return { kind: "PROJECT", accountId: null };
   }
@@ -50,9 +44,7 @@ export const parseWorkingCalendarTargetKey = (
     return null;
   }
   const accountId = Number(targetKey.slice(MEMBER_TARGET_PREFIX.length));
-  return Number.isSafeInteger(accountId) && accountId > 0
-    ? { kind: "MEMBER", accountId }
-    : null;
+  return Number.isSafeInteger(accountId) && accountId > 0 ? { kind: "MEMBER", accountId } : null;
 };
 
 /** calendar検索期間をBackendと同じ境界を含む最大366日で検証する。 */
@@ -74,11 +66,8 @@ export const validateWorkingCalendarDateRange = (
   if (dateTo.getTime() < dateFrom.getTime()) {
     return ["calendar終了日は開始日以降にしてください。"];
   }
-  const inclusiveDays =
-    Math.floor((dateTo.getTime() - dateFrom.getTime()) / MILLIS_PER_DAY) + 1;
-  return inclusiveDays > MAX_CALENDAR_DAYS
-    ? ["calendarの検索期間は366日以内にしてください。"]
-    : [];
+  const inclusiveDays = Math.floor((dateTo.getTime() - dateFrom.getTime()) / MILLIS_PER_DAY) + 1;
+  return inclusiveDays > MAX_CALENDAR_DAYS ? ["calendarの検索期間は366日以内にしてください。"] : [];
 };
 
 /** 選択中のProject共通・member固有階層に保存された例外だけを取り出す。 */
@@ -97,15 +86,12 @@ export const buildWorkingDayForm = (
   return {
     workDate: override?.workDate ?? day.workDate,
     dayType: override?.dayType ?? day.dayType,
-    availableMinutes:
-      override?.availableMinutes ?? day.availableMinutes,
+    availableMinutes: override?.availableMinutes ?? day.availableMinutes,
   };
 };
 
 /** 稼働日例外フォームをBackendと同じ種別・分数制約で検証する。 */
-export const validateWorkingDayForm = (
-  form: Readonly<WorkingDayForm>
-): string[] => {
+export const validateWorkingDayForm = (form: Readonly<WorkingDayForm>): string[] => {
   const messages: string[] = [];
   if (!isValidIsoLocalDate(form.workDate)) {
     messages.push("設定日を入力してください。");
@@ -113,10 +99,7 @@ export const validateWorkingDayForm = (
   if (form.dayType !== "WORKING_DAY" && form.dayType !== "HOLIDAY") {
     messages.push("稼働日種別を選択してください。");
   }
-  if (
-    form.availableMinutes === null ||
-    !Number.isSafeInteger(form.availableMinutes)
-  ) {
+  if (form.availableMinutes === null || !Number.isSafeInteger(form.availableMinutes)) {
     messages.push("稼働可能時間を整数で入力してください。");
     return messages;
   }
@@ -124,9 +107,7 @@ export const validateWorkingDayForm = (
     form.dayType === "WORKING_DAY" &&
     (form.availableMinutes < 1 || form.availableMinutes > 1440)
   ) {
-    messages.push(
-      "稼働日の稼働可能時間は1分以上1440分以下で入力してください。"
-    );
+    messages.push("稼働日の稼働可能時間は1分以上1440分以下で入力してください。");
   }
   if (form.dayType === "HOLIDAY" && form.availableMinutes !== 0) {
     messages.push("休日の稼働可能時間は0分にしてください。");
@@ -157,9 +138,7 @@ export const getWorkingDayTypeLabel = (dayType: WorkingDayType): string =>
   dayType === "WORKING_DAY" ? "稼働日" : "休日";
 
 /** Backendの有効値設定元コードを画面表示名へ変換する。 */
-export const getWorkingDaySourceLabel = (
-  source: WorkingDaySource
-): string => {
+export const getWorkingDaySourceLabel = (source: WorkingDaySource): string => {
   if (source === "MEMBER") {
     return "個人例外";
   }

@@ -1,9 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import TaskChecklistApi, {
-  TaskChecklistApiError,
-} from "@/features/task/api/taskChecklistApi";
+import TaskChecklistApi, { TaskChecklistApiError } from "@/features/task/api/taskChecklistApi";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
@@ -32,10 +30,8 @@ export type ChecklistControl = "toggle" | "move-up" | "move-down" | "edit";
  * @param control 部品の種類
  * @returns `"{itemId}:{control}"`形式の属性値
  */
-export const buildChecklistControlKey = (
-  itemId: number,
-  control: ChecklistControl
-): string => `${itemId}:${control}`;
+export const buildChecklistControlKey = (itemId: number, control: ChecklistControl): string =>
+  `${itemId}:${control}`;
 
 /**
  * trim後1文字以上、最大文字数以下のチェック項目本文か。
@@ -103,15 +99,9 @@ export const useTaskChecklist = (
   const isReordering = ref(false);
   /** いずれかの更新系APIを実行中か。実行中は全項目の操作部品をdisabledにして二重送信を防ぐ。 */
   const isMutating = computed(
-    () =>
-      isCreating.value ||
-      isUpdating.value ||
-      isDeleting.value ||
-      isReordering.value
+    () => isCreating.value || isUpdating.value || isDeleting.value || isReordering.value
   );
-  const completedCount = computed(
-    () => items.value.filter((item) => item.completed).length
-  );
+  const completedCount = computed(() => items.value.filter((item) => item.completed).length);
   /** 追加欄の本文が有効で、上限件数未満、参照のみでなく、他の更新中でない場合だけ追加できる。 */
   const canAdd = computed(
     () =>
@@ -125,7 +115,9 @@ export const useTaskChecklist = (
     items.value.length === 0 ? 0 : Math.round((completedCount.value / items.value.length) * 100)
   );
   /** 編集中の本文が有効で、他の更新中でない場合だけ保存できる。 */
-  const canSaveEdit = computed<boolean>(() => isValidChecklistContent(editContent.value) && !isMutating.value);
+  const canSaveEdit = computed<boolean>(
+    () => isValidChecklistContent(editContent.value) && !isMutating.value
+  );
 
   /** 前回の操作結果の文言を消す。新しい操作・取得を始めるときに呼ぶ。 */
   const clearFeedback = (): void => {
@@ -139,12 +131,7 @@ export const useTaskChecklist = (
    * @returns 参照のみ・他の更新中・ID未確定のいずれかならnull
    */
   const resolveMutationTarget = (): ChecklistMutationTarget | null => {
-    if (
-      disabled.value ||
-      isMutating.value ||
-      projectId.value === null ||
-      taskId.value === null
-    ) {
+    if (disabled.value || isMutating.value || projectId.value === null || taskId.value === null) {
       return null;
     }
     return { projectId: projectId.value, taskId: taskId.value };
@@ -209,10 +196,7 @@ export const useTaskChecklist = (
     isLoading.value = true;
     clearFeedback();
     try {
-      const loadedItems = await TaskChecklistApi.findItems(
-        projectId.value,
-        taskId.value
-      );
+      const loadedItems = await TaskChecklistApi.findItems(projectId.value, taskId.value);
       if (!isLatestRequest()) {
         return false;
       }
@@ -270,18 +254,12 @@ export const useTaskChecklist = (
     isLoading.value = true;
     clearFeedback();
     try {
-      const loadedItems = await TaskChecklistApi.findItems(
-        currentProjectId,
-        currentTaskId
-      );
+      const loadedItems = await TaskChecklistApi.findItems(currentProjectId, currentTaskId);
       if (!isLatestRequest()) {
         return;
       }
       items.value = loadedItems;
-      errorMessages.value = [
-        ...mutationMessages,
-        DISPLAY_MESSAGES.task.checklist.conflictReloaded,
-      ];
+      errorMessages.value = [...mutationMessages, DISPLAY_MESSAGES.task.checklist.conflictReloaded];
     } catch (reloadError: unknown) {
       if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
@@ -300,10 +278,7 @@ export const useTaskChecklist = (
         );
         return;
       }
-      errorMessages.value = [
-        ...mutationMessages,
-        DISPLAY_MESSAGES.task.checklist.reloadFailed,
-      ];
+      errorMessages.value = [...mutationMessages, DISPLAY_MESSAGES.task.checklist.reloadFailed];
     } finally {
       if (isLatestRequest()) {
         isLoading.value = false;
@@ -317,19 +292,10 @@ export const useTaskChecklist = (
    * @param error 更新系APIまたは通信で発生した例外
    * @param fallback 契約外のerror codeや本文なしのときに出す文言
    */
-  const handleMutationError = async (
-    error: unknown,
-    fallback: string
-  ): Promise<void> => {
+  const handleMutationError = async (error: unknown, fallback: string): Promise<void> => {
     if (await handleUnauthorized(error)) return;
-    if (
-      error instanceof TaskChecklistApiError &&
-      (error.status === 404 || error.status === 409)
-    ) {
-      await recoverLatestItems(
-        error,
-        DISPLAY_MESSAGES.task.checklist.conflictFallback
-      );
+    if (error instanceof TaskChecklistApiError && (error.status === 404 || error.status === 409)) {
+      await recoverLatestItems(error, DISPLAY_MESSAGES.task.checklist.conflictFallback);
       return;
     }
     errorMessages.value = getErrorMessages(error, fallback);
@@ -350,8 +316,7 @@ export const useTaskChecklist = (
   ): Promise<void> =>
     focusFirstEnabledElement(
       candidates.map(
-        (control) =>
-          `[data-checklist-control="${buildChecklistControlKey(itemId, control)}"]`
+        (control) => `[data-checklist-control="${buildChecklistControlKey(itemId, control)}"]`
       )
     );
 
@@ -379,10 +344,7 @@ export const useTaskChecklist = (
       newContent.value = "";
       successMessage.value = DISPLAY_MESSAGES.task.checklist.created;
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.checklist.createFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.checklist.createFailed);
     } finally {
       isCreating.value = false;
     }
@@ -424,9 +386,7 @@ export const useTaskChecklist = (
     if (target === null || editingItemId.value === null) {
       return;
     }
-    const item = items.value.find(
-      (candidate) => candidate.checklistItemId === editingItemId.value
-    );
+    const item = items.value.find((candidate) => candidate.checklistItemId === editingItemId.value);
     const content = editContent.value.trim();
     if (!item || !content || content.length > CHECKLIST_ITEM_MAX_LENGTH) {
       errorMessages.value = [DISPLAY_MESSAGES.task.checklist.contentInvalid];
@@ -436,20 +396,16 @@ export const useTaskChecklist = (
     clearFeedback();
     try {
       replaceItem(
-        await TaskChecklistApi.updateItem(
-          target.projectId,
-          target.taskId,
-          item.checklistItemId,
-          { content, completed: item.completed, version: item.version }
-        )
+        await TaskChecklistApi.updateItem(target.projectId, target.taskId, item.checklistItemId, {
+          content,
+          completed: item.completed,
+          version: item.version,
+        })
       );
       cancelEditing();
       successMessage.value = DISPLAY_MESSAGES.task.checklist.updated;
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.checklist.updateFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.checklist.updateFailed);
     } finally {
       isUpdating.value = false;
     }
@@ -469,22 +425,14 @@ export const useTaskChecklist = (
     clearFeedback();
     try {
       replaceItem(
-        await TaskChecklistApi.updateItem(
-          target.projectId,
-          target.taskId,
-          item.checklistItemId,
-          {
-            content: item.content,
-            completed: !item.completed,
-            version: item.version,
-          }
-        )
+        await TaskChecklistApi.updateItem(target.projectId, target.taskId, item.checklistItemId, {
+          content: item.content,
+          completed: !item.completed,
+          version: item.version,
+        })
       );
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.checklist.toggleFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.checklist.toggleFailed);
     } finally {
       isUpdating.value = false;
     }
@@ -498,10 +446,7 @@ export const useTaskChecklist = (
    * @param item 動かす項目
    * @param direction -1で上、1で下
    */
-  const moveItem = async (
-    item: TaskChecklistItem,
-    direction: -1 | 1
-  ): Promise<void> => {
+  const moveItem = async (item: TaskChecklistItem, direction: -1 | 1): Promise<void> => {
     const target = resolveMutationTarget();
     if (target === null) {
       return;
@@ -514,28 +459,18 @@ export const useTaskChecklist = (
       return;
     }
     const reordered = [...items.value];
-    [reordered[index], reordered[destination]] = [
-      reordered[destination],
-      reordered[index],
-    ];
+    [reordered[index], reordered[destination]] = [reordered[destination], reordered[index]];
     isReordering.value = true;
     clearFeedback();
     try {
-      items.value = await TaskChecklistApi.reorderItems(
-        target.projectId,
-        target.taskId,
-        {
-          items: reordered.map((candidate) => ({
-            checklistItemId: candidate.checklistItemId,
-            version: candidate.version,
-          })),
-        }
-      );
+      items.value = await TaskChecklistApi.reorderItems(target.projectId, target.taskId, {
+        items: reordered.map((candidate) => ({
+          checklistItemId: candidate.checklistItemId,
+          version: candidate.version,
+        })),
+      });
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.checklist.reorderFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.checklist.reorderFailed);
     } finally {
       isReordering.value = false;
     }
@@ -587,10 +522,7 @@ export const useTaskChecklist = (
       cancelDelete();
       successMessage.value = DISPLAY_MESSAGES.task.checklist.deleted;
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.checklist.deleteFailed
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.checklist.deleteFailed);
     } finally {
       isDeleting.value = false;
     }

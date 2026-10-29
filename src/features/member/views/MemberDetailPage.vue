@@ -47,17 +47,35 @@ const {
       <div class="-m-3 flex flex-wrap">
         <div class="w-full p-3 sm:w-1/2">
           <UFormField label="姓">
-            <UInput v-model="memberForm.lastName" name="lastName" placeholder="苗字を入力してください。" required class="w-full" />
+            <UInput
+              v-model="memberForm.lastName"
+              name="lastName"
+              placeholder="苗字を入力してください。"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3 sm:w-1/2">
           <UFormField label="名">
-            <UInput v-model="memberForm.firstName" name="firstName" placeholder="名前を入力してください。" required class="w-full" />
+            <UInput
+              v-model="memberForm.firstName"
+              name="firstName"
+              placeholder="名前を入力してください。"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3">
           <UFormField label="ログインID">
-            <UInput v-model="memberForm.loginId" name="loginId" placeholder="ログインIDを入力してください。" required class="w-full" />
+            <UInput
+              v-model="memberForm.loginId"
+              name="loginId"
+              placeholder="ログインIDを入力してください。"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3">
@@ -66,7 +84,11 @@ const {
               v-model="memberForm.password"
               type="password"
               name="password"
-              :placeholder="memberForm.memberId > 0 ? '変更する場合だけ入力してください。' : 'パスワードを入力してください。'"
+              :placeholder="
+                memberForm.memberId > 0
+                  ? '変更する場合だけ入力してください。'
+                  : 'パスワードを入力してください。'
+              "
               :required="memberForm.memberId === 0"
               class="w-full"
             />
@@ -74,7 +96,14 @@ const {
         </div>
         <div class="w-full p-3">
           <UFormField label="Email アドレス">
-            <UInput v-model="memberForm.email" type="email" name="email" placeholder="emailを入力してください。" required class="w-full" />
+            <UInput
+              v-model="memberForm.email"
+              type="email"
+              name="email"
+              placeholder="emailを入力してください。"
+              required
+              class="w-full"
+            />
           </UFormField>
         </div>
         <div class="w-full p-3 text-sm">

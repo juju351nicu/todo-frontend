@@ -2,12 +2,8 @@ import { computed, ref, type Ref } from "vue";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
-import TaskRecurrenceApi, {
-  TaskRecurrenceApiError,
-} from "@/features/task/api/taskRecurrenceApi";
-import TaskTemplateApi, {
-  TaskTemplateApiError,
-} from "@/features/task/api/taskTemplateApi";
+import TaskRecurrenceApi, { TaskRecurrenceApiError } from "@/features/task/api/taskRecurrenceApi";
+import TaskTemplateApi, { TaskTemplateApiError } from "@/features/task/api/taskTemplateApi";
 import {
   TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS,
   TASK_RECURRENCE_INTERVAL_MAX,
@@ -29,10 +25,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { validateTaskSnapshot } from "@/features/task/utils/taskSnapshotForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /** 繰り返し規則の作成元。 */
@@ -108,9 +101,7 @@ const buildForm = (rule: TaskRecurrence): TaskRecurrenceForm => ({
 });
 
 /** Project内の繰り返し規則CRUD、生成履歴、手動再試行を管理する。 */
-export const useTaskRecurrences = (
-  projectId: Readonly<Ref<number | null>>
-) => {
+export const useTaskRecurrences = (projectId: Readonly<Ref<number | null>>) => {
   const { expireSession } = useSessionExpiry();
 
   const rules = ref<TaskRecurrence[]>([]);
@@ -131,16 +122,10 @@ export const useTaskRecurrences = (
   const successMessage = ref("");
 
   const selectedRule = computed(
-    () =>
-      rules.value.find(
-        (rule) => rule.taskRecurrenceRuleId === selectedRuleId.value
-      ) ?? null
+    () => rules.value.find((rule) => rule.taskRecurrenceRuleId === selectedRuleId.value) ?? null
   );
   const isMutating = computed(
-    () =>
-      isSaving.value ||
-      isArchiving.value ||
-      retryingGenerationId.value !== null
+    () => isSaving.value || isArchiving.value || retryingGenerationId.value !== null
   );
 
   /** 選択中規則、生成履歴、作成・編集draftを破棄し、古いversionを再利用できない状態へ戻す。 */
@@ -166,22 +151,11 @@ export const useTaskRecurrences = (
     fallback: string,
     forbidden: string = DISPLAY_MESSAGES.task.recurrence.operationForbidden
   ): string => {
-    if (
-      !(
-        error instanceof TaskRecurrenceApiError ||
-        error instanceof TaskTemplateApiError
-      )
-    ) {
+    if (!(error instanceof TaskRecurrenceApiError || error instanceof TaskTemplateApiError)) {
       return DISPLAY_MESSAGES.common.connectionFailed;
     }
     if (error.status === 403) {
-      if (
-        !hasApiFieldError(
-          error.errorResponse,
-          "FEATURE_NOT_ENTITLED",
-          "featureCode"
-        )
-      ) {
+      if (!hasApiFieldError(error.errorResponse, "FEATURE_NOT_ENTITLED", "featureCode")) {
         return forbidden;
       }
     }
@@ -202,10 +176,7 @@ export const useTaskRecurrences = (
   /** 401ではSession表示を破棄し、保護画面に留まらないようLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
     if (
-      !(
-        error instanceof TaskRecurrenceApiError ||
-        error instanceof TaskTemplateApiError
-      ) ||
+      !(error instanceof TaskRecurrenceApiError || error instanceof TaskTemplateApiError) ||
       error.status !== 401
     ) {
       return false;
@@ -227,9 +198,7 @@ export const useTaskRecurrences = (
       rules.value = await TaskRecurrenceApi.findRules(projectId.value);
       if (
         selectedRuleId.value !== null &&
-        !rules.value.some(
-          (rule) => rule.taskRecurrenceRuleId === selectedRuleId.value
-        )
+        !rules.value.some((rule) => rule.taskRecurrenceRuleId === selectedRuleId.value)
       ) {
         selectedRuleId.value = null;
         generations.value = [];
@@ -283,19 +252,12 @@ export const useTaskRecurrences = (
   /** 選択規則の直近100件の生成履歴を取得する。 */
   const loadGenerations = async (): Promise<boolean> => {
     const ruleId = selectedRuleId.value;
-    if (
-      projectId.value === null ||
-      ruleId === null ||
-      isLoadingGenerations.value
-    ) {
+    if (projectId.value === null || ruleId === null || isLoadingGenerations.value) {
       return false;
     }
     isLoadingGenerations.value = true;
     try {
-      generations.value = await TaskRecurrenceApi.findGenerations(
-        projectId.value,
-        ruleId
-      );
+      generations.value = await TaskRecurrenceApi.findGenerations(projectId.value, ruleId);
       return true;
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
@@ -332,10 +294,7 @@ export const useTaskRecurrences = (
   };
 
   /** 初期担当者・Board列を設定して新規作成フォームを開く。 */
-  const beginCreating = (
-    assigneeAccountId: number | null,
-    taskStatusId: number | null
-  ): void => {
+  const beginCreating = (assigneeAccountId: number | null, taskStatusId: number | null): void => {
     if (isMutating.value) return;
     selectedRuleId.value = null;
     generations.value = [];
@@ -361,9 +320,7 @@ export const useTaskRecurrences = (
     if (isMutating.value) return;
     isCreating.value = false;
     isEditing.value = false;
-    form.value = selectedRule.value
-      ? buildForm(selectedRule.value)
-      : createEmptyForm();
+    form.value = selectedRule.value ? buildForm(selectedRule.value) : createEmptyForm();
     errorMessage.value = "";
   };
 
@@ -448,8 +405,7 @@ export const useTaskRecurrences = (
   const createRule = async (): Promise<void> => {
     if (projectId.value === null || !isCreating.value || isMutating.value) return;
     const scheduleError = validateSchedule(form.value.firstOccurrenceDate);
-    const snapshotError =
-      creationMode.value === "DIRECT" ? validateSnapshot() : "";
+    const snapshotError = creationMode.value === "DIRECT" ? validateSnapshot() : "";
     if (scheduleError || snapshotError) {
       errorMessage.value = scheduleError || snapshotError;
       return;
@@ -480,10 +436,7 @@ export const useTaskRecurrences = (
           ...schedule,
           firstOccurrenceDate: form.value.firstOccurrenceDate,
         };
-        created = await TaskRecurrenceApi.createFromTemplate(
-          projectId.value,
-          request
-        );
+        created = await TaskRecurrenceApi.createFromTemplate(projectId.value, request);
       }
       rules.value = [...rules.value, created].sort(
         (left, right) => left.taskRecurrenceRuleId - right.taskRecurrenceRuleId
@@ -494,11 +447,7 @@ export const useTaskRecurrences = (
       isCreating.value = false;
       successMessage.value = "繰り返しTask規則を作成しました。";
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.recurrence.createFailed,
-        false
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.recurrence.createFailed, false);
     } finally {
       isSaving.value = false;
     }
@@ -533,19 +482,13 @@ export const useTaskRecurrences = (
         request
       );
       rules.value = rules.value.map((candidate) =>
-        candidate.taskRecurrenceRuleId === updated.taskRecurrenceRuleId
-          ? updated
-          : candidate
+        candidate.taskRecurrenceRuleId === updated.taskRecurrenceRuleId ? updated : candidate
       );
       form.value = buildForm(updated);
       isEditing.value = false;
       successMessage.value = "繰り返しTask規則を更新しました。";
     } catch (error: unknown) {
-      await handleMutationError(
-        error,
-        DISPLAY_MESSAGES.task.recurrence.updateFailed,
-        true
-      );
+      await handleMutationError(error, DISPLAY_MESSAGES.task.recurrence.updateFailed, true);
     } finally {
       isSaving.value = false;
     }
@@ -560,17 +503,9 @@ export const useTaskRecurrences = (
     successMessage.value = "";
     try {
       try {
-        await TaskRecurrenceApi.archive(
-          projectId.value,
-          rule.taskRecurrenceRuleId,
-          rule.version
-        );
+        await TaskRecurrenceApi.archive(projectId.value, rule.taskRecurrenceRuleId, rule.version);
       } catch (error: unknown) {
-        await handleMutationError(
-          error,
-          DISPLAY_MESSAGES.task.recurrence.archiveFailed,
-          true
-        );
+        await handleMutationError(error, DISPLAY_MESSAGES.task.recurrence.archiveFailed, true);
         return;
       }
       await refreshAfterCompletedMutation(
@@ -583,9 +518,7 @@ export const useTaskRecurrences = (
   };
 
   /** FAILED生成履歴を最新規則version条件付きで再試行待ちへ戻す。 */
-  const retryGeneration = async (
-    generation: TaskRecurrenceGeneration
-  ): Promise<void> => {
+  const retryGeneration = async (generation: TaskRecurrenceGeneration): Promise<void> => {
     const rule = selectedRule.value;
     if (
       projectId.value === null ||
@@ -607,11 +540,7 @@ export const useTaskRecurrences = (
           rule.version
         );
       } catch (error: unknown) {
-        await handleMutationError(
-          error,
-          DISPLAY_MESSAGES.task.recurrence.retryFailed,
-          true
-        );
+        await handleMutationError(error, DISPLAY_MESSAGES.task.recurrence.retryFailed, true);
         return;
       }
       await refreshAfterCompletedMutation(
@@ -627,9 +556,7 @@ export const useTaskRecurrences = (
   const refreshAfterMutation = async (ruleId: number): Promise<void> => {
     if (projectId.value === null) return;
     const latestRules = await TaskRecurrenceApi.findRules(projectId.value);
-    const latest = latestRules.find(
-      (rule) => rule.taskRecurrenceRuleId === ruleId
-    );
+    const latest = latestRules.find((rule) => rule.taskRecurrenceRuleId === ruleId);
     if (latest === undefined) {
       rules.value = latestRules;
       clearRuleState(false);
@@ -671,8 +598,7 @@ export const useTaskRecurrences = (
         );
         return;
       }
-      errorMessage.value =
-        DISPLAY_MESSAGES.task.recurrence.completedRefreshFailed;
+      errorMessage.value = DISPLAY_MESSAGES.task.recurrence.completedRefreshFailed;
     } finally {
       isLoading.value = false;
     }

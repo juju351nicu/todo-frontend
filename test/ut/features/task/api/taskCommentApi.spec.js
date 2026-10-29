@@ -1,8 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import TaskCommentApi, {
-  TaskCommentApiError,
-} from "@/features/task/api/taskCommentApi";
+import TaskCommentApi, { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import HttpClient from "@/shared/api/httpClient";
 
 vi.mock("@/shared/api/httpClient", () => ({
@@ -37,30 +35,25 @@ describe("TaskコメントAPI", () => {
       json: vi.fn().mockResolvedValue([comment]),
     });
 
-    await expect(TaskCommentApi.findComments(5, 31)).resolves.toEqual([
-      comment,
-    ]);
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31/comments"
-    );
+    await expect(TaskCommentApi.findComments(5, 31)).resolves.toEqual([comment]);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31/comments");
   });
 
   it("投稿者の状態はBackendの値を保ち、項目がない古い版ではACTIVEで補う", async () => {
     const { authorAccountStatus: _omitted, ...legacyComment } = comment;
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue([
-        { ...comment, commentId: 42, authorAccountStatus: "DISABLED" },
-        legacyComment,
-      ]),
+      json: vi
+        .fn()
+        .mockResolvedValue([
+          { ...comment, commentId: 42, authorAccountStatus: "DISABLED" },
+          legacyComment,
+        ]),
     });
 
     const comments = await TaskCommentApi.findComments(5, 31);
 
-    expect(comments.map((item) => item.authorAccountStatus)).toEqual([
-      "DISABLED",
-      "ACTIVE",
-    ]);
+    expect(comments.map((item) => item.authorAccountStatus)).toEqual(["DISABLED", "ACTIVE"]);
   });
 
   it("Project内のTask横断コメント一覧を取得する", async () => {
@@ -74,12 +67,8 @@ describe("TaskコメントAPI", () => {
       json: vi.fn().mockResolvedValue([projectComment]),
     });
 
-    await expect(TaskCommentApi.findProjectComments(5)).resolves.toEqual([
-      projectComment,
-    ]);
-    expect(HttpClient.getRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/comments"
-    );
+    await expect(TaskCommentApi.findProjectComments(5)).resolves.toEqual([projectComment]);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/5/comments");
   });
 
   it("trim済み投稿本文をコメントAPIへ送信する", async () => {
@@ -91,10 +80,9 @@ describe("TaskコメントAPI", () => {
     await expect(
       TaskCommentApi.createComment(5, 31, { body: "確認をお願いします。" })
     ).resolves.toEqual(comment);
-    expect(HttpClient.postRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31/comments",
-      { body: "確認をお願いします。" }
-    );
+    expect(HttpClient.postRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31/comments", {
+      body: "確認をお願いします。",
+    });
   });
 
   it("更新本文と取得時点versionをコメントID配下のPUTへ送信する", async () => {
@@ -110,18 +98,16 @@ describe("TaskコメントAPI", () => {
         version: 0,
       })
     ).resolves.toEqual(updated);
-    expect(HttpClient.putRequest).toHaveBeenCalledWith(
-      "/api/v1/projects/5/tasks/31/comments/41",
-      { body: "確認済みです。", version: 0 }
-    );
+    expect(HttpClient.putRequest).toHaveBeenCalledWith("/api/v1/projects/5/tasks/31/comments/41", {
+      body: "確認済みです。",
+      version: 0,
+    });
   });
 
   it("取得時点versionをqueryへ指定してコメントを削除する", async () => {
     HttpClient.deleteRequest.mockResolvedValue({ ok: true, status: 204 });
 
-    await expect(
-      TaskCommentApi.deleteComment(5, 31, 41, 2)
-    ).resolves.toBeUndefined();
+    await expect(TaskCommentApi.deleteComment(5, 31, 41, 2)).resolves.toBeUndefined();
     expect(HttpClient.deleteRequest).toHaveBeenCalledWith(
       "/api/v1/projects/5/tasks/31/comments/41?version=2"
     );
@@ -129,9 +115,7 @@ describe("TaskコメントAPI", () => {
 
   it("409の項目エラーを競合回復用の例外へ保持する", async () => {
     const errorResponse = {
-      fieldErrors: [
-        { field: "version", message: "別の操作で変更されました。" },
-      ],
+      fieldErrors: [{ field: "version", message: "別の操作で変更されました。" }],
     };
     HttpClient.putRequest.mockResolvedValue({
       ok: false,
@@ -148,9 +132,7 @@ describe("TaskコメントAPI", () => {
       status: 409,
       errorResponse,
     });
-    await promise.catch((error) =>
-      expect(error).toBeInstanceOf(TaskCommentApiError)
-    );
+    await promise.catch((error) => expect(error).toBeInstanceOf(TaskCommentApiError));
   });
 
   it("非JSONのエラーResponseは本文を公開せずnullとして保持する", async () => {

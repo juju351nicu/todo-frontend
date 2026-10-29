@@ -114,10 +114,7 @@ export const useTaskTimerHistory = () => {
 
   /** 現在pageより後が存在する場合だけ次ページを取得する。 */
   const loadNextPage = async (): Promise<void> => {
-    if (
-      history.value !== null &&
-      history.value.page + 1 < history.value.totalPages
-    ) {
+    if (history.value !== null && history.value.page + 1 < history.value.totalPages) {
       await loadHistory(history.value.page + 1);
     }
   };

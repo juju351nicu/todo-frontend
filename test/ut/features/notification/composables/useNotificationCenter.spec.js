@@ -26,8 +26,26 @@ const buildCenter = () => ({
   badgeCount: 1,
   alerts: [],
   events: [
-    { notificationEventId: 2, eventType: "ADMIN_ANNOUNCEMENT", title: "お知らせ", message: "1\n2\n3", navigationPath: null, occurredAt: "2026-10-26T13:00:00Z", publisherDisplayName: "管理者", read: false },
-    { notificationEventId: 1, eventType: "TASK_ASSIGNED", title: "割当", message: "Task", navigationPath: "/projects/7/board", occurredAt: "2026-10-26T12:00:00Z", publisherDisplayName: "管理者", read: true },
+    {
+      notificationEventId: 2,
+      eventType: "ADMIN_ANNOUNCEMENT",
+      title: "お知らせ",
+      message: "1\n2\n3",
+      navigationPath: null,
+      occurredAt: "2026-10-26T13:00:00Z",
+      publisherDisplayName: "管理者",
+      read: false,
+    },
+    {
+      notificationEventId: 1,
+      eventType: "TASK_ASSIGNED",
+      title: "割当",
+      message: "Task",
+      navigationPath: "/projects/7/board",
+      occurredAt: "2026-10-26T12:00:00Z",
+      publisherDisplayName: "管理者",
+      read: true,
+    },
   ],
   generatedAt: "2026-10-26T13:00:01Z",
 });
@@ -56,7 +74,11 @@ describe("useNotificationCenter", () => {
   });
 
   it("未読がなければ既読APIを呼ばない", async () => {
-    mocks.notificationApi.getNotificationCenter.mockResolvedValue({ ...buildCenter(), unreadEventCount: 0, badgeCount: 0 });
+    mocks.notificationApi.getNotificationCenter.mockResolvedValue({
+      ...buildCenter(),
+      unreadEventCount: 0,
+      badgeCount: 0,
+    });
     const center = useNotificationCenter();
 
     await center.handleMenuVisibility(true);

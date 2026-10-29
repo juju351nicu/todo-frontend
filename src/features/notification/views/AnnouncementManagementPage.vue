@@ -24,7 +24,11 @@ const {
     <UCard class="mx-auto max-w-225" :ui="{ body: 'p-6 sm:p-6' }">
       <template #header>
         <div class="flex flex-wrap items-center gap-3 px-2 pt-4">
-          <UAvatar icon="i-mdi-bullhorn-outline" size="3xl" class="bg-secondary/12 text-secondary" />
+          <UAvatar
+            icon="i-mdi-bullhorn-outline"
+            size="3xl"
+            class="bg-secondary/12 text-secondary"
+          />
           <div>
             <div class="text-2xl font-normal">お知らせ配信</div>
             <div class="mt-1 text-sm font-normal tracking-normal text-muted">
@@ -76,7 +80,13 @@ const {
           <FieldCounter :value="message" :max="ANNOUNCEMENT_MESSAGE_MAX_LENGTH" />
         </div>
         <UFormField label="表示終了日時（任意）" help="未入力の場合は無期限で表示します。">
-          <UInput v-model="expiresAtLocal" type="datetime-local" variant="outline" :disabled="isSubmitting" class="w-full" />
+          <UInput
+            v-model="expiresAtLocal"
+            type="datetime-local"
+            variant="outline"
+            :disabled="isSubmitting"
+            class="w-full"
+          />
         </UFormField>
 
         <div class="mt-6 flex justify-end">

@@ -2,7 +2,11 @@ import { computed, type Ref } from "vue";
 
 import { useUserStore } from "@/features/auth/stores/user";
 import type { ProjectDetail } from "@/features/project/types/project";
-import { canManageProject, canManageProjectTasks, findProjectRole } from "@/features/project/utils/projectRole";
+import {
+  canManageProject,
+  canManageProjectTasks,
+  findProjectRole,
+} from "@/features/project/utils/projectRole";
 import { isActiveProject } from "@/features/project/utils/projectStatus";
 
 /**
@@ -29,17 +33,13 @@ export const useTaskBoardPermissions = (project: Ref<ProjectDetail | null>) => {
    * TemplateはProjectに属さないため、Projectの状態は問わない。
    */
   const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
-  const currentProjectRole = computed(() =>
-    findProjectRole(project.value, userStore.accountId)
-  );
+  const currentProjectRole = computed(() => findProjectRole(project.value, userStore.accountId));
   /** Project内のTaskを管理できるか（SYSTEM_ADMIN、またはOWNER・MANAGER）。 */
   const canManageTasks = computed(() =>
     canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
   const isCurrentUserProjectMember = computed(() =>
-    (project.value?.members ?? []).some(
-      (member) => member.accountId === userStore.accountId
-    )
+    (project.value?.members ?? []).some((member) => member.accountId === userStore.accountId)
   );
   /**
    * このProjectで変更操作（コメント投稿・Template保存等）へ進めるか。READ_ONLY_ADMINは参加していないProjectも
@@ -54,38 +54,21 @@ export const useTaskBoardPermissions = (project: Ref<ProjectDetail | null>) => {
    * archive済みProjectではBackendが409で拒否するため、利用中のProjectに限る。
    */
   const canPostTaskComment = computed(
-    () =>
-      userStore.hasPermission("TASK_READ") &&
-      isProjectActive.value &&
-      canOperateProject.value
+    () => userStore.hasPermission("TASK_READ") && isProjectActive.value && canOperateProject.value
   );
-  const canCreateTaskRecurrence = computed(
-    () =>
-      canCreateTask.value &&
-      canManageTasks.value
-  );
+  const canCreateTaskRecurrence = computed(() => canCreateTask.value && canManageTasks.value);
   const canCaptureProjectTemplate = computed(
     () =>
       userStore.hasPermission("PROJECT_CREATE") &&
       isProjectActive.value &&
       canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
-  const canUpdateTaskRecurrence = computed(
-    () =>
-      canUpdateTask.value &&
-      canManageTasks.value
-  );
+  const canUpdateTaskRecurrence = computed(() => canUpdateTask.value && canManageTasks.value);
   const canMoveTask = computed(
-    () =>
-      userStore.hasPermission("TASK_MOVE") &&
-      isProjectActive.value &&
-      canManageTasks.value
+    () => userStore.hasPermission("TASK_MOVE") && isProjectActive.value && canManageTasks.value
   );
   const canArchiveTask = computed(
-    () =>
-      userStore.hasPermission("TASK_ARCHIVE") &&
-      isProjectActive.value &&
-      canManageTasks.value
+    () => userStore.hasPermission("TASK_ARCHIVE") && isProjectActive.value && canManageTasks.value
   );
   /**
    * Task Templateを適用するときに担当者を限定するaccount ID。限定しない場合はnull。

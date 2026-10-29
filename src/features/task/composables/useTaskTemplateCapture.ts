@@ -1,17 +1,12 @@
 import { computed, ref, type Ref } from "vue";
 
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
-import TaskTemplateApi, {
-  TaskTemplateApiError,
-} from "@/features/task/api/taskTemplateApi";
+import TaskTemplateApi, { TaskTemplateApiError } from "@/features/task/api/taskTemplateApi";
 import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
 import { TASK_TEMPLATE_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import {
-  hasApiFieldError,
-  resolveApiErrorMessages,
-} from "@/shared/utils/apiError";
+import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** 既存Taskと未完了checklistを本人用Templateへ保存するDialog状態を管理する。 */
 export const useTaskTemplateCapture = (
@@ -29,7 +24,10 @@ export const useTaskTemplateCapture = (
   const canCapture = computed<boolean>(() => {
     const trimmedName = name.value.trim();
     return (
-      !disabled.value && !isSaving.value && trimmedName.length > 0 && trimmedName.length <= TASK_TEMPLATE_NAME_MAX_LENGTH
+      !disabled.value &&
+      !isSaving.value &&
+      trimmedName.length > 0 &&
+      trimmedName.length <= TASK_TEMPLATE_NAME_MAX_LENGTH
     );
   });
 
@@ -39,13 +37,7 @@ export const useTaskTemplateCapture = (
       return DISPLAY_MESSAGES.common.connectionFailed;
     }
     if (error.status === 403) {
-      if (
-        !hasApiFieldError(
-          error.errorResponse,
-          "FEATURE_NOT_ENTITLED",
-          "featureCode"
-        )
-      ) {
+      if (!hasApiFieldError(error.errorResponse, "FEATURE_NOT_ENTITLED", "featureCode")) {
         return DISPLAY_MESSAGES.task.template.operationForbidden;
       }
     }
@@ -98,11 +90,9 @@ export const useTaskTemplateCapture = (
     errorMessage.value = "";
     successMessage.value = "";
     try {
-      const created = await TaskTemplateApi.capture(
-        projectId.value,
-        taskId.value,
-        { name: normalizedName }
-      );
+      const created = await TaskTemplateApi.capture(projectId.value, taskId.value, {
+        name: normalizedName,
+      });
       name.value = "";
       isOpen.value = false;
       successMessage.value = "TaskをTemplateとして保存しました。";

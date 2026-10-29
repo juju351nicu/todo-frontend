@@ -23,7 +23,7 @@ const props = withDefaults(
     density: "default",
     title: undefined,
     closable: false,
-  },
+  }
 );
 
 const emit = defineEmits<{
