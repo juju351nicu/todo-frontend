@@ -22,7 +22,7 @@ import {
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project設定Dialogで編集する表示情報と取得時点のversion。 */
 interface ProjectSettingsForm {
@@ -111,8 +111,7 @@ const needsReloadGuidance = (error: ProjectApiError): boolean =>
   );
 
 /** `data-project-settings-control`属性の値から、その要素を探すselectorを作る。 */
-const projectSettingsControlSelector = (key: string): string =>
-  `[data-project-settings-control="${key}"]`;
+const buildProjectSettingsControlSelector = createDataAttributeSelector("data-project-settings-control");
 
 /**
  * Task Board上のProject設定Dialogについて、Project更新・archive・member管理をまとめて扱う。
@@ -287,7 +286,7 @@ export const useProjectSettingsDialog = (
       return;
     }
     await focusFirstEnabledElement(
-      [...candidates, PROJECT_SETTINGS_CONTROL.close].map(projectSettingsControlSelector)
+      [...candidates, PROJECT_SETTINGS_CONTROL.close].map(buildProjectSettingsControlSelector)
     );
   };
 

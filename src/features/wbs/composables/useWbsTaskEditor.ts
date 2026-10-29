@@ -16,7 +16,7 @@ import {
 } from "@/features/wbs/utils/wbsForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * WBS Task編集Dialogの部品に付ける`data-wbs-task-editor-control`属性の値。
@@ -29,8 +29,7 @@ export const WBS_TASK_EDITOR_CONTROL = {
 } as const;
 
 /** `data-wbs-task-editor-control`属性の値から、その要素を探すselectorを作る。 */
-const wbsTaskEditorControlSelector = (key: string): string =>
-  `[data-wbs-task-editor-control="${key}"]`;
+const buildWbsTaskEditorControlSelector = createDataAttributeSelector("data-wbs-task-editor-control");
 
 /**
  * Backendの文言が「WBSを再読み込みしてください。」で終わる409のerror code
@@ -202,7 +201,7 @@ export const useWbsTaskEditor = (
     if (shouldRestoreSaveFocus) {
       // disabledが解除されたDOMへ反映された後に戻す（`focusFirstEnabledElement`がnextTickを待つ）。
       await focusFirstEnabledElement([
-        wbsTaskEditorControlSelector(WBS_TASK_EDITOR_CONTROL.save),
+        buildWbsTaskEditorControlSelector(WBS_TASK_EDITOR_CONTROL.save),
       ]);
     }
   };

@@ -21,7 +21,7 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * Dashboardの部品に付ける`data-dashboard-control`属性の値。
@@ -36,8 +36,7 @@ export const DASHBOARD_CONTROL = {
 } as const;
 
 /** `data-dashboard-control`属性の値から、その要素を探すselectorを作る。 */
-const dashboardControlSelector = (key: string): string =>
-  `[data-dashboard-control="${key}"]`;
+const buildDashboardControlSelector = createDataAttributeSelector("data-dashboard-control");
 
 const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
   "FEATURE_NOT_ENTITLED",
@@ -221,13 +220,13 @@ export const useDashboardPage = () => {
    */
   const reloadDashboard = async (): Promise<void> => {
     await loadDashboard();
-    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.reload)]);
+    await focusFirstEnabledElement([buildDashboardControlSelector(DASHBOARD_CONTROL.reload)]);
   };
 
   /** 高度Dashboardの「集計」（またはEVM基準日でEnter）の後に、EVM基準日へフォーカスを戻す。 */
   const submitAdvancedDashboard = async (): Promise<void> => {
     await loadAdvancedDashboard();
-    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
+    await focusFirstEnabledElement([buildDashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
   };
 
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */

@@ -23,7 +23,7 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template header編集フォーム。 */
 export interface ProjectTemplateEditForm {
@@ -65,8 +65,7 @@ export const templateItemControlKey = (projectTemplateId: number): string =>
   `template:${projectTemplateId}`;
 
 /** `data-project-template-control`属性の値から、その要素を探すselectorを作る。 */
-const templateControlSelector = (key: string): string =>
-  `[data-project-template-control="${key}"]`;
+const buildTemplateControlSelector = createDataAttributeSelector("data-project-template-control");
 
 /**
  * Templateからの作成で、入力内容の誤りを表す409のerror code。Template自体は古くなっていないので、
@@ -187,7 +186,7 @@ export const useProjectTemplatePage = () => {
    * @param candidates `PROJECT_TEMPLATE_CONTROL`または`templateItemControlKey`の値
    */
   const restoreControlFocus = (candidates: readonly string[]): Promise<void> =>
-    focusFirstEnabledElement(candidates.map(templateControlSelector));
+    focusFirstEnabledElement(candidates.map(buildTemplateControlSelector));
 
   /** 機能資格不足をpermission不足のbodyなし403と区別する。 */
   const isFeatureNotEntitled = (error: ProjectTemplateApiError): boolean =>

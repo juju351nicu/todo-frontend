@@ -20,7 +20,7 @@ import {
   validateWbsBaselineCreateForm,
 } from "@/features/wbs/utils/wbsBaseline";
 import { hasApiFieldError } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * baseline cardの部品に付ける`data-wbs-baseline-control`属性の値。
@@ -43,8 +43,7 @@ export const baselineActivateControlKey = (baselineId: number): string =>
   `activate:${baselineId}`;
 
 /** `data-wbs-baseline-control`属性の値から、その要素を探すselectorを作る。 */
-const baselineControlSelector = (key: string): string =>
-  `[data-wbs-baseline-control="${key}"]`;
+const buildBaselineControlSelector = createDataAttributeSelector("data-wbs-baseline-control");
 
 /**
  * Backendの文言が「最新状態を取得して…」となる409のerror code
@@ -359,11 +358,11 @@ export const useWbsBaselines = (
     }
     if (!context.isSessionInvalidated()) {
       await focusFirstEnabledElement([
-        baselineControlSelector(baselineActivateControlKey(baseline.baselineId)),
+        buildBaselineControlSelector(baselineActivateControlKey(baseline.baselineId)),
         ...(previousActiveBaselineId === null
           ? []
-          : [baselineControlSelector(baselineActivateControlKey(previousActiveBaselineId))]),
-        baselineControlSelector(WBS_BASELINE_CONTROL.create),
+          : [buildBaselineControlSelector(baselineActivateControlKey(previousActiveBaselineId))]),
+        buildBaselineControlSelector(WBS_BASELINE_CONTROL.create),
       ]);
     }
   };

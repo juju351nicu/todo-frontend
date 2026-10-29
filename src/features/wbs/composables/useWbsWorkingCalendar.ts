@@ -33,7 +33,7 @@ import {
 } from "@/features/wbs/utils/workingCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 稼働日calendarの各行の「登録・編集」ボタンに付ける`data-working-calendar-control`属性の値を作る。
@@ -54,8 +54,7 @@ export const workingDayEditControlKey = (workDate: string): string =>
 export const WORKING_CALENDAR_SUBMIT_CONTROL = "submit";
 
 /** `data-working-calendar-control`属性の値から、その要素を探すselectorを作る。 */
-const workingCalendarControlSelector = (key: string): string =>
-  `[data-working-calendar-control="${key}"]`;
+const buildWorkingCalendarControlSelector = createDataAttributeSelector("data-working-calendar-control");
 
 /**
  * Backendの文言が「最新状態を取得してください。」で終わる409のerror code
@@ -503,7 +502,7 @@ export const useWbsWorkingCalendar = (
     workingCalendarErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
     // 削除後は削除ボタンが消えるため、成功・失敗にかかわらず同じ行の「登録・編集」へフォーカスを戻す。
-    const editControl = workingCalendarControlSelector(
+    const editControl = buildWorkingCalendarControlSelector(
       workingDayEditControlKey(override.workDate)
     );
     try {
@@ -582,7 +581,7 @@ export const useWbsWorkingCalendar = (
     await loadWorkingCalendar(dateRange, targetKey);
     if (!context.isSessionInvalidated()) {
       await focusFirstEnabledElement([
-        workingCalendarControlSelector(WORKING_CALENDAR_SUBMIT_CONTROL),
+        buildWorkingCalendarControlSelector(WORKING_CALENDAR_SUBMIT_CONTROL),
       ]);
     }
   };

@@ -13,7 +13,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { SemanticColor } from "@/shared/types/color";
 
 interface MyTaskGroup {
@@ -40,8 +40,7 @@ export const myTaskCompleteControlKey = (taskId: number): string =>
   `complete:${taskId}`;
 
 /** `data-my-task-control`属性の値から、その要素を探すselectorを作る。 */
-const myTaskControlSelector = (key: string): string =>
-  `[data-my-task-control="${key}"]`;
+const buildMyTaskControlSelector = createDataAttributeSelector("data-my-task-control");
 
 /** 本人担当Taskを日付グループへ分けるMy Tasks画面の状態と操作を提供する。 */
 export const useMyTasksPage = () => {
@@ -217,8 +216,8 @@ export const useMyTasksPage = () => {
       tasksNow[Math.min(index, tasksNow.length) - 1]?.taskId,
     ].filter((candidate): candidate is number => candidate !== undefined);
     return focusFirstEnabledElement([
-      ...candidates.map((candidate) => myTaskControlSelector(myTaskCompleteControlKey(candidate))),
-      myTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
+      ...candidates.map((candidate) => buildMyTaskControlSelector(myTaskCompleteControlKey(candidate))),
+      buildMyTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
     ]);
   };
 

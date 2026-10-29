@@ -25,7 +25,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
@@ -45,8 +45,7 @@ export const TASK_SEARCH_CONTROL = {
 } as const;
 
 /** `data-task-search-control`属性の値から、その要素を探すselectorを作る。 */
-const taskSearchControlSelector = (key: string): string =>
-  `[data-task-search-control="${key}"]`;
+const buildTaskSearchControlSelector = createDataAttributeSelector("data-task-search-control");
 
 interface TaskSearchColumnOption {
   code: TaskSearchColumn;
@@ -520,7 +519,7 @@ export const useTaskSearchPage = () => {
           DISPLAY_MESSAGES.task.search.updateFailed
         );
         // 取り直しの間「更新」はdisabledになりフォーカスが外れるため、名前の入力欄へ戻す。
-        await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
+        await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
         return;
       }
       if (!(await handleUnauthorized(error))) {
@@ -552,7 +551,7 @@ export const useTaskSearchPage = () => {
         "Saved Viewを削除しました。"
       );
       // 削除の後は選択がなくなり「削除」がdisabledになるため、「保存した条件」へ戻す。
-      await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
+      await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
     } catch (error: unknown) {
       if (
         error instanceof TaskSearchApiError &&

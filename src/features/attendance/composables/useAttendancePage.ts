@@ -30,7 +30,7 @@ import {
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { StatusAlertType } from "@/shared/types/color";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
@@ -71,12 +71,11 @@ export const ATTENDANCE_CONTROL = {
 } as const;
 
 /** `data-attendance-control`属性の値から、その部品を探すselectorを作る。 */
-const attendanceControlSelector = (key: string): string =>
-  `[data-attendance-control="${key}"]`;
+const buildAttendanceControlSelector = createDataAttributeSelector("data-attendance-control");
 
 /** `data-attendance-punch`属性の値から、その打刻ボタンを探すselectorを作る。 */
-const punchButtonSelector = (action: AttendancePunchAction): string =>
-  `[data-attendance-punch="${action}"]`;
+const buildPunchButtonSelector = (action: AttendancePunchAction): string =>
+  createDataAttributeSelector("data-attendance-punch")(action);
 
 /**
  * 本人勤怠画面の月一覧、選択日詳細、server timestamp打刻、競合回復を管理する。
@@ -254,7 +253,7 @@ export const useAttendancePage = () => {
     }
     // 押したボタンが押せるまま（失敗等）ならそこへ、押せなくなったら画面の並び順で最初に押せるボタンへ戻す。
     await focusFirstEnabledElement(
-      [action, ...PUNCH_FOCUS_ORDER].map(punchButtonSelector)
+      [action, ...PUNCH_FOCUS_ORDER].map(buildPunchButtonSelector)
     );
   };
 
@@ -285,8 +284,8 @@ export const useAttendancePage = () => {
       isSubmittingMonth.value = false;
     }
     await focusFirstEnabledElement([
-      attendanceControlSelector(ATTENDANCE_CONTROL.submitMonth),
-      attendanceControlSelector(ATTENDANCE_CONTROL.month),
+      buildAttendanceControlSelector(ATTENDANCE_CONTROL.submitMonth),
+      buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
     ]);
   };
 
@@ -410,8 +409,8 @@ export const useAttendancePage = () => {
       successMessage.value = "勤怠修正を申請しました。";
       // 審査待ちの間は「修正申請」が消えるため、Dialogを開いたボタンの代わりに新しい申請の「申請取消」へ移す。
       await focusFirstEnabledElement([
-        attendanceControlSelector(ATTENDANCE_CONTROL.cancelCorrection),
-        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.cancelCorrection),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
       ]);
     } catch (error: unknown) {
       // Dialogは開いたままなので、理由は画面の後ろでなくDialogの中へ出す。
@@ -450,8 +449,8 @@ export const useAttendancePage = () => {
       successMessage.value = "勤怠修正申請を取り消しました。";
       // 押した「申請取消」は消えるため、再び出る「修正申請」（承認済み・締め済みの月だけ）へ移す。
       await focusFirstEnabledElement([
-        attendanceControlSelector(ATTENDANCE_CONTROL.requestCorrection),
-        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.requestCorrection),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
       ]);
     } catch (error: unknown) {
       await handleApiError(

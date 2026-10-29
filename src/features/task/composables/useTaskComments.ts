@@ -17,7 +17,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
 /** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
@@ -40,8 +40,7 @@ export const commentEditControlKey = (commentId: number): string =>
   `${commentId}:edit`;
 
 /** `data-comment-control`属性の値から、その要素を探すselectorを作る。 */
-const commentControlSelector = (key: string): string =>
-  `[data-comment-control="${key}"]`;
+const buildCommentControlSelector = createDataAttributeSelector("data-comment-control");
 
 /**
  * trim後1文字以上、最大文字数以下のコメント本文か。
@@ -375,7 +374,7 @@ export const useTaskComments = (
       isSubmitting.value = false;
     }
     // 送信中は投稿欄と投稿ボタンをdisabledにするためフォーカスが外れる。続けて書けるよう投稿欄へ戻す。
-    await focusFirstEnabledElement([commentControlSelector(COMMENT_COMPOSER_CONTROL)]);
+    await focusFirstEnabledElement([buildCommentControlSelector(COMMENT_COMPOSER_CONTROL)]);
   };
 
   /** 投稿者本人のコメント本文を編集状態へ切り替える。削除確認中なら閉じる。 */
@@ -403,7 +402,7 @@ export const useTaskComments = (
     const commentId = editingCommentId.value;
     cancelEditing();
     if (commentId !== null) {
-      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(commentEditControlKey(commentId))]);
     }
   };
 
@@ -453,7 +452,7 @@ export const useTaskComments = (
     }
     // 更新に成功して編集欄が閉じたときだけ編集ボタンへ戻す。失敗して編集欄が残る場合は編集欄のフォーカスを奪わない。
     if (editingCommentId.value === null) {
-      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(comment.commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(commentEditControlKey(comment.commentId))]);
     }
   };
 

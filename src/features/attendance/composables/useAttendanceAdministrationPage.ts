@@ -26,7 +26,7 @@ import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 勤怠管理画面の部品に付ける`data-attendance-admin-control`属性の値。
@@ -65,8 +65,7 @@ export const attendanceCorrectionRowControlKey = (requestId: number): string =>
   `correction:${requestId}`;
 
 /** `data-attendance-admin-control`属性の値から、その部品を探すselectorを作る。 */
-const adminControlSelector = (key: string): string =>
-  `[data-attendance-admin-control="${key}"]`;
+const buildAdminControlSelector = createDataAttributeSelector("data-attendance-admin-control");
 
 /**
  * 管理一覧で全状態を対象にする選択値。選択UI（Reka UI）は空文字の選択肢を扱えないため専用値にし、
@@ -229,7 +228,7 @@ export const useAttendanceAdministrationPage = () => {
     } finally {
       isExportingMonthlyCsv.value = false;
     }
-    await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.export)]);
+    await focusFirstEnabledElement([buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.export)]);
   };
 
   /**
@@ -320,7 +319,7 @@ export const useAttendanceAdministrationPage = () => {
     if (!reason) {
       correctionRejectReasonError.value = "却下理由を入力してください。";
       await focusFirstEnabledElement([
-        adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionRejectReason),
+        buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionRejectReason),
       ]);
       return;
     }
@@ -381,7 +380,7 @@ export const useAttendanceAdministrationPage = () => {
     if (!reason) {
       // 画面上部では押した位置から見えないため、入力欄の下に出して入力欄へ移す。
       monthRejectReasonError.value = "差戻し理由を入力してください。";
-      await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
+      await focusFirstEnabledElement([buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
@@ -513,11 +512,11 @@ export const useAttendanceAdministrationPage = () => {
     }
     // 状態が変わると押したボタンは消えるため、一覧の同じ行（絞り込みで消えたら「検索」）へ戻す。
     await focusFirstEnabledElement([
-      adminControlSelector(action),
+      buildAdminControlSelector(action),
       ...(selectedAccountId.value === null
         ? []
-        : [adminControlSelector(attendanceMonthRowControlKey(selectedAccountId.value))]),
-      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
+        : [buildAdminControlSelector(attendanceMonthRowControlKey(selectedAccountId.value))]),
+      buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
     ]);
   };
 
@@ -565,11 +564,11 @@ export const useAttendanceAdministrationPage = () => {
     }
     // 審査すると押したボタンは消え、審査待ちで絞った一覧からは行も消えるため、残っている部品へ戻す。
     await focusFirstEnabledElement([
-      adminControlSelector(action),
+      buildAdminControlSelector(action),
       ...(requestId === null
         ? []
-        : [adminControlSelector(attendanceCorrectionRowControlKey(requestId))]),
-      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
+        : [buildAdminControlSelector(attendanceCorrectionRowControlKey(requestId))]),
+      buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
     ]);
   };
 
