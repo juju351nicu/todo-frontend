@@ -329,6 +329,23 @@ describe("useTaskBoardPage", () => {
     });
   });
 
+  it("Task新規登録の開始日・終了日の初期値は、端末のタイムゾーンによらず業務日（Asia/Tokyo）の今日にする", async () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    try {
+      const page = useTaskBoardPage();
+      await page.initialize();
+
+      page.openTaskCreator(11);
+
+      expect(page.form.value.dateFrom).toBe("2026-10-30");
+      expect(page.form.value.dateTo).toBe("2026-10-30");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it.each(["SUMMARY", "MILESTONE"])(
     "%sのTaskはTimer・日別実績の入口を出さない（実績工数は通常Taskだけ）",
     async (taskType) => {

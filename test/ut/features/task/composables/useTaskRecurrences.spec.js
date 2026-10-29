@@ -110,6 +110,23 @@ describe("useTaskRecurrences", () => {
     vi.useRealTimers();
   });
 
+  it("最初の発生日の初期値と「今日以降」の判定は、端末のタイムゾーンによらず業務日（Asia/Tokyo）で行う", async () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    const page = createPage();
+
+    page.beginCreating(2, 11);
+    expect(page.form.value.firstOccurrenceDate).toBe("2026-10-30");
+
+    page.form.value.title = "週次確認";
+    page.form.value.detail = "確認する";
+    page.form.value.firstOccurrenceDate = "2026-10-29";
+    await page.createRule();
+
+    expect(page.errorMessage.value).toBe("最初の発生日は今日以降にしてください。");
+    expect(mocks.taskRecurrenceApi.create).not.toHaveBeenCalled();
+  });
+
   it("archive済みを含む規則一覧を取得する", async () => {
     const page = createPage();
 

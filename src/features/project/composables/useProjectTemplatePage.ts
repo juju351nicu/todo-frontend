@@ -15,15 +15,13 @@ import {
   PROJECT_RECOVERY_PRIORITY_STATUSES,
   PROJECT_TEMPLATE_ERROR_CODES,
 } from "@/features/project/utils/apiErrors";
-import {
-  isValidLocalDateInput,
-  toLocalDateInputValue,
-} from "@/features/project/utils/projectTemplateDate";
+import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template header編集フォーム。 */
@@ -114,7 +112,7 @@ const createEmptyEditForm = (): ProjectTemplateEditForm => ({
 const createEmptyApplyForm = (): ProjectTemplateApplyForm => ({
   projectKey: "",
   name: "",
-  projectStartDate: toLocalDateInputValue(),
+  projectStartDate: getBusinessToday(),
   memberMappings: {},
 });
 
@@ -232,7 +230,7 @@ export const useProjectTemplatePage = () => {
     applyForm.value = {
       projectKey: "",
       name: template.name,
-      projectStartDate: toLocalDateInputValue(),
+      projectStartDate: getBusinessToday(),
       memberMappings: Object.fromEntries(
         template.memberSlots.map((slot) => [
           slot.slotKey,

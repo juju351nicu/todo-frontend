@@ -24,6 +24,7 @@ import {
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 import {
@@ -80,13 +81,6 @@ const createEmptyTaskForm = (): TaskForm => ({
   priority: 2,
   version: null,
 });
-
-/** ブラウザーのローカル日付をdate input用のyyyy-MM-ddへ変換する。 */
-const getToday = (): string => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
 
 /** ドラッグ失敗時に復元できるよう、Boardと列・Task配列を複製する。 */
 const cloneTaskBoard = (source: TaskBoard): TaskBoard => ({
@@ -366,7 +360,7 @@ export const useTaskBoardPage = () => {
       errorMessages.value = ["Taskを登録するpermissionがありません。"];
       return;
     }
-    const today = getToday();
+    const today = getBusinessToday();
     form.value = {
       ...createEmptyTaskForm(),
       taskStatusId:

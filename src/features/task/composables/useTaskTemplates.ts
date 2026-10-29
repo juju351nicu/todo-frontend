@@ -20,6 +20,7 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /** Task Template編集Dialogが保持する入力値。 */
 export interface TaskTemplateEditForm {
@@ -34,13 +35,6 @@ export interface TaskTemplateEditForm {
   checklistContents: string[];
   version: number;
 }
-
-/** ブラウザーのローカル日付をdate input用のyyyy-MM-ddへ変換する。 */
-const getToday = (): string => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
 
 /** 空のTemplate編集フォームを作る。 */
 const createEmptyEditForm = (): TaskTemplateEditForm => ({
@@ -70,7 +64,7 @@ export const useTaskTemplates = (
   const selectedTemplateId = ref<number | null>(null);
   const isEditing = ref(false);
   const editForm = ref<TaskTemplateEditForm>(createEmptyEditForm());
-  const applyDateFrom = ref(getToday());
+  const applyDateFrom = ref(getBusinessToday());
   const applyAssigneeAccountId = ref<number | null>(null);
   const applyTaskStatusId = ref<number | null>(null);
   const errorMessage = ref("");
@@ -95,7 +89,7 @@ export const useTaskTemplates = (
     selectedTemplateId.value = null;
     isEditing.value = false;
     editForm.value = createEmptyEditForm();
-    applyDateFrom.value = getToday();
+    applyDateFrom.value = getBusinessToday();
     applyAssigneeAccountId.value = null;
     applyTaskStatusId.value = null;
   };
@@ -184,7 +178,7 @@ export const useTaskTemplates = (
   const selectTemplate = (template: TaskTemplate): void => {
     if (isMutating.value) return;
     selectedTemplateId.value = template.taskTemplateId;
-    applyDateFrom.value = getToday();
+    applyDateFrom.value = getBusinessToday();
     applyAssigneeAccountId.value = null;
     applyTaskStatusId.value = null;
     isEditing.value = false;

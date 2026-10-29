@@ -75,6 +75,19 @@ describe("useTaskTemplates", () => {
     mocks.taskTemplateApi.apply.mockResolvedValue(createdTask);
   });
 
+  it("適用日の初期値は、端末のタイムゾーンによらず業務日（Asia/Tokyo）の今日にする", () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    try {
+      const page = createPage();
+
+      expect(page.applyDateFrom.value).toBe("2026-10-30");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("本人所有Templateを取得して一覧へ反映する", async () => {
     const page = createPage();
 

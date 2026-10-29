@@ -7,15 +7,13 @@ import ProjectTemplateApi, {
 } from "@/features/project/api/projectTemplateApi";
 import type { ProjectTemplate } from "@/features/project/types/projectTemplate";
 import { PROJECT_TEMPLATE_ERROR_CODES } from "@/features/project/utils/apiErrors";
-import {
-  isValidLocalDateInput,
-  toLocalDateInputValue,
-} from "@/features/project/utils/projectTemplateDate";
+import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
@@ -37,7 +35,7 @@ export const useProjectTemplateCapture = (
   const userStore = useUserStore();
   const isOpen = ref(false);
   const name = ref("");
-  const baseDate = ref(toLocalDateInputValue());
+  const baseDate = ref(getBusinessToday());
   const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isSaving = ref(false);
@@ -57,7 +55,7 @@ export const useProjectTemplateCapture = (
   const open = (): void => {
     if (disabled.value || isSaving.value) return;
     name.value = "";
-    baseDate.value = toLocalDateInputValue();
+    baseDate.value = getBusinessToday();
     errorMessages.value = [];
     successMessage.value = "";
     isOpen.value = true;

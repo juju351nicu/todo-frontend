@@ -33,6 +33,20 @@ describe("useProjectTemplateCapture", () => {
     });
   });
 
+  it("基準日の初期値は、端末のタイムゾーンによらず業務日（Asia/Tokyo）の今日にする", () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    try {
+      const state = useProjectTemplateCapture(ref(5), ref(false));
+      state.open();
+
+      expect(state.baseDate.value).toBe("2026-10-30");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("名称をtrimしてProject構造を基準日付きでcaptureする", async () => {
     const state = useProjectTemplateCapture(ref(5), ref(false));
     state.open();

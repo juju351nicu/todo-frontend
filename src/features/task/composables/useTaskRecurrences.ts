@@ -29,6 +29,7 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /** 繰り返し規則の作成元。 */
 export type TaskRecurrenceCreationMode = "DIRECT" | "TEMPLATE";
@@ -55,13 +56,6 @@ export interface TaskRecurrenceForm {
   taskTemplateId: number | null;
 }
 
-/** ブラウザーのローカル日付をdate input用のyyyy-MM-ddへ変換する。 */
-const getToday = (): string => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
-
 /** 新規規則用の独立フォームを作る。 */
 const createEmptyForm = (
   assigneeAccountId: number | null = null,
@@ -78,7 +72,7 @@ const createEmptyForm = (
   intervalCount: 1,
   weekdays: [],
   monthlyDay: null,
-  firstOccurrenceDate: getToday(),
+  firstOccurrenceDate: getBusinessToday(),
   endDate: "",
   generationLeadDays: 0,
   status: "ACTIVE",
@@ -379,7 +373,7 @@ export const useTaskRecurrences = (
   const validateSchedule = (firstOccurrenceDate: string): string => {
     const value = form.value;
     if (!firstOccurrenceDate) return "最初の発生日を入力してください。";
-    if (isCreating.value && firstOccurrenceDate < getToday()) {
+    if (isCreating.value && firstOccurrenceDate < getBusinessToday()) {
       return "最初の発生日は今日以降にしてください。";
     }
     if (value.endDate && value.endDate < firstOccurrenceDate) {

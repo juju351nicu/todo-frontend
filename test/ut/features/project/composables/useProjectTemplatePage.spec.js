@@ -112,6 +112,19 @@ describe("useProjectTemplatePage", () => {
     mocks.projectTemplateApi.apply.mockResolvedValue({ projectId: 99 });
   });
 
+  it("Project開始日の初期値は、端末のタイムゾーンによらず業務日（Asia/Tokyo）の今日にする", () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    try {
+      const page = useProjectTemplatePage();
+
+      expect(page.applyForm.value.projectStartDate).toBe("2026-10-30");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("初期表示で本人所有一覧と先頭snapshot詳細を取得する", async () => {
     const page = useProjectTemplatePage();
 
