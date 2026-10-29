@@ -12,6 +12,7 @@ import type {
   DashboardProject,
   DashboardTask,
 } from "@/features/dashboard/types/dashboard";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { useExpandableNotificationMessages } from "@/features/notification/composables/useExpandableNotificationMessages";
 import { validateEarnedValueStatusDate } from "@/features/wbs/utils/earnedValue";
@@ -55,6 +56,7 @@ export const useDashboardPage = () => {
   const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
     useExpandableNotificationMessages();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const dashboard = ref<BasicDashboardResponse | null>(null);
   const advancedDashboard = ref<AdvancedDashboardResponse | null>(null);
@@ -117,8 +119,7 @@ export const useDashboardPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (isFeatureNotEntitled(error)) {
@@ -177,8 +178,7 @@ export const useDashboardPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     errorMessages.value = resolveApiErrorMessages(

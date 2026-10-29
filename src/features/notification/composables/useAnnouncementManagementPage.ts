@@ -1,7 +1,6 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import NotificationApi, {
   NotificationApiError,
 } from "@/features/notification/api/notificationApi";
@@ -9,6 +8,7 @@ import { NOTIFICATION_REFRESH_EVENT } from "@/features/notification/composables/
 import { ANNOUNCEMENT_ERROR_CODES } from "@/features/notification/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** 管理者お知らせ入力の最大文字数。Backend Bean Validationと同じ上限に保つ。 */
 export const ANNOUNCEMENT_TITLE_MAX_LENGTH = 100;
@@ -19,7 +19,7 @@ export const ANNOUNCEMENT_MESSAGE_MAX_LENGTH = 2000;
 /** 全利用者向けお知らせ画面の入力、送信状態、認証・入力エラー処理を提供する。 */
 export const useAnnouncementManagementPage = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
   const expiresAtLocal = ref("");
@@ -95,8 +95,7 @@ export const useAnnouncementManagementPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

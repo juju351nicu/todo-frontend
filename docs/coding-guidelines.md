@@ -127,7 +127,8 @@ await authStore.restoreSession();
 
 - 全APIリクエストで`credentials: "include"`を使用する。
 - 更新系APIでは共通HTTPクライアントからCSRFヘッダーを設定する。
-- 401は認証状態を破棄してログインへ戻し、403は権限不足として区別する。
+- 401は認証状態を破棄してログインへ戻し、403は権限不足として区別する。401の判定は`shared/utils/apiError`の`isUnauthorizedApiError`、ログインへ戻す手順（画面の片付け → Session破棄 → Login）は`features/auth/composables/useSessionExpiry`の`expireSession`を使い、画面ごとに書かない。
+- featureのAPI例外は`shared/utils/apiError`の`ApiError`を継承し、名前とAPIの表示名だけを渡す。
 - Session ID、OAuth token、パスワードをconsole、URL、Web Storageへ出さない。
 - APIのRequest／Response変更はBackendのOpenAPI定義と照合する。
 

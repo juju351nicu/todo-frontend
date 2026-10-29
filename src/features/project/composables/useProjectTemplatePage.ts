@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
@@ -143,6 +144,7 @@ const toSummary = (template: ProjectTemplate): ProjectTemplateSummary => ({
 export const useProjectTemplatePage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const templates = ref<ProjectTemplateSummary[]>([]);
   const selectedTemplateId = ref<number | null>(null);
@@ -210,8 +212,7 @@ export const useProjectTemplatePage = () => {
     successMessage.value = "";
     isEditing.value = false;
     isArchiveConfirmOpen.value = false;
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

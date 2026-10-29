@@ -1,7 +1,6 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
@@ -15,6 +14,7 @@ import {
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
 export const TEMPLATE_NAME_MAX_LENGTH = 100;
@@ -32,7 +32,7 @@ export const useProjectTemplateCapture = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const isOpen = ref(false);
   const name = ref("");
   const baseDate = ref(getBusinessToday());
@@ -107,8 +107,7 @@ export const useProjectTemplateCapture = (
         isOpen.value = false;
         errorMessages.value = [];
         successMessage.value = "";
-        userStore.clearSession();
-        await router.push({ name: "Login" });
+        await expireSession();
         return null;
       }
       if (!(error instanceof ProjectTemplateApiError)) {

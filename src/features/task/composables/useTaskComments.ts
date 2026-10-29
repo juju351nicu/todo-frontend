@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import TaskCommentApi, {
   TaskCommentApiError,
@@ -80,6 +81,7 @@ export const useTaskComments = (
 ) => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** 投稿時刻の古い順のコメント。更新APIの確定Responseで置き換える。 */
   const comments = ref<TaskComment[]>([]);
@@ -187,8 +189,7 @@ export const useTaskComments = (
     comments.value = [];
     clearMutationDrafts();
     clearFeedback();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import ProjectApi, {
@@ -69,6 +70,7 @@ export const useWbsPage = () => {
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** WBSの表示形式。Gantt libraryは表示切替時に初めて読み込むため、既定は階層表。 */
   const activeView = ref<WbsViewMode>("table");
@@ -126,8 +128,7 @@ export const useWbsPage = () => {
     sessionInvalidated = true;
     discardAllDialogs();
     clearWbsApiErrorMessages();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
   };
 
   const context: WbsPageContext = {

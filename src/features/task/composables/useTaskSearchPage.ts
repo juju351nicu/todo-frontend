@@ -1,7 +1,6 @@
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import {
   createTaskSavedView,
   deleteTaskSavedView,
@@ -28,6 +27,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** キーワードの最大文字数。Backendの入力制約（`TaskSearchFilterRequest#keyword`の`@Size(max = 100)`）と同じ値。 */
 export const TASK_SEARCH_KEYWORD_MAX_LENGTH = 100;
@@ -101,7 +101,7 @@ const copyFilters = (
 /** Project横断検索、検索候補、本人Saved Viewの画面状態と操作を提供する。 */
 export const useTaskSearchPage = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const filters = reactive<TaskSearchFilters>(createEmptyFilters());
   const options = ref<TaskSearchOptionsResponse>({
     projects: [],
@@ -200,8 +200,7 @@ export const useTaskSearchPage = () => {
     clearProtectedState();
     errorMessages.value = [];
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

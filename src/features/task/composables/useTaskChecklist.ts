@@ -1,7 +1,6 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import TaskChecklistApi, {
   TaskChecklistApiError,
 } from "@/features/task/api/taskChecklistApi";
@@ -14,6 +13,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
 import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
 export const CHECKLIST_ITEM_MAX_LENGTH = 255;
@@ -79,7 +79,7 @@ export const useTaskChecklist = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** Backendのposition順のチェック項目。更新APIの確定Responseで置き換える。 */
   const items = ref<TaskChecklistItem[]>([]);
@@ -203,8 +203,7 @@ export const useTaskChecklist = (
     items.value = [];
     clearMutationDrafts();
     clearFeedback();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
   TimeTrackingApiError,
 } from "@/features/time-tracking/api/timeTrackingApi";
@@ -39,7 +39,7 @@ const validateDateRange = (dateFrom: string, dateTo: string): string[] => {
 /** 本人Timer Session履歴Dialogの期間、paging、認証エラーを管理する。 */
 export const useTaskTimerHistory = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const defaultRange = buildDefaultTimerHistoryRange();
   const dateFrom = ref(defaultRange.dateFrom);
   const dateTo = ref(defaultRange.dateTo);
@@ -71,9 +71,7 @@ export const useTaskTimerHistory = () => {
     } catch (error: unknown) {
       if (error instanceof TimeTrackingApiError) {
         if (error.status === 401) {
-          userStore.clearSession();
-          closeDialogAfterSessionExpiry();
-          await router.push({ name: "Login" });
+          await expireSession(closeDialogAfterSessionExpiry);
           return;
         }
         errorMessages.value = resolveApiErrorMessages(

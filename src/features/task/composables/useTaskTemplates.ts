@@ -1,7 +1,6 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import type { TaskPriority } from "@/features/project/types/project";
 import TaskTemplateApi, {
   TaskTemplateApiError,
@@ -21,6 +20,7 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** Task Template編集Dialogが保持する入力値。 */
 export interface TaskTemplateEditForm {
@@ -58,7 +58,7 @@ export const useTaskTemplates = (
   projectId: Readonly<Ref<number | null>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const templates = ref<TaskTemplate[]>([]);
   const selectedTemplateId = ref<number | null>(null);
@@ -132,8 +132,7 @@ export const useTaskTemplates = (
     clearTemplateState(true);
     errorMessage.value = "";
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

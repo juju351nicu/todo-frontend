@@ -1,7 +1,6 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import type { TaskPriority } from "@/features/project/types/project";
 import TaskRecurrenceApi, {
   TaskRecurrenceApiError,
@@ -30,6 +29,7 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 import { getBusinessToday } from "@/shared/utils/businessDate";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 /** 繰り返し規則の作成元。 */
 export type TaskRecurrenceCreationMode = "DIRECT" | "TEMPLATE";
@@ -112,7 +112,7 @@ export const useTaskRecurrences = (
   projectId: Readonly<Ref<number | null>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const rules = ref<TaskRecurrence[]>([]);
   const templates = ref<TaskTemplate[]>([]);
@@ -214,8 +214,7 @@ export const useTaskRecurrences = (
     clearProtectedState();
     errorMessage.value = "";
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

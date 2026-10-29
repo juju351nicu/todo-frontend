@@ -1,13 +1,13 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
 import { TASK_TEMPLATE_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
@@ -23,7 +23,7 @@ export const useTaskTemplateCapture = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const isOpen = ref(false);
   const name = ref("");
   const errorMessage = ref("");
@@ -72,8 +72,7 @@ export const useTaskTemplateCapture = (
     isOpen.value = false;
     errorMessage.value = "";
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

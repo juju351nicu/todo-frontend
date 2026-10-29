@@ -12,6 +12,7 @@ import {
   ACCOUNT_ADMINISTRATION_ERROR_CODES,
   ADMINISTRATION_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/administration/utils/apiErrors";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
@@ -62,6 +63,7 @@ const hasSameRoleCodes = (
 export const useAccountAdministrationPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const accounts = ref<AccountAuthorization[]>([]);
   const errorMessages = ref<string[]>([]);
@@ -238,8 +240,7 @@ export const useAccountAdministrationPage = () => {
         // Backendは権限変更commit後に対象者の全HttpSessionを削除するため、古い画面権限を保持しない。
         clearProtectedState();
         errorMessages.value = [];
-        userStore.clearSession();
-        await router.push({ name: "Login" });
+        await expireSession();
         return;
       }
       successMessage.value = `${updatedAccount.displayName}さんのロールを更新しました。`;
@@ -355,8 +356,7 @@ export const useAccountAdministrationPage = () => {
     }
     clearProtectedState();
     errorMessages.value = [];
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

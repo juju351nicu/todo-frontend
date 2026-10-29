@@ -27,6 +27,7 @@ import {
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
   needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
@@ -84,6 +85,7 @@ const punchButtonSelector = (action: AttendancePunchAction): string =>
 export const useAttendancePage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const today = getBusinessToday();
 
   const errorMessages = ref<string[]>([]);
@@ -616,8 +618,7 @@ export const useAttendancePage = () => {
       errorMessages.value = [];
       correctionErrorMessages.value = [];
       isCorrectionDialogOpen.value = false;
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

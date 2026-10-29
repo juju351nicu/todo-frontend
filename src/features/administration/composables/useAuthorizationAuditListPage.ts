@@ -13,10 +13,10 @@ import {
   formatRoleNames,
   resolveRoleName,
 } from "@/features/administration/utils/authorizationAudit";
-import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 
 const AUDIT_TABLE_HEADERS: DataTableHeader[] = [
   { title: "操作日時", align: "start", key: "occurredAt", sortable: false },
@@ -40,7 +40,7 @@ export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
  */
 export const useAuthorizationAuditListPage = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const auditLogs = ref<AuthorizationAuditLog[]>([]);
   const errorMessages = ref<string[]>([]);
@@ -135,8 +135,7 @@ export const useAuthorizationAuditListPage = () => {
     if (error.status === 401) {
       clearProtectedState();
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

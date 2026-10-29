@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
   ProjectApiError,
@@ -127,6 +128,7 @@ export const useProjectSettingsDialog = (
 ) => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const activeSection = ref<ProjectSettingsSection>("project");
   const addMemberAccountId = ref<number | string | null>(null);
@@ -676,8 +678,7 @@ export const useProjectSettingsDialog = (
     isRemoveConfirmOpen.value = false;
     memberToRemove.value = null;
     isDialogOpen.value = false;
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
   };
 
   /** 競合または確定済みDELETE後の詳細再取得失敗を現在の参照状態へ変換する。 */

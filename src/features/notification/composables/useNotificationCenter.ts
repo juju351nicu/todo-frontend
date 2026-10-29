@@ -1,6 +1,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import NotificationApi, {
   NotificationApiError,
@@ -24,6 +25,7 @@ export const useNotificationCenter = () => {
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const alerts = ref<NotificationAlert[]>([]);
   const badgeCount = ref(0);
@@ -131,8 +133,7 @@ export const useNotificationCenter = () => {
     fallbackMessage: string
   ): Promise<void> => {
     if (error instanceof NotificationApiError && error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     errorMessage.value = fallbackMessage;

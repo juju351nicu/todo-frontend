@@ -1,8 +1,8 @@
 import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
 import { TaskApiError } from "@/features/task/api/taskApi";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useTodoStore } from "@/features/task/stores/task";
 import type { TodoListRequest } from "@/features/task/types/task";
 import { LEGACY_TODO_ERROR_CODES } from "@/features/task/utils/apiErrors";
@@ -18,7 +18,7 @@ import { toNumberList } from "@/shared/utils/number";
 export const useTodoCalendarPage = () => {
   const router = useRouter();
   const todoStore = useTodoStore();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const calendarOptions = reactive(buildTodoCalendarOptions());
   const errorMessages = ref<string[]>([]);
@@ -40,8 +40,7 @@ export const useTodoCalendarPage = () => {
     }
     calendarOptions.events = [];
     errorMessages.value = [];
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

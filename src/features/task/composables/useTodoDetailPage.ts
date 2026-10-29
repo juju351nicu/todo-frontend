@@ -1,6 +1,7 @@
 import { computed, reactive, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { TaskApiError } from "@/features/task/api/taskApi";
 import { useTodoStore } from "@/features/task/stores/task";
@@ -68,6 +69,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   const router = useRouter();
   const todoStore = useTodoStore();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
   const isShowConfirm = ref(false);
@@ -159,8 +161,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
     }
     clearProtectedState();
     clearMessages();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 

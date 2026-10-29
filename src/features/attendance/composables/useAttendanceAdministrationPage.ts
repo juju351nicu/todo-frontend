@@ -21,6 +21,7 @@ import {
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
   needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
@@ -101,6 +102,7 @@ export const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
 export const useAttendanceAdministrationPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
   const isLoadingDetail = ref(false);
@@ -582,8 +584,7 @@ export const useAttendanceAdministrationPage = () => {
     }
     if (error.status === 401) {
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {
@@ -613,8 +614,7 @@ export const useAttendanceAdministrationPage = () => {
     }
     if (error.status === 401) {
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

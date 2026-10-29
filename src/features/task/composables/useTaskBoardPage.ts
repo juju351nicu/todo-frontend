@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
   ProjectApiError,
@@ -96,6 +97,7 @@ export const useTaskBoardPage = () => {
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const board = ref<TaskBoard | null>(null);
   const errorMessages = ref<string[]>([]);
@@ -937,8 +939,7 @@ export const useTaskBoardPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     clearBoardState();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
   };
 
   /** Board再取得で参照不可になった場合に、古い画面状態を残さずreadエラーへ変換する。 */
