@@ -161,7 +161,7 @@ onBeforeMount(initialize);
     </StatusAlert>
 
     <div v-if="board" class="flex items-start gap-4 overflow-x-auto pb-4">
-      <!-- E2Eはboard-column／task-card classで列とTask cardを特定する。色は移行前のtonal列とその中のcardの見え方に合わせている。 -->
+      <!-- E2Eはboard-column／task-card classで列とTask cardを特定する。列は一段濃い背景（bg-elevated）、cardは通常の背景（bg-default）にして、列とcardの境目を見せる。 -->
       <div
         v-for="column in board.columns"
         :key="column.taskStatusId"

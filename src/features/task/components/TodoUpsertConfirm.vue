@@ -32,8 +32,7 @@ const handleOpenChange = (open: boolean): void => {
 
 <template>
   <!--
-    旧画面は固定幅600pxの独自のoverlayで、幅390pxでは左右が切れ、Escで閉じず、Dialogとして読み上げられなかった
-    （動作確認/16_Todo G-8）。ほかの画面と同じUModalにする。
+    ほかの画面と同じUModalにし、幅の狭い画面（390px）でも切れず、Escで閉じられ、Dialogとして読み上げられるようにする。
   -->
   <UModal
     :open="true"

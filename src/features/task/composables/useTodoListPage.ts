@@ -22,7 +22,7 @@ import { toNumberList } from "@/shared/utils/number";
 
 /**
  * 行ごとの「編集」（参照のみなら「表示」）ボタンに付ける`data-todo-control`属性の値を組み立てる。
- * 「完了」の後はそのボタンがdisabledになりフォーカスがbodyへ外れるため、同じ行のこのボタンへ戻す（動作確認/16_Todo G-3）。
+ * 「完了」の後はそのボタンがdisabledになりフォーカスがbodyへ外れるため、同じ行のこのボタンへ戻す。
  *
  * @param todoId Todo ID
  * @returns `"edit:{todoId}"`形式の属性値
@@ -167,7 +167,7 @@ export const useTodoListPage = () => {
 
   /**
    * 指定されたTodoを完了状態へ更新し、結果を出してから同じ行の「編集」へフォーカスを戻す。
-   * 完了したTodoは「完了」がdisabledになるだけで一覧に残るため、何も表示しないと完了したかが分からなかった（動作確認/16_Todo G-3）。
+   * 完了したTodoは「完了」がdisabledになるだけで一覧に残るため、何も表示しないと完了したかが分からない。
    */
   const completeTodo = async (todo: TodoListItem): Promise<void> => {
     await submitComplete(todo);

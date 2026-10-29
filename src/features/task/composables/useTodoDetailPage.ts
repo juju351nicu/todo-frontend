@@ -22,7 +22,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
 /**
  * 「登録する」「更新する」ボタンに付ける`data-todo-detail-control`属性の値。
  * 確認Dialogを「戻る」「更新」で閉じると、親画面の`v-if`がDialogを消すため、Dialogがフォーカスを戻せずbodyへ外れる
- * （Escで閉じたときはDialog自身が戻す）。そこで閉じた後にこのボタンへ戻す（動作確認/16_Todo G-5）。
+ * （Escで閉じたときはDialog自身が戻す）。そこで閉じた後にこのボタンへ戻す。
  */
 export const TODO_SUBMIT_CONTROL = "submit";
 
@@ -99,7 +99,7 @@ export const useTodoDetailPage = (todoId: Readonly<Ref<number | undefined>>) => 
   });
   /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のない会員ではnull。 */
   const ownerName = ref<string | null>(null);
-  /** 「対象ユーザー」欄の表示。担当者名を優先し、名前がなければユーザーIDで示す（改善提案 1-17）。 */
+  /** 「対象ユーザー」欄の表示。担当者名を優先し、名前がなければユーザーIDで示す。 */
   const fullName = computed(() => {
     if (todoForm.userId <= 0) {
       return "対象ユーザーなし";

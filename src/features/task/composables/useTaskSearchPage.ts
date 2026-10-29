@@ -32,8 +32,7 @@ import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 
 /**
  * Saved Viewの部品に付ける`data-task-search-control`属性の値。
- * 更新の409・削除の後は、押したボタンが一時的または以後disabledになりフォーカスがbodyへ外れるため、ここへ戻す
- * （動作確認/15_Task検索 G-7・G-8）。
+ * 更新の409・削除の後は、押したボタンが一時的または以後disabledになりフォーカスがbodyへ外れるため、ここへ戻す。
  */
 export const TASK_SEARCH_CONTROL = {
   /** 「保存した条件」の選択。削除の後に戻す。 */
@@ -395,7 +394,7 @@ export const useTaskSearchPage = () => {
   /**
    * 404／409後に古いversionを破棄し、最新Saved View一覧へ安全に回復する。
    * version競合のBackendの文言は「最新状態を再取得してください。」だが、ここで取り直すため、
-   * 取り直せたときは取り直し済みであることを添える（動作確認/15_Task検索 G-7。07・08・12・13の対応と同じ）。
+   * 取り直せたときは取り直し済みであることを添える（チェックリスト・コメント・Project設定の409と同じ書き方）。
    */
   const recoverSavedViews = async (
     error: TaskSearchApiError,
@@ -413,7 +412,7 @@ export const useTaskSearchPage = () => {
       const recoveryMessages = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
         ? [...mutationMessages, DISPLAY_MESSAGES.task.search.conflictReloaded]
         : mutationMessages;
-      // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す（改善提案 1-16）。
+      // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す。
       // 検索は画面のメッセージを置き換えるため、取り直しの案内はその後に先頭へ足す。
       isSessionEnded = false;
       if (selectedSavedViewId.value !== null && (await refreshOptions(true))) {

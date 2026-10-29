@@ -155,7 +155,7 @@ export const useTaskBoardPage = () => {
   );
   /**
    * 本人のTask Templateをarchiveできるか。Templateは本人専用で、BackendはTASK_READで保存・archiveを許す
-   * （改善提案 2-8。以前はarchiveにTASK_UPDATEが要り、参照のみの利用者は作ったTemplateを消せなかった）。
+   * （参照のみの利用者も、自分で作ったTemplateを消せるようにするため）。
    * TemplateはProjectに属さないため、Projectの状態は問わない。
    */
   const canArchiveTaskTemplate = computed(() => userStore.hasPermission("TASK_READ"));
@@ -172,7 +172,7 @@ export const useTaskBoardPage = () => {
   );
   /**
    * このProjectで変更操作（コメント投稿・Template保存等）へ進めるか。READ_ONLY_ADMINは参加していないProjectも
-   * 参照できるが変更できない（改善提案 2-12。Backendの`ProjectAuthorizationLogic#canOperateProject`）。
+   * 参照できるが変更できない（Backendの`ProjectAuthorizationLogic#canOperateProject`）。
    */
   const canOperateProject = computed(
     () => userStore.hasRole("SYSTEM_ADMIN") || isCurrentUserProjectMember.value
@@ -234,7 +234,7 @@ export const useTaskBoardPage = () => {
   /**
    * 開いているTaskが通常Task（`TASK`）か。実績工数（Timer・日別実績）とTask Templateへの保存は通常Taskだけが対象で、
    * SUMMARY・MILESTONEではBackendが400で拒否するため、入口自体を出さない
-   * （`todo-backend`の`docs/time-tracking-design.md` §4.3、`TaskTemplateLogic#calculateDueOffsetDays`）。
+   * （`todo-backend`の`docs/time-tracking-design.md`、`TaskTemplateLogic#calculateDueOffsetDays`）。
    */
   const isEditingRegularTask = computed(
     () => isEditing.value && editingTaskType.value === "TASK"
@@ -243,7 +243,7 @@ export const useTaskBoardPage = () => {
   const canRecordTaskWork = computed(() => isEditingRegularTask.value);
   /**
    * 開いているTaskを「Templateとして保存」できるか。保存自体は`TASK_READ`で許可される（Backendの`TaskTemplateController`）が、
-   * 保存元Projectへの参加が要る（READ_ONLY_ADMINは未参加Projectから保存できない。改善提案 2-12）。
+   * 保存元Projectへの参加が要る（READ_ONLY_ADMINは未参加Projectから保存できない）。
    */
   const canCaptureTaskTemplate = computed(
     () => isEditingRegularTask.value && canOperateProject.value

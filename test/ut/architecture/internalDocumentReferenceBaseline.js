@@ -5,19 +5,6 @@
  * 新しいファイル・行を足してはいけない（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。
  */
 export const INTERNAL_DOCUMENT_REFERENCE_BASELINE = Object.freeze({
-  "src/features/task/api/taskApi.ts": 1,
-  "src/features/task/components/ProjectCommentsDialog.vue": 2,
-  "src/features/task/components/TaskChecklistPanel.vue": 1,
-  "src/features/task/components/TodoUpsertConfirm.vue": 1,
-  "src/features/task/composables/useMyTasksPage.ts": 1,
-  "src/features/task/composables/useTaskBoardPage.ts": 4,
-  "src/features/task/composables/useTaskSearchPage.ts": 3,
-  "src/features/task/composables/useTodoDetailPage.ts": 2,
-  "src/features/task/composables/useTodoListPage.ts": 2,
-  "src/features/task/utils/taskForm.ts": 1,
-  "src/features/task/utils/taskRecurrenceDisplay.ts": 1,
-  "src/features/task/views/MyTasksPage.vue": 1,
-  "src/features/task/views/TaskSearchPage.vue": 1,
   "src/features/wbs/components/WbsTaskEditDialog.vue": 1,
   "src/features/wbs/components/WorkingCalendarCard.vue": 1,
   "src/features/wbs/composables/useWbsBaselines.ts": 2,

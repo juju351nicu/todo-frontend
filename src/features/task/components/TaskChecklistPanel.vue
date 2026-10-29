@@ -22,7 +22,7 @@ const props = withDefaults(
     /**
      * 参照のみで開くときtrue（担当外のMEMBER、TASK_UPDATEのないaccount、archive済みProject等）。
      * trueの間は追加欄と各行の操作（上下・編集・削除）を出さず、完了のチェックはdisabledで状態だけを示す。更新系APIは呼ばない。
-     * 押せない部品が並ぶと操作できない理由が分かりにくいため、出さない（改善提案 1-1）。
+     * 押せない部品が並ぶと操作できない理由が分かりにくいため、出さない。
      */
     disabled?: boolean;
   }>(),

@@ -17,7 +17,7 @@ const DONE_FLAG_OPTIONS = [
   { value: "1", label: "完了のみ" },
 ] as const;
 
-/** 完了状態のcheckboxを切り替える。移行前と同じく、選択値の配列として保持する。 */
+/** 完了状態のcheckboxを切り替える。検索条件（`done_flag_values`）へそのまま渡せるよう、選択値の配列として保持する。 */
 const toggleDoneFlag = (value: string, checked: boolean): void => {
   const others = selectedDoneFlag.value.filter((flag) => flag !== value);
   selectedDoneFlag.value = checked ? [...others, value] : others;

@@ -64,7 +64,7 @@ const FILTER_OPTIONS = [
     </StatusAlert>
     <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-    <!-- Vuetifyのv-btn-toggle（outlined・mandatory）と同じく、どちらか1つを必ず選択した状態にする。 -->
+    <!-- 期間の切替は、どちらか1つを必ず選択した状態にする（選択を外せない切替）。 -->
     <UFieldGroup class="mb-4" role="group" aria-label="My Tasksの期間">
       <UButton
         v-for="option in FILTER_OPTIONS"
@@ -97,7 +97,7 @@ const FILTER_OPTIONS = [
             <li v-for="task in group.items" :key="task.taskId" class="border-b border-default last:border-b-0">
               <!--
                 行の中のTimer・完了ボタンでEnterを押したときに行のEnterまで動き、完了と同時にBoardへ移っていたため、
-                行自身にフォーカスがあるときだけ開く（.self。動作確認/14_MyTasks G-5）。
+                行自身にフォーカスがあるときだけ開く（.self）。
               -->
               <div
                 role="button"

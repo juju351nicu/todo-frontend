@@ -265,7 +265,7 @@ onBeforeMount(initialize);
     <StatusAlert v-if="truncated" type="info" variant="soft" class="mb-4">
       検索結果が100件を超えたため、先頭100件を表示しています。条件を追加してください。
     </StatusAlert>
-    <!-- 検索に失敗したときは結果を消しているだけなので、「一致するTaskはありません」とは出さない（動作確認/15_Task検索 G-2）。 -->
+    <!-- 検索に失敗したときは結果を消しているだけなので、「一致するTaskはありません」とは出さない。 -->
     <StatusAlert v-if="!isBusy && tasks.length === 0 && !errorMessages.length" type="info" variant="soft" class="mb-4">
       条件に一致するTaskはありません。
     </StatusAlert>

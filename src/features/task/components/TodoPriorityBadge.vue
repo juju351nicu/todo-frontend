@@ -3,7 +3,7 @@ import { getTodoPriorityColor, getTodoPriorityLabel } from "@/features/task/util
 
 /**
  * Todo・Taskの重要度（1:低、2:中、3以上:高）を色付きbadgeで表示する。
- * 重要度色はsemantic colorではなく固定のhex値（`getTodoPriorityColor`）のため、移行前のVuetify tonal chipと同じく
+ * 重要度色はsemantic colorではなく固定のhex値（`getTodoPriorityColor`）のため、Nuxt UIのcolorで指定できない。
  * 文字をその色にし、背景を同じ色の12%で塗る。
  */
 withDefaults(

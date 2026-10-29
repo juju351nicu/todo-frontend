@@ -96,7 +96,7 @@ const complete = async (todoId: number): Promise<void> => {
 
 /**
  * My Tasksの「完了」で、Project Taskを完了扱いのBoard列の末尾へ移して完了にする
- * （`POST /api/v1/projects/{projectId}/tasks/{taskId}/complete`。改善提案 2-15）。
+ * （`POST /api/v1/projects/{projectId}/tasks/{taskId}/complete`）。
  * Board列の移動と同じ採番・version・Project状態の検査を使い、担当者本人のMEMBERも完了にできる（TASK_UPDATE）。
  * 共通HTTP clientがSession CookieとCSRF tokenを付ける。
  *
