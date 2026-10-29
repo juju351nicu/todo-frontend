@@ -1,6 +1,6 @@
 /**
  * Nuxt UI Componentの`color` propへ渡すsemantic color名。
- * 実際の色は`src/app/theme/nuxtUiTheme.ts`の`colors`で、移行前のVuetify既定色へ対応させている。
+ * 実際の色は`src/app/theme/nuxtUiTheme.ts`の`colors`で決める。
  */
 export type SemanticColor = "primary" | "secondary" | "success" | "info" | "warning" | "error" | "neutral";
 

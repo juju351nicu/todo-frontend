@@ -6,8 +6,8 @@ import type { StatusAlertType } from "@/shared/types/color";
 /**
  * 成功・情報・警告・エラーを表示する共通alert。Nuxt UIの`UAlert`へ、種類に応じた色・MDIアイコン・`role="alert"`を補う。
  *
- * - `variant`: `solid`は移行前Vuetifyの既定（塗りつぶし）、`soft`はVuetifyの`tonal`に相当する。
- * - `density`: `compact`はVuetifyの`density="compact"`に相当し、上下の余白を狭める。
+ * - `variant`: `solid`は塗りつぶし、`soft`は種類の色を薄くした背景にする。
+ * - `density`: `compact`は上下の余白を狭める。
  * - 本文はdefault slotへ渡す。`closable`がtrueの場合、閉じる操作で`close`を通知する（非表示化は呼出側が行う）。
  */
 const props = withDefaults(

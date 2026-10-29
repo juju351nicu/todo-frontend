@@ -4,14 +4,14 @@ import { onBeforeUnmount, ref } from "vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import type { StatusAlertType } from "@/shared/types/color";
 
-/** 表示から4秒後、または閉じる操作で非表示になる通知。Vuetify v-alertのcompact・closable表示を踏襲する。 */
+/** 表示から4秒後、または閉じる操作で非表示になる通知。余白を狭め、閉じるボタンを付けて表示する。 */
 defineProps<{
   message: string;
   type: StatusAlertType;
 }>();
 
 const AUTO_CLOSE_MILLISECONDS = 4000;
-// ログイン失敗等の一時通知は、移行前から画面内alertより明るいMaterial redで表示している。
+// ログイン失敗等の一時通知は、画面内のalertより明るい赤（#F44336）で表示する（templateのclassで指定）。
 
 const isVisible = ref<boolean>(true);
 
