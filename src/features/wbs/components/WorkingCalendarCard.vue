@@ -17,7 +17,7 @@ import {
 } from "@/features/wbs/utils/workingCalendar";
 import {
   WORKING_CALENDAR_SUBMIT_CONTROL,
-  workingDayEditControlKey,
+  buildWorkingDayEditControlKey,
 } from "@/features/wbs/composables/useWbsWorkingCalendar";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useSyncedDraft } from "@/shared/composables/useSyncedDraft";
@@ -82,7 +82,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
     </p>
     <!--
       操作結果のmessageは、calendarを下へスクロールしている間も画面上端（固定ヘッダーの下）に出す。
-      月末の行で登録・削除すると、card上端のmessageが画面外になり結果が分からなかったため（動作確認/19_workload_稼働日calendar G-3・G-5）。
+      月末の行で登録・削除すると、card上端のmessageが画面外になり結果が分からないため。
       負のmarginとpaddingでcard本文の左右の余白（nuxtUiTheme.ts の card.body の p-4）まで覆い、下を流れる表が透けないようにする。
     -->
     <div v-if="errorMessages.length || successMessage" class="sticky top-16 z-10 -mx-4 flex flex-col gap-4 bg-default px-4 pt-2 pb-4">
@@ -185,7 +185,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
                     variant="ghost"
                     square
                     :disabled="isMutating"
-                    :data-working-calendar-control="workingDayEditControlKey(day.workDate)"
+                    :data-working-calendar-control="buildWorkingDayEditControlKey(day.workDate)"
                     :aria-label="`${day.workDate}の稼働日例外を${findSelectedOverride(day) ? '編集' : '登録'}`"
                     @click="emit('edit', day.workDate)"
                   />

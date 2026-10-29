@@ -1,10 +1,11 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
+import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type { TaskTemplate } from "@/features/task/types/taskTemplate";
 import { TASK_TEMPLATE_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -13,9 +14,6 @@ import {
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
 
-/** Task Template名の最大文字数（trim後）。Backendの入力制約と同じ値。 */
-export const TASK_TEMPLATE_NAME_MAX_LENGTH = 100;
-
 /** 既存Taskと未完了checklistを本人用Templateへ保存するDialog状態を管理する。 */
 export const useTaskTemplateCapture = (
   projectId: Readonly<Ref<number>>,
@@ -23,13 +21,13 @@ export const useTaskTemplateCapture = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const isOpen = ref(false);
   const name = ref("");
   const errorMessage = ref("");
   const successMessage = ref("");
   const isSaving = ref(false);
-  /** 参照専用・保存中でなく、Template名がtrim後1～100文字の場合だけ保存できる。 */
+  /** 参照専用・保存中でなく、Template名がtrim後1文字以上`TASK_TEMPLATE_NAME_MAX_LENGTH`文字以下の場合だけ保存できる。 */
   const canCapture = computed<boolean>(() => {
     const trimmedName = name.value.trim();
     return (
@@ -72,8 +70,7 @@ export const useTaskTemplateCapture = (
     isOpen.value = false;
     errorMessage.value = "";
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -95,8 +92,8 @@ export const useTaskTemplateCapture = (
   const capture = async (): Promise<TaskTemplate | null> => {
     const normalizedName = name.value.trim();
     if (disabled.value || isSaving.value) return null;
-    if (!normalizedName || normalizedName.length > 100) {
-      errorMessage.value = "Template名を1〜100文字で入力してください。";
+    if (!normalizedName || normalizedName.length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
+      errorMessage.value = `Template名を1〜${TASK_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`;
       return null;
     }
     isSaving.value = true;

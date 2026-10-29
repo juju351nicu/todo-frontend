@@ -1,12 +1,16 @@
 import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
 import type { ProjectDetail } from "@/features/project/types/project";
+import { canManageProjectTasks, findProjectRole } from "@/features/project/utils/projectRole";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useTaskEffortPlans } from "@/features/wbs/composables/useTaskEffortPlans";
 import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
@@ -30,7 +34,7 @@ import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 /**
  * route queryの値を1件の文字列へ揃える。Vue Routerは同名queryの重複時に配列を返すため、先頭だけを採用する。
  */
-const firstRouteValue = (
+const getFirstRouteValue = (
   value: string | null | (string | null)[] | undefined
 ): string | null | undefined => (Array.isArray(value) ? value[0] : value);
 
@@ -42,7 +46,7 @@ const firstRouteValue = (
 const parsePositiveId = (
   value: string | null | (string | null)[] | undefined
 ): number | null => {
-  const parsed = Number(firstRouteValue(value));
+  const parsed = Number(getFirstRouteValue(value));
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
@@ -69,6 +73,7 @@ export const useWbsPage = () => {
   const route = useRoute();
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** WBSの表示形式。Gantt libraryは表示切替時に初めて読み込むため、既定は階層表。 */
   const activeView = ref<WbsViewMode>("table");
@@ -85,7 +90,7 @@ export const useWbsPage = () => {
   const projectId = computed(() => parsePositiveId(route.params.projectId));
   /** Boardの「日別実績」導線（`?panel=work-logs&taskId=…`）で初期表示後に開くTask ID。導線外ではnull。 */
   const requestedWorkLogTaskId = computed(() =>
-    firstRouteValue(route.query.panel) === "work-logs"
+    getFirstRouteValue(route.query.panel) === "work-logs"
       ? parsePositiveId(route.query.taskId)
       : null
   );
@@ -100,17 +105,12 @@ export const useWbsPage = () => {
     () => rows.value.filter((row) => row.taskType === "MILESTONE").length
   );
   const canEditWbs = computed(() => userStore.hasPermission("TASK_UPDATE"));
-  const currentProjectRole = computed(
-    () =>
-      project.value?.members.find(
-        (member) => member.accountId === userStore.memberId
-      )?.projectRole ?? null
+  const currentProjectRole = computed(() =>
+    findProjectRole(project.value, userStore.accountId)
   );
-  const canManageProject = computed(
-    () =>
-      userStore.hasRole("SYSTEM_ADMIN") ||
-      currentProjectRole.value === "OWNER" ||
-      currentProjectRole.value === "MANAGER"
+  /** WBSの管理操作（baseline等）へ進めるか。SYSTEM_ADMIN、またはProjectのOWNER・MANAGER。 */
+  const canManageProject = computed(() =>
+    canManageProjectTasks(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
 
   /**
@@ -126,8 +126,7 @@ export const useWbsPage = () => {
     sessionInvalidated = true;
     discardAllDialogs();
     clearWbsApiErrorMessages();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
   };
 
   const context: WbsPageContext = {
@@ -324,7 +323,7 @@ export const useWbsPage = () => {
    * 履歴を増やさないよう`replace`し、他のqueryは保持する。
    */
   const removeWorkLogPanelQuery = async (): Promise<void> => {
-    if (firstRouteValue(route.query.panel) !== "work-logs") {
+    if (getFirstRouteValue(route.query.panel) !== "work-logs") {
       return;
     }
     const { panel: _panel, taskId: _taskId, ...remainingQuery } = route.query;
@@ -346,7 +345,7 @@ export const useWbsPage = () => {
       return;
     }
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: projectId.value },
     });
   };
@@ -364,9 +363,9 @@ export const useWbsPage = () => {
     ...estimateAccuracyState,
     activeView,
     canEditWbs,
-    currentAccountId: computed(() => userStore.memberId),
+    currentAccountId: computed(() => userStore.accountId),
     /** Projectが利用中（ACTIVE）か。archive済み・未取得はfalse。 */
-    isProjectActive: computed(() => project.value?.status === "ACTIVE"),
+    isProjectActive: computed(() => isActiveProject(project.value)),
     errorMessages,
     initialize,
     isLoading,

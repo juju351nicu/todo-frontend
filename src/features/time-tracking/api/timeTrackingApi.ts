@@ -9,19 +9,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Time Tracking APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class TimeTrackingApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class TimeTrackingApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Time Tracking APIの実行に失敗しました。status=${status}`);
-    this.name = "TimeTrackingApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("TimeTrackingApiError", "Time Tracking API", status, errorResponse);
   }
 }
 

@@ -21,7 +21,7 @@ const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([
 let csrfToken: string | null = null;
 
 /** Backend APIの相対pathを環境別の接続先URLへ解決する。 */
-const apiUrl = (uri: string): string => API_BASE_URL + uri;
+const buildApiUrl = (uri: string): string => API_BASE_URL + uri;
 
 /**
  * ブラウザーCookieから指定名の値をURL decodeして取得する。
@@ -47,7 +47,7 @@ const readCookie = (name: string): string | null => {
  * ログイン・ログアウトで古いトークンが破棄された後にも呼び出す。
  */
 const refreshCsrfToken = async (): Promise<string> => {
-  const response = await fetch(apiUrl(API_PATHS.CSRF), {
+  const response = await fetch(buildApiUrl(API_PATHS.CSRF), {
     method: METHOD.GET,
     headers: { Accept: "application/json" },
     credentials: "include",
@@ -111,7 +111,7 @@ const request = async <TRequest = unknown>(
   if (requestData !== null && method !== METHOD.GET) {
     options.body = JSON.stringify(requestData);
   }
-  return fetch(apiUrl(uri), options);
+  return fetch(buildApiUrl(uri), options);
 };
 
 /**

@@ -1,6 +1,8 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import DashboardApi, {
   DashboardApiError,
 } from "@/features/dashboard/api/dashboardApi";
@@ -20,12 +22,12 @@ import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * Dashboardの部品に付ける`data-dashboard-control`属性の値。
  * 再読込中は「再読み込み」が、集計中は「EVM基準日」がdisabledになりフォーカスがbodyへ外れるため、
- * 利用者が押した操作の後にここへ戻す（動作確認/17_Dashboard G-9）。
+ * 利用者が押した操作の後にここへ戻す。
  */
 export const DASHBOARD_CONTROL = {
   /** 画面右上の「再読み込み」ボタン。 */
@@ -35,8 +37,7 @@ export const DASHBOARD_CONTROL = {
 } as const;
 
 /** `data-dashboard-control`属性の値から、その要素を探すselectorを作る。 */
-const dashboardControlSelector = (key: string): string =>
-  `[data-dashboard-control="${key}"]`;
+const buildDashboardControlSelector = createDataAttributeSelector("data-dashboard-control");
 
 const DASHBOARD_ERROR_CODES: ReadonlySet<string> = new Set([
   "FEATURE_NOT_ENTITLED",
@@ -55,6 +56,7 @@ export const useDashboardPage = () => {
   const { canExpandNotification, isNotificationExpanded, openOrToggleNotification } =
     useExpandableNotificationMessages();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const dashboard = ref<BasicDashboardResponse | null>(null);
   const advancedDashboard = ref<AdvancedDashboardResponse | null>(null);
@@ -117,8 +119,7 @@ export const useDashboardPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (isFeatureNotEntitled(error)) {
@@ -177,8 +178,7 @@ export const useDashboardPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     errorMessages.value = resolveApiErrorMessages(
@@ -191,7 +191,7 @@ export const useDashboardPage = () => {
   /** DashboardのTask previewから既存Board詳細へ遷移する。 */
   const openTask = async (task: DashboardTask): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: task.projectId },
       query: { taskId: String(task.taskId) },
     });
@@ -200,7 +200,7 @@ export const useDashboardPage = () => {
   /** DashboardのProject cardから既存Boardへ遷移する。 */
   const openProject = async (project: DashboardProject): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: project.projectId },
     });
   };
@@ -210,7 +210,7 @@ export const useDashboardPage = () => {
     project: AdvancedDashboardProject
   ): Promise<void> => {
     await router.push({
-      name: "Wbs",
+      name: ROUTE_NAMES.wbs,
       params: { projectId: project.projectId },
     });
   };
@@ -221,18 +221,18 @@ export const useDashboardPage = () => {
    */
   const reloadDashboard = async (): Promise<void> => {
     await loadDashboard();
-    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.reload)]);
+    await focusFirstEnabledElement([buildDashboardControlSelector(DASHBOARD_CONTROL.reload)]);
   };
 
   /** 高度Dashboardの「集計」（またはEVM基準日でEnter）の後に、EVM基準日へフォーカスを戻す。 */
   const submitAdvancedDashboard = async (): Promise<void> => {
     await loadAdvancedDashboard();
-    await focusFirstEnabledElement([dashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
+    await focusFirstEnabledElement([buildDashboardControlSelector(DASHBOARD_CONTROL.advancedStatusDate)]);
   };
 
   /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
   const openAdvancedAccessInquiry = async (): Promise<void> => {
-    await router.push({ name: "InquiryForm" });
+    await router.push({ name: ROUTE_NAMES.inquiryForm });
   };
 
   /**
@@ -251,17 +251,17 @@ export const useDashboardPage = () => {
 
   /** My Tasksの全件画面へ遷移する。 */
   const openMyTasks = async (): Promise<void> => {
-    await router.push({ name: "MyTasks" });
+    await router.push({ name: ROUTE_NAMES.myTasks });
   };
 
   /** 参照可能Projectの一覧画面へ遷移する。 */
   const openProjects = async (): Promise<void> => {
-    await router.push({ name: "ProjectList" });
+    await router.push({ name: ROUTE_NAMES.projectList });
   };
 
   /** 本人勤怠画面へ遷移する。 */
   const openAttendance = async (): Promise<void> => {
-    await router.push({ name: "Attendance" });
+    await router.push({ name: ROUTE_NAMES.attendance });
   };
 
   return {

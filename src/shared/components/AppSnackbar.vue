@@ -4,7 +4,7 @@ import { onScopeDispose, watch } from "vue";
 import type { StatusAlertType } from "@/shared/types/color";
 
 /**
- * 画面下部中央に一時表示する通知。移行前のVuetify v-snackbarと同じ位置・配色・自動消去を踏襲する。
+ * 画面下部中央に一時表示し、時間がたつと自動で消える通知。
  *
  * 表示状態は親が`open`で所有し、`timeout`経過または閉じる操作で`update:open`へfalseを通知する。
  * 本文はdefault slotへ渡す。

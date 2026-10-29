@@ -7,19 +7,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task checklist APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class TaskChecklistApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class TaskChecklistApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Task checklist APIの実行に失敗しました。status=${status}`);
-    this.name = "TaskChecklistApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("TaskChecklistApiError", "Task checklist API", status, errorResponse);
   }
 }
 

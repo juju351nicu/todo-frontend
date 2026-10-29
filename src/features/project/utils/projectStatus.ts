@@ -23,3 +23,12 @@ export const getProjectStatusLabel = (status: ProjectStatus): string =>
  */
 export const getProjectStatusColor = (status: ProjectStatus): "success" | "neutral" =>
   status === "ACTIVE" ? "success" : "neutral";
+
+/**
+ * Projectが利用中（archive済みでない）か。archive済みのProjectでは、Backendが変更を409で拒否する。
+ *
+ * @param project Project。読込前はnull
+ * @returns 利用中の場合true。読込前はfalse
+ */
+export const isActiveProject = (project: { status: ProjectStatus } | null | undefined): boolean =>
+  project?.status === "ACTIVE";

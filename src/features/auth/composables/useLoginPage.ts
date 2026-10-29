@@ -2,8 +2,8 @@ import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import {
+  AUTHENTICATED_HOME_ROUTE_NAME,
   LOGIN_REQUIRED_QUERY,
-  resolveAuthenticatedHomeRouteName,
 } from "@/app/router/authorization";
 import AuthApi, { AuthApiError } from "@/features/auth/api/authApi";
 import { useUserStore } from "@/features/auth/stores/user";
@@ -68,7 +68,7 @@ export const useLoginPage = () => {
   const initialize = async (): Promise<void> => {
     if (await userStore.restoreSession(true)) {
       await router.push({
-        name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
+        name: AUTHENTICATED_HOME_ROUTE_NAME,
       });
       return;
     }
@@ -105,7 +105,7 @@ export const useLoginPage = () => {
         return;
       }
       await router.push({
-        name: resolveAuthenticatedHomeRouteName(userStore.permissionCodes),
+        name: AUTHENTICATED_HOME_ROUTE_NAME,
       });
     } catch (error: unknown) {
       if (error instanceof AuthApiError) {

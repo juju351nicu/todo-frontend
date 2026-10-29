@@ -1,3 +1,7 @@
+import {
+  ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT,
+  ATTENDANCE_TEXT_MAX_LENGTH,
+} from "@/features/attendance/constants/attendanceLimits";
 import type {
   AttendanceCorrectionCreateRequest,
   AttendanceCorrectionForm,
@@ -5,10 +9,11 @@ import type {
   AttendanceDayResponse,
 } from "@/features/attendance/types/attendance";
 import type { SemanticColor } from "@/shared/types/color";
+import {
+  BUSINESS_TIME_ZONE_OFFSET,
+  BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS,
+} from "@/shared/utils/businessDate";
 
-const TOKYO_OFFSET = "+09:00";
-const MAX_PERIOD_COUNT = 20;
-const MAX_TEXT_LENGTH = 1000;
 
 /** 勤怠修正申請状態を画面表示用の日本語へ変換する。 */
 export const getAttendanceCorrectionStatusLabel = (
@@ -38,7 +43,7 @@ export const toTokyoDateTimeInput = (instant: string): string => {
   if (Number.isNaN(date.getTime())) {
     return "";
   }
-  const tokyoDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const tokyoDate = new Date(date.getTime() + BUSINESS_TIME_ZONE_OFFSET_MILLISECONDS);
   return tokyoDate.toISOString().slice(0, 19);
 };
 
@@ -46,7 +51,7 @@ export const toTokyoDateTimeInput = (instant: string): string => {
 export const toTokyoOffsetDateTime = (input: string): string => {
   // datetime-localは利用者が値を変更すると秒を省略するため、Instantが解釈できる形式へ揃える。
   const normalizedInput = input.length === 16 ? `${input}:00` : input;
-  return `${normalizedInput}${TOKYO_OFFSET}`;
+  return `${normalizedInput}${BUSINESS_TIME_ZONE_OFFSET}`;
 };
 
 /** 現在の勤怠日を全置換用の修正申請フォーム初期値へ変換する。 */
@@ -95,14 +100,14 @@ export const validateAttendanceCorrectionForm = (
   const errors: string[] = [];
   if (!form.reason.trim()) {
     errors.push("修正理由を入力してください。");
-  } else if (form.reason.trim().length > MAX_TEXT_LENGTH) {
-    errors.push("修正理由は1000文字以内で入力してください。");
+  } else if (form.reason.trim().length > ATTENDANCE_TEXT_MAX_LENGTH) {
+    errors.push(`修正理由は${ATTENDANCE_TEXT_MAX_LENGTH}文字以内で入力してください。`);
   }
-  if (form.note.length > MAX_TEXT_LENGTH) {
-    errors.push("メモは1000文字以内で入力してください。");
+  if (form.note.length > ATTENDANCE_TEXT_MAX_LENGTH) {
+    errors.push(`メモは${ATTENDANCE_TEXT_MAX_LENGTH}文字以内で入力してください。`);
   }
-  if (form.workPeriods.length > MAX_PERIOD_COUNT) {
-    errors.push("勤務区間は20件以内で入力してください。");
+  if (form.workPeriods.length > ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT) {
+    errors.push(`勤務区間は${ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT}件以内で入力してください。`);
   }
 
   const workRanges: Array<{ start: number; end: number }> = [];
@@ -118,8 +123,10 @@ export const validateAttendanceCorrectionForm = (
     if (range !== null) {
       workRanges.push(range);
     }
-    if (workPeriod.breakPeriods.length > MAX_PERIOD_COUNT) {
-      errors.push(`勤務区間${workIndex + 1}の休憩は20件以内で入力してください。`);
+    if (workPeriod.breakPeriods.length > ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT) {
+      errors.push(
+        `勤務区間${workIndex + 1}の休憩は${ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT}件以内で入力してください。`
+      );
     }
     const breakRanges: Array<{ start: number; end: number }> = [];
     workPeriod.breakPeriods.forEach((breakPeriod, breakIndex) => {

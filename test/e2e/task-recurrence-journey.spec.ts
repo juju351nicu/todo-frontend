@@ -5,7 +5,7 @@ import { runBrowserRegressionFixture } from "./support/databaseFixture";
 
 const PROJECT_KEY = "BROWSER-TASK-RECURRENCE";
 const BOUNDARY_TITLE = "Browser Boundary Recurring Task";
-const UPDATED_TITLE = "Browser Stage10D2 Recurring Task";
+const UPDATED_TITLE = "Browser Updated Recurring Task";
 const UPDATED_DETAIL = "停止・再読込・再開後も保持するsnapshot";
 const RETRY_TITLE = "Browser Retry Recovery Task";
 

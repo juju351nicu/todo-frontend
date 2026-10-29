@@ -1,18 +1,19 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
-import type { MyTaskItem } from "@/features/task/types/task";
+import MyTaskApi, { MyTaskApiError } from "@/features/task/api/myTaskApi";
+import type { MyTaskItem } from "@/features/task/types/myTask";
 import {
-  LEGACY_TODO_ERROR_CODES,
   MY_TASK_COMPLETE_ERROR_CODES,
+  MY_TASK_ERROR_CODES,
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { SemanticColor } from "@/shared/types/color";
 
 interface MyTaskGroup {
@@ -35,18 +36,17 @@ export const MY_TASKS_RELOAD_CONTROL = "reload";
  * @param taskId Task ID
  * @returns `"complete:{taskId}"`形式の属性値
  */
-export const myTaskCompleteControlKey = (taskId: number): string =>
+export const buildMyTaskCompleteControlKey = (taskId: number): string =>
   `complete:${taskId}`;
 
 /** `data-my-task-control`属性の値から、その要素を探すselectorを作る。 */
-const myTaskControlSelector = (key: string): string =>
-  `[data-my-task-control="${key}"]`;
+const buildMyTaskControlSelector = createDataAttributeSelector("data-my-task-control");
 
 /** 本人担当Taskを日付グループへ分けるMy Tasks画面の状態と操作を提供する。 */
 export const useMyTasksPage = () => {
   const router = useRouter();
-  const todoStore = useTodoStore();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isLoading = ref(false);
@@ -118,7 +118,7 @@ export const useMyTasksPage = () => {
 
   /** Backendの確定ResponseでMy Tasksと業務日を同時に置き換える。 */
   const replaceTasks = async (): Promise<void> => {
-    const data = await todoStore.findMyTasks();
+    const data = await MyTaskApi.findMyTasks();
     myTasks.value = data.tasks;
     businessDate.value = data.businessDate;
   };
@@ -128,29 +128,24 @@ export const useMyTasksPage = () => {
     error: unknown,
     fallback: string,
     forbidden: string,
-    knownCodes: ReadonlySet<string> = LEGACY_TODO_ERROR_CODES
+    knownCodes: ReadonlySet<string> = MY_TASK_ERROR_CODES
   ): string[] => {
-    if (!(error instanceof TaskApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.myTasks.resourceNotFound];
-    }
-    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
+    return resolveStandardErrorMessages(error, MyTaskApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.myTasks.resourceNotFound,
+      knownErrorCodes: knownCodes,
+      fallback,
+    });
   };
 
   /** 401ではMy TasksとSession表示を破棄してLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskApiError) || error.status !== 401) {
+    if (!(error instanceof MyTaskApiError) || error.status !== 401) {
       return false;
     }
     clearProtectedState();
     errorMessages.value = [];
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -167,7 +162,7 @@ export const useMyTasksPage = () => {
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
         if (
-          error instanceof TaskApiError &&
+          error instanceof MyTaskApiError &&
           (error.status === 403 || error.status === 404)
         ) {
           clearProtectedState();
@@ -187,7 +182,7 @@ export const useMyTasksPage = () => {
 
   const showTask = (task: MyTaskItem): void => {
     void router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: task.projectId },
       query: { taskId: String(task.taskId) },
     });
@@ -201,7 +196,7 @@ export const useMyTasksPage = () => {
 
   /**
    * 完了の後（失敗した場合も含む）に、フォーカスを戻す。
-   * 完了したTaskの「完了」ボタンは一覧から消え、そのままではbodyへ外れるため（動作確認/14_MyTasks G-4）、
+   * 完了したTaskの「完了」ボタンは一覧から消え、そのままではbodyへ外れるため、
    * 同じ位置に来たTask、なければ1つ前のTaskの「完了」、それもなければ再読み込みボタンへ戻す。
    * 完了に失敗してTaskが残っている場合は、そのTaskの「完了」へ戻る。
    *
@@ -216,8 +211,8 @@ export const useMyTasksPage = () => {
       tasksNow[Math.min(index, tasksNow.length) - 1]?.taskId,
     ].filter((candidate): candidate is number => candidate !== undefined);
     return focusFirstEnabledElement([
-      ...candidates.map((candidate) => myTaskControlSelector(myTaskCompleteControlKey(candidate))),
-      myTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
+      ...candidates.map((candidate) => buildMyTaskControlSelector(buildMyTaskCompleteControlKey(candidate))),
+      buildMyTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
     ]);
   };
 
@@ -239,7 +234,7 @@ export const useMyTasksPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      await todoStore.completeMyTask(task.projectId, task.taskId, task.version);
+      await MyTaskApi.completeMyTask(task.projectId, task.taskId, task.version);
       myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
       successMessage.value = DISPLAY_MESSAGES.task.myTasks.completed(task.title);
       try {
@@ -247,7 +242,7 @@ export const useMyTasksPage = () => {
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof MyTaskApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();
@@ -271,7 +266,7 @@ export const useMyTasksPage = () => {
         MY_TASK_COMPLETE_ERROR_CODES
       );
       // 404（Taskがない）と409（他の操作で変わった）は、表示中の一覧が古いので取り直してから理由を出す。
-      if (!(error instanceof TaskApiError) || (error.status !== 404 && error.status !== 409)) {
+      if (!(error instanceof MyTaskApiError) || (error.status !== 404 && error.status !== 409)) {
         setErrors(operationMessages);
         return;
       }
@@ -283,7 +278,7 @@ export const useMyTasksPage = () => {
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof MyTaskApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();

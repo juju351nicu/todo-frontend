@@ -1,5 +1,6 @@
 import type { RouteRecordRaw } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
   ATTENDANCE_READ_PERMISSION_CODES,
@@ -14,19 +15,19 @@ import {
 export const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    name: "Login",
+    name: ROUTE_NAMES.login,
     component: () => import("@/features/auth/views/LoginPage.vue"),
     meta: { layout: "blank" },
   },
   {
     path: "/dashboard",
-    name: "Dashboard",
+    name: ROUTE_NAMES.dashboard,
     component: () => import("@/features/dashboard/views/DashboardPage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/attendance",
-    name: "Attendance",
+    name: ROUTE_NAMES.attendance,
     component: () => import("@/features/attendance/views/AttendancePage.vue"),
     meta: {
       requiresAuth: true,
@@ -35,7 +36,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/attendance/administration",
-    name: "AttendanceAdministration",
+    name: ROUTE_NAMES.attendanceAdministration,
     component: () =>
       import(
         "@/features/attendance/views/AttendanceAdministrationPage.vue"
@@ -47,7 +48,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/administration/accounts",
-    name: "AccountAdministration",
+    name: ROUTE_NAMES.accountAdministration,
     component: () =>
       import(
         "@/features/administration/views/AccountAdministrationPage.vue"
@@ -59,7 +60,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/administration/authorization-audit-logs",
-    name: "AuthorizationAuditList",
+    name: ROUTE_NAMES.authorizationAuditList,
     component: () =>
       import(
         "@/features/administration/views/AuthorizationAuditListPage.vue"
@@ -71,7 +72,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/administration/notifications",
-    name: "NotificationAdministration",
+    name: ROUTE_NAMES.notificationAdministration,
     component: () =>
       import("@/features/notification/views/AnnouncementManagementPage.vue"),
     meta: {
@@ -81,27 +82,27 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/member/memberList",
-    name: "MemberList",
+    name: ROUTE_NAMES.memberList,
     component: () => import("@/features/member/views/MemberListPage.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/member/detail/:id?",
-    name: "MemberDetail",
+    name: ROUTE_NAMES.memberDetail,
     component: () => import("@/features/member/views/MemberDetailPage.vue"),
     props: (route) => ({ id: Number(route.params.id ?? 0) }),
     meta: { requiresAuth: true },
   },
   {
     path: "/member/cancel/:id",
-    name: "MemberCancel",
+    name: ROUTE_NAMES.memberCancel,
     component: () => import("@/features/member/views/MemberCancelPage.vue"),
     props: (route) => ({ id: Number(route.params.id) }),
     meta: { requiresAuth: true },
   },
   {
     path: "/projects",
-    name: "ProjectList",
+    name: ROUTE_NAMES.projectList,
     component: () => import("@/features/project/views/ProjectListPage.vue"),
     meta: {
       requiresAuth: true,
@@ -110,7 +111,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/project-templates",
-    name: "ProjectTemplates",
+    name: ROUTE_NAMES.projectTemplates,
     component: () =>
       import("@/features/project/views/ProjectTemplatePage.vue"),
     meta: {
@@ -120,7 +121,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/my-tasks",
-    name: "MyTasks",
+    name: ROUTE_NAMES.myTasks,
     component: () => import("@/features/task/views/MyTasksPage.vue"),
     meta: {
       requiresAuth: true,
@@ -129,7 +130,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/tasks/search",
-    name: "TaskSearch",
+    name: ROUTE_NAMES.taskSearch,
     component: () => import("@/features/task/views/TaskSearchPage.vue"),
     meta: {
       requiresAuth: true,
@@ -138,7 +139,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/projects/:projectId/board",
-    name: "TaskBoard",
+    name: ROUTE_NAMES.taskBoard,
     component: () => import("@/features/task/views/TaskBoardPage.vue"),
     meta: {
       requiresAuth: true,
@@ -147,7 +148,7 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/projects/:projectId/wbs",
-    name: "Wbs",
+    name: ROUTE_NAMES.wbs,
     component: () => import("@/features/wbs/views/WbsPage.vue"),
     meta: {
       requiresAuth: true,
@@ -156,8 +157,8 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/todo/calendar",
-    name: "TodoCalendar",
-    component: () => import("@/features/task/views/TodoCalendarPage.vue"),
+    name: ROUTE_NAMES.todoCalendar,
+    component: () => import("@/features/todo/views/TodoCalendarPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
@@ -165,8 +166,8 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/todo/todoList",
-    name: "TodoList",
-    component: () => import("@/features/task/views/TodoListPage.vue"),
+    name: ROUTE_NAMES.todoList,
+    component: () => import("@/features/todo/views/TodoListPage.vue"),
     meta: {
       requiresAuth: true,
       requiredAnyPermissions: TASK_READ_PERMISSION_CODES,
@@ -174,8 +175,8 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/todo/detail/:id",
-    name: "TodoDetail",
-    component: () => import("@/features/task/views/TodoDetailPage.vue"),
+    name: ROUTE_NAMES.todoDetail,
+    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
     props: (route) => ({ id: Number(route.params.id) }),
     meta: {
       requiresAuth: true,
@@ -184,8 +185,8 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/todo/register",
-    name: "TodoRegister",
-    component: () => import("@/features/task/views/TodoDetailPage.vue"),
+    name: ROUTE_NAMES.todoRegister,
+    component: () => import("@/features/todo/views/TodoDetailPage.vue"),
     props: { id: 0 },
     meta: {
       requiresAuth: true,
@@ -194,18 +195,18 @@ export const routes: RouteRecordRaw[] = [
   },
   {
     path: "/forbidden",
-    name: "AccessDenied",
+    name: ROUTE_NAMES.accessDenied,
     component: () => import("@/app/views/AccessDeniedPage.vue"),
     meta: { requiresAuth: true, layout: "blank" },
   },
   {
     path: "/inquiry",
-    name: "InquiryForm",
+    name: ROUTE_NAMES.inquiryForm,
     component: () => import("@/features/inquiry/views/InquiryFormPage.vue"),
   },
   {
     path: "/:pathMatch(.*)*",
-    name: "NotFound",
+    name: ROUTE_NAMES.notFound,
     component: () => import("@/app/views/NotFoundPage.vue"),
     meta: { layout: "blank" },
   },

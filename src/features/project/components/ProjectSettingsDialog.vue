@@ -2,10 +2,14 @@
 import { computed } from "vue";
 
 import {
-  memberRoleControlKey,
+  buildMemberRoleControlKey,
   PROJECT_SETTINGS_CONTROL,
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type { ProjectDetail } from "@/features/project/types/project";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
 import { getProjectRoleDescription } from "@/features/project/utils/projectRole";
@@ -99,7 +103,7 @@ const SECTION_TABS = [
     <template #body>
       <!--
         結果のmessageはDialog本文のスクロールに付いて上端へ固定する。メンバーが多いと下の行で「role保存」を押した位置から
-        本文の先頭が見えず、成功・失敗が分からなかったため（動作確認/12_Project設定 G-6）。
+        本文の先頭が見えず、成功・失敗が分からないため。
         負のtopとmarginでUModal本文の上余白（nuxtUiTheme.ts の modal.body の pt-4）まで覆い、上を流れる内容が透けないようにする。
       -->
       <div
@@ -126,27 +130,27 @@ const SECTION_TABS = [
             <UFormField label="Project名">
               <UInput
                 v-model="projectForm.name"
-                :maxlength="100"
+                :maxlength="PROJECT_NAME_MAX_LENGTH"
                 :readonly="!canUpdateProject"
                 :disabled="isBusy"
                 class="w-full"
                 :data-project-settings-control="PROJECT_SETTINGS_CONTROL.projectName"
               />
             </UFormField>
-            <FieldCounter :value="projectForm.name" :max="100" />
+            <FieldCounter :value="projectForm.name" :max="PROJECT_NAME_MAX_LENGTH" />
           </div>
           <div class="relative">
             <UFormField label="説明">
               <UTextarea
                 v-model="projectForm.description"
-                :maxlength="2000"
+                :maxlength="PROJECT_DESCRIPTION_MAX_LENGTH"
                 :rows="5"
                 :readonly="!canUpdateProject"
                 :disabled="isBusy"
                 class="w-full"
               />
             </UFormField>
-            <FieldCounter :value="projectForm.description" :max="2000" />
+            <FieldCounter :value="projectForm.description" :max="PROJECT_DESCRIPTION_MAX_LENGTH" />
           </div>
           <div class="mt-4 flex flex-wrap items-center gap-3">
             <UButton
@@ -184,7 +188,7 @@ const SECTION_TABS = [
             <template #header>
               <div class="text-base font-normal">メンバーを追加</div>
             </template>
-            <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（改善提案 2-9）。 -->
+            <!-- 名前・メールアドレス・ログインIDの先頭で候補を探し、選ぶとアカウントIDへ入る（他人のIDを知らなくても追加できる）。 -->
             <form class="-m-3 mb-0 flex flex-wrap items-end" @submit.prevent="searchMemberCandidates">
               <div class="w-full p-3 md:w-3/4">
                 <UFormField
@@ -324,7 +328,7 @@ const SECTION_TABS = [
                     :disabled="isBusy || !canManageMembers"
                     :aria-label="`${member.displayName}（ID: ${member.accountId}）のProject role`"
                     class="w-full"
-                    :data-project-settings-control="memberRoleControlKey(member.accountId)"
+                    :data-project-settings-control="buildMemberRoleControlKey(member.accountId)"
                   />
                   <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
                 </td>
@@ -386,7 +390,7 @@ const SECTION_TABS = [
     <template #body>
       <p class="mb-3">「{{ project.name }}」を履歴参照専用に変更します。</p>
       <StatusAlert type="warning" variant="soft">
-        MVPではアーカイブ解除できません。Project、メンバー、Taskの更新もできなくなります。
+        アーカイブは解除できません。Project、メンバー、Taskの更新もできなくなります。
       </StatusAlert>
     </template>
     <template #footer>

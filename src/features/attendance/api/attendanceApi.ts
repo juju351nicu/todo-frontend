@@ -14,22 +14,15 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 const CSV_CONTENT_TYPE = "text/csv";
 const SAFE_CSV_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+\.csv$/;
 
 /** 勤怠APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class AttendanceApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class AttendanceApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`勤怠APIの実行に失敗しました。status=${status}`);
-    this.name = "AttendanceApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("AttendanceApiError", "勤怠API", status, errorResponse);
   }
 }
 

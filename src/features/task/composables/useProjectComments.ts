@@ -1,14 +1,14 @@
 import { ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskCommentApi, {
   TaskCommentApiError,
 } from "@/features/task/api/taskCommentApi";
 import type { ProjectTaskComment } from "@/features/task/types/taskComment";
 import { TASK_COMMENT_ERROR_CODES } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 
 /**
  * Project BoardのTask横断コメントDialogを管理する。
@@ -23,7 +23,7 @@ export const useProjectComments = (
   onTaskSelected: (taskId: number) => void = () => undefined
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const comments = ref<ProjectTaskComment[]>([]);
   const errorMessages = ref<string[]>([]);
@@ -32,20 +32,12 @@ export const useProjectComments = (
 
   /** API statusと契約済みerror codeをProjectコメント用の案内へ変換する。 */
   const getErrorMessages = (error: unknown): string[] => {
-    if (!(error instanceof TaskCommentApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [DISPLAY_MESSAGES.task.comments.readForbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.comments.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_COMMENT_ERROR_CODES,
-      DISPLAY_MESSAGES.task.comments.projectLoadFailed
-    );
+    return resolveStandardErrorMessages(error, TaskCommentApiError, {
+      forbidden: DISPLAY_MESSAGES.task.comments.readForbidden,
+      notFound: DISPLAY_MESSAGES.task.comments.resourceNotFound,
+      knownErrorCodes: TASK_COMMENT_ERROR_CODES,
+      fallback: DISPLAY_MESSAGES.task.comments.projectLoadFailed,
+    });
   };
 
   /**
@@ -67,8 +59,7 @@ export const useProjectComments = (
       if (error instanceof TaskCommentApiError && error.status === 401) {
         isOpen.value = false;
         errorMessages.value = [];
-        userStore.clearSession();
-        await router.push({ name: "Login" });
+        await expireSession();
       } else {
         errorMessages.value = getErrorMessages(error);
       }

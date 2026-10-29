@@ -13,7 +13,7 @@ import {
   formatRoleNames,
   resolveRoleName,
 } from "@/features/administration/utils/authorizationAudit";
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import type { DataTableHeader } from "@/shared/types/dataTable";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
@@ -29,7 +29,7 @@ const AUDIT_TABLE_HEADERS: DataTableHeader[] = [
 ];
 
 /** Backend監査APIで許可されるページサイズ選択肢。 */
-export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
+const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
 
 /**
  * 権限変更監査ログ画面のページング取得と認証エラー処理を提供する。
@@ -40,7 +40,7 @@ export const AUTHORIZATION_AUDIT_PAGE_SIZES = [20, 50, 100] as const;
  */
 export const useAuthorizationAuditListPage = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const auditLogs = ref<AuthorizationAuditLog[]>([]);
   const errorMessages = ref<string[]>([]);
@@ -135,8 +135,7 @@ export const useAuthorizationAuditListPage = () => {
     if (error.status === 401) {
       clearProtectedState();
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

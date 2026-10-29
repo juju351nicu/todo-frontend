@@ -1,5 +1,5 @@
 /**
- * `AppDataTable`の列定義。移行前のVuetify v-data-tableの`headers`と同じ形にし、composableの列定義を変えずに使えるようにする。
+ * `AppDataTable`の列定義。各画面のcomposableが列（key・見出し・位置・並べ替えの可否）をこの形で定義する。
  */
 export interface DataTableHeader {
   /** 行データのproperty名。表示値の取得とcell slot名（`<key>-cell`）に使用する。 */
@@ -8,7 +8,7 @@ export interface DataTableHeader {
   title: string;
   /** 見出しとcellの水平位置。未指定は`start`。 */
   align?: "start" | "center" | "end";
-  /** falseの場合だけ見出しクリックによる並べ替えを無効にする。未指定は並べ替え可能（Vuetifyの既定と同じ）。 */
+  /** falseの場合だけ見出しクリックによる並べ替えを無効にする。未指定は並べ替え可能。 */
   sortable?: boolean;
 }
 

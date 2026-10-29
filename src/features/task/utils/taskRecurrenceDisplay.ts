@@ -125,7 +125,7 @@ export const formatRecurrenceErrorCode = (value: string | null): string =>
   value ? (BLOCKED_REASON_LABELS[value] ?? value) : "-";
 
 /**
- * 繰り返し規則の作成元を、内部のIDではなく名前で示す（改善提案 1-9）。
+ * 繰り返し規則の作成元を、内部のIDではなく名前で示す。
  *
  * @param sourceTaskTemplateId 作成元のTask Template ID。直接作成はnull
  * @param templates 取得済みの本人のactive Task Template。未取得なら空配列

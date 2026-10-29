@@ -15,7 +15,6 @@ import type {
 import {
   buildAttendanceMonthDateRange,
   buildAttendanceMonthRows,
-  getTodayInTokyo,
   summarizeAttendanceDay,
 } from "@/features/attendance/utils/attendance";
 import {
@@ -28,11 +27,13 @@ import {
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
   needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import type { StatusAlertType } from "@/shared/types/color";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
   "clock-in": "出勤を記録しました。",
@@ -43,8 +44,7 @@ const PUNCH_SUCCESS_MESSAGES: Record<AttendancePunchAction, string> = {
 
 /**
  * 打刻ボタンに付ける`data-attendance-punch`属性の値（打刻操作名と同じ）を、画面の並び順で並べたもの。
- * 打刻すると押したボタンがdisabledになりフォーカスがbodyへ外れるため、打刻の後は次に押せるボタンへ移す
- * （動作確認/21_勤怠本人 G-2）。
+ * 打刻すると押したボタンがdisabledになりフォーカスがbodyへ外れるため、打刻の後は次に押せるボタンへ移す。
  */
 const PUNCH_FOCUS_ORDER: readonly AttendancePunchAction[] = [
   "clock-in",
@@ -55,8 +55,7 @@ const PUNCH_FOCUS_ORDER: readonly AttendancePunchAction[] = [
 
 /**
  * 本人勤怠画面の部品に付ける`data-attendance-control`属性の値。
- * 押したボタンが消える操作（提出・修正申請・申請取消）の後に、フォーカスがbodyへ外れないよう次の部品へ移す
- * （動作確認/21_勤怠本人 G-6〜G-8）。
+ * 押したボタンが消える操作（提出・修正申請・申請取消）の後に、フォーカスがbodyへ外れないよう次の部品へ移す。
  */
 export const ATTENDANCE_CONTROL = {
   /** 画面見出しの「表示月」入力欄。提出の後、「提出」が消えたときの戻り先。 */
@@ -70,12 +69,11 @@ export const ATTENDANCE_CONTROL = {
 } as const;
 
 /** `data-attendance-control`属性の値から、その部品を探すselectorを作る。 */
-const attendanceControlSelector = (key: string): string =>
-  `[data-attendance-control="${key}"]`;
+const buildAttendanceControlSelector = createDataAttributeSelector("data-attendance-control");
 
 /** `data-attendance-punch`属性の値から、その打刻ボタンを探すselectorを作る。 */
-const punchButtonSelector = (action: AttendancePunchAction): string =>
-  `[data-attendance-punch="${action}"]`;
+const buildPunchButtonSelector = (action: AttendancePunchAction): string =>
+  createDataAttributeSelector("data-attendance-punch")(action);
 
 /**
  * 本人勤怠画面の月一覧、選択日詳細、server timestamp打刻、競合回復を管理する。
@@ -84,7 +82,8 @@ const punchButtonSelector = (action: AttendancePunchAction): string =>
 export const useAttendancePage = () => {
   const router = useRouter();
   const userStore = useUserStore();
-  const today = getTodayInTokyo();
+  const { expireSession } = useSessionExpiry();
+  const today = getBusinessToday();
 
   const errorMessages = ref<string[]>([]);
   /** 修正申請Dialogの入力チェック・申請APIの失敗。Dialogを開いている間は画面上部が隠れるため、Dialogの中へ出す。 */
@@ -168,7 +167,7 @@ export const useAttendancePage = () => {
       ["APPROVED", "CLOSED"].includes(monthSummary.value?.statusCode ?? "")
   );
   /**
-   * 選択日に修正申請できない理由（改善提案 1-22）。ボタンを出さないだけでは理由が分からないため、日の詳細に添える。
+   * 選択日に修正申請できない理由。ボタンを出さないだけでは理由が分からないため、日の詳細に添える。
    * 修正申請は承認済み・締め済みの月だけが対象（`docs/attendance-mvp-design.md`「修正申請」）。
    * 勤怠の更新permissionがない利用者、申請できる日、月の情報を取得していない間は空文字。
    */
@@ -252,7 +251,7 @@ export const useAttendancePage = () => {
     }
     // 押したボタンが押せるまま（失敗等）ならそこへ、押せなくなったら画面の並び順で最初に押せるボタンへ戻す。
     await focusFirstEnabledElement(
-      [action, ...PUNCH_FOCUS_ORDER].map(punchButtonSelector)
+      [action, ...PUNCH_FOCUS_ORDER].map(buildPunchButtonSelector)
     );
   };
 
@@ -283,8 +282,8 @@ export const useAttendancePage = () => {
       isSubmittingMonth.value = false;
     }
     await focusFirstEnabledElement([
-      attendanceControlSelector(ATTENDANCE_CONTROL.submitMonth),
-      attendanceControlSelector(ATTENDANCE_CONTROL.month),
+      buildAttendanceControlSelector(ATTENDANCE_CONTROL.submitMonth),
+      buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
     ]);
   };
 
@@ -408,8 +407,8 @@ export const useAttendancePage = () => {
       successMessage.value = "勤怠修正を申請しました。";
       // 審査待ちの間は「修正申請」が消えるため、Dialogを開いたボタンの代わりに新しい申請の「申請取消」へ移す。
       await focusFirstEnabledElement([
-        attendanceControlSelector(ATTENDANCE_CONTROL.cancelCorrection),
-        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.cancelCorrection),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
       ]);
     } catch (error: unknown) {
       // Dialogは開いたままなので、理由は画面の後ろでなくDialogの中へ出す。
@@ -448,8 +447,8 @@ export const useAttendancePage = () => {
       successMessage.value = "勤怠修正申請を取り消しました。";
       // 押した「申請取消」は消えるため、再び出る「修正申請」（承認済み・締め済みの月だけ）へ移す。
       await focusFirstEnabledElement([
-        attendanceControlSelector(ATTENDANCE_CONTROL.requestCorrection),
-        attendanceControlSelector(ATTENDANCE_CONTROL.month),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.requestCorrection),
+        buildAttendanceControlSelector(ATTENDANCE_CONTROL.month),
       ]);
     } catch (error: unknown) {
       await handleApiError(
@@ -616,8 +615,7 @@ export const useAttendancePage = () => {
       errorMessages.value = [];
       correctionErrorMessages.value = [];
       isCorrectionDialogOpen.value = false;
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

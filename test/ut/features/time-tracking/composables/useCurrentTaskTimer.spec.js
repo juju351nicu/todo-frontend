@@ -137,7 +137,7 @@ describe("useCurrentTaskTimer", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("停止できたら、消えた停止ボタンの代わりにTimer履歴ボタンへフォーカスを戻す（改善提案 1-7）", async () => {
+  it("停止できたら、消えた停止ボタンの代わりにTimer履歴ボタンへフォーカスを戻す", async () => {
     const { currentTaskTimer, scope } = setUp();
 
     await currentTaskTimer.stopTimer();

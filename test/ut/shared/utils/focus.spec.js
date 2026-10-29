@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import {
+  createDataAttributeSelector,
+  focusFirstEnabledElement,
+} from "@/shared/utils/focus";
 
 /**
  * 単体テストの実行環境にはDOMがないため、selectorごとの要素を返すdocumentへ差し替える。
@@ -53,5 +56,14 @@ describe("focusFirstEnabledElement", () => {
 
   it("DOMのない実行環境では何もしない", async () => {
     await expect(focusFirstEnabledElement(["#a"])).resolves.toBeUndefined();
+  });
+});
+
+describe("createDataAttributeSelector", () => {
+  it("属性名と値から、その部品を探すselectorを作る", () => {
+    const buildSelector = createDataAttributeSelector("data-dashboard-control");
+
+    expect(buildSelector("reload")).toBe('[data-dashboard-control="reload"]');
+    expect(buildSelector("activate:7")).toBe('[data-dashboard-control="activate:7"]');
   });
 });

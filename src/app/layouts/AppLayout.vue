@@ -14,7 +14,7 @@ const { isDrawerOpen, navigationLinks, toggleDrawer, logout } = useAppNavigation
   <div class="relative min-h-screen">
     <AppHeader @toggle-menu="toggleDrawer" />
     <AppSideMenu :is-open="isDrawerOpen" :links="navigationLinks" @logout="logout" />
-    <!-- 移行前のVuetify layoutと同じく、メニューを開くと本文を重ねずに右へ押し出す。 -->
+    <!-- メニューを開くと、本文を重ねずに右へ押し出す（本文の左端がメニューに隠れないようにするため）。 -->
     <main
       class="pt-16 transition-[padding] duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
       :class="isDrawerOpen ? 'ps-64' : 'ps-0'"

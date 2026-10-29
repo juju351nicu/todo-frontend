@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TimeTrackingApi, {
   TimeTrackingApiError,
 } from "@/features/time-tracking/api/timeTrackingApi";
@@ -15,7 +15,7 @@ const PAGE_SIZE = 20;
 /** 指定Taskの工数監査Dialogについて、読込、paging、認証・認可エラーを管理する。 */
 export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const audits = ref<TaskWorkLogAuditListResponse | null>(null);
   const errorMessages = ref<string[]>([]);
   const isLoading = ref(false);
@@ -41,9 +41,7 @@ export const useTaskWorkLogAudits = (projectId: number, taskId: number) => {
         return;
       }
       if (error.status === 401) {
-        userStore.clearSession();
-        closeDialogAfterSessionExpiry();
-        await router.push({ name: "Login" });
+        await expireSession(closeDialogAfterSessionExpiry);
         return;
       }
       if (error.status === 403) {

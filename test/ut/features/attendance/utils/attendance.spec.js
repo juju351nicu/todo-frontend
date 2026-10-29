@@ -8,7 +8,6 @@ import {
   formatAttendanceMinutes,
   getAttendanceAllocationStatusColor,
   getAttendanceAllocationStatusLabel,
-  getTodayInTokyo,
   summarizeAttendanceDay,
 } from "@/features/attendance/utils/attendance";
 
@@ -26,12 +25,6 @@ const buildDay = (overrides = {}) => ({
 });
 
 describe("本人勤怠表示utility", () => {
-  it("UTC日付境界の時刻をAsia/Tokyoの業務日へ変換する", () => {
-    expect(getTodayInTokyo(new Date("2026-09-05T15:30:00Z"))).toBe(
-      "2026-09-06"
-    );
-  });
-
   it("打刻パネルの現在時刻をAsia/Tokyoの24時間制秒表示へ変換する", () => {
     expect(
       formatAttendanceClockTime(new Date("2026-09-11T15:05:06Z"))

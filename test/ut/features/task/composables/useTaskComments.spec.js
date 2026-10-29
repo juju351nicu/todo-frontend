@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import {
   COMMENT_COMPOSER_CONTROL,
-  commentEditControlKey,
+  buildCommentEditControlKey,
   useTaskComments,
 } from "@/features/task/composables/useTaskComments";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
     updateComment: vi.fn(),
   },
   userStore: {
-    memberId: 7,
+    accountId: 7,
     clearSession: vi.fn(),
   },
 }));
@@ -65,7 +65,7 @@ const waitForInitialLoad = async () => {
 describe("useTaskComments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.userStore.memberId = 7;
+    mocks.userStore.accountId = 7;
     mocks.router.push.mockResolvedValue(undefined);
     mocks.taskCommentApi.findComments.mockResolvedValue([
       structuredClone(ownComment),
@@ -90,6 +90,25 @@ describe("useTaskComments", () => {
     await waitForInitialLoad();
 
     expect(page.comments.value).toEqual([ownComment, otherComment]);
+  });
+
+  it("Taskを切り替えた後に前のTaskのコメントが届いても、今のTaskのコメントを上書きしない", async () => {
+    let resolvePreviousTaskList;
+    mocks.taskCommentApi.findComments
+      .mockReturnValueOnce(new Promise((resolve) => { resolvePreviousTaskList = resolve; }))
+      .mockResolvedValueOnce([{ ...ownComment, taskId: 40, body: "今のTaskのコメント" }]);
+    const taskId = ref(31);
+    const page = useTaskComments(ref(5), taskId, ref(false));
+
+    taskId.value = 40;
+    await vi.waitFor(() => {
+      expect(page.comments.value.map((entry) => entry.body)).toEqual(["今のTaskのコメント"]);
+    });
+    resolvePreviousTaskList([structuredClone(ownComment)]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(page.comments.value.map((entry) => entry.body)).toEqual(["今のTaskのコメント"]);
+    expect(page.isLoading.value).toBe(false);
   });
 
   it("本人コメントだけを編集・削除可能と判定し、参照専用では本人も変更不可にする", async () => {
@@ -469,7 +488,7 @@ describe("useTaskComments", () => {
       await page.submitEdit();
 
       expect(page.editingCommentId.value).toBeNull();
-      expect(focused).toEqual([commentEditControlKey(41)]);
+      expect(focused).toEqual([buildCommentEditControlKey(41)]);
     });
 
     it("更新に失敗して編集欄が残る場合は、フォーカスを動かさない", async () => {
@@ -498,7 +517,7 @@ describe("useTaskComments", () => {
       expect(page.editingCommentId.value).toBeNull();
       expect(page.editBody.value).toBe("");
       expect(mocks.taskCommentApi.updateComment).not.toHaveBeenCalled();
-      expect(focused).toEqual([commentEditControlKey(41)]);
+      expect(focused).toEqual([buildCommentEditControlKey(41)]);
     });
   });
 });

@@ -4,9 +4,10 @@ import { onBeforeMount } from "vue";
 import AttendanceCorrectionAdministration from "@/features/attendance/components/AttendanceCorrectionAdministration.vue";
 import {
   ATTENDANCE_ADMIN_CONTROL,
-  attendanceMonthRowControlKey,
+  buildAttendanceMonthRowControlKey,
   useAttendanceAdministrationPage,
 } from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import {
   formatAttendanceDate,
   formatAttendanceInstant,
@@ -169,7 +170,7 @@ onBeforeMount(initialize);
                     role="button"
                     tabindex="0"
                     :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
-                    :data-attendance-admin-control="attendanceMonthRowControlKey(month.accountId)"
+                    :data-attendance-admin-control="buildAttendanceMonthRowControlKey(month.accountId)"
                     @click="selectMonth(month)"
                     @keydown.enter="selectMonth(month)"
                     @keydown.space.prevent="selectMonth(month)"
@@ -229,9 +230,9 @@ onBeforeMount(initialize);
               <template v-if="canApproveOrReject">
                 <div class="relative">
                   <UFormField label="承認コメント（任意）">
-                    <UTextarea v-model="reviewComment" :maxlength="1000" :rows="2" class="w-full" />
+                    <UTextarea v-model="reviewComment" :maxlength="ATTENDANCE_TEXT_MAX_LENGTH" :rows="2" class="w-full" />
                   </UFormField>
-                  <FieldCounter :value="reviewComment" :max="1000" />
+                  <FieldCounter :value="reviewComment" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
                 <UButton
                   color="success"
@@ -246,13 +247,13 @@ onBeforeMount(initialize);
                   <UFormField label="差戻し理由（必須）" :error="monthRejectReasonError || undefined">
                     <UTextarea
                       v-model="rejectReason"
-                      :maxlength="1000"
+                      :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
                       :rows="2"
                       class="w-full"
                       :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.rejectReason"
                     />
                   </UFormField>
-                  <FieldCounter :value="rejectReason" :max="1000" />
+                  <FieldCounter :value="rejectReason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
                 <UButton color="warning" :loading="processingAction === 'reject'" data-attendance-admin-control="reject" @click="reject">
                   差戻し

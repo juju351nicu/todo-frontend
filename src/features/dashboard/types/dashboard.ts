@@ -4,7 +4,7 @@ import type {
   ProjectRole,
   TaskPriority,
 } from "@/features/project/types/project";
-import type { MyTaskDueGroup } from "@/features/task/types/task";
+import type { MyTaskDueGroup } from "@/features/task/types/myTask";
 
 /** DashboardのMy Tasks previewへ表示する本人担当Task。 */
 export interface DashboardTask {
@@ -115,21 +115,21 @@ export interface AdvancedDashboardProject {
   statusDate: string;
   /** EVM価値単位。初期契約では常に分。 */
   valueUnit: "MINUTES";
-  /** BAC（分）。 */
+  /** BAC（Budget at Completion、完了時の予定工数の合計）。baselineの全Taskの予定工数（分）。 */
   bac: number;
-  /** PV（分）。 */
+  /** PV（Planned Value、計画価値）。基準日までに終わる予定だった作業の予定工数（分）。 */
   pv: number;
-  /** Backendが小数第2位へ丸めたEV（分）。 */
+  /** EV（Earned Value、出来高）。予定工数に進捗率を掛けた、終わった作業の量（分、Backendが小数第2位へ丸める）。 */
   ev: number;
-  /** AC（分）。 */
+  /** AC（Actual Cost、実績工数）。基準日までに計上した実績工数（分）。 */
   ac: number;
-  /** Backendが小数第2位へ丸めたSV（分）。 */
+  /** SV（Schedule Variance、スケジュール差異）。EV − PV（分、小数第2位）。負なら遅れ。 */
   sv: number;
-  /** Backendが小数第2位へ丸めたCV（分）。 */
+  /** CV（Cost Variance、コスト差異）。EV − AC（分、小数第2位）。負なら予定より工数が多い。 */
   cv: number;
-  /** PVが0の場合はnull。 */
+  /** SPI（Schedule Performance Index、スケジュール効率）。EV ÷ PV（小数第4位）。PVが0の場合はnull。 */
   spi: number | null;
-  /** ACが0の場合はnull。 */
+  /** CPI（Cost Performance Index、コスト効率）。EV ÷ AC（小数第4位）。ACが0の場合はnull。 */
   cpi: number | null;
   /** BACが0の場合はnull。 */
   plannedProgressPercent: number | null;

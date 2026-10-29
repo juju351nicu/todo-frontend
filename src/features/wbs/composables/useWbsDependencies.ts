@@ -95,7 +95,7 @@ export const useWbsDependencies = (
     context.canEditWbs.value &&
     canChangeDependencyEndpoint(
       taskById.value.get(taskId),
-      userStore.memberId,
+      userStore.accountId,
       context.canManageProject.value
     );
 

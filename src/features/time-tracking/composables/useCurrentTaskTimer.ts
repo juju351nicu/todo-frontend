@@ -13,7 +13,7 @@ const ELAPSED_REFRESH_MILLISECONDS = 1_000;
 
 /**
  * ヘッダーのTimer履歴ボタン（`TaskTimerHistoryDialog.vue`）に付ける`data-task-timer-control`属性の値。
- * 停止・取消の後は押したボタン自体が消えてフォーカスがbodyへ外れるため、残り続けるこのボタンへ戻す（改善提案 1-7）。
+ * 停止・取消の後は押したボタン自体が消えてフォーカスがbodyへ外れるため、残り続けるこのボタンへ戻す。
  */
 export const TASK_TIMER_HISTORY_CONTROL = "history";
 

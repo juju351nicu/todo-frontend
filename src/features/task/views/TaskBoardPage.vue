@@ -2,9 +2,14 @@
 import { onBeforeMount } from "vue";
 import Draggable from "vuedraggable";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import ProjectSettingsDialog from "@/features/project/components/ProjectSettingsDialog.vue";
 import ProjectTemplateCaptureButton from "@/features/project/components/ProjectTemplateCaptureButton.vue";
-import { getProjectStatusColor, getProjectStatusLabel } from "@/features/project/utils/projectStatus";
+import {
+  getProjectStatusColor,
+  getProjectStatusLabel,
+  isActiveProject,
+} from "@/features/project/utils/projectStatus";
 import ProjectCommentsDialog from "@/features/task/components/ProjectCommentsDialog.vue";
 import TaskCommentsPanel from "@/features/task/components/TaskCommentsPanel.vue";
 import TaskChecklistPanel from "@/features/task/components/TaskChecklistPanel.vue";
@@ -12,6 +17,10 @@ import TaskRecurrenceDialog from "@/features/task/components/TaskRecurrenceDialo
 import TaskTemplateCaptureButton from "@/features/task/components/TaskTemplateCaptureButton.vue";
 import TaskTemplateDialog from "@/features/task/components/TaskTemplateDialog.vue";
 import { useTaskBoardPage } from "@/features/task/composables/useTaskBoardPage";
+import {
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import { getTaskPriorityColor, getTaskPriorityLabel } from "@/features/task/utils/taskDisplay";
 import TaskTimerActionButton from "@/features/time-tracking/components/TaskTimerActionButton.vue";
 import TaskWorkLogAuditDialog from "@/features/time-tracking/components/TaskWorkLogAuditDialog.vue";
@@ -43,6 +52,7 @@ const {
   errorMessages,
   finishTaskDrag,
   form,
+  handleEditorOpenChange,
   handleTaskDrop,
   handleTemplateTaskCreated,
   initialize,
@@ -80,7 +90,7 @@ onBeforeMount(initialize);
   <div class="page-surface p-6">
     <div class="mb-4 flex flex-wrap items-center gap-3">
       <UButton
-        :to="{ name: 'ProjectList' }"
+        :to="{ name: ROUTE_NAMES.projectList }"
         icon="i-mdi-arrow-left"
         variant="ghost"
         square
@@ -101,7 +111,7 @@ onBeforeMount(initialize);
       </UBadge>
       <UButton
         v-if="board"
-        :to="{ name: 'Wbs', params: { projectId: board.projectId } }"
+        :to="{ name: ROUTE_NAMES.wbs, params: { projectId: board.projectId } }"
         icon="i-mdi-file-tree-outline"
         variant="soft"
       >
@@ -121,7 +131,7 @@ onBeforeMount(initialize);
         :can-apply="canCreateTask"
         :can-edit="canUpdateTask"
         :can-archive="canArchiveTaskTemplate"
-        :project-active="project.status === 'ACTIVE'"
+        :project-active="isActiveProject(project)"
         :restricted-assignee-account-id="taskTemplateAssigneeAccountId"
         @task-created="handleTemplateTaskCreated"
       />
@@ -132,7 +142,7 @@ onBeforeMount(initialize);
         :statuses="project.taskStatuses"
         :can-create="canCreateTaskRecurrence"
         :can-update="canUpdateTaskRecurrence"
-        :project-active="project.status === 'ACTIVE'"
+        :project-active="isActiveProject(project)"
       />
       <ProjectSettingsDialog v-if="project" :project="project" @project-updated="applyProjectDetail" />
       <UButton v-if="canCreateTask" color="primary" icon="i-mdi-plus" @click="openTaskCreator()">Taskを追加</UButton>
@@ -152,7 +162,7 @@ onBeforeMount(initialize);
     </StatusAlert>
 
     <div v-if="board" class="flex items-start gap-4 overflow-x-auto pb-4">
-      <!-- E2Eはboard-column／task-card classで列とTask cardを特定する。色は移行前のtonal列とその中のcardの見え方に合わせている。 -->
+      <!-- E2Eはboard-column／task-card classで列とTask cardを特定する。列は一段濃い背景（bg-elevated）、cardは通常の背景（bg-default）にして、列とcardの境目を見せる。 -->
       <div
         v-for="column in board.columns"
         :key="column.taskStatusId"
@@ -236,10 +246,11 @@ onBeforeMount(initialize);
     </div>
 
     <UModal
-      v-model:open="isEditorOpen"
+      :open="isEditorOpen"
       :dismissible="!isSaving"
       :title="form.taskId === null ? 'Taskを追加' : isReadonly ? 'Task詳細' : 'Taskを編集'"
       :ui="{ content: 'max-w-180' }"
+      @update:open="handleEditorOpenChange"
     >
       <template #body>
         <StatusAlert v-if="isReadonly" type="info" class="mb-4">このTaskは参照のみ可能です。</StatusAlert>
@@ -250,22 +261,22 @@ onBeforeMount(initialize);
         <form @submit.prevent="saveTask">
           <div class="relative mb-2">
             <UFormField label="タイトル">
-              <UInput v-model="form.title" :maxlength="45" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
+              <UInput v-model="form.title" :maxlength="TASK_TITLE_MAX_LENGTH" :readonly="isReadonly" :disabled="isSaving" class="w-full" />
             </UFormField>
-            <FieldCounter :value="form.title" :max="45" />
+            <FieldCounter :value="form.title" :max="TASK_TITLE_MAX_LENGTH" />
           </div>
           <div class="relative mb-2">
             <UFormField label="詳細">
               <UTextarea
                 v-model="form.detail"
-                :maxlength="1000"
+                :maxlength="TASK_DETAIL_MAX_LENGTH"
                 :rows="4"
                 :readonly="isReadonly"
                 :disabled="isSaving"
                 class="w-full"
               />
             </UFormField>
-            <FieldCounter :value="form.detail" :max="1000" />
+            <FieldCounter :value="form.detail" :max="TASK_DETAIL_MAX_LENGTH" />
           </div>
           <div class="-m-3 flex flex-wrap">
             <div class="w-full p-3 sm:w-1/2">

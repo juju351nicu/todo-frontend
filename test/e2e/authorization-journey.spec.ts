@@ -100,7 +100,7 @@ test("ロール変更で既存Sessionを失効し再ログイン後は閲覧権�
       .getByRole("row")
       .filter({ hasText: "権限 対象者" });
     await expect(targetAuditRows).toHaveCount(2);
-    // 監査ログはロールをコードではなく表示名で出す（V1__baseline.sqlのrole_name。改善提案 1-23）。
+    // 監査ログはロールをコードではなく表示名で出す（V1__baseline.sqlのrole_name）。
     await expect(
       targetAuditRows.filter({ hasText: "取消" }).filter({ hasText: "ユーザー" })
     ).toHaveCount(1);

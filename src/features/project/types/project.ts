@@ -68,7 +68,7 @@ export interface ProjectUpdateRequest {
 }
 
 /**
- * Templateを使わずにProjectを作るRequest（`POST /api/v1/projects`。改善提案 2-13）。
+ * Templateを使わずにProjectを作るRequest（`POST /api/v1/projects`）。
  * 作成者はOWNERになり、標準のBoard列（Todo・進行中・完了）はBackendが作る。
  */
 export interface ProjectCreateRequest {
@@ -88,7 +88,7 @@ export interface ProjectMemberCreateRequest {
 
 /**
  * Project memberへ追加できるアカウント候補（有効で、まだ参加していないアカウント）。
- * `GET /api/v1/projects/{projectId}/member-candidates`が名前・メールアドレス・ログインIDの前方一致で返す（改善提案 2-9）。
+ * `GET /api/v1/projects/{projectId}/member-candidates`が名前・メールアドレス・ログインIDの前方一致で返す。
  */
 export interface ProjectMemberCandidate {
   accountId: number;

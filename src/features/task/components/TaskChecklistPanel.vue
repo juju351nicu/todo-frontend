@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
+import { buildChecklistControlKey, useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
-  checklistControlKey,
-  useTaskChecklist,
-} from "@/features/task/composables/useTaskChecklist";
+} from "@/features/task/constants/taskLimits";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 
@@ -23,7 +22,7 @@ const props = withDefaults(
     /**
      * 参照のみで開くときtrue（担当外のMEMBER、TASK_UPDATEのないaccount、archive済みProject等）。
      * trueの間は追加欄と各行の操作（上下・編集・削除）を出さず、完了のチェックはdisabledで状態だけを示す。更新系APIは呼ばない。
-     * 押せない部品が並ぶと操作できない理由が分かりにくいため、出さない（改善提案 1-1）。
+     * 押せない部品が並ぶと操作できない理由が分かりにくいため、出さない。
      */
     disabled?: boolean;
   }>(),
@@ -86,7 +85,7 @@ const {
         :model-value="item.completed"
         :disabled="disabled || isMutating"
         :aria-label="`${item.content}の完了状態を変更`"
-        :data-checklist-control="checklistControlKey(item.checklistItemId, 'toggle')"
+        :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'toggle')"
         @update:model-value="toggleItem(item)"
       />
       <div v-if="editingItemId === item.checklistItemId" class="flex flex-1 items-center gap-2 py-1">
@@ -119,7 +118,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === 0"
             :aria-label="`${item.content}を上へ移動`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-up')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'move-up')"
             @click="moveItem(item, -1)"
           />
           <UButton
@@ -130,7 +129,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === items.length - 1"
             :aria-label="`${item.content}を下へ移動`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-down')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'move-down')"
             @click="moveItem(item, 1)"
           />
           <UButton
@@ -141,7 +140,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating"
             :aria-label="`${item.content}を編集`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'edit')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'edit')"
             @click="startEditing(item)"
           />
           <UButton

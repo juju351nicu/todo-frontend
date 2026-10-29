@@ -13,7 +13,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
  * @param taskId Timer対象Task ID
  * @returns `"{projectId}:{taskId}"`形式の属性値
  */
-export const taskTimerActionKey = (projectId: number, taskId: number): string =>
+export const buildTaskTimerActionKey = (projectId: number, taskId: number): string =>
   `${projectId}:${taskId}`;
 
 /** `useTaskTimerAction`の対象Taskと事前の無効化条件。 */
@@ -53,7 +53,7 @@ export const useTaskTimerAction = (target: TaskTimerActionTarget) => {
 
   /** 対象Taskのbuttonへ付ける`data-task-timer-action`属性の値。 */
   const actionKey = computed<string>(() =>
-    taskTimerActionKey(toValue(target.projectId), toValue(target.taskId)),
+    buildTaskTimerActionKey(toValue(target.projectId), toValue(target.taskId)),
   );
 
   /**

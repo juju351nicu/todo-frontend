@@ -37,10 +37,10 @@ export interface UseDataTableOptions<T extends object> {
 }
 
 /**
- * Vuetifyの`v-data-table`と同じ並べ替え・ページ分割・行選択を、Nuxt UIの`UTable`（TanStack Table）の状態として作る。
+ * 一覧表の並べ替え・ページ分割・行選択を、Nuxt UIの`UTable`（TanStack Table）の状態として作る。
  *
  * - 並べ替え: 見出しクリックで昇順→降順→解除。`UTable`の`v-model:sorting`へ渡す。
- * - ページ: 件数変更でページ範囲外になったら最終ページへ戻し、表示件数を変えたら先頭ページへ戻す（Vuetifyと同じ）。
+ * - ページ: 件数変更でページ範囲外になったら最終ページへ戻し、表示件数を変えたら先頭ページへ戻す。
  * - 選択: TanStackの`RowSelectionState`と、親へ返す`itemValue`の配列を相互変換する。
  *
  * 画面に依存するslot名の解決は`AppDataTable.vue`側に残し、ここでは表の状態だけを扱う。
@@ -84,7 +84,7 @@ export const useDataTable = <T extends object>(options: UseDataTableOptions<T>) 
     formatPageRange(pageIndex.value, pageSize.value, options.items().length),
   );
 
-  // 件数変更や削除で現在ページが範囲外になった場合、Vuetifyと同じく表示可能な最終ページへ戻す。
+  // 件数変更や削除で現在ページが範囲外になった場合、空のページを見せないよう、表示可能な最終ページへ戻す。
   watch(pageCount, (count) => {
     if (pageIndex.value > count - 1) {
       pageIndex.value = count - 1;

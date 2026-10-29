@@ -185,7 +185,7 @@ describe("useTaskSearchPage", () => {
     ]);
   });
 
-  it("更新競合でSaved Viewを取り直したら、最新の条件で検索し直す（改善提案 1-16）", async () => {
+  it("更新競合でSaved Viewを取り直したら、最新の条件で検索し直す", async () => {
     const latestSavedView = {
       ...savedView,
       filters: { ...emptyFilters, statusCode: "TODO" },

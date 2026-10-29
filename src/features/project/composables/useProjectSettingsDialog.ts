@@ -1,10 +1,16 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectDetail,
   ProjectMember,
@@ -19,9 +25,11 @@ import {
   PROJECT_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/project/utils/apiErrors";
 import { resolveProjectMemberDisplayName } from "@/features/project/utils/projectMember";
+import { canManageProject, findProjectRole } from "@/features/project/utils/projectRole";
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project設定Dialogで編集する表示情報と取得時点のversion。 */
 interface ProjectSettingsForm {
@@ -86,7 +94,7 @@ export const PROJECT_SETTINGS_CONTROL = {
  * @param accountId 行のアカウントID
  * @returns `"member:{accountId}:role"`形式の属性値
  */
-export const memberRoleControlKey = (accountId: number): string =>
+export const buildMemberRoleControlKey = (accountId: number): string =>
   `member:${accountId}:role`;
 
 /**
@@ -110,8 +118,7 @@ const needsReloadGuidance = (error: ProjectApiError): boolean =>
   );
 
 /** `data-project-settings-control`属性の値から、その要素を探すselectorを作る。 */
-const projectSettingsControlSelector = (key: string): string =>
-  `[data-project-settings-control="${key}"]`;
+const buildProjectSettingsControlSelector = createDataAttributeSelector("data-project-settings-control");
 
 /**
  * Task Board上のProject設定Dialogについて、Project更新・archive・member管理をまとめて扱う。
@@ -127,11 +134,12 @@ export const useProjectSettingsDialog = (
 ) => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const activeSection = ref<ProjectSettingsSection>("project");
   const addMemberAccountId = ref<number | string | null>(null);
   const addMemberRole = ref<ProjectRole>("MEMBER");
-  /** member候補を探す語（名前・メールアドレス・ログインIDの先頭）。改善提案 2-9。 */
+  /** member候補を探す語（名前・メールアドレス・ログインIDの先頭）。 */
   const memberCandidateQuery = ref("");
   /** 直前の検索で見つかったmember候補（有効でまだ参加していないアカウント、最大20件）。 */
   const memberCandidates = ref<ProjectMemberCandidate[]>([]);
@@ -151,17 +159,13 @@ export const useProjectSettingsDialog = (
   const projectForm = ref<ProjectSettingsForm>(createEmptyProjectForm());
   const successMessage = ref("");
 
-  const currentProjectRole = computed(
-    () =>
-      project.value?.members.find(
-        (member) => member.accountId === userStore.memberId
-      )?.projectRole ?? null
+  const currentProjectRole = computed(() =>
+    findProjectRole(project.value, userStore.accountId)
   );
-  const canManageResource = computed(
-    () =>
-      userStore.hasRole("SYSTEM_ADMIN") || currentProjectRole.value === "OWNER"
+  const canManageResource = computed(() =>
+    canManageProject(userStore.hasRole("SYSTEM_ADMIN"), currentProjectRole.value)
   );
-  const isProjectActive = computed(() => project.value?.status === "ACTIVE");
+  const isProjectActive = computed(() => isActiveProject(project.value));
   const canUpdateProject = computed(
     () =>
       canManageResource.value &&
@@ -206,8 +210,8 @@ export const useProjectSettingsDialog = (
       !isBusy.value &&
       hasProjectChanges.value &&
       projectForm.value.name.trim().length > 0 &&
-      projectForm.value.name.trim().length <= 100 &&
-      projectForm.value.description.trim().length <= 2000
+      projectForm.value.name.trim().length <= PROJECT_NAME_MAX_LENGTH &&
+      projectForm.value.description.trim().length <= PROJECT_DESCRIPTION_MAX_LENGTH
   );
   /** 入力中のアカウントIDが、すでにProjectへ参加しているアカウントか。 */
   const isAddMemberAlreadyJoined = computed<boolean>(() => {
@@ -218,7 +222,7 @@ export const useProjectSettingsDialog = (
     );
   });
   /**
-   * 「追加」を押せない理由のうち、入力欄の下に出すもの（改善提案 1-11）。
+   * 「追加」を押せない理由のうち、入力欄の下に出すもの。
    * 黙ってbuttonが無効になると理由が分からないため、参加済みのアカウントIDを入れた時点で示す。
    * 空欄・正の整数でない入力は、入力途中のことが多いため出さない（押せば`addMember`が案内する）。
    */
@@ -274,18 +278,18 @@ export const useProjectSettingsDialog = (
   /**
    * 操作の後（失敗した場合も含む）、候補の部品へフォーカスを戻す。
    * 更新中はDialog内の入力欄とボタンをすべてdisabledにするため、押した部品からフォーカスが外れて
-   * bodyへ移り、キーボードだけでは続けて操作できなくなる（動作確認/12_Project設定 G-3・G-5）。
+   * bodyへ移り、キーボードだけでは続けて操作できなくなる。
    * 候補がすべて消えた・disabledのとき（自分を降格した後など）は「閉じる」へ戻す。
    * Dialogを閉じた後（401・自己除外）は何もしない。isSaving等をfalseへ戻した後に呼ぶ。
    *
-   * @param candidates `PROJECT_SETTINGS_CONTROL`または`memberRoleControlKey`の値（優先順）
+   * @param candidates `PROJECT_SETTINGS_CONTROL`または`buildMemberRoleControlKey`の値（優先順）
    */
   const restoreControlFocus = async (candidates: readonly string[]): Promise<void> => {
     if (!isDialogOpen.value) {
       return;
     }
     await focusFirstEnabledElement(
-      [...candidates, PROJECT_SETTINGS_CONTROL.close].map(projectSettingsControlSelector)
+      [...candidates, PROJECT_SETTINGS_CONTROL.close].map(buildProjectSettingsControlSelector)
     );
   };
 
@@ -386,8 +390,8 @@ export const useProjectSettingsDialog = (
   };
 
   /**
-   * member候補を名前・メールアドレス・ログインIDの先頭で探す（改善提案 2-9）。
-   * 以前はアカウントIDの数字を入力するしかなく、利用者は他人のIDを知らなかった。空白だけの語では探さず候補を消す。
+   * member候補を名前・メールアドレス・ログインIDの先頭で探す。利用者は他人のアカウントIDを知らないため。
+   * 空白だけの語では探さず候補を消す。
    */
   const searchMemberCandidates = async (): Promise<void> => {
     const current = project.value;
@@ -476,7 +480,7 @@ export const useProjectSettingsDialog = (
 
   /** 指定memberが現在のSession利用者自身か判定する。 */
   const isCurrentMember = (member: ProjectMember): boolean =>
-    member.accountId === userStore.memberId;
+    member.accountId === userStore.accountId;
 
   /** member role draftが変更され、最後のOWNER規則にも違反しないか判定する。 */
   const canSaveMemberRole = (member: ProjectMember): boolean => {
@@ -533,7 +537,7 @@ export const useProjectSettingsDialog = (
     }
     // 変更後は「role保存」がdisabledに戻るため、同じ行のrole選択へ戻す。
     await restoreControlFocus([
-      memberRoleControlKey(member.accountId),
+      buildMemberRoleControlKey(member.accountId),
       PROJECT_SETTINGS_CONTROL.addAccountId,
     ]);
   };
@@ -601,10 +605,10 @@ export const useProjectSettingsDialog = (
 
     isRemoveConfirmOpen.value = false;
     memberToRemove.value = null;
-    if (target.accountId === userStore.memberId) {
+    if (target.accountId === userStore.accountId) {
       isDialogOpen.value = false;
       isSavingMember.value = false;
-      await router.push({ name: "ProjectList" });
+      await router.push({ name: ROUTE_NAMES.projectList });
       return;
     }
 
@@ -628,7 +632,7 @@ export const useProjectSettingsDialog = (
   /**
    * 409競合後にProject詳細を再取得し、古いProject／member versionを画面へ残さない。
    * version競合等（`RELOAD_GUIDANCE_ERROR_CODES`）で再取得できたときは、Backendの「最新状態を取得してください。」の後ろに、
-   * 画面側で取り直し済みであることの案内を添える（動作確認/12_Project設定 G-4。07・08の対応と同じ）。
+   * 画面側で取り直し済みであることの案内を添える（チェックリスト・コメントの409と同じ書き方）。
    *
    * @param conflict 操作APIが返した409
    */
@@ -676,8 +680,7 @@ export const useProjectSettingsDialog = (
     isRemoveConfirmOpen.value = false;
     memberToRemove.value = null;
     isDialogOpen.value = false;
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
   };
 
   /** 競合または確定済みDELETE後の詳細再取得失敗を現在の参照状態へ変換する。 */

@@ -20,7 +20,7 @@ export const mocks = {
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
     hasRole: vi.fn((code) => mocks.roles.has(code)),
-    memberId: 2,
+    accountId: 2,
   },
   roles: new Set(),
   createObjectUrl: vi.fn(() => "blob:wbs-report"),
@@ -497,7 +497,7 @@ export const resetWbsPageMocks = () => {
   mocks.permissions.clear();
   mocks.roles.clear();
   mocks.permissions.add("TASK_UPDATE");
-  mocks.userStore.memberId = 2;
+  mocks.userStore.accountId = 2;
   mocks.route.params.projectId = "7";
   mocks.route.query = {};
   mocks.router.push.mockResolvedValue(undefined);

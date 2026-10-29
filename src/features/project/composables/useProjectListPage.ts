@@ -1,21 +1,27 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectApi, {
   ProjectApiError,
 } from "@/features/project/api/projectApi";
+import {
+  PROJECT_DESCRIPTION_MAX_LENGTH,
+  PROJECT_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectCreateRequest,
   ProjectSummary,
 } from "@/features/project/types/project";
 import { useUserStore } from "@/features/auth/stores/user";
 import { PROJECT_ERROR_CODES } from "@/features/project/utils/apiErrors";
+import { validateProjectKey } from "@/features/project/utils/projectForm";
 import { getProjectStatusLabel } from "@/features/project/utils/projectStatus";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
 
 /** Projectキーの形式（Backendの`ProjectCreateRequest`と同じ。大文字英数字をハイフンで区切る）。 */
-const PROJECT_KEY_PATTERN = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 
 /** Project作成フォームの初期値。 */
 const createEmptyCreateForm = (): ProjectCreateRequest => ({
@@ -24,10 +30,11 @@ const createEmptyCreateForm = (): ProjectCreateRequest => ({
   description: "",
 });
 
-/** Project一覧の検索、読込、Board遷移と、Templateを使わないProject作成（改善提案 2-13）を管理する。 */
+/** Project一覧の検索、読込、Board遷移と、Templateを使わないProject作成を管理する。 */
 export const useProjectListPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
   const isLoading = ref(false);
@@ -40,8 +47,8 @@ export const useProjectListPage = () => {
   const createErrorMessages = ref<string[]>([]);
 
   /**
-   * Templateを使わずにProjectを作れるか。以前は画面がなくTemplateからしか作れず、Templateは既存Projectから保存するため、
-   * Projectがない利用者は最初のProjectを作れなかった（改善提案 2-13）。
+   * Templateを使わずにProjectを作れるか。Templateは既存のProjectから保存するため、
+   * Templateからしか作れないと、Projectがない利用者は最初のProjectを作れない。
    */
   const canCreateProject = computed(() => userStore.hasPermission("PROJECT_CREATE"));
 
@@ -54,14 +61,15 @@ export const useProjectListPage = () => {
     const name = createForm.value.name.trim();
     const description = createForm.value.description.trim();
     return {
-      projectKey:
-        projectKey.length > 30
-          ? "Projectキーは30文字以内で入力してください。"
-          : projectKey.length > 0 && !PROJECT_KEY_PATTERN.test(projectKey)
-            ? "Projectキーは大文字英数字をハイフンで区切って入力してください（例：SALES-2026）。"
-            : "",
-      name: name.length > 100 ? "名前は100文字以内で入力してください。" : "",
-      description: description.length > 2000 ? "説明は2000文字以内で入力してください。" : "",
+      projectKey: projectKey.length > 0 ? validateProjectKey(projectKey) : "",
+      name:
+        name.length > PROJECT_NAME_MAX_LENGTH
+          ? `名前は${PROJECT_NAME_MAX_LENGTH}文字以内で入力してください。`
+          : "",
+      description:
+        description.length > PROJECT_DESCRIPTION_MAX_LENGTH
+          ? `説明は${PROJECT_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`
+          : "",
     };
   });
 
@@ -78,8 +86,8 @@ export const useProjectListPage = () => {
   /**
    * 検索欄の語を含むProjectだけを返す（大文字小文字は区別しない）。
    * 照合する文字列はカードに出ている名前・Project key・状態の表示名・Project roleと、状態コード。
-   * 状態はカードに「利用中」「アーカイブ」と出るため表示名でも探せるようにする
-   * （コードだけで照合していたため「アーカイブ」で0件になった。動作確認/13_Project一覧_Template G-2）。
+   * 状態はカードに「利用中」「アーカイブ」と出るため、コード（`ARCHIVED`等）に加えて表示名でも照合する
+   * （画面に見えている「アーカイブ」で探して見つかるようにするため）。
    */
   const filteredProjects = computed(() => {
     const keyword = searchText.value.trim().toLocaleLowerCase();
@@ -118,7 +126,7 @@ export const useProjectListPage = () => {
 
   /** 選択したProjectのBoardへ遷移する。 */
   const openBoard = async (projectId: number): Promise<void> => {
-    await router.push({ name: "TaskBoard", params: { projectId } });
+    await router.push({ name: ROUTE_NAMES.taskBoard, params: { projectId } });
   };
 
   /** 空のフォームでProject作成Dialogを開く。 */
@@ -196,8 +204,7 @@ export const useProjectListPage = () => {
       return;
     }
     if (error.status === 401) {
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

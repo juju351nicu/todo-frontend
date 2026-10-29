@@ -6,11 +6,11 @@ import { useDataTable } from "@/shared/composables/useDataTable";
 import type { DataTableHeader, DataTablePageOption } from "@/shared/types/dataTable";
 
 /**
- * 移行前のVuetify v-data-table（density compact）と同じ表示・操作を、Nuxt UIの`UTable`で提供する一覧表。
+ * 行を詰めた表示で、並べ替え・ページ分割・行選択ができる一覧表。Nuxt UIの`UTable`で作る。
  *
  * - 見出しクリックで昇順→降順→解除の順に並べ替える（`sortable: false`の列を除く）。
  * - `selectable`がtrueの場合、先頭列に選択checkboxを表示し、選択行の`itemValue`を`selected`へ反映する。
- *   見出しのcheckboxは表示中ページの行だけを対象にする（Vuetifyの既定と同じ）。
+ *   見出しのcheckboxは表示中ページの行だけを対象にする（見えていない行まで選ばないため）。
  * - footerに表示件数の選択とページ移動を表示する。`hideFooter`がtrueの場合は全件を1ページで表示する。
  * - cellの表示を変える場合は`<key>-cell`slotを使う。slot propsの`item`は行データ、`value`はその列の値。
  *
@@ -96,7 +96,7 @@ const {
           @update:model-value="(value: boolean | 'indeterminate') => row.toggleSelected(value === true)"
         />
       </template>
-      <!-- Vuetifyと同じく、未ソート時の矢印はhover中だけ薄く表示する。 -->
+      <!-- 未ソートの列の矢印は、hover中だけ薄く表示する。 -->
       <template v-for="header in sortableHeaders" #[`${header.key}-header`]="{ column }" :key="header.key">
         <button type="button" class="group inline-flex items-center gap-1 font-medium" @click="column.getToggleSortingHandler()?.($event)">
           {{ header.title }}

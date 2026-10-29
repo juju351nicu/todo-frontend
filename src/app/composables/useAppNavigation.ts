@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import type { ComputedRef, Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useUserStore } from "@/features/auth/stores/user";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
@@ -72,10 +73,10 @@ export const useAppNavigation = (): AppNavigation => {
     // 未認証でも共通レイアウトを表示する画面（問い合わせ）があるため、利用者IDがない場合は本人向けの導線を出さない。
     // 「アカウント」は自分の会員情報（詳細画面）を開く。会員の一覧は、ACCOUNT_READを持つ管理者だけが「会員一覧」から開く
     // （同じ一覧画面へのリンクが2つ並んでいたため。確認依頼「会員一覧の見え方の変更」3、2026-10-28決定）。
-    if (userStore.memberId !== null) {
+    if (userStore.accountId !== null) {
       links.push(
-        { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.memberId}` },
-        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.memberId}` },
+        { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.accountId}` },
+        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` },
       );
     }
     if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
@@ -111,7 +112,7 @@ export const useAppNavigation = (): AppNavigation => {
       // Logout APIが失敗しても、端末上の認証表示を残さずログイン画面へ戻す。
     } finally {
       isDrawerOpen.value = false;
-      await router.push({ name: "Login" });
+      await router.push({ name: ROUTE_NAMES.login });
     }
   };
 

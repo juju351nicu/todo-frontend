@@ -5,19 +5,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 問い合わせAPIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class InquiryApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class InquiryApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`問い合わせAPIの実行に失敗しました。status=${status}`);
-    this.name = "InquiryApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("InquiryApiError", "問い合わせAPI", status, errorResponse);
   }
 }
 

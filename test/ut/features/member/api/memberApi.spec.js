@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import MemberApi from "@/features/member/api/memberApi";
+import MemberApi, { MemberApiError } from "@/features/member/api/memberApi";
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 
@@ -31,12 +31,14 @@ describe("Member API", () => {
     );
   });
 
-  it("会員詳細取得のHTTPエラーを操作名付きで通知する", async () => {
+  it("会員詳細取得のHTTPエラーをstatus付きのMemberApiErrorで通知する", async () => {
     HttpClient.getRequest.mockResolvedValue({ ok: false, status: 404 });
 
-    await expect(MemberApi.findDetail(999)).rejects.toThrow(
-      "会員詳細の取得に失敗しました。status=404"
-    );
+    const error = await MemberApi.findDetail(999).catch((caught) => caught);
+
+    expect(error).toBeInstanceOf(MemberApiError);
+    expect(error.status).toBe(404);
+    expect(error.message).toBe("会員APIの実行に失敗しました。status=404");
   });
 
   it("選択された会員IDをquery parameterとして削除APIへ渡す", async () => {

@@ -9,19 +9,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 権限管理APIがHTTPエラーを返したことを、statusと項目エラー付きで表す。 */
-export class AdministrationApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class AdministrationApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`権限管理APIの実行に失敗しました。status=${status}`);
-    this.name = "AdministrationApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("AdministrationApiError", "権限管理API", status, errorResponse);
   }
 }
 

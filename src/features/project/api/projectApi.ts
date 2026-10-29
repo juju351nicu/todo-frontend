@@ -12,19 +12,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Project APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class ProjectApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class ProjectApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Project APIの実行に失敗しました。status=${status}`);
-    this.name = "ProjectApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("ProjectApiError", "Project API", status, errorResponse);
   }
 }
 
@@ -133,7 +126,7 @@ const updateProject = async (
 };
 
 /**
- * Templateを使わずにProjectを作る（改善提案 2-13）。作成者はOWNERになり、標準のBoard列はBackendが作る。
+ * Templateを使わずにProjectを作る。作成者はOWNERになり、標準のBoard列はBackendが作る。
  *
  * @param request Projectキー・名前・説明
  * @returns 作成したProject詳細
@@ -146,7 +139,7 @@ const createProject = async (request: ProjectCreateRequest): Promise<ProjectDeta
 };
 
 /**
- * Project memberへ追加できるアカウント候補を、名前・メールアドレス・ログインIDの前方一致で探す（改善提案 2-9）。
+ * Project memberへ追加できるアカウント候補を、名前・メールアドレス・ログインIDの前方一致で探す。
  * Backendは有効でまだ参加していないアカウントを最大20件、アカウントID順に返す。空白だけの語は空配列。
  *
  * @param projectId 追加先Project ID

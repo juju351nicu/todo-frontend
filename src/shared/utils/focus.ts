@@ -1,6 +1,20 @@
 import { nextTick } from "vue";
 
 /**
+ * `data-*`属性の値から、その部品を探すselectorを作る関数を返す。
+ *
+ * フォーカスの戻し先は、templateで`data-*`属性を付けた部品を、composableがselectorで探し直す。
+ * 属性名はtemplate側では文字列で書くしかないため、composable側はこの関数で属性名を1か所に書く。
+ *
+ * @param attributeName 部品に付けた属性の名前（例: `data-dashboard-control`）
+ * @returns 属性の値を受け取り、`[属性名="値"]`のselectorを返す関数
+ */
+export const createDataAttributeSelector =
+  (attributeName: `data-${string}`) =>
+  (value: string): string =>
+    `[${attributeName}="${value}"]`;
+
+/**
  * 次の描画の後、候補のselectorを先頭から順に探し、最初に見つかった操作できる（disabledでない）要素へフォーカスを移す。
  *
  * 更新中に操作部品をdisabledにする画面では、押した部品からフォーカスが外れ（`document.activeElement`がbody）、

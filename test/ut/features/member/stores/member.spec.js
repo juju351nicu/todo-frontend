@@ -49,14 +49,15 @@ describe("Member store", () => {
     expect(store.memberListInfo).toEqual(remaining);
   });
 
-  it("削除に失敗した場合は一覧を変えない", async () => {
-    MemberApi.deleteMembers.mockRejectedValue(new Error("403"));
+  it("削除に失敗した場合は一覧を変えず、例外を画面へ渡す", async () => {
+    const failure = new Error("403");
+    MemberApi.deleteMembers.mockRejectedValue(failure);
     const store = useMemberStore();
     const current = [{ memberId: 2, lastName: "佐藤", firstName: "花子" }];
     store.memberListInfo = current;
-    vi.spyOn(console, "error").mockImplementation(() => {});
 
-    await expect(store.deleteMemberList([2])).resolves.toBeNull();
+    await expect(store.deleteMemberList([2])).rejects.toBe(failure);
+    expect(store.isLoading).toBe(false);
     expect(store.memberListInfo).toEqual(current);
   });
 

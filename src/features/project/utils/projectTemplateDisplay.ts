@@ -54,7 +54,7 @@ export const formatProjectTemplateTaskTitle = (tasks: readonly ProjectTemplateTa
 };
 
 /**
- * Template TaskのBoard列コード（`TODO`等）を、Templateに保存した列名で示す（改善提案 1-14）。
+ * Template TaskのBoard列コード（`TODO`等）を、Templateに保存した列名で示す（利用者はコードを知らないため）。
  *
  * @param statusCode Template TaskのBoard列コード
  * @param statuses Templateに保存したBoard列
@@ -66,7 +66,7 @@ export const resolveProjectTemplateStatusName = (
 ): string => statuses.find((status) => status.statusCode === statusCode)?.name ?? statusCode;
 
 /**
- * Template Taskの担当slotのキー（`OWNER_1`等）を、slotの表示名で示す（改善提案 1-14）。
+ * Template Taskの担当slotのキー（`OWNER_1`等）を、slotの表示名で示す。
  *
  * @param slotKey Template Taskの担当slotのキー
  * @param memberSlots Templateに保存したmember slot
@@ -78,7 +78,7 @@ export const resolveProjectTemplateSlotName = (
 ): string => memberSlots.find((slot) => slot.slotKey === slotKey)?.displayName ?? slotKey;
 
 /**
- * Template Taskの親を、snapshot IDではなく親TaskのWBS番号と件名で示す（改善提案 1-14）。
+ * Template Taskの親を、snapshot IDではなく親TaskのWBS番号と件名で示す。
  *
  * @param parentProjectTemplateTaskId 親のsnapshot Task ID。最上位はnull
  * @param tasks 同じTemplateのTask

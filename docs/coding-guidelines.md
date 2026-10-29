@@ -11,6 +11,24 @@
 - 複数機能で共用するものだけを`shared`へ置き、`shared`から個別featureへ依存させない。
 - 旧タスク管理製品から移植したコード・文言に含まれていた名称を、Frontendのソース・テスト・リポジトリ内資料へ再混入させない。比較調査で必要な場合はリポジトリ外の資料フォルダで管理する。
 
+## 名前
+
+コードだけを読んだ人が、何の値かを推測せずに分かる名前にする。名前で伝わることはコメントに書かない。
+
+- 変数・引数・関数は単語を省略しない。`v`→`value`、`res`→`response`、`req`→`request`、`idx`→`index`、`cnt`→`count`、`el`→`element`、`cb`→`callback`、`opts`→`options`。`tmp`・`obj`・`val`・`data`・`info`のように中身を表さない名前は、中身を表す名前（`assigneeAccountId`、`remainingMinutes`）にする。
+- 1文字の名前は、数行で終わるコールバックで、型と文脈から明らかな場合だけ許す（要素を表す単語を使えるならそちらを使う。`tasks.map((task) => ...)`）。`catch`の`error`も省略しない。
+- 関数は動詞から始める。値を返すだけの関数も`buildXxx`・`resolveXxx`・`findXxx`等、何をするかが分かる名前にする。
+- 中身がProjectのTaskであるものに`Todo`という名前を新しく付けない。`Todo`は旧Todo画面・API（`/api/v1/todo`）の互換処理だけに使う。
+- コメントや文章で旧Todoを指すときは`Todo`と書き、大文字の`TODO`（未完了の作業の印と区別できなくなる）を使わない。
+
+## 定数とリテラル
+
+- 同じ意味の値を2か所以上で使う場合は定数にし、定義は1か所にまとめる（例: 入力の上限文字数、permissionコード、route名、フォーカスの戻し先の属性名）。featureごとに同じ値の定数を定義し直さない。
+- 入力の上限はBackendの`@Size`等と同じ値を1つの定数にし、検証とエラー文言の両方でその定数を使う。
+- 定数を定義したファイルで、同じ値をリテラルのまま書かない。
+- テストのために本体の定数・関数をexportしない。テストでは本体の定数に数値を足した値（`MAX_LENGTH + 1`）を書かず、テスト側に意味の分かる値を置く。
+- 定数のJSDocには、値の業務上の意味（「Backendと同じ、Task名の上限」）を書く。
+
 ## JSDoc
 
 次の要素には、名前だけでは分からない責務と契約をJSDocで記載する。
@@ -39,9 +57,24 @@ JSDocはチャット、口頭説明、Gitのコミットメッセージがなく
 - API関数: HTTPメソッドと用途、認証・CSRFの前提、Request／Responseの意味、204・空配列・nullの扱い、呼出側が区別すべき失敗条件。単純な共通Client委譲では、パスをコードから読める場合に重複記載しなくてよい。
 - Store action・utility: 変更する共有状態、永続化の有無、再実行時の契約、外部状態や時刻への依存。
 - type・interface・property: Backend項目との対応、コード体系、日時・数値の単位、null・未指定の意味、画面専用かAPI境界か。名称とTypeScript型だけで明白なpropertyへ重複説明は書かない。
-- 互換処理・回避策: 守っているBackend／ブラウザ仕様、Vue・Pinia・Router・外部ライブラリの制約、削除できる条件。根拠が設計資料にある場合は、リポジトリ相対パスと見出しを記載する。
+- 互換処理・回避策: 守っているBackend／ブラウザ仕様、Vue・Pinia・Router・外部ライブラリの制約、削除できる条件。根拠が設計資料にある場合は、リポジトリ相対パスと**見出しの文言**を記載する（`§5`のような番号だけで示さない）。
 
 「上記の対応」「例の仕様」「念のため」「一時的に」のように参照先や終了条件が分からない表現は使わない。確定した契約と推測を混ぜず、未確定事項はIssueまたは計画資料へ移す。JSDocの量や行数を増やすこと自体は品質ではない。
+
+### 資料を知らない人が読めるコメントにする
+
+JSDocとコメントは、リポジトリの外の資料や過去の会話を知らない人が読んで、業務上の意味と理由が分かる文で書く。次のものは書かない。
+
+- リポジトリの外にある資料の番号・略称：改善提案の番号（「改善提案 2-9」）、動作確認の項目番号（「動作確認/14_MyTasks G-4」「A-13」）、「BE資料」「§10-3」、開発の段階名（「Stage 10」）、設計書のシート名・番号。どの資料のどこかが分からず、資料が変わると意味を失う。
+- 経緯：「以前は〜だった」「旧画面では〜」「移行前と同じ」「Vuetifyと同じ」。今の仕様と、その理由だけを書く。経緯はコミットメッセージとPR説明文に書く。
+- 「暫定」「仮」「未確定」：確定させてから書く。決まっていないことは課題の資料に書き、コードには今の動きを確定した仕様として書く。
+
+```ts
+// 悪い例: 動作確認/14_MyTasks G-4 の対応（改善提案 1-2）。
+// 良い例: 完了したTaskの「完了」ボタンは一覧から消えるため、同じ位置に来たTaskのボタンへフォーカスを戻す。
+```
+
+repository conventionのVitestで、`src`と`test`に資料番号の書き方（「改善提案 n」「動作確認/」「BE資料」「Stage nnX」「§n」）が増えていないことを検査する。
 
 ```ts
 /**
@@ -67,7 +100,7 @@ export const fetchSessionUser = async (): Promise<SessionUserResponse | null> =>
 - コメントだけを別の場所へ残さず、説明対象の分岐・呼出し・設定の直前へ置く。離れた設計判断は資料へ記載し、コメントから資料を参照する。
 - `loading = true`に「ローディングを開始」、`if`に「条件分岐」等の逐語的コメントは追加しない。
 - コメントで複雑さを隠さず、先に関数抽出、型定義、命名改善を検討する。
-- `TODO`、`FIXME`を残す場合は、解消条件と参照するIssueまたは計画資料を併記する。
+- `TODO`、`FIXME`はコードに残さない。未解決の作業は課題の資料（Issue・計画資料）に書き、解決してからレビューに出す。確認待ちの事項は確認してからコードに反映する。
 - コメントアウトした旧実装、デバッグ用`console.log`を残さない。変更履歴はGitで管理する。
 
 ```ts
@@ -94,11 +127,18 @@ await authStore.restoreSession();
 
 - 全APIリクエストで`credentials: "include"`を使用する。
 - 更新系APIでは共通HTTPクライアントからCSRFヘッダーを設定する。
-- 401は認証状態を破棄してログインへ戻し、403は権限不足として区別する。
+- 401は認証状態を破棄してログインへ戻し、403は権限不足として区別する。401の判定は`shared/utils/apiError`の`isUnauthorizedApiError`、ログインへ戻す手順（画面の片付け → Session破棄 → Login）は`features/auth/composables/useSessionExpiry`の`expireSession`を使い、画面ごとに書かない。
+- featureのAPI例外は`shared/utils/apiError`の`ApiError`を継承し、名前とAPIの表示名だけを渡す。
 - Session ID、OAuth token、パスワードをconsole、URL、Web Storageへ出さない。
 - APIのRequest／Response変更はBackendのOpenAPI定義と照合する。
 
 ## 検証とレビュー
+
+### templateの型検査（`tsconfig.vue.json`）
+
+- `vueCompilerOptions`で`checkUnknownComponents`・`checkUnknownDirectives`を有効にし、登録していない部品・ディレクティブ（名前の書き間違い等）を`npm run typecheck`で検出する。
+- `strictTemplates`（`checkUnknownProps`・`checkUnknownEvents`を含む）は使わない。部品へ付けて根の要素へ渡す`data-*`・`aria-*`属性やネイティブのeventまで誤りになり、型の宣言で許そうとすると別の属性まで誤りになるため（vue-tsc 3.x・Nuxt UI 4で確認）。
+  部品へ渡すpropの名前の誤りは、部品のテストとE2Eで確かめる。
 
 ### Vitestの方針
 
@@ -110,6 +150,10 @@ await authStore.restoreSession();
 - テストを通すために実装の型を弱めたり、実際には発生しない保証をmockへ追加したりしない。失敗したテストが仕様誤認や実装不備を示す場合は、原因を修正して回帰テストとして残す。
 - 時刻、乱数、通信、Router、Store等の外部要因はテスト境界で固定し、テストの実行順へ依存させない。`beforeEach`でmockと共有状態を初期化する。
 - DOM描画だけを重複確認するテストより、画面composableの業務分岐とAPI境界を優先する。Component固有の表示制御に不具合リスクがある場合はComponentテストを追加する。
+- Componentテストは、templateの式にしかない表示制御（参照のみで操作を出さない、ボタンの有効・無効、上限の案内）と、props・emitのつなぎを確かめる。
+  ファイルの先頭に`// @vitest-environment happy-dom`を書き、`test/ut/support/mountWithUi`でmountする（Nuxt UI・Pinia・Routerはアプリと同じ）。
+  APIはmoduleをmockし、`vue-router`はmockしない（Nuxt UIの部品が`useRoute`を使うため）。画面全体（Board・WBS等）はmountせず、composableのテストとE2Eに任せる。
+- フォーカスの戻し先の`data-*`属性は、`test/ut/architecture/focusControlContract.spec.js`がcomposableの`…_CONTROL`とtemplateの一致を確かめる。新しい`…_CONTROL`を作ったら、このテストへ足す。
 - Backend変更を伴う場合はFrontendのVitestだけで完了せず、Backendの該当JUnitと`./mvnw verify`も成功させる。
 - repository conventionのVitestでexportedな型・関数とAPI境界の関数にJSDocがあることを構文解析する。composable内部の非同期副作用、認証、CSRF、変換等は自動検査だけに依存せずレビューする。
 - 境界値、状態遷移、API Request mapping、競合回復等の高リスクな変更では、変更単位ごとに代表条件を1件以上選び、比較演算子、上限値、code mapping、guard等を一時的に誤らせる手動mutation probeを行う。対象のVitestまたはPlaywrightが意図したassertionで失敗することを確認し、故意変更を復元して同じtestの成功まで確認する。
@@ -126,6 +170,11 @@ npm run build
 - [ ] JSDocだけで責務、前提、戻り値、主要な副作用、失敗条件を判断でき、チャット履歴や曖昧な指示語へ依存していない。
 - [ ] 非自明な副作用・処理順・互換対応へ、理由が分かる`//`コメントを書いている。
 - [ ] 実装の逐語訳、推測、不要・古いコメント、コメントアウトした旧コードを残していない。
+- [ ] コメントに資料の番号（改善提案・動作確認・BE資料・Stage）や経緯を書いていない。業務上の意味と理由を書いている。
+- [ ] 略した変数名・関数名を使っていない。
+- [ ] 同じ意味の値を定数にし、定数とリテラルを混在させていない。テストで本体の定数に数値を足していない。
+- [ ] `TODO`・`FIXME`・暫定のコメントを残していない。
+- [ ] 指摘を受けた箇所だけでなく、同じ型の書き方をsrc・test全体で探して直している。
 - [ ] Session、CSRF、秘密情報を安全に扱っている。
 - [ ] 正常系と実在する異常系・境界値をVitestで検証し、発見した不具合の回帰テストを残している。
 - [ ] 高リスクな規則では代表的な故意変更を対象テストが検知し、復元後も成功することを確認している。

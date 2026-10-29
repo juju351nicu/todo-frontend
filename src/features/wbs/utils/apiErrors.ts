@@ -6,7 +6,7 @@ import { resolveApiErrorMessages } from "@/shared/utils/apiError";
  * WBS APIでFrontendが表示契約を持つerror code集合。
  * 共通Bean Validation、WBS業務例外、未検出、帳票生成失敗を含む。
  */
-export const WBS_ERROR_CODES: ReadonlySet<string> = new Set([
+const WBS_ERROR_CODES: ReadonlySet<string> = new Set([
   "INVALID_REQUEST_BODY",
   "PROJECT_NOT_FOUND",
   "TASK_NOT_FOUND",

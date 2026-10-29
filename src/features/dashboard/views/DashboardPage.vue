@@ -17,7 +17,7 @@ import {
   formatNotificationOccurredAt,
   getNotificationEventIcon,
 } from "@/features/notification/utils/notification";
-import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import TaskPriorityBadge from "@/features/task/components/TaskPriorityBadge.vue";
 import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
 import {
   formatEarnedValueMinutes,
@@ -58,7 +58,7 @@ const {
 
 onBeforeMount(loadDashboard);
 
-// 移行前のv-card-title直下のv-dividerと同じく、見出しと本文を線で区切り、本文の上余白を残す。
+// 見出しと本文を線で区切り、本文の上余白を残す（cardの見出しと本文の境目を分かりやすくするため）。
 const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4" };
 </script>
 
@@ -140,7 +140,7 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
                   class="flex w-full items-start px-4 py-2 text-start hover:bg-elevated"
                   @click="openTask(task)"
                 >
-                  <TodoPriorityBadge :priority="task.priority" size="xs" class="me-3 mt-0.5" />
+                  <TaskPriorityBadge :priority="task.priority" size="xs" class="me-3 mt-0.5" />
                   <span class="min-w-0 flex-1">
                     <span class="block text-base font-medium">{{ task.title }}</span>
                     <span class="line-clamp-2 text-sm text-muted">

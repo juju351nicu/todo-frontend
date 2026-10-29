@@ -79,7 +79,7 @@ export const useTaskWorkLogs = (
       context.canEditWbs.value &&
       workLogTask.value !== null &&
       (canManageAnyWorkLog.value ||
-        workLogTask.value.assigneeAccountId === userStore.memberId)
+        workLogTask.value.assigneeAccountId === userStore.accountId)
   );
   /**
    * 作業者の候補。Project管理権限がなければ本人だけ。
@@ -89,7 +89,7 @@ export const useTaskWorkLogs = (
     buildProjectMemberOptions(
       (context.project.value?.members ?? []).filter(
         (member) =>
-          canManageAnyWorkLog.value || member.accountId === userStore.memberId
+          canManageAnyWorkLog.value || member.accountId === userStore.accountId
       )
     )
   );
@@ -190,7 +190,7 @@ export const useTaskWorkLogs = (
   const canMutateWorkLog = (workLog: TaskWorkLog): boolean =>
     canEditSelectedWorkLogTask.value &&
     (canManageAnyWorkLog.value ||
-      workLog.workerAccountId === userStore.memberId);
+      workLog.workerAccountId === userStore.accountId);
 
   /**
    * 取得済み日別実績を複製し、取得時点versionを保持した編集状態へ移す。

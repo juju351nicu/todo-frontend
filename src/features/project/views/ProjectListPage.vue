@@ -38,7 +38,7 @@ onBeforeMount(initialize);
           <UIcon name="i-mdi-view-dashboard-outline" class="size-6" />
           Project一覧
           <SearchField v-model="searchText" label="Projectを検索" class="ms-auto w-80" />
-          <!-- Templateを使わずにProjectを作る（改善提案 2-13）。Projectがない利用者も最初のProjectを作れる。 -->
+          <!-- Templateを使わずにProjectを作る。Projectがない利用者も最初のProjectを作れる。 -->
           <UButton v-if="canCreateProject" color="primary" icon="i-mdi-folder-plus-outline" @click="openCreateDialog">
             Projectを作成
           </UButton>

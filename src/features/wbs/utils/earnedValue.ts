@@ -66,8 +66,8 @@ export const getEarnedValueVarianceColor = (
 };
 
 /**
- * EVMを集計する前（結果がなく、エラーも出ていないとき）に出す案内を選ぶ（改善提案 1-21）。
- * 以前はbaselineの有無にかかわらず「baselineがなければ先に保存」と出していた。
+ * EVMを集計する前（結果がなく、エラーも出ていないとき）に出す案内を選ぶ。
+ * baselineの有無で次にすることが違うため、状況に合った案内だけを出す。
  *
  * @param state 有効なbaselineの有無と、利用者がbaselineを保存できるか
  * @returns 案内文

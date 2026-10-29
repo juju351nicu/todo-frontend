@@ -3,6 +3,14 @@ import { toRef } from "vue";
 
 import type { ProjectMember, TaskStatus } from "@/features/project/types/project";
 import { useTaskRecurrenceDialog } from "@/features/task/composables/useTaskRecurrenceDialog";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  TASK_DETAIL_MAX_LENGTH,
+  TASK_DUE_OFFSET_MAX_DAYS,
+  TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS,
+  TASK_RECURRENCE_INTERVAL_MAX,
+  TASK_TITLE_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
 import {
   formatRecurrenceDateTime,
@@ -174,15 +182,15 @@ const CREATION_MODE_OPTIONS = [
             <template v-if="!isCreating || creationMode === 'DIRECT'">
               <div class="relative">
                 <UFormField label="Taskタイトル">
-                  <UInput v-model="form.title" :maxlength="45" :disabled="isMutating" class="w-full" />
+                  <UInput v-model="form.title" :maxlength="TASK_TITLE_MAX_LENGTH" :disabled="isMutating" class="w-full" />
                 </UFormField>
-                <FieldCounter :value="form.title" :max="45" />
+                <FieldCounter :value="form.title" :max="TASK_TITLE_MAX_LENGTH" />
               </div>
               <div class="relative">
                 <UFormField label="Task詳細">
-                  <UTextarea v-model="form.detail" :maxlength="1000" :rows="3" :disabled="isMutating" class="w-full" />
+                  <UTextarea v-model="form.detail" :maxlength="TASK_DETAIL_MAX_LENGTH" :rows="3" :disabled="isMutating" class="w-full" />
                 </UFormField>
-                <FieldCounter :value="form.detail" :max="1000" />
+                <FieldCounter :value="form.detail" :max="TASK_DETAIL_MAX_LENGTH" />
               </div>
               <div class="-m-3 flex flex-wrap">
                 <div class="w-full p-3 sm:w-1/3">
@@ -204,7 +212,7 @@ const CREATION_MODE_OPTIONS = [
                 </div>
                 <div class="w-full p-3 sm:w-1/3">
                   <UFormField label="期限オフセット（日）">
-                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" max="365" :disabled="isMutating" class="w-full" />
+                    <UInput v-model.number="form.dueOffsetDays" type="number" min="0" :max="TASK_DUE_OFFSET_MAX_DAYS" :disabled="isMutating" class="w-full" />
                   </UFormField>
                 </div>
                 <div class="w-full p-3 sm:w-1/2">
@@ -234,8 +242,8 @@ const CREATION_MODE_OPTIONS = [
                   </UFormField>
                 </div>
               </div>
-              <UFormField label="チェック項目" help="入力後にEnterで項目を追加します（最大50件）" class="mb-3">
-                <UInputTags v-model="form.checklistContents" :max="50" :disabled="isMutating" class="w-full" />
+              <UFormField label="チェック項目" :help="`入力後にEnterで項目を追加します（最大${CHECKLIST_ITEM_MAX_COUNT}件）`" class="mb-3">
+                <UInputTags v-model="form.checklistContents" :max="CHECKLIST_ITEM_MAX_COUNT" :disabled="isMutating" class="w-full" />
               </UFormField>
             </template>
 
@@ -312,7 +320,7 @@ const CREATION_MODE_OPTIONS = [
                     v-model.number="form.intervalCount"
                     type="number"
                     min="1"
-                    :max="form.frequency === 'DAILY' ? 365 : form.frequency === 'WEEKLY' ? 52 : 24"
+                    :max="TASK_RECURRENCE_INTERVAL_MAX[form.frequency]"
                     :disabled="isMutating"
                     class="w-full"
                   />
@@ -343,7 +351,7 @@ const CREATION_MODE_OPTIONS = [
               </div>
               <div class="w-full p-3 sm:w-1/3">
                 <UFormField label="生成先行日数" help="発生日の何日前にTaskを作るか">
-                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" max="90" :disabled="isMutating" class="w-full" />
+                  <UInput v-model.number="form.generationLeadDays" type="number" min="0" :max="TASK_RECURRENCE_GENERATION_LEAD_MAX_DAYS" :disabled="isMutating" class="w-full" />
                 </UFormField>
               </div>
               <div v-if="isEditing" class="w-full p-3 sm:w-1/3">

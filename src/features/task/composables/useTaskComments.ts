@@ -1,10 +1,12 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import TaskCommentApi, {
   TaskCommentApiError,
 } from "@/features/task/api/taskCommentApi";
+import { TASK_COMMENT_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskComment,
   TaskCommentCreateRequest,
@@ -15,11 +17,9 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
-
-/** コメント本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
-export const TASK_COMMENT_MAX_LENGTH = 2000;
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
 /**
  * 投稿欄（`TaskCommentsPanel.vue`の「コメントを追加」）に付ける`data-comment-control`属性の値。
@@ -34,12 +34,11 @@ export const COMMENT_COMPOSER_CONTROL = "composer";
  * @param commentId コメントID
  * @returns `"{commentId}:edit"`形式の属性値
  */
-export const commentEditControlKey = (commentId: number): string =>
+export const buildCommentEditControlKey = (commentId: number): string =>
   `${commentId}:edit`;
 
 /** `data-comment-control`属性の値から、その要素を探すselectorを作る。 */
-const commentControlSelector = (key: string): string =>
-  `[data-comment-control="${key}"]`;
+const buildCommentControlSelector = createDataAttributeSelector("data-comment-control");
 
 /**
  * trim後1文字以上、最大文字数以下のコメント本文か。
@@ -79,6 +78,7 @@ export const useTaskComments = (
 ) => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** 投稿時刻の古い順のコメント。更新APIの確定Responseで置き換える。 */
   const comments = ref<TaskComment[]>([]);
@@ -95,6 +95,11 @@ export const useTaskComments = (
   /** パネル内に緑で出す文言。出さないときは空文字。 */
   const successMessage = ref("");
   const isLoading = ref(false);
+  /**
+   * コメント一覧の読込の順番。Task詳細Dialogを開いたまま別のTaskへ切り替えたとき、
+   * 前のTaskの一覧が後から届いて今のTaskの一覧を上書きしないよう、最後に始めた読込だけを反映する。
+   */
+  const listRequests = createLatestRequestTracker();
   const isSubmitting = ref(false);
   const isUpdating = ref(false);
   const isDeleting = ref(false);
@@ -145,20 +150,12 @@ export const useTaskComments = (
     fallback: string,
     forbidden: string = DISPLAY_MESSAGES.task.comments.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskCommentApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.comments.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_COMMENT_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskCommentApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.comments.resourceNotFound,
+      knownErrorCodes: TASK_COMMENT_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 編集・削除対象を破棄し、取得前versionを再利用できない状態へ戻す。 */
@@ -181,8 +178,7 @@ export const useTaskComments = (
     comments.value = [];
     clearMutationDrafts();
     clearFeedback();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -196,15 +192,23 @@ export const useTaskComments = (
       comments.value = [];
       return false;
     }
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      comments.value = await TaskCommentApi.findComments(
+      const loadedComments = await TaskCommentApi.findComments(
         projectId.value,
         taskId.value
       );
+      if (!isLatestRequest()) {
+        return false;
+      }
+      comments.value = loadedComments;
       return true;
     } catch (error: unknown) {
+      if (!isLatestRequest()) {
+        return false;
+      }
       if (!(await handleUnauthorized(error))) {
         if (
           error instanceof TaskCommentApiError &&
@@ -221,7 +225,9 @@ export const useTaskComments = (
       }
       return false;
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -247,19 +253,24 @@ export const useTaskComments = (
     }
     const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      comments.value = await TaskCommentApi.findComments(
+      const loadedComments = await TaskCommentApi.findComments(
         currentProjectId,
         currentTaskId
       );
+      if (!isLatestRequest()) {
+        return;
+      }
+      comments.value = loadedComments;
       errorMessages.value = [
         ...mutationMessages,
         DISPLAY_MESSAGES.task.comments.conflictReloaded,
       ];
     } catch (reloadError: unknown) {
-      if (await handleUnauthorized(reloadError)) {
+      if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
       }
       if (
@@ -281,7 +292,9 @@ export const useTaskComments = (
         DISPLAY_MESSAGES.task.comments.reloadFailed,
       ];
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -314,8 +327,8 @@ export const useTaskComments = (
   /** 現在のSession利用者が対象コメントの投稿者本人で、参照専用でないか判定する。 */
   const canModifyComment = (comment: TaskComment): boolean =>
     !disabled.value &&
-    userStore.memberId !== null &&
-    comment.authorAccountId === userStore.memberId;
+    userStore.accountId !== null &&
+    comment.authorAccountId === userStore.accountId;
 
   /**
    * 本文をtrimして投稿し、Backendが返したコメントを一覧の末尾へ追加する。成功したら投稿欄を空にする。
@@ -351,7 +364,7 @@ export const useTaskComments = (
       isSubmitting.value = false;
     }
     // 送信中は投稿欄と投稿ボタンをdisabledにするためフォーカスが外れる。続けて書けるよう投稿欄へ戻す。
-    await focusFirstEnabledElement([commentControlSelector(COMMENT_COMPOSER_CONTROL)]);
+    await focusFirstEnabledElement([buildCommentControlSelector(COMMENT_COMPOSER_CONTROL)]);
   };
 
   /** 投稿者本人のコメント本文を編集状態へ切り替える。削除確認中なら閉じる。 */
@@ -379,7 +392,7 @@ export const useTaskComments = (
     const commentId = editingCommentId.value;
     cancelEditing();
     if (commentId !== null) {
-      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(commentId))]);
     }
   };
 
@@ -429,7 +442,7 @@ export const useTaskComments = (
     }
     // 更新に成功して編集欄が閉じたときだけ編集ボタンへ戻す。失敗して編集欄が残る場合は編集欄のフォーカスを奪わない。
     if (editingCommentId.value === null) {
-      await focusFirstEnabledElement([commentControlSelector(commentEditControlKey(comment.commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(comment.commentId))]);
     }
   };
 

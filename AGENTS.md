@@ -8,6 +8,7 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 - 依存方向は`view -> composable -> store/api -> shared/api`とし、ComponentからBackend APIを直接呼ばない。
 - 画面の状態と操作は、最初は1画面につき1つの`useXxxPage`へまとめる。再利用可能な独立責務が明確になった場合だけ分割する。
 - Backend認証はSpring Session JDBCの`JSESSIONID`とCSRFを使用する。JWT、Session ID、OAuth token、パスワードをWeb Storageやログへ保存しない。
+- 変数・引数・関数名は略さず、同じ意味の値（入力の上限、permissionコード、route名等）は1か所に定数として定義する（`docs/coding-guidelines.md`「名前」「定数とリテラル」）。
 - BackendのRequest／Responseとの変換を境界へ集約し、画面内にsnake_case変換や既定値処理を散らさない。
 - 旧タスク管理製品から移植したコード・文言に含まれていた名称はFrontendへ再混入させず、比較調査はリポジトリ外の資料フォルダで行う。
 
@@ -33,6 +34,7 @@ Codex等のAIコーディングツールは、変更前にこのファイル、`
 - `//`は「何をしているか」の言い換えではなく、互換性、Vueのreactivity／lifecycle、処理順、セキュリティ、外部ライブラリ制約等の「なぜ」を直前に記載する。
 - 自明な代入、条件分岐、型名の繰り返しコメントは追加しない。コメントアウトした旧コードは残さない。
 - コメント数を増やすこと自体を目的にしない。命名、型、computed、function抽出で明確になる場合はコードを改善し、なお残る契約・判断理由だけをコメントする。
+- コメントに、リポジトリの外の資料の番号（改善提案・動作確認の項目番号、「BE資料」、「§n」、「Stage」名）、「以前は〜」「移行前と同じ」等の経緯、「暫定」、`TODO`を書かない。業務上の意味と理由を文で書き、経緯はコミットメッセージとPR説明文に書く（`docs/coding-guidelines.md`「資料を知らない人が読めるコメントにする」）。 repository conventionのVitestが既存件数から増えていないことを検査する。
 - 実装変更でコメントが古くなった場合は、同じ変更で更新または削除する。
 - 作業完了前に、新規・変更したexport、composable、API、Store action、業務上の型を見直し、必要なJSDocと`//`が不足していないか、不要・陳腐化したコメントが残っていないか確認する。
 

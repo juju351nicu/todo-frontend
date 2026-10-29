@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectTemplateApiError } from "@/features/project/api/projectTemplateApi";
 import {
   PROJECT_TEMPLATE_CONTROL,
-  templateItemControlKey,
+  buildTemplateItemControlKey,
   useProjectTemplatePage,
 } from "@/features/project/composables/useProjectTemplatePage";
 
@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   },
   router: { push: vi.fn() },
   userStore: {
-    memberId: 7,
+    accountId: 7,
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
   },
@@ -97,7 +97,7 @@ describe("useProjectTemplatePage", () => {
     mocks.permissions.add("PROJECT_READ");
     mocks.permissions.add("PROJECT_CREATE");
     mocks.permissions.add("PROJECT_UPDATE");
-    mocks.userStore.memberId = 7;
+    mocks.userStore.accountId = 7;
     mocks.router.push.mockResolvedValue(undefined);
     mocks.projectTemplateApi.findOwnTemplates.mockResolvedValue([
       structuredClone(summary),
@@ -110,6 +110,19 @@ describe("useProjectTemplatePage", () => {
     );
     mocks.projectTemplateApi.archive.mockResolvedValue(undefined);
     mocks.projectTemplateApi.apply.mockResolvedValue({ projectId: 99 });
+  });
+
+  it("Project開始日の初期値は、端末のタイムゾーンによらず業務日（Asia/Tokyo）の今日にする", () => {
+    // 日本時間では10月30日0時30分、UTCではまだ10月29日。端末のタイムゾーンで「今日」を決めると1日ずれる。
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-29T15:30:00Z"));
+    try {
+      const page = useProjectTemplatePage();
+
+      expect(page.applyForm.value.projectStartDate).toBe("2026-10-30");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("初期表示で本人所有一覧と先頭snapshot詳細を取得する", async () => {
@@ -415,7 +428,7 @@ describe("useProjectTemplatePage", () => {
 
       await page.archiveTemplate();
 
-      expect(focused).toEqual([templateItemControlKey(82)]);
+      expect(focused).toEqual([buildTemplateItemControlKey(82)]);
     });
   });
 

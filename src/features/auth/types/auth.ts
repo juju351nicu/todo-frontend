@@ -44,11 +44,6 @@ export const ATTENDANCE_READ_PERMISSION_CODES = [
   "ATTENDANCE_READ_OWN",
 ] as const satisfies readonly PermissionCode[];
 
-/** 本人の出退勤・休憩打刻に必要なpermission。 */
-export const ATTENDANCE_WRITE_PERMISSION_CODES = [
-  "ATTENDANCE_WRITE_OWN",
-] as const satisfies readonly PermissionCode[];
-
 /** 管理者向け勤怠月一覧・詳細画面の参照に必要なpermission。 */
 export const ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES = [
   "ATTENDANCE_READ_ALL",

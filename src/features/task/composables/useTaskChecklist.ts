@@ -1,24 +1,23 @@
 import { computed, ref, watch, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import TaskChecklistApi, {
   TaskChecklistApiError,
 } from "@/features/task/api/taskChecklistApi";
+import {
+  CHECKLIST_ITEM_MAX_COUNT,
+  CHECKLIST_ITEM_MAX_LENGTH,
+} from "@/features/task/constants/taskLimits";
 import type { TaskChecklistItem } from "@/features/task/types/taskChecklist";
 import {
   TASK_CHECKLIST_ERROR_CODES,
   TASK_RECOVERY_PRIORITY_STATUSES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { resolveApiErrorMessages } from "@/shared/utils/apiError";
+import { resolveStandardErrorMessages } from "@/shared/utils/apiError";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
-
-/** チェック項目本文の最大文字数（trim後）。Backendの入力制約と同じ値。 */
-export const CHECKLIST_ITEM_MAX_LENGTH = 255;
-
-/** 1 Taskに登録できるチェック項目の最大件数。Backendの入力制約と同じ値。 */
-export const CHECKLIST_ITEM_MAX_COUNT = 50;
+import { createLatestRequestTracker } from "@/shared/utils/latestRequest";
 
 /**
  * 操作後にフォーカスを戻すチェック項目の部品。
@@ -34,7 +33,7 @@ export type ChecklistControl = "toggle" | "move-up" | "move-down" | "edit";
  * @param control 部品の種類
  * @returns `"{itemId}:{control}"`形式の属性値
  */
-export const checklistControlKey = (
+export const buildChecklistControlKey = (
   itemId: number,
   control: ChecklistControl
 ): string => `${itemId}:${control}`;
@@ -78,7 +77,7 @@ export const useTaskChecklist = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   /** Backendのposition順のチェック項目。更新APIの確定Responseで置き換える。 */
   const items = ref<TaskChecklistItem[]>([]);
@@ -95,6 +94,11 @@ export const useTaskChecklist = (
   /** パネル内に緑で出す文言。出さないときは空文字。 */
   const successMessage = ref("");
   const isLoading = ref(false);
+  /**
+   * checklist一覧の読込の順番。Task詳細Dialogを開いたまま別のTaskへ切り替えたとき、
+   * 前のTaskの一覧が後から届いて今のTaskの一覧を上書きしないよう、最後に始めた読込だけを反映する。
+   */
+  const listRequests = createLatestRequestTracker();
   const isCreating = ref(false);
   const isUpdating = ref(false);
   const isDeleting = ref(false);
@@ -161,20 +165,12 @@ export const useTaskChecklist = (
     fallback: string,
     forbidden: string = DISPLAY_MESSAGES.task.checklist.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskChecklistApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.checklist.resourceNotFound];
-    }
-    return resolveApiErrorMessages(
-      error.errorResponse,
-      TASK_CHECKLIST_ERROR_CODES,
-      fallback
-    );
+    return resolveStandardErrorMessages(error, TaskChecklistApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.checklist.resourceNotFound,
+      knownErrorCodes: TASK_CHECKLIST_ERROR_CODES,
+      fallback,
+    });
   };
 
   /** 編集・削除対象を破棄し、古いversionを再利用できない状態へ戻す。 */
@@ -197,8 +193,7 @@ export const useTaskChecklist = (
     items.value = [];
     clearMutationDrafts();
     clearFeedback();
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -212,15 +207,23 @@ export const useTaskChecklist = (
       items.value = [];
       return false;
     }
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      items.value = await TaskChecklistApi.findItems(
+      const loadedItems = await TaskChecklistApi.findItems(
         projectId.value,
         taskId.value
       );
+      if (!isLatestRequest()) {
+        return false;
+      }
+      items.value = loadedItems;
       return true;
     } catch (error: unknown) {
+      if (!isLatestRequest()) {
+        return false;
+      }
       if (!(await handleUnauthorized(error))) {
         if (
           error instanceof TaskChecklistApiError &&
@@ -237,7 +240,9 @@ export const useTaskChecklist = (
       }
       return false;
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -263,19 +268,24 @@ export const useTaskChecklist = (
     }
     const mutationMessages = getErrorMessages(error, fallback);
     clearMutationDrafts();
+    const isLatestRequest = listRequests.begin();
     isLoading.value = true;
     clearFeedback();
     try {
-      items.value = await TaskChecklistApi.findItems(
+      const loadedItems = await TaskChecklistApi.findItems(
         currentProjectId,
         currentTaskId
       );
+      if (!isLatestRequest()) {
+        return;
+      }
+      items.value = loadedItems;
       errorMessages.value = [
         ...mutationMessages,
         DISPLAY_MESSAGES.task.checklist.conflictReloaded,
       ];
     } catch (reloadError: unknown) {
-      if (await handleUnauthorized(reloadError)) {
+      if (!isLatestRequest() || (await handleUnauthorized(reloadError))) {
         return;
       }
       if (
@@ -297,7 +307,9 @@ export const useTaskChecklist = (
         DISPLAY_MESSAGES.task.checklist.reloadFailed,
       ];
     } finally {
-      isLoading.value = false;
+      if (isLatestRequest()) {
+        isLoading.value = false;
+      }
     }
   };
 
@@ -341,7 +353,7 @@ export const useTaskChecklist = (
     focusFirstEnabledElement(
       candidates.map(
         (control) =>
-          `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
+          `[data-checklist-control="${buildChecklistControlKey(itemId, control)}"]`
       )
     );
 

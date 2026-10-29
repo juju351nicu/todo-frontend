@@ -1,6 +1,6 @@
 import type { RowSelectionState } from "@tanstack/vue-table";
 
-/** 全件表示を表す表示件数。Vuetify v-data-tableの`items-per-page="-1"`と同じ値。 */
+/** 全件表示を表す表示件数（表示件数の選択肢「All」の値）。 */
 export const ALL_ITEMS_PER_PAGE = -1;
 
 /**
@@ -14,7 +14,7 @@ export const resolvePageSize = (itemsPerPage: number, totalCount: number): numbe
   itemsPerPage === ALL_ITEMS_PER_PAGE ? Math.max(totalCount, 1) : Math.max(itemsPerPage, 1);
 
 /**
- * Vuetify v-data-tableのfooterと同じ「開始-終了 of 全件」表記を作る。
+ * 一覧表の下に出す「開始-終了 of 全件」の表記を作る。
  *
  * @param pageIndex 0始まりのページ番号
  * @param pageSize 1ページの件数

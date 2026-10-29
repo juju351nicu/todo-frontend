@@ -34,7 +34,7 @@ describe("User store", () => {
 
     expect(AuthApi.getSession).toHaveBeenCalledOnce();
     expect(store.isAuthenticated).toBe(true);
-    expect(store.memberId).toBe(1);
+    expect(store.accountId).toBe(1);
     expect(store.hasRole("SYSTEM_ADMIN")).toBe(true);
     expect(store.hasPermission("TASK_READ_ALL")).toBe(true);
     expect(store.hasAnyPermission(["TASK_WRITE_ALL", "TASK_WRITE_OWN"])).toBe(
@@ -78,6 +78,6 @@ describe("User store", () => {
 
     expect(AuthApi.logout).toHaveBeenCalledOnce();
     expect(store.isAuthenticated).toBe(false);
-    expect(store.memberId).toBeNull();
+    expect(store.accountId).toBeNull();
   });
 });

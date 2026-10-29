@@ -1,15 +1,4 @@
 /**
- * Dateをブラウザーのローカル日付としてdate input用のyyyy-MM-ddへ変換する。
- *
- * @param date 変換対象。省略時は現在日時。
- * @returns ローカルタイムゾーン基準のyyyy-MM-dd。
- */
-export const toLocalDateInputValue = (date: Date = new Date()): string => {
-  const timezoneOffset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
-
-/**
  * 文字列がMySQL DATEとして扱える実在するyyyy-MM-ddか検査する。
  *
  * @param value date inputから受け取った文字列。

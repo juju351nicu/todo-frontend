@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import {
-  baselineActivateControlKey,
+  buildBaselineActivateControlKey,
   useWbsBaselines,
 } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -106,7 +106,7 @@ describe("useWbsBaselines", () => {
   });
 
   it("Project OWNERは取得時点versionで保存済みbaselineを比較対象へ切り替える", async () => {
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     const page = useWbsPage();
     await page.initialize();
 
@@ -122,7 +122,7 @@ describe("useWbsBaselines", () => {
   });
 
   it("baseline有効化の409競合では理由を表示して最新一覧を再取得する", async () => {
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
       new WbsApiError(409, {
         fieldErrors: [
@@ -149,7 +149,7 @@ describe("useWbsBaselines", () => {
   });
 
   it("archive済みProjectの409では、取り直しても操作できないので取り直し済みの案内を添えない", async () => {
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
       new WbsApiError(409, {
         fieldErrors: [
@@ -172,7 +172,7 @@ describe("useWbsBaselines", () => {
   });
 
   it("有効化の後は、押したボタンが残っていればそこへ、なければ直前のactive baselineのボタンへフォーカスを戻す", async () => {
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     const page = useWbsPage();
     await page.initialize();
 
@@ -180,12 +180,12 @@ describe("useWbsBaselines", () => {
 
     // 単体テストのdocumentは常に要素を返すため、候補の先頭（押したボタン）へ戻したことだけを確かめる。
     expect(mocks.focusedControls).toEqual([
-      baselineActivateControlKey(inactiveBaselineSummary.baselineId),
+      buildBaselineActivateControlKey(inactiveBaselineSummary.baselineId),
     ]);
   });
 
   it("baseline更新409後の再取得で401になった場合は競合案内を残さない", async () => {
-    mocks.userStore.memberId = 1;
+    mocks.userStore.accountId = 1;
     mocks.wbsApi.activateWbsBaseline.mockRejectedValue(
       new WbsApiError(409, {
         fieldErrors: [

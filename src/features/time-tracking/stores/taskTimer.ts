@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 
 import router from "@/app/router";
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useUserStore } from "@/features/auth/stores/user";
 import TimeTrackingApi, {
   TimeTrackingApiError,
@@ -288,10 +289,13 @@ export const useTaskTimerStore = defineStore("taskTimer", {
         return;
       }
       if (error.status === 401) {
+        // Timerはヘッダー・Task Dialog・My Tasksの複数の画面から同じStoreを使うため、401の後始末とLoginへの遷移を
+        // 呼出側ごとに書かず、ここで1回だけ行う。Storeのactionでは`useRouter`（`useSessionExpiry`）を使えないため、
+        // routerのインスタンスで遷移する。
         this.resetForLogout();
         const userStore = useUserStore();
         userStore.clearSession();
-        await router.push({ name: "Login" });
+        await router.push({ name: ROUTE_NAMES.login });
         return;
       }
       if (error.status === 409) {

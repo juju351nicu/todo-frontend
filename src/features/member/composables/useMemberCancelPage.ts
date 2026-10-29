@@ -1,7 +1,10 @@
 import { computed, ref, type Ref } from "vue";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
+import { MEMBER_MESSAGES } from "@/features/member/constants/memberMessages";
 import { useMemberStore } from "@/features/member/stores/member";
 import type { MemberCancelRequest } from "@/features/member/types/member";
+import { isUnauthorizedApiError } from "@/shared/utils/apiError";
 
 /**
  * 会員退会画面の状態と操作を提供する。
@@ -12,6 +15,7 @@ export const useMemberCancelPage = (
   memberId: Readonly<Ref<number>>
 ) => {
   const memberStore = useMemberStore();
+  const { expireSession } = useSessionExpiry();
 
   const isLoading = computed<boolean>(() => memberStore.isLoading);
   const message = ref("");
@@ -23,16 +27,24 @@ export const useMemberCancelPage = (
     message.value = "";
   };
 
-  /** パスワードを付けて退会処理を実行する。 */
+  /**
+   * パスワードを付けて退会処理を実行する。
+   * 失敗したら理由を出す。Sessionが切れていた（401）場合は、パスワードを捨ててログイン画面へ戻す。
+   */
   const confirmCancellation = async (): Promise<void> => {
     message.value = "";
     const payload: MemberCancelRequest = {
       memberId: memberId.value,
       password: password.value,
     };
-    const response = await memberStore.cancelMemberInfo(payload);
-    if (!response) {
-      message.value = "退会処理に失敗しました。入力内容を確認してください。";
+    try {
+      await memberStore.cancelMemberInfo(payload);
+    } catch (error: unknown) {
+      if (isUnauthorizedApiError(error)) {
+        await expireSession(clearPassword);
+        return;
+      }
+      message.value = MEMBER_MESSAGES.cancelFailed;
     }
   };
 

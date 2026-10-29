@@ -1,10 +1,17 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
+import {
+  PROJECT_NAME_MAX_LENGTH,
+  PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH,
+  PROJECT_TEMPLATE_NAME_MAX_LENGTH,
+} from "@/features/project/constants/projectLimits";
 import type {
   ProjectTemplate,
   ProjectTemplateMemberMappingRequest,
@@ -15,16 +22,15 @@ import {
   PROJECT_RECOVERY_PRIORITY_STATUSES,
   PROJECT_TEMPLATE_ERROR_CODES,
 } from "@/features/project/utils/apiErrors";
-import {
-  isValidLocalDateInput,
-  toLocalDateInputValue,
-} from "@/features/project/utils/projectTemplateDate";
+import { validateProjectKey } from "@/features/project/utils/projectForm";
+import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { getBusinessToday } from "@/shared/utils/businessDate";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /** Project Template header編集フォーム。 */
 export interface ProjectTemplateEditForm {
@@ -44,8 +50,7 @@ export interface ProjectTemplateApplyForm {
 /**
  * 画面の部品に付ける`data-project-template-control`属性の値。
  * `ProjectTemplatePage.vue`はこの値で属性を付け、`useProjectTemplatePage`は操作の後に同じ値で部品を探してフォーカスを戻す。
- * 更新中は部品をdisabledにし、編集の開始・終了では部品自体が入れ替わるため、そのままではフォーカスがbodyへ外れる
- * （動作確認/13_Project一覧_Template G-7・G-10・G-12）。
+ * 更新中は部品をdisabledにし、編集の開始・終了では部品自体が入れ替わるため、そのままではフォーカスがbodyへ外れる。
  */
 export const PROJECT_TEMPLATE_CONTROL = {
   /** 詳細の「編集」ボタン。 */
@@ -62,17 +67,16 @@ export const PROJECT_TEMPLATE_CONTROL = {
  * @param projectTemplateId Project Template ID
  * @returns `"template:{projectTemplateId}"`形式の属性値
  */
-export const templateItemControlKey = (projectTemplateId: number): string =>
+export const buildTemplateItemControlKey = (projectTemplateId: number): string =>
   `template:${projectTemplateId}`;
 
 /** `data-project-template-control`属性の値から、その要素を探すselectorを作る。 */
-const templateControlSelector = (key: string): string =>
-  `[data-project-template-control="${key}"]`;
+const buildTemplateControlSelector = createDataAttributeSelector("data-project-template-control");
 
 /**
  * Templateからの作成で、入力内容の誤りを表す409のerror code。Template自体は古くなっていないので、
  * 一覧・詳細を取り直さず、入力（Projectキー・Project名・slotの割当）を残したまま直してもらう。
- * 取り直すと入力がすべて消えていた（動作確認/13_Project一覧_Template G-10）。
+ * 取り直すと入力がすべて消えるため。
  */
 const APPLY_INPUT_ERROR_CODES: ReadonlySet<string> = new Set([
   "PROJECT_KEY_CONFLICT",
@@ -114,7 +118,7 @@ const createEmptyEditForm = (): ProjectTemplateEditForm => ({
 const createEmptyApplyForm = (): ProjectTemplateApplyForm => ({
   projectKey: "",
   name: "",
-  projectStartDate: toLocalDateInputValue(),
+  projectStartDate: getBusinessToday(),
   memberMappings: {},
 });
 
@@ -145,6 +149,7 @@ const toSummary = (template: ProjectTemplate): ProjectTemplateSummary => ({
 export const useProjectTemplatePage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const templates = ref<ProjectTemplateSummary[]>([]);
   const selectedTemplateId = ref<number | null>(null);
@@ -174,7 +179,7 @@ export const useProjectTemplatePage = () => {
   /**
    * 結果のmessageを「TemplateからProjectを作成」のボタンの上に出すか。
    * 作成フォームは画面の中ほどにあり、上部のmessageは作成ボタンを押した位置から見えないことがあるため
-   * （幅390pxでは画面の外へ出た。動作確認/13_Project一覧_Template G-8）。Templateが消えて作成フォームがないときは上部に出す。
+   * （幅390pxでは画面の外へ出る）。Templateが消えて作成フォームがないときは上部に出す。
    */
   const isApplyFeedback = computed(
     () => feedbackTarget.value === "apply" && selectedTemplate.value !== null
@@ -184,10 +189,10 @@ export const useProjectTemplatePage = () => {
    * 操作の後に、候補の部品へフォーカスを戻す（候補は優先順。すべて消えた・disabledのときは動かさない）。
    * isSaving等をfalseへ戻した後に呼ぶ。
    *
-   * @param candidates `PROJECT_TEMPLATE_CONTROL`または`templateItemControlKey`の値
+   * @param candidates `PROJECT_TEMPLATE_CONTROL`または`buildTemplateItemControlKey`の値
    */
   const restoreControlFocus = (candidates: readonly string[]): Promise<void> =>
-    focusFirstEnabledElement(candidates.map(templateControlSelector));
+    focusFirstEnabledElement(candidates.map(buildTemplateControlSelector));
 
   /** 機能資格不足をpermission不足のbodyなし403と区別する。 */
   const isFeatureNotEntitled = (error: ProjectTemplateApiError): boolean =>
@@ -212,8 +217,7 @@ export const useProjectTemplatePage = () => {
     successMessage.value = "";
     isEditing.value = false;
     isArchiveConfirmOpen.value = false;
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -232,11 +236,11 @@ export const useProjectTemplatePage = () => {
     applyForm.value = {
       projectKey: "",
       name: template.name,
-      projectStartDate: toLocalDateInputValue(),
+      projectStartDate: getBusinessToday(),
       memberMappings: Object.fromEntries(
         template.memberSlots.map((slot) => [
           slot.slotKey,
-          slot.slotKey === "OWNER_1" ? userStore.memberId : null,
+          slot.slotKey === "OWNER_1" ? userStore.accountId : null,
         ])
       ),
     };
@@ -357,12 +361,12 @@ export const useProjectTemplatePage = () => {
   const buildUpdateRequest = (): ProjectTemplateUpdateRequest | null => {
     const name = editForm.value.name.trim();
     const description = editForm.value.description.trim();
-    if (!name || name.length > 100) {
-      errorMessages.value = ["Template名を1〜100文字で入力してください。"];
+    if (!name || name.length > PROJECT_TEMPLATE_NAME_MAX_LENGTH) {
+      errorMessages.value = [`Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`];
       return null;
     }
-    if (description.length > 2000) {
-      errorMessages.value = ["説明は2000文字以内で入力してください。"];
+    if (description.length > PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH) {
+      errorMessages.value = [`説明は${PROJECT_TEMPLATE_DESCRIPTION_MAX_LENGTH}文字以内で入力してください。`];
       return null;
     }
     return {
@@ -464,7 +468,7 @@ export const useProjectTemplatePage = () => {
     await restoreControlFocus([
       PROJECT_TEMPLATE_CONTROL.editButton,
       ...templates.value.slice(0, 1).map((candidate) =>
-        templateItemControlKey(candidate.projectTemplateId)
+        buildTemplateItemControlKey(candidate.projectTemplateId)
       ),
     ]);
   };
@@ -479,13 +483,13 @@ export const useProjectTemplatePage = () => {
     for (const slot of template.memberSlots) {
       const rawAccountId = applyForm.value.memberMappings[slot.slotKey] ?? null;
       if ((rawAccountId === null || rawAccountId === "") && slot.slotKey === "OWNER_1") {
-        if (userStore.memberId === null) {
+        if (userStore.accountId === null) {
           errorMessages.value = ["SessionのアカウントIDを確認できません。"];
           return null;
         }
         actorIsOwner = true;
-        accountIds.add(userStore.memberId);
-        mappings.push({ slotKey: slot.slotKey, accountId: userStore.memberId });
+        accountIds.add(userStore.accountId);
+        mappings.push({ slotKey: slot.slotKey, accountId: userStore.accountId });
         continue;
       }
       const accountId = parseAccountId(rawAccountId);
@@ -502,7 +506,7 @@ export const useProjectTemplatePage = () => {
         return null;
       }
       accountIds.add(accountId);
-      if (slot.projectRole === "OWNER" && accountId === userStore.memberId) {
+      if (slot.projectRole === "OWNER" && accountId === userStore.accountId) {
         actorIsOwner = true;
       }
       mappings.push({ slotKey: slot.slotKey, accountId });
@@ -527,14 +531,13 @@ export const useProjectTemplatePage = () => {
     successMessage.value = "";
     const projectKey = applyForm.value.projectKey.trim().toUpperCase();
     const name = applyForm.value.name.trim();
-    if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(projectKey) || projectKey.length > 30) {
-      errorMessages.value = [
-        "Projectキーは30文字以内の大文字英数字をハイフンで区切って入力してください。",
-      ];
+    const projectKeyError = validateProjectKey(projectKey);
+    if (projectKeyError) {
+      errorMessages.value = [projectKeyError];
       return;
     }
-    if (!name || name.length > 100) {
-      errorMessages.value = ["Project名を1〜100文字で入力してください。"];
+    if (!name || name.length > PROJECT_NAME_MAX_LENGTH) {
+      errorMessages.value = [`Project名を1〜${PROJECT_NAME_MAX_LENGTH}文字で入力してください。`];
       return;
     }
     if (!isValidLocalDateInput(applyForm.value.projectStartDate)) {
@@ -558,7 +561,7 @@ export const useProjectTemplatePage = () => {
         }
       );
       await router.push({
-        name: "TaskBoard",
+        name: ROUTE_NAMES.taskBoard,
         params: { projectId: created.projectId },
       });
       return;
@@ -703,7 +706,7 @@ export const useProjectTemplatePage = () => {
               fallback
             );
       // version競合のBackendの文言は「再読み込みしてください。」だが、画面はこの後で取り直す。
-      // 取り直せたときは、取り直し済みであることを添える（動作確認/13_Project一覧_Template G-9。07・08・12の対応と同じ）。
+      // 取り直せたときは、取り直し済みであることを添える（チェックリスト・コメント・Project設定の409と同じ書き方）。
       const reloadedMessages =
         error.status === 409 && isVersionConflict(error)
           ? [DISPLAY_MESSAGES.project.template.conflictReloaded]

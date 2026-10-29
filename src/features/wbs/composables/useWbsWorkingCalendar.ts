@@ -33,29 +33,26 @@ import {
 } from "@/features/wbs/utils/workingCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { hasApiFieldError } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 稼働日calendarの各行の「登録・編集」ボタンに付ける`data-working-calendar-control`属性の値を作る。
- * 削除すると同じ行の削除ボタンが消えてフォーカスがbodyへ外れるため、削除の後はこのボタンへ戻す
- * （動作確認/19_workload_稼働日calendar G-4）。
+ * 削除すると同じ行の削除ボタンが消えてフォーカスがbodyへ外れるため、削除の後はこのボタンへ戻す。
  *
  * @param workDate 行の日付（yyyy-MM-dd）
  * @returns 属性の値
  */
-export const workingDayEditControlKey = (workDate: string): string =>
+export const buildWorkingDayEditControlKey = (workDate: string): string =>
   `day:${workDate}:edit`;
 
 /**
  * 稼働日calendar cardの「表示」ボタンに付ける`data-working-calendar-control`属性の値。
- * 取得中は「表示」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す
- * （動作確認/19_workload_稼働日calendar G-12）。
+ * 取得中は「表示」がdisabledになりフォーカスがbodyへ外れるため、利用者が押した後はここへ戻す。
  */
 export const WORKING_CALENDAR_SUBMIT_CONTROL = "submit";
 
 /** `data-working-calendar-control`属性の値から、その要素を探すselectorを作る。 */
-const workingCalendarControlSelector = (key: string): string =>
-  `[data-working-calendar-control="${key}"]`;
+const buildWorkingCalendarControlSelector = createDataAttributeSelector("data-working-calendar-control");
 
 /**
  * Backendの文言が「最新状態を取得してください。」で終わる409のerror code
@@ -125,7 +122,7 @@ export const useWbsWorkingCalendar = (
     const members = (context.project.value?.members ?? []).filter(
       (member) =>
         context.canManageProject.value ||
-        member.accountId === userStore.memberId
+        member.accountId === userStore.accountId
     );
     return targetOptions.concat(
       members.map((member) => ({
@@ -153,8 +150,7 @@ export const useWbsWorkingCalendar = (
   });
   /**
    * 個人例外を表示していて、その参加者がACTIVEでない（無効化・ロック中、またはProjectから外れた）場合はtrue。
-   * 表示はできるが、Backendは個人例外の登録・更新を`INVALID_WORKING_CALENDAR`（400）にするため、変更の操作を出さない
-   * （動作確認/19_workload_稼働日calendar G-7）。
+   * 表示はできるが、Backendは個人例外の登録・更新を`INVALID_WORKING_CALENDAR`（400）にするため、変更の操作を出さない。
    */
   const isSelectedTargetInactiveMember = computed(() => {
     const target = selectedWorkingCalendarTarget.value;
@@ -179,7 +175,7 @@ export const useWbsWorkingCalendar = (
     return target.kind === "PROJECT"
       ? context.canManageProject.value
       : context.canManageProject.value ||
-          target.accountId === userStore.memberId;
+          target.accountId === userStore.accountId;
   });
   const canEditSelectedWorkingCalendarTarget = computed(
     () =>
@@ -189,7 +185,7 @@ export const useWbsWorkingCalendar = (
   /**
    * 変更できない理由の案内。変更できる場合はnull。
    * archive済みProject、参加者が無効、権限がない、の順に、利用者が直せない理由から示す
-   * （archive済みで権限の案内を出すと、OWNERにも権限が足りないように読めたため。動作確認/19_workload_稼働日calendar G-10）。
+   * （archive済みで権限の案内を出すと、OWNERにも権限が足りないように読めるため）。
    */
   const workingCalendarReadOnlyMessage = computed(() => {
     if (canEditSelectedWorkingCalendarTarget.value) {
@@ -503,8 +499,8 @@ export const useWbsWorkingCalendar = (
     workingCalendarErrorMessages.value = [];
     workingCalendarSuccessMessage.value = "";
     // 削除後は削除ボタンが消えるため、成功・失敗にかかわらず同じ行の「登録・編集」へフォーカスを戻す。
-    const editControl = workingCalendarControlSelector(
-      workingDayEditControlKey(override.workDate)
+    const editControl = buildWorkingCalendarControlSelector(
+      buildWorkingDayEditControlKey(override.workDate)
     );
     try {
       if (target.kind === "PROJECT") {
@@ -582,7 +578,7 @@ export const useWbsWorkingCalendar = (
     await loadWorkingCalendar(dateRange, targetKey);
     if (!context.isSessionInvalidated()) {
       await focusFirstEnabledElement([
-        workingCalendarControlSelector(WORKING_CALENDAR_SUBMIT_CONTROL),
+        buildWorkingCalendarControlSelector(WORKING_CALENDAR_SUBMIT_CONTROL),
       ]);
     }
   };
@@ -650,7 +646,7 @@ export const useWbsWorkingCalendar = (
   /**
    * 404・409の後にcalendarとworkloadを取り直す。
    * version競合（`RELOAD_GUIDANCE_ERROR_CODE`）で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに、
-   * 画面側で取り直し済みであることの案内を添える（動作確認/19_workload_稼働日calendar G-6。12・18の対応と同じ）。
+   * 画面側で取り直し済みであることの案内を添える（Project設定・Project Templateの409と同じ書き方）。
    *
    * @param error 変更・削除APIが返した404または409
    */

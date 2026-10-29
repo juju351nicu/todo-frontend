@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import type { Ref } from "vue";
 
+import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
@@ -20,13 +21,12 @@ import {
   validateWbsBaselineCreateForm,
 } from "@/features/wbs/utils/wbsBaseline";
 import { hasApiFieldError } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * baseline cardの部品に付ける`data-wbs-baseline-control`属性の値。
  * 有効化すると押した「比較対象にする」が消えてフォーカスがbodyへ外れるため、
- * 有効化の後は直前まで比較中だったbaselineの「比較対象にする」（なければ「現在計画を保存」）へ戻す
- * （動作確認/20_baseline_EVM_Excel帳票 G-5）。
+ * 有効化の後は直前まで比較中だったbaselineの「比較対象にする」（なければ「現在計画を保存」）へ戻す。
  */
 export const WBS_BASELINE_CONTROL = {
   /** card見出しの「現在計画を保存」ボタン。 */
@@ -39,12 +39,11 @@ export const WBS_BASELINE_CONTROL = {
  * @param baselineId 行のbaseline ID
  * @returns 属性の値
  */
-export const baselineActivateControlKey = (baselineId: number): string =>
+export const buildBaselineActivateControlKey = (baselineId: number): string =>
   `activate:${baselineId}`;
 
 /** `data-wbs-baseline-control`属性の値から、その要素を探すselectorを作る。 */
-const baselineControlSelector = (key: string): string =>
-  `[data-wbs-baseline-control="${key}"]`;
+const buildBaselineControlSelector = createDataAttributeSelector("data-wbs-baseline-control");
 
 /**
  * Backendの文言が「最新状態を取得して…」となる409のerror code
@@ -98,7 +97,7 @@ export const useWbsBaselines = (
   const canManageBaselines = computed(
     () =>
       context.canEditWbs.value &&
-      context.project.value?.status === "ACTIVE" &&
+      isActiveProject(context.project.value) &&
       context.canManageProject.value
   );
   const activeBaseline = computed(
@@ -237,7 +236,7 @@ export const useWbsBaselines = (
       );
       const reloaded = await reloadWbsBaselines();
       // version競合等で取り直せたときは、Backendの「最新状態を取得してください。」の後ろに取り直し済みの案内を添える
-      // （動作確認/20_baseline_EVM_Excel帳票 G-6。12・18・19の対応と同じ）。
+      // （Project設定・Project Templateの409と同じ書き方）。
       if (
         reloaded &&
         !context.isSessionInvalidated() &&
@@ -359,11 +358,11 @@ export const useWbsBaselines = (
     }
     if (!context.isSessionInvalidated()) {
       await focusFirstEnabledElement([
-        baselineControlSelector(baselineActivateControlKey(baseline.baselineId)),
+        buildBaselineControlSelector(buildBaselineActivateControlKey(baseline.baselineId)),
         ...(previousActiveBaselineId === null
           ? []
-          : [baselineControlSelector(baselineActivateControlKey(previousActiveBaselineId))]),
-        baselineControlSelector(WBS_BASELINE_CONTROL.create),
+          : [buildBaselineControlSelector(buildBaselineActivateControlKey(previousActiveBaselineId))]),
+        buildBaselineControlSelector(WBS_BASELINE_CONTROL.create),
       ]);
     }
   };

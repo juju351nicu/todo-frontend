@@ -6,9 +6,9 @@ import type {
 } from "@/features/wbs/types/wbs";
 import {
   formatEffortMinutes,
-  getToday,
   isValidIsoLocalDate,
 } from "@/features/wbs/utils/effort";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /**
  * 新規登録または更新対象から、API Responseを変更しないDialog入力を作る。
@@ -21,7 +21,7 @@ export const buildTaskWorkLogForm = (
   defaultWorkerAccountId: number | null,
   workLog?: Readonly<TaskWorkLog> | null
 ): TaskWorkLogForm => ({
-  workDate: workLog?.workDate ?? getToday(),
+  workDate: workLog?.workDate ?? getBusinessToday(),
   actualEffortMinutes: workLog?.actualEffortMinutes ?? null,
   workerAccountId: workLog?.workerAccountId ?? defaultWorkerAccountId,
 });

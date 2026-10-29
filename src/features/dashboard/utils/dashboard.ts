@@ -34,7 +34,7 @@ export const getDashboardProjectRoleLabel = (
   ];
 };
 
-// 画面ではbaselineを「基準計画」、AC（Actual Cost）を「実績工数」と呼ぶ（改善提案 1-18。英語の用語を減らす）。
+// 画面ではbaselineを「基準計画」、AC（Actual Cost）を「実績工数」と呼ぶ（利用者に英語の用語を読ませないため）。
 const ADVANCED_WARNING_LABELS: Readonly<Record<string, string>> = {
   BASELINE_PLAN_UNALLOCATED: "基準計画の予定工数に未配賦があります",
   BASELINE_PLAN_OVER_ALLOCATED: "基準計画の予定工数を超えて配賦されています",

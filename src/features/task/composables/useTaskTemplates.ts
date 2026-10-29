@@ -1,11 +1,12 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import type { TaskPriority } from "@/features/project/types/project";
 import TaskTemplateApi, {
   TaskTemplateApiError,
 } from "@/features/task/api/taskTemplateApi";
+import { TASK_TEMPLATE_NAME_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskTemplate,
   TaskTemplateApplyResponse,
@@ -15,11 +16,13 @@ import {
   TASK_RECOVERY_PRIORITY_STATUSES,
   TASK_TEMPLATE_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
+import { validateTaskSnapshot } from "@/features/task/utils/taskSnapshotForm";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 
 /** Task Template編集Dialogが保持する入力値。 */
 export interface TaskTemplateEditForm {
@@ -34,13 +37,6 @@ export interface TaskTemplateEditForm {
   checklistContents: string[];
   version: number;
 }
-
-/** ブラウザーのローカル日付をdate input用のyyyy-MM-ddへ変換する。 */
-const getToday = (): string => {
-  const now = new Date();
-  const timezoneOffset = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - timezoneOffset).toISOString().slice(0, 10);
-};
 
 /** 空のTemplate編集フォームを作る。 */
 const createEmptyEditForm = (): TaskTemplateEditForm => ({
@@ -64,13 +60,13 @@ export const useTaskTemplates = (
   projectId: Readonly<Ref<number | null>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const templates = ref<TaskTemplate[]>([]);
   const selectedTemplateId = ref<number | null>(null);
   const isEditing = ref(false);
   const editForm = ref<TaskTemplateEditForm>(createEmptyEditForm());
-  const applyDateFrom = ref(getToday());
+  const applyDateFrom = ref(getBusinessToday());
   const applyAssigneeAccountId = ref<number | null>(null);
   const applyTaskStatusId = ref<number | null>(null);
   const errorMessage = ref("");
@@ -95,7 +91,7 @@ export const useTaskTemplates = (
     selectedTemplateId.value = null;
     isEditing.value = false;
     editForm.value = createEmptyEditForm();
-    applyDateFrom.value = getToday();
+    applyDateFrom.value = getBusinessToday();
     applyAssigneeAccountId.value = null;
     applyTaskStatusId.value = null;
   };
@@ -138,8 +134,7 @@ export const useTaskTemplates = (
     clearTemplateState(true);
     errorMessage.value = "";
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -184,7 +179,7 @@ export const useTaskTemplates = (
   const selectTemplate = (template: TaskTemplate): void => {
     if (isMutating.value) return;
     selectedTemplateId.value = template.taskTemplateId;
-    applyDateFrom.value = getToday();
+    applyDateFrom.value = getBusinessToday();
     applyAssigneeAccountId.value = null;
     applyTaskStatusId.value = null;
     isEditing.value = false;
@@ -220,39 +215,22 @@ export const useTaskTemplates = (
     editForm.value = createEmptyEditForm();
   };
 
-  /** 編集フォームをBackend契約に合わせて検証する。 */
+  /**
+   * 編集フォーム（Template名、生成するTaskの内容、既定のBoard列）を検証し、最初の誤りを`errorMessage`へ出す。
+   *
+   * @returns 誤りがなければtrue
+   */
   const validateEditForm = (): boolean => {
     const form = editForm.value;
-    const checklistContents = form.checklistContents.map((content) =>
-      content.trim()
-    );
+    const name = form.name.trim();
     let message = "";
-    if (!form.name.trim() || form.name.trim().length > 100) {
-      message = "Template名を1〜100文字で入力してください。";
-    } else if (!form.title.trim() || form.title.trim().length > 45) {
-      message = "Taskタイトルを1〜45文字で入力してください。";
-    } else if (!form.detail.trim() || form.detail.trim().length > 1000) {
-      message = "Task詳細を1〜1000文字で入力してください。";
-    } else if (
-      !Number.isInteger(form.dueOffsetDays) ||
-      form.dueOffsetDays < 0 ||
-      form.dueOffsetDays > 365
-    ) {
-      message = "期限オフセットを0〜365日で入力してください。";
-    } else if (
-      !Number.isSafeInteger(form.plannedEffortMinutes) ||
-      form.plannedEffortMinutes < 0
-    ) {
-      message = "予定工数を0分以上の整数で入力してください。";
-    } else if (!form.defaultStatusCode) {
-      message = "既定のBoard列を選択してください。";
-    } else if (
-      checklistContents.length > 50 ||
-      checklistContents.some(
-        (content) => content.length === 0 || content.length > 255
-      )
-    ) {
-      message = "チェック項目は1〜255文字、最大50件で入力してください。";
+    if (!name || name.length > TASK_TEMPLATE_NAME_MAX_LENGTH) {
+      message = `Template名を1〜${TASK_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`;
+    } else {
+      message = validateTaskSnapshot(form);
+      if (!message && !form.defaultStatusCode) {
+        message = "既定のBoard列を選択してください。";
+      }
     }
     errorMessage.value = message;
     return !message;

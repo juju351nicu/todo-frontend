@@ -1,30 +1,25 @@
 import { computed, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import ProjectTemplateApi, {
   ProjectTemplateApiError,
 } from "@/features/project/api/projectTemplateApi";
+import { PROJECT_TEMPLATE_NAME_MAX_LENGTH } from "@/features/project/constants/projectLimits";
 import type { ProjectTemplate } from "@/features/project/types/projectTemplate";
 import { PROJECT_TEMPLATE_ERROR_CODES } from "@/features/project/utils/apiErrors";
-import {
-  isValidLocalDateInput,
-  toLocalDateInputValue,
-} from "@/features/project/utils/projectTemplateDate";
+import { isValidLocalDateInput } from "@/features/project/utils/projectTemplateDate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   hasApiFieldError,
   resolveApiErrorMessages,
 } from "@/shared/utils/apiError";
+import { getBusinessToday } from "@/shared/utils/businessDate";
 import { focusFirstEnabledElement } from "@/shared/utils/focus";
-
-/** Project Template名の最大文字数。Backendの入力制約と同じ値。 */
-export const TEMPLATE_NAME_MAX_LENGTH = 100;
 
 /**
  * 保存Dialogの「Template名」入力欄に付ける`data-project-template-capture`属性の値。
- * 保存に失敗したとき（保存中はdisabledになりフォーカスが外れる）に、名前を直せるようここへ戻す
- * （動作確認/13_Project一覧_Template G-5）。
+ * 保存に失敗したとき（保存中はdisabledになりフォーカスが外れる）に、名前を直せるようここへ戻す。
  */
 export const CAPTURE_NAME_CONTROL = "name";
 
@@ -34,21 +29,21 @@ export const useProjectTemplateCapture = (
   disabled: Readonly<Ref<boolean>>
 ) => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const isOpen = ref(false);
   const name = ref("");
-  const baseDate = ref(toLocalDateInputValue());
+  const baseDate = ref(getBusinessToday());
   const errorMessages = ref<string[]>([]);
   const successMessage = ref("");
   const isSaving = ref(false);
-  /** Template名（trim後1～100文字）と基準日が入力済みで、参照専用・保存中でない場合だけ保存できる。Backendも再検査する。 */
+  /** Template名（trim後1文字以上`PROJECT_TEMPLATE_NAME_MAX_LENGTH`文字以下）と基準日が入力済みで、参照専用・保存中でない場合だけ保存できる。Backendも再検査する。 */
   const canCapture = computed<boolean>(() => {
     const trimmedName = name.value.trim();
     return (
       !disabled.value &&
       !isSaving.value &&
       trimmedName.length > 0 &&
-      trimmedName.length <= TEMPLATE_NAME_MAX_LENGTH &&
+      trimmedName.length <= PROJECT_TEMPLATE_NAME_MAX_LENGTH &&
       baseDate.value.length > 0
     );
   });
@@ -57,7 +52,7 @@ export const useProjectTemplateCapture = (
   const open = (): void => {
     if (disabled.value || isSaving.value) return;
     name.value = "";
-    baseDate.value = toLocalDateInputValue();
+    baseDate.value = getBusinessToday();
     errorMessages.value = [];
     successMessage.value = "";
     isOpen.value = true;
@@ -84,8 +79,8 @@ export const useProjectTemplateCapture = (
   const submitCapture = async (): Promise<ProjectTemplate | null> => {
     const normalizedName = name.value.trim();
     if (disabled.value || isSaving.value) return null;
-    if (!normalizedName || normalizedName.length > 100) {
-      errorMessages.value = ["Template名を1〜100文字で入力してください。"];
+    if (!normalizedName || normalizedName.length > PROJECT_TEMPLATE_NAME_MAX_LENGTH) {
+      errorMessages.value = [`Template名を1〜${PROJECT_TEMPLATE_NAME_MAX_LENGTH}文字で入力してください。`];
       return null;
     }
     if (!isValidLocalDateInput(baseDate.value)) {
@@ -109,8 +104,7 @@ export const useProjectTemplateCapture = (
         isOpen.value = false;
         errorMessages.value = [];
         successMessage.value = "";
-        userStore.clearSession();
-        await router.push({ name: "Login" });
+        await expireSession();
         return null;
       }
       if (!(error instanceof ProjectTemplateApiError)) {

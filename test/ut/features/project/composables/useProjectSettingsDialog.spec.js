@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
 import {
-  memberRoleControlKey,
+  buildMemberRoleControlKey,
   PROJECT_SETTINGS_CONTROL,
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
   roles: new Set(),
   router: { push: vi.fn() },
   userStore: {
-    memberId: 2,
+    accountId: 2,
     clearSession: vi.fn(),
     hasPermission: vi.fn((code) => mocks.permissions.has(code)),
     hasRole: vi.fn((code) => mocks.roles.has(code)),
@@ -257,7 +257,7 @@ describe("useProjectSettingsDialog", () => {
     expect(dialog.addMemberAccountId.value).toBeNull();
   });
 
-  it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す（改善提案 2-9）", async () => {
+  it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す", async () => {
     const candidate = { accountId: 9, displayName: "山田 太郎", email: "yamada@example.com", loginId: "yamada" };
     mocks.projectApi.findMemberCandidates.mockResolvedValue([candidate]);
     mocks.projectApi.addProjectMember.mockResolvedValue(structuredClone(project));
@@ -658,7 +658,7 @@ describe("useProjectSettingsDialog", () => {
 
       await dialog.saveMemberRole(project.members[2]);
 
-      expect(focused).toEqual([memberRoleControlKey(4)]);
+      expect(focused).toEqual([buildMemberRoleControlKey(4)]);
     });
 
     it("他memberを除外した後は、行が消えるためアカウントIDの入力欄へ戻す", async () => {

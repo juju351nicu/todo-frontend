@@ -28,9 +28,12 @@ test("My Tasksから同じTaskをBoardで更新し再読込後もWBSへ反映す
   await taskDialog.getByRole("button", { name: "保存", exact: true }).click();
 
   await expect(page.getByText("Taskを更新しました。", { exact: true })).toBeVisible();
+  // Dialogを閉じたら?taskId=を外す。残すと、同じTaskをMy Tasks・通知からもう一度開いても同じURLになり開かない。
+  await expect(page).toHaveURL(/\/projects\/\d+\/board$/);
   await expect(page.getByText(UPDATED_TITLE, { exact: true })).toBeVisible();
 
   await page.reload();
+  await page.getByText(UPDATED_TITLE, { exact: true }).click();
 
   const reloadedTaskDialog = page.getByRole("dialog");
   await expect(reloadedTaskDialog.getByLabel("タイトル")).toHaveValue(

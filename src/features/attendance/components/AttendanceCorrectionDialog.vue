@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import type { AttendanceCorrectionForm } from "@/features/attendance/types/attendance";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -31,7 +32,7 @@ defineEmits<{
 </script>
 
 <template>
-  <!-- 入力途中の申請を誤って破棄しないよう、Vuetifyのpersistentと同じく外側クリックやEscでは閉じない。 -->
+  <!-- 入力途中の申請を誤って破棄しないよう、外側クリックやEscでは閉じない（`dismissible`を無効にする）。 -->
   <UModal
     :open="modelValue"
     :dismissible="false"
@@ -41,8 +42,8 @@ defineEmits<{
   >
     <template #body>
       <!--
-        失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。以前は画面上部（Dialogの後ろ）へ出て見えなかった
-        （動作確認/21_勤怠本人 G-5）。負のtopとmarginでUModal本文の上余白（pt-4）まで覆う（12・18と同じ対応）。
+        失敗のmessageはDialog本文のスクロールに付いて上端へ固定する。画面上部（Dialogの後ろ）に出すと見えないため。
+        負のtopとmarginでUModal本文の上余白（pt-4）まで覆う（Project設定・WBSのDialogと同じ書き方）。
       -->
       <div v-if="errorMessages.length" class="sticky -top-4 z-10 -mt-4 bg-default pt-4 pb-4">
         <StatusAlert type="error">
@@ -53,25 +54,25 @@ defineEmits<{
         <UFormField label="修正理由（必須）">
           <UTextarea
             :model-value="form.reason"
-            :maxlength="1000"
+            :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
             :rows="2"
             class="w-full"
             @update:model-value="$emit('updateReason', String($event ?? ''))"
           />
         </UFormField>
-        <FieldCounter :value="form.reason" :max="1000" />
+        <FieldCounter :value="form.reason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
       </div>
       <div class="relative">
         <UFormField label="承認後のメモ">
           <UTextarea
             :model-value="form.note"
-            :maxlength="1000"
+            :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
             :rows="2"
             class="w-full"
             @update:model-value="$emit('updateNote', String($event ?? ''))"
           />
         </UFormField>
-        <FieldCounter :value="form.note" :max="1000" />
+        <FieldCounter :value="form.note" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
       </div>
 
       <UCard v-for="(workPeriod, workIndex) in form.workPeriods" :key="workIndex" variant="outline" class="mb-4">

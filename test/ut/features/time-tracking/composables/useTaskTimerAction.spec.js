@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ref } from "vue";
 
 import {
-  taskTimerActionKey,
+  buildTaskTimerActionKey,
   useTaskTimerAction,
 } from "@/features/time-tracking/composables/useTaskTimerAction";
 import { useTaskTimerStore } from "@/features/time-tracking/stores/taskTimer";
@@ -104,7 +104,7 @@ describe("useTaskTimerAction", () => {
       await action[actionName]();
 
       expect(querySelector).toHaveBeenCalledWith(
-        `[data-task-timer-action="${taskTimerActionKey(12, 345)}"]`
+        `[data-task-timer-action="${buildTaskTimerActionKey(12, 345)}"]`
       );
       expect(focus).toHaveBeenCalledOnce();
     });

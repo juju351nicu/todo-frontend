@@ -585,7 +585,7 @@ describe("useAttendancePage", () => {
     ["APPROVED", "OFF_DUTY", ["PENDING"], "この日には審査待ちの修正申請があります。結果が出るまで新しい申請はできません。"],
     ["APPROVED", "WORKING", [], "勤務・休憩が終わっていない日は修正申請できません。"],
     ["APPROVED", "OFF_DUTY", [], ""],
-  ])("月次%s・選択日%s・申請%jのとき、修正申請できない理由は「%s」（改善提案 1-22）", (monthStatus, punchState, requestStatuses, expected) => {
+  ])("月次%s・選択日%s・申請%jのとき、修正申請できない理由は「%s」", (monthStatus, punchState, requestStatuses, expected) => {
     const page = useAttendancePage();
     page.monthSummary.value = buildMonth("2026-10", monthStatus);
     page.selectedDay.value =

@@ -1,7 +1,8 @@
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
-import { useUserStore } from "@/features/auth/stores/user";
+import { ROUTE_NAMES } from "@/app/router/routeNames";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import {
   createTaskSavedView,
   deleteTaskSavedView,
@@ -11,6 +12,7 @@ import {
   TaskSearchApiError,
   updateTaskSavedView,
 } from "@/features/task/api/taskSearchApi";
+import { TASK_SEARCH_KEYWORD_MAX_LENGTH } from "@/features/task/constants/taskLimits";
 import type {
   TaskSavedView,
   TaskSearchColumn,
@@ -25,17 +27,13 @@ import {
   TASK_SEARCH_ERROR_CODES,
 } from "@/features/task/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
-import { hasApiFieldError, resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { hasApiFieldError, resolveStandardErrorMessages } from "@/shared/utils/apiError";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 import { TASK_PRIORITY_OPTIONS } from "@/features/task/utils/taskFormOptions";
-
-/** キーワードの最大文字数。Backendの入力制約（`TaskSearchFilterRequest#keyword`の`@Size(max = 100)`）と同じ値。 */
-export const TASK_SEARCH_KEYWORD_MAX_LENGTH = 100;
 
 /**
  * Saved Viewの部品に付ける`data-task-search-control`属性の値。
- * 更新の409・削除の後は、押したボタンが一時的または以後disabledになりフォーカスがbodyへ外れるため、ここへ戻す
- * （動作確認/15_Task検索 G-7・G-8）。
+ * 更新の409・削除の後は、押したボタンが一時的または以後disabledになりフォーカスがbodyへ外れるため、ここへ戻す。
  */
 export const TASK_SEARCH_CONTROL = {
   /** 「保存した条件」の選択。削除の後に戻す。 */
@@ -45,8 +43,7 @@ export const TASK_SEARCH_CONTROL = {
 } as const;
 
 /** `data-task-search-control`属性の値から、その要素を探すselectorを作る。 */
-const taskSearchControlSelector = (key: string): string =>
-  `[data-task-search-control="${key}"]`;
+const buildTaskSearchControlSelector = createDataAttributeSelector("data-task-search-control");
 
 interface TaskSearchColumnOption {
   code: TaskSearchColumn;
@@ -101,7 +98,7 @@ const copyFilters = (
 /** Project横断検索、検索候補、本人Saved Viewの画面状態と操作を提供する。 */
 export const useTaskSearchPage = () => {
   const router = useRouter();
-  const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
   const filters = reactive<TaskSearchFilters>(createEmptyFilters());
   const options = ref<TaskSearchOptionsResponse>({
     projects: [],
@@ -179,16 +176,12 @@ export const useTaskSearchPage = () => {
     knownCodes: ReadonlySet<string>,
     forbidden: string = DISPLAY_MESSAGES.task.search.operationForbidden
   ): string[] => {
-    if (!(error instanceof TaskSearchApiError)) {
-      return [DISPLAY_MESSAGES.common.connectionFailed];
-    }
-    if (error.status === 403) {
-      return [forbidden];
-    }
-    if (error.status === 404) {
-      return [DISPLAY_MESSAGES.task.search.resourceNotFound];
-    }
-    return resolveApiErrorMessages(error.errorResponse, knownCodes, fallback);
+    return resolveStandardErrorMessages(error, TaskSearchApiError, {
+      forbidden,
+      notFound: DISPLAY_MESSAGES.task.search.resourceNotFound,
+      knownErrorCodes: knownCodes,
+      fallback,
+    });
   };
 
   /** 401ではServer由来の状態とSession表示を破棄してLoginへ戻す。 */
@@ -200,8 +193,7 @@ export const useTaskSearchPage = () => {
     clearProtectedState();
     errorMessages.value = [];
     successMessage.value = "";
-    userStore.clearSession();
-    await router.push({ name: "Login" });
+    await expireSession();
     return true;
   };
 
@@ -399,7 +391,7 @@ export const useTaskSearchPage = () => {
   /**
    * 404／409後に古いversionを破棄し、最新Saved View一覧へ安全に回復する。
    * version競合のBackendの文言は「最新状態を再取得してください。」だが、ここで取り直すため、
-   * 取り直せたときは取り直し済みであることを添える（動作確認/15_Task検索 G-7。07・08・12・13の対応と同じ）。
+   * 取り直せたときは取り直し済みであることを添える（チェックリスト・コメント・Project設定の409と同じ書き方）。
    */
   const recoverSavedViews = async (
     error: TaskSearchApiError,
@@ -417,7 +409,7 @@ export const useTaskSearchPage = () => {
       const recoveryMessages = hasApiFieldError(error.errorResponse, "TASK_SAVED_VIEW_VERSION_CONFLICT")
         ? [...mutationMessages, DISPLAY_MESSAGES.task.search.conflictReloaded]
         : mutationMessages;
-      // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す（改善提案 1-16）。
+      // 取り直したSaved Viewの条件は最新に戻るが、表示中の結果は古い条件のままなので検索し直す。
       // 検索は画面のメッセージを置き換えるため、取り直しの案内はその後に先頭へ足す。
       isSessionEnded = false;
       if (selectedSavedViewId.value !== null && (await refreshOptions(true))) {
@@ -521,7 +513,7 @@ export const useTaskSearchPage = () => {
           DISPLAY_MESSAGES.task.search.updateFailed
         );
         // 取り直しの間「更新」はdisabledになりフォーカスが外れるため、名前の入力欄へ戻す。
-        await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
+        await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewName)]);
         return;
       }
       if (!(await handleUnauthorized(error))) {
@@ -553,7 +545,7 @@ export const useTaskSearchPage = () => {
         "Saved Viewを削除しました。"
       );
       // 削除の後は選択がなくなり「削除」がdisabledになるため、「保存した条件」へ戻す。
-      await focusFirstEnabledElement([taskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
+      await focusFirstEnabledElement([buildTaskSearchControlSelector(TASK_SEARCH_CONTROL.savedViewSelect)]);
     } catch (error: unknown) {
       if (
         error instanceof TaskSearchApiError &&
@@ -583,7 +575,7 @@ export const useTaskSearchPage = () => {
   /** 検索結果のTaskを既存Board詳細deep linkで開く。 */
   const showTask = async (task: TaskSearchItem): Promise<void> => {
     await router.push({
-      name: "TaskBoard",
+      name: ROUTE_NAMES.taskBoard,
       params: { projectId: task.projectId },
       query: { taskId: String(task.taskId) },
     });

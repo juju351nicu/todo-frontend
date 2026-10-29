@@ -30,7 +30,7 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
     @update:open="closeComments"
   >
     <template #title>
-      <!-- w-fullにしないと見出しの幅が文字分だけになり、ms-autoの再読み込みボタンが右端へ寄らない（改善提案 1-6）。 -->
+      <!-- w-fullにしないと見出しの幅が文字分だけになり、ms-autoの再読み込みボタンが右端へ寄らない。 -->
       <span class="flex w-full items-center">
         Projectのコメント
         <UButton
@@ -63,7 +63,7 @@ const { closeComments, comments, errorMessages, isLoading, isOpen, loadComments,
             <span class="min-w-0 flex-1">
               <span class="flex flex-wrap items-center gap-2 text-base">
                 <span>{{ comment.taskTitle }}</span>
-                <!-- archive済みTaskの行は開けないが、会話の履歴として読めるよう薄くせず、ラベル（neutral）だけで示す（改善提案 1-6）。 -->
+                <!-- archive済みTaskの行は開けないが、会話の履歴として読めるよう薄くせず、ラベル（neutral）だけで示す。 -->
                 <UBadge v-if="comment.taskArchived" size="xs" color="neutral" variant="outline">アーカイブ済み</UBadge>
               </span>
               <span class="block text-sm text-muted">

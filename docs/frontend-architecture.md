@@ -75,6 +75,8 @@ src/
 - `src/shared/types/error.ts`: Backend共通エラー型
 - `src/shared/utils/apiError.ts`: error code／field判定と安全な表示message抽出
 - `src/shared/utils/number.ts`: 文字列・数値配列を数値配列へ変換する純粋関数
+- `src/shared/utils/businessDate.ts`: 業務タイムゾーン（Asia/Tokyo）と、業務日の「今日」・業務月の範囲。画面の日付の既定値はすべてここから作り、端末のタイムゾーンを使わない
+- `src/shared/utils/latestRequest.ts`: 表示対象を素早く切り替える読込で、最後に始めた読込の結果だけを反映するための判定
 - `src/shared/types/accountStatus.ts`、`src/shared/utils/accountStatus.ts`: アカウント状態コード（ACTIVE／LOCKED／DISABLED）と表示名・表示色。管理画面とProject参加者表示で共通に使う
 - `src/features/dashboard/api/dashboardApi.ts`: permission別Basic Dashboardと資格境界を持つ高度Dashboard API
 - `src/features/dashboard/types/dashboard.ts`: My Tasks、通知、Project進捗、本人勤怠、横断EVM／負荷のDashboard契約型
@@ -96,6 +98,7 @@ src/
 - `src/app/router/index.ts`: Router生成とSession認証ガード
 - `src/app/router/routes.ts`: ルート定義と画面単位の遅延読み込み
 - `src/app/router/router.d.ts`: Routerの認証要否メタデータ型
+- `src/app/router/routerViewKey.ts`: `RouterView`のkey。route paramの`projectId`が変わったら画面を作り直し、前のProjectの表示・Dialog・遅れて届くResponseを残さない
 - `src/app/views/NotFoundPage.vue`: NotFound画面
 - `src/features/auth/api/authApi.ts`: Session確認、ローカルログイン、ログアウト、GitHub OAuth2開始URL
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
@@ -112,25 +115,24 @@ src/
 - `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
 - `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
-- `src/features/task/api/taskApi.ts`: Todo一覧・詳細・カレンダー・完了・登録更新、My Tasks専用API
+- `src/features/task/api/myTaskApi.ts`: My Tasks（本人担当のProject Task）の一覧・完了API
 - `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
-- `src/features/task/stores/task.ts`: Todo一覧の共有状態とTask API呼び出し
-- `src/features/task/types/task.ts`: TodoとMy Tasks APIのRequest / Response型
+- `src/features/task/types/myTask.ts`: My Tasks APIのResponse型
 - `src/features/task/types/taskSearch.ts`: Task検索・候補・Saved ViewのRequest / Response型
-- `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移
-- `src/features/task/composables/useTodoDetailPage.ts`: Todo詳細取得、登録更新フォーム、確認モーダル、エラー表示
-- `src/features/task/composables/useTodoCalendarPage.ts`: Todoカレンダー検索、イベント設定、エラー表示
 - `src/features/task/composables/useMyTasksPage.ts`: Backend認可済み本人Taskの期限グループ・今週表示、完了、Board詳細遷移
 - `src/features/task/composables/useTaskSearchPage.ts`: 横断検索、候補、表示列、本人Saved View、競合回復
-- `src/features/task/components/TodoUpsertConfirm.vue`: Todo登録更新の確認部品
-- `src/features/task/utils/taskForm.ts`: Todo詳細Responseからフォーム、フォームから登録更新Requestへの変換
-- `src/features/task/utils/taskCalendar.ts`: Todo一覧からFullCalendarイベント・設定への変換
-- `src/features/task/utils/taskDisplay.ts`: 重要度・色・残日数・詳細省略の表示変換
-- `src/features/task/views/TodoListPage.vue`: composableを利用して表示を組み立てるTodo一覧画面
-- `src/features/task/views/TodoDetailPage.vue`: Todo登録・更新画面
-- `src/features/task/views/TodoCalendarPage.vue`: Todoカレンダー画面
+- `src/features/task/components/TaskPriorityBadge.vue`: Project Task（My Tasks・Task検索・Dashboard）の優先度badge（Boardと同じ色）
+- `src/features/task/utils/taskDisplay.ts`: Project Taskの優先度の表示名・色、残り日数の表示変換
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
+- `src/features/todo/`: 旧Todo（`/api/v1/todo/*`）の画面。Project Taskと混ざらないよう分けて置き、旧Todo APIを廃止するときに丸ごと消す
+  - `api/todoApi.ts`（`TodoApi`・`TodoApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
+  - `stores/todo.ts`: 画面のAPI呼び出しと通信中状態
+  - `types/todo.ts`: Request / Response型（snake_caseの項目を含む）
+  - `composables/useTodoListPage.ts`・`useTodoDetailPage.ts`・`useTodoCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
+  - `components/TodoSearchCard.vue`・`TodoUpsertConfirm.vue`・`TodoPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
+  - `utils/todoForm.ts`・`todoCalendar.ts`・`todoDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
+  - `views/TodoListPage.vue`・`TodoDetailPage.vue`・`TodoCalendarPage.vue`: 一覧・登録更新・カレンダー画面
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/api/projectTemplateApi.ts`: 本人所有Project Templateのcapture・一覧・詳細・更新・archive・適用API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型
@@ -145,9 +147,13 @@ src/
 - `src/features/project/components/ProjectTemplateCaptureButton.vue`: OWNER／SYSTEM_ADMIN向けProject snapshot保存Dialog
 - `src/features/project/views/ProjectListPage.vue`: 参照可能なProjectのカード一覧
 - `src/features/project/views/ProjectTemplatePage.vue`: Template snapshot参照、管理、member slot mapping、Project生成画面
-- `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputのローカル日付変換と実在日付検証
+- `src/features/project/utils/projectTemplateDate.ts`: Project Template date inputの実在日付検証（日付の既定値は`src/shared/utils/businessDate.ts`の業務日）
 - `src/features/task/api/projectTaskApi.ts`: Project配下のTask詳細・登録・更新・移動・archive API
-- `src/features/task/composables/useTaskBoardPage.ts`: Board読込、Task ID queryからの詳細表示、Task登録・更新・移動・archive・競合回復
+- `src/features/task/composables/useTaskBoardPage.ts`: Board画面の統括。Project詳細・Boardの読込、`?taskId=`のTaskを開く処理、APIエラーの表示（401のSession破棄、403・404で古い画面を破棄）、409後の再取得と、下記の領域別composableの配線
+- `src/features/task/composables/taskBoardPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、Board、画面上部message、Board再取得、エラー処理）の型
+- `src/features/task/composables/useTaskBoardPermissions.ts`: Project単位の操作の可否（permission・Project role・Projectの状態から決まる作成・更新・移動・archive・コメント投稿・Template保存等）
+- `src/features/task/composables/useTaskEditor.ts`: Task作成・編集Dialog（詳細の読込、入力チェック、登録・更新、archive、閉じたときの`?taskId=`の除去、WBSの日別実績への遷移）と、開いたTaskごとの可否
+- `src/features/task/composables/useTaskBoardMove.ts`: Taskの移動（dragの楽観表示と失敗時の復元、キーボードでの上下左右移動とフォーカスの復元）
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
 - `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
 - `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
@@ -217,6 +223,8 @@ Project設定とmember管理はTask Boardから開く1つのDialogと`useProject
 WBSは`src/features/wbs`へ独立させる。Backendが返すTask flat listを`parentTaskId`でpreorderへ変換し、親欠損や循環があってもTaskを消さず1回だけ表示する。Boardと同じTask IDを正本とし、WBS専用のTask Storeや編集状態は作らない。`useWbsPage`ひとつで読込、階層変換、エラー、Board遷移を扱う。
 
 2026-10-26に、約2,700行へ増えた`useWbsPage`を領域別composableへ分割した。`useWbsPage`は統括として残り、各composableの戻り値を分割前と同じ名前で返すため、`WbsPage.vue`は変更していない（契約は`useWbsPage.spec.js`の戻り値テストで固定）。領域別composableは`WbsPageContext`で画面共通の状態を受け取り、領域をまたぐ処理（日別予定・実績・稼働日例外の変更後のworkload再取得、workloadの401時の日別予定・実績Dialogのclose、baseline変更時のEVM破棄、依存関係の競合時の画面全体再取得）は各composableのoptionsのcallbackで`useWbsPage`から配線する。テストは領域ごとのspecへ分け、共通mock・fixtureは`test/ut/features/wbs/composables/wbsPageTestSupport.js`に置く。
+
+2026-10-29に、約1,000行の`useTaskBoardPage`も同じ形で分割した。`useTaskBoardPage`は統括として残り、Project単位の可否（`useTaskBoardPermissions`）、Task作成・編集Dialog（`useTaskEditor`）、Taskの移動（`useTaskBoardMove`）の戻り値を分割前と同じ名前で返すため、`TaskBoardPage.vue`は変更していない（契約は`useTaskBoardPage.spec.js`で固定）。領域別composableは`TaskBoardPageContext`で画面共通の状態とエラー処理を受け取る。401・403・404で画面を片付けるときは、統括がDialogの破棄（`discardTaskEditor`）とドラッグ前Boardの破棄（`discardDragSnapshot`）を呼ぶ。
 
 2026-08-22にWBS階層表へTask編集Dialogを追加した。親候補はSummaryだけとし、編集中Task自身と全子孫を除いて明らかな循環をFrontendでも抑止する。予定日、整数分の予定工数、0から100まで小数第2位の進捗率、Milestoneの同日・0分制約を送信前に検証するが、Project状態、親Taskの最新状態、子Task有無、同時更新はBackendを最終判定とする。更新は取得時点のversionを含む`PUT /api/v1/projects/{projectId}/wbs/tasks/{taskId}`を使用し、成功時はResponse全体、409時は再取得した最新WBSで画面を差し替える。Ganttのdrag・resize・progress直接変更は引き続き無効とする。
 
@@ -430,8 +438,8 @@ Backendでも再検査する。生成成功後は既存Project Boardへ遷移し
 
 Template参照は契約終了後も可能とし、capture・更新・archive・適用で機能資格403を受けた場合はBackendの案内を表示する。
 401ではSessionを破棄してLoginへ戻り、更新系の404／409では古いsnapshot、version、member mapping draftを破棄して
-一覧・詳細を再取得する。Project Template固有の日付既定値とMySQL DATE範囲の実在日付検証は
-`projectTemplateDate.ts`へ集約した。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
+一覧・詳細を再取得する。MySQL DATE範囲の実在日付検証は`projectTemplateDate.ts`へ集約した（日付の既定値は業務日の
+`shared/utils/businessDate.ts`から作る）。全71 test file・516 Vitest、TypeScript／Vue型検査、production buildが成功している。
 専用fixtureによる実ブラウザ、DB inspect／cleanup、通常Project不変確認も完了している。Stage 10D-2では同じfixtureを
 Playwrightへ統合し、capture、snapshot表示、member slot mapping、別Project適用、生成Board、DB lineageを自動化した。
 

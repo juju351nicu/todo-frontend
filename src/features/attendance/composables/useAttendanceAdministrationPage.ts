@@ -15,22 +15,23 @@ import type {
 } from "@/features/attendance/types/attendance";
 import {
   buildAttendanceMonthDateRange,
-  getTodayInTokyo,
 } from "@/features/attendance/utils/attendance";
 import {
   ATTENDANCE_ERROR_CODES,
   ATTENDANCE_RECOVERY_PRIORITY_STATUSES,
   needsAttendanceReloadGuidance,
 } from "@/features/attendance/utils/apiErrors";
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import { resolveApiErrorMessages } from "@/shared/utils/apiError";
-import { focusFirstEnabledElement } from "@/shared/utils/focus";
+import { getBusinessToday } from "@/shared/utils/businessDate";
+import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/utils/focus";
 
 /**
  * 勤怠管理画面の部品に付ける`data-attendance-admin-control`属性の値。
  * 承認・差戻し・締め・修正の審査の後は押したボタンが消えてフォーカスがbodyへ外れるため、
- * 一覧の同じ行（なければ「検索」）へ戻す。理由が空のときは理由の入力欄へ移す（動作確認/22_勤怠管理 G-2〜G-5）。
+ * 一覧の同じ行（なければ「検索」）へ戻す。理由が空のときは理由の入力欄へ移す。
  */
 export const ATTENDANCE_ADMIN_CONTROL = {
   /** 月次一覧の「検索」ボタン。 */
@@ -51,7 +52,7 @@ export const ATTENDANCE_ADMIN_CONTROL = {
  * @param accountId 行のaccount ID
  * @returns 属性の値
  */
-export const attendanceMonthRowControlKey = (accountId: number): string =>
+export const buildAttendanceMonthRowControlKey = (accountId: number): string =>
   `month:${accountId}`;
 
 /**
@@ -60,21 +61,20 @@ export const attendanceMonthRowControlKey = (accountId: number): string =>
  * @param requestId 行の修正申請ID
  * @returns 属性の値
  */
-export const attendanceCorrectionRowControlKey = (requestId: number): string =>
+export const buildAttendanceCorrectionRowControlKey = (requestId: number): string =>
   `correction:${requestId}`;
 
 /** `data-attendance-admin-control`属性の値から、その部品を探すselectorを作る。 */
-const adminControlSelector = (key: string): string =>
-  `[data-attendance-admin-control="${key}"]`;
+const buildAdminControlSelector = createDataAttributeSelector("data-attendance-admin-control");
 
 /**
  * 管理一覧で全状態を対象にする選択値。選択UI（Reka UI）は空文字の選択肢を扱えないため専用値にし、
  * API呼出時に状態条件なし（`null`）へ変換する。
  */
-export const ALL_ATTENDANCE_MONTH_STATUSES = "ALL";
+const ALL_ATTENDANCE_MONTH_STATUSES = "ALL";
 
 /** 管理一覧の状態絞込み選択肢。 */
-export const ATTENDANCE_MONTH_STATUS_OPTIONS = [
+const ATTENDANCE_MONTH_STATUS_OPTIONS = [
   { title: "すべて", value: ALL_ATTENDANCE_MONTH_STATUSES },
   { title: "下書き", value: "DRAFT" },
   { title: "提出済み", value: "SUBMITTED" },
@@ -87,7 +87,7 @@ type AttendanceMonthAction = "approve" | "reject" | "close";
 type AttendanceCorrectionAction = "approve-correction" | "reject-correction";
 
 /** 修正申請管理一覧の状態絞込み選択肢。 */
-export const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
+const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
   { title: "審査待ち", value: "PENDING" },
   { title: "承認済み", value: "APPROVED" },
   { title: "却下", value: "REJECTED" },
@@ -101,6 +101,7 @@ export const ATTENDANCE_CORRECTION_STATUS_OPTIONS = [
 export const useAttendanceAdministrationPage = () => {
   const router = useRouter();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const errorMessages = ref<string[]>([]);
   const isLoadingDetail = ref(false);
@@ -135,7 +136,7 @@ export const useAttendanceAdministrationPage = () => {
   });
   const selectedAccountId = ref<number | null>(null);
   const selectedDetail = ref<AttendanceMonthResponse | null>(null);
-  const selectedMonth = ref(getTodayInTokyo().slice(0, 7));
+  const selectedMonth = ref(getBusinessToday().slice(0, 7));
   const selectedStatus = ref<AttendanceMonthStatus | typeof ALL_ATTENDANCE_MONTH_STATUSES>(ALL_ATTENDANCE_MONTH_STATUSES);
   /** 状態絞込みをBackendの検索条件へ変換する。全状態の場合は条件なし。 */
   const statusFilter = computed<AttendanceMonthStatus | null>(() =>
@@ -227,7 +228,7 @@ export const useAttendanceAdministrationPage = () => {
     } finally {
       isExportingMonthlyCsv.value = false;
     }
-    await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.export)]);
+    await focusFirstEnabledElement([buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.export)]);
   };
 
   /**
@@ -318,7 +319,7 @@ export const useAttendanceAdministrationPage = () => {
     if (!reason) {
       correctionRejectReasonError.value = "却下理由を入力してください。";
       await focusFirstEnabledElement([
-        adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionRejectReason),
+        buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionRejectReason),
       ]);
       return;
     }
@@ -379,7 +380,7 @@ export const useAttendanceAdministrationPage = () => {
     if (!reason) {
       // 画面上部では押した位置から見えないため、入力欄の下に出して入力欄へ移す。
       monthRejectReasonError.value = "差戻し理由を入力してください。";
-      await focusFirstEnabledElement([adminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
+      await focusFirstEnabledElement([buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.rejectReason)]);
       return;
     }
     const attendanceMonthId = detail.attendanceMonthId;
@@ -511,11 +512,11 @@ export const useAttendanceAdministrationPage = () => {
     }
     // 状態が変わると押したボタンは消えるため、一覧の同じ行（絞り込みで消えたら「検索」）へ戻す。
     await focusFirstEnabledElement([
-      adminControlSelector(action),
+      buildAdminControlSelector(action),
       ...(selectedAccountId.value === null
         ? []
-        : [adminControlSelector(attendanceMonthRowControlKey(selectedAccountId.value))]),
-      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
+        : [buildAdminControlSelector(buildAttendanceMonthRowControlKey(selectedAccountId.value))]),
+      buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
     ]);
   };
 
@@ -563,11 +564,11 @@ export const useAttendanceAdministrationPage = () => {
     }
     // 審査すると押したボタンは消え、審査待ちで絞った一覧からは行も消えるため、残っている部品へ戻す。
     await focusFirstEnabledElement([
-      adminControlSelector(action),
+      buildAdminControlSelector(action),
       ...(requestId === null
         ? []
-        : [adminControlSelector(attendanceCorrectionRowControlKey(requestId))]),
-      adminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
+        : [buildAdminControlSelector(buildAttendanceCorrectionRowControlKey(requestId))]),
+      buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
     ]);
   };
 
@@ -582,8 +583,7 @@ export const useAttendanceAdministrationPage = () => {
     }
     if (error.status === 401) {
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {
@@ -613,8 +613,7 @@ export const useAttendanceAdministrationPage = () => {
     }
     if (error.status === 401) {
       errorMessages.value = [];
-      userStore.clearSession();
-      await router.push({ name: "Login" });
+      await expireSession();
       return;
     }
     if (error.status === 403) {

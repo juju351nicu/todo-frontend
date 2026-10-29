@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { onBeforeMount } from "vue";
 
-import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
+import TaskPriorityBadge from "@/features/task/components/TaskPriorityBadge.vue";
 import {
   MY_TASKS_RELOAD_CONTROL,
-  myTaskCompleteControlKey,
+  buildMyTaskCompleteControlKey,
   useMyTasksPage,
 } from "@/features/task/composables/useMyTasksPage";
 import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
@@ -64,7 +64,7 @@ const FILTER_OPTIONS = [
     </StatusAlert>
     <StatusAlert v-if="successMessage" type="success" class="mb-4">{{ successMessage }}</StatusAlert>
 
-    <!-- Vuetifyのv-btn-toggle（outlined・mandatory）と同じく、どちらか1つを必ず選択した状態にする。 -->
+    <!-- 期間の切替は、どちらか1つを必ず選択した状態にする（選択を外せない切替）。 -->
     <UFieldGroup class="mb-4" role="group" aria-label="My Tasksの期間">
       <UButton
         v-for="option in FILTER_OPTIONS"
@@ -97,7 +97,7 @@ const FILTER_OPTIONS = [
             <li v-for="task in group.items" :key="task.taskId" class="border-b border-default last:border-b-0">
               <!--
                 行の中のTimer・完了ボタンでEnterを押したときに行のEnterまで動き、完了と同時にBoardへ移っていたため、
-                行自身にフォーカスがあるときだけ開く（.self。動作確認/14_MyTasks G-5）。
+                行自身にフォーカスがあるときだけ開く（.self）。
               -->
               <div
                 role="button"
@@ -106,7 +106,7 @@ const FILTER_OPTIONS = [
                 @click="showTask(task)"
                 @keydown.enter.self="showTask(task)"
               >
-                <TodoPriorityBadge :priority="task.priority" size="xs" class="me-2 mt-0.5" />
+                <TaskPriorityBadge :priority="task.priority" size="xs" class="me-2 mt-0.5" />
                 <span class="min-w-0 flex-1">
                   <span class="block text-base font-medium">{{ task.title }}</span>
                   <span class="line-clamp-2 text-sm text-muted">
@@ -126,7 +126,7 @@ const FILTER_OPTIONS = [
                     :aria-label="`「${task.title}」を完了`"
                     title="完了"
                     :disabled="isLoading"
-                    :data-my-task-control="myTaskCompleteControlKey(task.taskId)"
+                    :data-my-task-control="buildMyTaskCompleteControlKey(task.taskId)"
                     @click.stop="completeTask(task)"
                   />
                 </span>

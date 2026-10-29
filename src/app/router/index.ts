@@ -4,6 +4,7 @@ import {
   hasAnyPermission,
   LOGIN_REQUIRED_QUERY,
 } from "@/app/router/authorization";
+import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { routes } from "@/app/router/routes";
 import { useUserStore } from "@/features/auth/stores/user";
 
@@ -20,10 +21,10 @@ router.beforeEach(async (to) => {
   const userStore = useUserStore();
   if (!(await userStore.restoreSession())) {
     // ブラウザーのalertは操作を止め、閉じると内容が残らないため、理由をqueryで渡してLogin画面内に表示する。
-    return { name: "Login", query: LOGIN_REQUIRED_QUERY };
+    return { name: ROUTE_NAMES.login, query: LOGIN_REQUIRED_QUERY };
   }
   if (!hasAnyPermission(userStore.permissionCodes, requiredPermissions)) {
-    return { name: "AccessDenied" };
+    return { name: ROUTE_NAMES.accessDenied };
   }
   return true;
 });

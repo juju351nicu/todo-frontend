@@ -39,7 +39,7 @@ describe("projectTemplateDisplay", () => {
   });
 });
 
-describe("Template詳細の内部コード・番号を名前で示す（改善提案 1-14）", () => {
+describe("Template詳細の内部コード・番号を名前で示す", () => {
   const statuses = [{ statusCode: "TODO", name: "未着手", position: 1, completed: false }];
   const memberSlots = [{ slotKey: "OWNER_1", displayName: "管理 一郎", projectRole: "OWNER", position: 1 }];
   const tasks = [
