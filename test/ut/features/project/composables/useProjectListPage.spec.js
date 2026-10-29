@@ -155,7 +155,7 @@ describe("useProjectListPage", () => {
     ]);
   });
 
-  describe("Templateを使わないProject作成（改善提案 2-13）", () => {
+  describe("Templateを使わないProject作成", () => {
     beforeEach(() => {
       mocks.permissions.add("PROJECT_CREATE");
     });

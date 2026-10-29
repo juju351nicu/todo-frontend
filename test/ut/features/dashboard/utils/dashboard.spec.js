@@ -33,7 +33,7 @@ describe("Dashboard表示utility", () => {
     expect(
       getAdvancedDashboardWarningLabel("BASELINE_PLAN_UNALLOCATED")
     ).toContain("未配賦");
-    // 利用者向けの文言に英語の用語（baseline・AC単独）を出さない（改善提案 1-18）。
+    // 利用者向けの文言に英語の用語（baseline・AC単独）を出さない。
     for (const code of [
       "BASELINE_PLAN_UNALLOCATED",
       "BASELINE_PLAN_OVER_ALLOCATED",

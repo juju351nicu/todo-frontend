@@ -147,7 +147,7 @@ describe("Project API", () => {
     );
   });
 
-  it("member候補の検索語をURLエンコードしてquery parameterへ設定し、候補配列を返す（改善提案 2-9）", async () => {
+  it("member候補の検索語をURLエンコードしてquery parameterへ設定し、候補配列を返す", async () => {
     const candidates = [{ accountId: 9, displayName: "山田 太郎", email: "y@example.com", loginId: null }];
     HttpClient.getRequest.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ candidates }) });
 

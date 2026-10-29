@@ -257,7 +257,7 @@ describe("useProjectSettingsDialog", () => {
     expect(dialog.addMemberAccountId.value).toBeNull();
   });
 
-  it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す（改善提案 2-9）", async () => {
+  it("名前で探したmember候補を選ぶとアカウントIDへ入り、追加後は検索結果を消す", async () => {
     const candidate = { accountId: 9, displayName: "山田 太郎", email: "yamada@example.com", loginId: "yamada" };
     mocks.projectApi.findMemberCandidates.mockResolvedValue([candidate]);
     mocks.projectApi.addProjectMember.mockResolvedValue(structuredClone(project));

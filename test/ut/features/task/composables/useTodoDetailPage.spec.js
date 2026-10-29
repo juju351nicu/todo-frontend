@@ -70,7 +70,7 @@ describe("useTodoDetailPage", () => {
     expect(mocks.todoStore.findTodoDetail).toHaveBeenCalledWith(42);
   });
 
-  it("担当者名が返れば、対象ユーザーを内部のIDではなく名前で示す（改善提案 1-17）", async () => {
+  it("担当者名が返れば、対象ユーザーを内部のIDではなく名前で示す", async () => {
     mocks.todoStore.findTodoDetail.mockResolvedValue({
       todo_id: 42,
       date_from: "2026-08-08",

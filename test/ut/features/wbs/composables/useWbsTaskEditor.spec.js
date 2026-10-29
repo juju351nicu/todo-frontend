@@ -67,7 +67,7 @@ describe("useWbsTaskEditor", () => {
     ]);
   });
 
-  it("MEMBERは自分が担当するTaskだけ編集でき、他人の担当Taskは入口を出さずDialogも開かない（改善提案 1-19）", async () => {
+  it("MEMBERは自分が担当するTaskだけ編集でき、他人の担当Taskは入口を出さずDialogも開かない", async () => {
     const othersWbs = structuredClone(wbs);
     othersWbs.tasks = othersWbs.tasks.map((task) => ({ ...task, assigneeAccountId: 1 }));
     mocks.wbsApi.getWbs.mockResolvedValue(othersWbs);

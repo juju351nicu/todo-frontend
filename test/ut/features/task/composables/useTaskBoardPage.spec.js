@@ -817,7 +817,7 @@ describe("useTaskBoardPage", () => {
     expect(page.canPostTaskComment.value).toBe(true);
   });
 
-  it("本人のTask TemplateのarchiveはTASK_READだけで出し、編集（TASK_UPDATE）とは分ける（改善提案 2-8）", async () => {
+  it("本人のTask TemplateのarchiveはTASK_READだけで出し、編集（TASK_UPDATE）とは分ける", async () => {
     mocks.permissions.clear();
     mocks.permissions.add("TASK_READ");
     const page = useTaskBoardPage();
@@ -844,7 +844,7 @@ describe("useTaskBoardPage", () => {
     expect(archivedPage.canPostTaskComment.value).toBe(false);
   });
 
-  it("未参加ProjectではREAD_ONLY_ADMINもコメント投稿・Template保存を出さず、SYSTEM_ADMINは出す（改善提案 2-12）", async () => {
+  it("未参加ProjectではREAD_ONLY_ADMINもコメント投稿・Template保存を出さず、SYSTEM_ADMINは出す", async () => {
     mocks.permissions.clear();
     mocks.permissions.add("TASK_READ");
     mocks.userStore.memberId = 99;
