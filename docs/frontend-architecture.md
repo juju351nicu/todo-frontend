@@ -115,9 +115,10 @@ src/
 - `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
 - `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
 - `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
-- `src/features/task/api/taskApi.ts`: Todo一覧・詳細・カレンダー・完了・登録更新、My Tasks専用API
+- `src/features/task/api/taskApi.ts`: 旧Todoの一覧・詳細・カレンダー・完了・登録更新API
+- `src/features/task/api/myTaskApi.ts`: My Tasks（本人担当のProject Task）の一覧・完了API
 - `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
-- `src/features/task/stores/task.ts`: Todo一覧の共有状態とTask API呼び出し
+- `src/features/task/stores/task.ts`: 旧Todoの画面のAPI呼び出しと通信中状態
 - `src/features/task/types/task.ts`: TodoとMy Tasks APIのRequest / Response型
 - `src/features/task/types/taskSearch.ts`: Task検索・候補・Saved ViewのRequest / Response型
 - `src/features/task/composables/useTodoListPage.ts`: Todo検索、一覧、完了更新、エラー表示、詳細画面遷移

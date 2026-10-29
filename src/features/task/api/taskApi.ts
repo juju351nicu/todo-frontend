@@ -1,5 +1,4 @@
 import type {
-  MyTaskListResponse,
   TodoDetailResponse,
   TodoListRequest,
   TodoListResponse,
@@ -37,18 +36,6 @@ const findDetail = async (todoId: number): Promise<TodoDetailResponse> => {
   );
   await ensureSuccess(response);
   return (await response.json()) as TodoDetailResponse;
-};
-
-/**
- * 認証利用者本人が担当する未完了Project Taskを取得する。
- *
- * @returns Backendが本人・Project・状態・期限を確定したMy Tasks Response
- * @throws TaskApiError 未認証、参照permission不足またはBackendエラーの場合
- */
-const findMyTasks = async (): Promise<MyTaskListResponse> => {
-  const response = await HttpClient.getRequest(API_PATHS.MY_TASKS);
-  await ensureSuccess(response);
-  return (await response.json()) as MyTaskListResponse;
 };
 
 /**
@@ -95,30 +82,6 @@ const complete = async (todoId: number): Promise<void> => {
 };
 
 /**
- * My Tasksの「完了」で、Project Taskを完了扱いのBoard列の末尾へ移して完了にする
- * （`POST /api/v1/projects/{projectId}/tasks/{taskId}/complete`）。
- * Board列の移動と同じ採番・version・Project状態の検査を使い、担当者本人のMEMBERも完了にできる（TASK_UPDATE）。
- * 共通HTTP clientがSession CookieとCSRF tokenを付ける。
- *
- * @param projectId Taskが属するProject ID
- * @param taskId    完了にするTask ID
- * @param version   My Tasksで取得した時点のTaskのversion
- * @throws TaskApiError 401・403・404、409（version競合 `TASK_VERSION_CONFLICT`、archive済みProject `PROJECT_ARCHIVED`、
- *   Summary Task `SUMMARY_TASK_NOT_COMPLETABLE`等）の場合
- */
-const completeMyTask = async (
-  projectId: number,
-  taskId: number,
-  version: number
-): Promise<void> => {
-  const response = await HttpClient.postRequest(
-    `${API_PATHS.PROJECTS}/${projectId}/tasks/${taskId}/complete`,
-    { version }
-  );
-  await ensureSuccess(response);
-};
-
-/**
  * Todoを登録または更新する。
  *
  * @param payload snake_case形式のTodo入力。所有者はBackendがpermissionに応じて確定する
@@ -131,10 +94,8 @@ const upsert = async (payload: TodoUpsertRequest): Promise<void> => {
 
 export default {
   complete,
-  completeMyTask,
   findCalendar,
   findDetail,
   findList,
-  findMyTasks,
   upsert,
 };

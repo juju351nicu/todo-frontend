@@ -2,7 +2,6 @@ import { defineStore } from "pinia";
 
 import TaskApi from "@/features/task/api/taskApi";
 import type {
-  MyTaskListResponse,
   TodoDetailResponse,
   TodoListRequest,
   TodoListResponse,
@@ -13,7 +12,7 @@ interface TodoState {
   isLoading: boolean;
 }
 
-/** Todo・My Tasksの画面が使うAPI呼出しと、通信中状態を管理するPinia Store。 */
+/** 旧Todoの画面（一覧・詳細・カレンダー）が使うAPI呼出しと、通信中状態を管理するPinia Store。 */
 export const useTodoStore = defineStore("todo", {
   state: (): TodoState => ({
     isLoading: false,
@@ -45,15 +44,6 @@ export const useTodoStore = defineStore("todo", {
     },
 
     /**
-     * Backendで本人・Project・状態を絞り込んだMy Tasks一覧を取得する。
-     *
-     * @returns 業務日と本人担当の未完了Project Task
-     */
-    findMyTasks(): Promise<MyTaskListResponse> {
-      return TaskApi.findMyTasks();
-    },
-
-    /**
      * Todoカレンダー情報を取得する。
      *
      * @param payload カレンダー検索条件
@@ -70,18 +60,6 @@ export const useTodoStore = defineStore("todo", {
      */
     completeTodo(todoId: number): Promise<void> {
       return TaskApi.complete(todoId);
-    },
-
-    /**
-     * My TasksのProject Taskを完了にする（完了列の末尾へ移す）。旧Todoの`completeTodo`とは別のAPIを使う。
-     *
-     * @param projectId Taskが属するProject ID
-     * @param taskId    完了にするTask ID
-     * @param version   取得時点のversion
-     * @throws TaskApiError 認証・認可失敗、未検出、競合の場合
-     */
-    completeMyTask(projectId: number, taskId: number, version: number): Promise<void> {
-      return TaskApi.completeMyTask(projectId, taskId, version);
     },
 
     /**

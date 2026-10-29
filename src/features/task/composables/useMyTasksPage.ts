@@ -4,8 +4,7 @@ import { useRouter } from "vue-router";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
-import { TaskApiError } from "@/features/task/api/taskApi";
-import { useTodoStore } from "@/features/task/stores/task";
+import MyTaskApi, { MyTaskApiError } from "@/features/task/api/myTaskApi";
 import type { MyTaskItem } from "@/features/task/types/task";
 import {
   LEGACY_TODO_ERROR_CODES,
@@ -46,7 +45,6 @@ const buildMyTaskControlSelector = createDataAttributeSelector("data-my-task-con
 /** 本人担当Taskを日付グループへ分けるMy Tasks画面の状態と操作を提供する。 */
 export const useMyTasksPage = () => {
   const router = useRouter();
-  const todoStore = useTodoStore();
   const userStore = useUserStore();
   const { expireSession } = useSessionExpiry();
   const errorMessages = ref<string[]>([]);
@@ -120,7 +118,7 @@ export const useMyTasksPage = () => {
 
   /** Backendの確定ResponseでMy Tasksと業務日を同時に置き換える。 */
   const replaceTasks = async (): Promise<void> => {
-    const data = await todoStore.findMyTasks();
+    const data = await MyTaskApi.findMyTasks();
     myTasks.value = data.tasks;
     businessDate.value = data.businessDate;
   };
@@ -132,7 +130,7 @@ export const useMyTasksPage = () => {
     forbidden: string,
     knownCodes: ReadonlySet<string> = LEGACY_TODO_ERROR_CODES
   ): string[] => {
-    return resolveStandardErrorMessages(error, TaskApiError, {
+    return resolveStandardErrorMessages(error, MyTaskApiError, {
       forbidden,
       notFound: DISPLAY_MESSAGES.task.myTasks.resourceNotFound,
       knownErrorCodes: knownCodes,
@@ -142,7 +140,7 @@ export const useMyTasksPage = () => {
 
   /** 401ではMy TasksとSession表示を破棄してLoginへ戻す。 */
   const handleUnauthorized = async (error: unknown): Promise<boolean> => {
-    if (!(error instanceof TaskApiError) || error.status !== 401) {
+    if (!(error instanceof MyTaskApiError) || error.status !== 401) {
       return false;
     }
     clearProtectedState();
@@ -164,7 +162,7 @@ export const useMyTasksPage = () => {
     } catch (error: unknown) {
       if (!(await handleUnauthorized(error))) {
         if (
-          error instanceof TaskApiError &&
+          error instanceof MyTaskApiError &&
           (error.status === 403 || error.status === 404)
         ) {
           clearProtectedState();
@@ -236,7 +234,7 @@ export const useMyTasksPage = () => {
     errorMessages.value = [];
     successMessage.value = "";
     try {
-      await todoStore.completeMyTask(task.projectId, task.taskId, task.version);
+      await MyTaskApi.completeMyTask(task.projectId, task.taskId, task.version);
       myTasks.value = myTasks.value.filter((item) => item.taskId !== task.taskId);
       successMessage.value = DISPLAY_MESSAGES.task.myTasks.completed(task.title);
       try {
@@ -244,7 +242,7 @@ export const useMyTasksPage = () => {
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof MyTaskApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();
@@ -268,7 +266,7 @@ export const useMyTasksPage = () => {
         MY_TASK_COMPLETE_ERROR_CODES
       );
       // 404（Taskがない）と409（他の操作で変わった）は、表示中の一覧が古いので取り直してから理由を出す。
-      if (!(error instanceof TaskApiError) || (error.status !== 404 && error.status !== 409)) {
+      if (!(error instanceof MyTaskApiError) || (error.status !== 404 && error.status !== 409)) {
         setErrors(operationMessages);
         return;
       }
@@ -280,7 +278,7 @@ export const useMyTasksPage = () => {
       } catch (reloadError: unknown) {
         if (await handleUnauthorized(reloadError)) return;
         if (
-          reloadError instanceof TaskApiError &&
+          reloadError instanceof MyTaskApiError &&
           TASK_RECOVERY_PRIORITY_STATUSES.has(reloadError.status)
         ) {
           clearProtectedState();

@@ -10,7 +10,6 @@ vi.mock("@/features/task/api/taskApi", () => ({
     findCalendar: vi.fn(),
     findDetail: vi.fn(),
     findList: vi.fn(),
-    findMyTasks: vi.fn(),
     upsert: vi.fn(),
   },
 }));
@@ -28,16 +27,6 @@ describe("Todo store", () => {
     await expect(store.completeTodo(42)).resolves.toBeUndefined();
 
     expect(TaskApi.complete).toHaveBeenCalledWith(42);
-  });
-
-  it("My Tasks専用APIのResponseをそのまま返す", async () => {
-    const response = { businessDate: "2026-09-20", tasks: [] };
-    TaskApi.findMyTasks.mockResolvedValue(response);
-    const store = useTodoStore();
-
-    await expect(store.findMyTasks()).resolves.toBe(response);
-
-    expect(TaskApi.findMyTasks).toHaveBeenCalledOnce();
   });
 
   it("ID指定でTodo詳細を取得し、処理中フラグを解除する", async () => {
