@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toRef } from "vue";
 
-import { checklistControlKey, useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
+import { buildChecklistControlKey, useTaskChecklist } from "@/features/task/composables/useTaskChecklist";
 import {
   CHECKLIST_ITEM_MAX_COUNT,
   CHECKLIST_ITEM_MAX_LENGTH,
@@ -85,7 +85,7 @@ const {
         :model-value="item.completed"
         :disabled="disabled || isMutating"
         :aria-label="`${item.content}の完了状態を変更`"
-        :data-checklist-control="checklistControlKey(item.checklistItemId, 'toggle')"
+        :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'toggle')"
         @update:model-value="toggleItem(item)"
       />
       <div v-if="editingItemId === item.checklistItemId" class="flex flex-1 items-center gap-2 py-1">
@@ -118,7 +118,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === 0"
             :aria-label="`${item.content}を上へ移動`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-up')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'move-up')"
             @click="moveItem(item, -1)"
           />
           <UButton
@@ -129,7 +129,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating || index === items.length - 1"
             :aria-label="`${item.content}を下へ移動`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'move-down')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'move-down')"
             @click="moveItem(item, 1)"
           />
           <UButton
@@ -140,7 +140,7 @@ const {
             class="text-inherit"
             :disabled="disabled || isMutating"
             :aria-label="`${item.content}を編集`"
-            :data-checklist-control="checklistControlKey(item.checklistItemId, 'edit')"
+            :data-checklist-control="buildChecklistControlKey(item.checklistItemId, 'edit')"
             @click="startEditing(item)"
           />
           <UButton

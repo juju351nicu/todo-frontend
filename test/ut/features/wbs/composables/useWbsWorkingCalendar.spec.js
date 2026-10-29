@@ -6,7 +6,7 @@ import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
 import {
   useWbsWorkingCalendar,
   WORKING_CALENDAR_SUBMIT_CONTROL,
-  workingDayEditControlKey,
+  buildWorkingDayEditControlKey,
 } from "@/features/wbs/composables/useWbsWorkingCalendar";
 import { buildWorkingCalendarTargetKey } from "@/features/wbs/utils/workingCalendar";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -274,7 +274,7 @@ describe("useWbsWorkingCalendar", () => {
     );
     expect(mocks.wbsApi.getTaskWorkload).toHaveBeenCalledTimes(2);
     // 削除ボタンは消えるので、同じ行の「登録・編集」へフォーカスを戻す。
-    expect(mocks.focusedControls).toEqual([workingDayEditControlKey("2026-08-22")]);
+    expect(mocks.focusedControls).toEqual([buildWorkingDayEditControlKey("2026-08-22")]);
   });
 
   describe("contextを直接渡した場合", () => {
@@ -399,7 +399,7 @@ describe("useWbsWorkingCalendar", () => {
         "別の操作で稼働日設定が変更されました。最新状態を取得してください。",
         DISPLAY_MESSAGES.wbs.workingCalendar.conflictReloaded,
       ]);
-      expect(mocks.focusedControls).toEqual([workingDayEditControlKey("2026-08-22")]);
+      expect(mocks.focusedControls).toEqual([buildWorkingDayEditControlKey("2026-08-22")]);
     });
 
     it("通常memberは他memberの個人例外を表示対象に選べずAPIを呼ばない", async () => {

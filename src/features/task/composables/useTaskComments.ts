@@ -34,7 +34,7 @@ export const COMMENT_COMPOSER_CONTROL = "composer";
  * @param commentId コメントID
  * @returns `"{commentId}:edit"`形式の属性値
  */
-export const commentEditControlKey = (commentId: number): string =>
+export const buildCommentEditControlKey = (commentId: number): string =>
   `${commentId}:edit`;
 
 /** `data-comment-control`属性の値から、その要素を探すselectorを作る。 */
@@ -392,7 +392,7 @@ export const useTaskComments = (
     const commentId = editingCommentId.value;
     cancelEditing();
     if (commentId !== null) {
-      await focusFirstEnabledElement([buildCommentControlSelector(commentEditControlKey(commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(commentId))]);
     }
   };
 
@@ -442,7 +442,7 @@ export const useTaskComments = (
     }
     // 更新に成功して編集欄が閉じたときだけ編集ボタンへ戻す。失敗して編集欄が残る場合は編集欄のフォーカスを奪わない。
     if (editingCommentId.value === null) {
-      await focusFirstEnabledElement([buildCommentControlSelector(commentEditControlKey(comment.commentId))]);
+      await focusFirstEnabledElement([buildCommentControlSelector(buildCommentEditControlKey(comment.commentId))]);
     }
   };
 

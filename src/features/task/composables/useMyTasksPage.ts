@@ -37,7 +37,7 @@ export const MY_TASKS_RELOAD_CONTROL = "reload";
  * @param taskId Task ID
  * @returns `"complete:{taskId}"`形式の属性値
  */
-export const myTaskCompleteControlKey = (taskId: number): string =>
+export const buildMyTaskCompleteControlKey = (taskId: number): string =>
   `complete:${taskId}`;
 
 /** `data-my-task-control`属性の値から、その要素を探すselectorを作る。 */
@@ -213,7 +213,7 @@ export const useMyTasksPage = () => {
       tasksNow[Math.min(index, tasksNow.length) - 1]?.taskId,
     ].filter((candidate): candidate is number => candidate !== undefined);
     return focusFirstEnabledElement([
-      ...candidates.map((candidate) => buildMyTaskControlSelector(myTaskCompleteControlKey(candidate))),
+      ...candidates.map((candidate) => buildMyTaskControlSelector(buildMyTaskCompleteControlKey(candidate))),
       buildMyTaskControlSelector(MY_TASKS_RELOAD_CONTROL),
     ]);
   };

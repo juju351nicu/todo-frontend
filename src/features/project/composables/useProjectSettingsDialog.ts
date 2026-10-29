@@ -94,7 +94,7 @@ export const PROJECT_SETTINGS_CONTROL = {
  * @param accountId 行のアカウントID
  * @returns `"member:{accountId}:role"`形式の属性値
  */
-export const memberRoleControlKey = (accountId: number): string =>
+export const buildMemberRoleControlKey = (accountId: number): string =>
   `member:${accountId}:role`;
 
 /**
@@ -282,7 +282,7 @@ export const useProjectSettingsDialog = (
    * 候補がすべて消えた・disabledのとき（自分を降格した後など）は「閉じる」へ戻す。
    * Dialogを閉じた後（401・自己除外）は何もしない。isSaving等をfalseへ戻した後に呼ぶ。
    *
-   * @param candidates `PROJECT_SETTINGS_CONTROL`または`memberRoleControlKey`の値（優先順）
+   * @param candidates `PROJECT_SETTINGS_CONTROL`または`buildMemberRoleControlKey`の値（優先順）
    */
   const restoreControlFocus = async (candidates: readonly string[]): Promise<void> => {
     if (!isDialogOpen.value) {
@@ -537,7 +537,7 @@ export const useProjectSettingsDialog = (
     }
     // 変更後は「role保存」がdisabledに戻るため、同じ行のrole選択へ戻す。
     await restoreControlFocus([
-      memberRoleControlKey(member.accountId),
+      buildMemberRoleControlKey(member.accountId),
       PROJECT_SETTINGS_CONTROL.addAccountId,
     ]);
   };

@@ -33,7 +33,7 @@ export type ChecklistControl = "toggle" | "move-up" | "move-down" | "edit";
  * @param control 部品の種類
  * @returns `"{itemId}:{control}"`形式の属性値
  */
-export const checklistControlKey = (
+export const buildChecklistControlKey = (
   itemId: number,
   control: ChecklistControl
 ): string => `${itemId}:${control}`;
@@ -353,7 +353,7 @@ export const useTaskChecklist = (
     focusFirstEnabledElement(
       candidates.map(
         (control) =>
-          `[data-checklist-control="${checklistControlKey(itemId, control)}"]`
+          `[data-checklist-control="${buildChecklistControlKey(itemId, control)}"]`
       )
     );
 

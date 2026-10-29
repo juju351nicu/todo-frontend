@@ -3,7 +3,7 @@ import { onBeforeMount } from "vue";
 
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
 import TodoSearchCard from "@/features/task/components/TodoSearchCard.vue";
-import { todoEditControlKey, useTodoListPage } from "@/features/task/composables/useTodoListPage";
+import { buildTodoEditControlKey, useTodoListPage } from "@/features/task/composables/useTodoListPage";
 import { formatRemainingDays, truncateTodoDetail } from "@/features/task/utils/taskDisplay";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
@@ -65,7 +65,7 @@ onBeforeMount(initialize);
           square
           class="m-1 size-8"
           :aria-label="canWriteTodo(item) ? `「${item.title}」を編集` : `「${item.title}」を表示`"
-          :data-todo-control="todoEditControlKey(item.todoId)"
+          :data-todo-control="buildTodoEditControlKey(item.todoId)"
           @click="showTodoDetail(item)"
         />
         <UButton

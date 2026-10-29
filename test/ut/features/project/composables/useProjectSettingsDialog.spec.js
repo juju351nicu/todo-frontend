@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
 import {
-  memberRoleControlKey,
+  buildMemberRoleControlKey,
   PROJECT_SETTINGS_CONTROL,
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
@@ -658,7 +658,7 @@ describe("useProjectSettingsDialog", () => {
 
       await dialog.saveMemberRole(project.members[2]);
 
-      expect(focused).toEqual([memberRoleControlKey(4)]);
+      expect(focused).toEqual([buildMemberRoleControlKey(4)]);
     });
 
     it("他memberを除外した後は、行が消えるためアカウントIDの入力欄へ戻す", async () => {

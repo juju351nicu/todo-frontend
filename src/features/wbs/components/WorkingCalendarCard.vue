@@ -17,7 +17,7 @@ import {
 } from "@/features/wbs/utils/workingCalendar";
 import {
   WORKING_CALENDAR_SUBMIT_CONTROL,
-  workingDayEditControlKey,
+  buildWorkingDayEditControlKey,
 } from "@/features/wbs/composables/useWbsWorkingCalendar";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useSyncedDraft } from "@/shared/composables/useSyncedDraft";
@@ -185,7 +185,7 @@ const findSelectedOverride = (day: WorkingCalendarDay) =>
                     variant="ghost"
                     square
                     :disabled="isMutating"
-                    :data-working-calendar-control="workingDayEditControlKey(day.workDate)"
+                    :data-working-calendar-control="buildWorkingDayEditControlKey(day.workDate)"
                     :aria-label="`${day.workDate}の稼働日例外を${findSelectedOverride(day) ? '編集' : '登録'}`"
                     @click="emit('edit', day.workDate)"
                   />

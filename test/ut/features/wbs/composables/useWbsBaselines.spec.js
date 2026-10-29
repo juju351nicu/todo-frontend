@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
 import {
-  baselineActivateControlKey,
+  buildBaselineActivateControlKey,
   useWbsBaselines,
 } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsPage } from "@/features/wbs/composables/useWbsPage";
@@ -180,7 +180,7 @@ describe("useWbsBaselines", () => {
 
     // 単体テストのdocumentは常に要素を返すため、候補の先頭（押したボタン）へ戻したことだけを確かめる。
     expect(mocks.focusedControls).toEqual([
-      baselineActivateControlKey(inactiveBaselineSummary.baselineId),
+      buildBaselineActivateControlKey(inactiveBaselineSummary.baselineId),
     ]);
   });
 

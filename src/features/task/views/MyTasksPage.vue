@@ -4,7 +4,7 @@ import { onBeforeMount } from "vue";
 import TodoPriorityBadge from "@/features/task/components/TodoPriorityBadge.vue";
 import {
   MY_TASKS_RELOAD_CONTROL,
-  myTaskCompleteControlKey,
+  buildMyTaskCompleteControlKey,
   useMyTasksPage,
 } from "@/features/task/composables/useMyTasksPage";
 import { formatRemainingDays } from "@/features/task/utils/taskDisplay";
@@ -126,7 +126,7 @@ const FILTER_OPTIONS = [
                     :aria-label="`「${task.title}」を完了`"
                     title="完了"
                     :disabled="isLoading"
-                    :data-my-task-control="myTaskCompleteControlKey(task.taskId)"
+                    :data-my-task-control="buildMyTaskCompleteControlKey(task.taskId)"
                     @click.stop="completeTask(task)"
                   />
                 </span>

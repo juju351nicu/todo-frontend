@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   MY_TASKS_RELOAD_CONTROL,
-  myTaskCompleteControlKey,
+  buildMyTaskCompleteControlKey,
   useMyTasksPage,
 } from "@/features/task/composables/useMyTasksPage";
 import { TaskApiError } from "@/features/task/api/taskApi";
@@ -325,11 +325,11 @@ describe("useMyTasksPage", () => {
       const page = useMyTasksPage();
       await page.loadTasks();
       mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [tasks[0], tasks[2]] });
-      const focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(17), MY_TASKS_RELOAD_CONTROL]);
+      const focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(17), MY_TASKS_RELOAD_CONTROL]);
 
       await page.completeTask(tasks[1]);
 
-      expect(focused).toEqual([myTaskCompleteControlKey(17)]);
+      expect(focused).toEqual([buildMyTaskCompleteControlKey(17)]);
     });
 
     it("最後のTaskを完了したら1つ前、Taskがなくなったら再読み込みボタンへ戻す", async () => {
@@ -337,10 +337,10 @@ describe("useMyTasksPage", () => {
       const page = useMyTasksPage();
       await page.loadTasks();
       mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: tasks.slice(0, 2) });
-      let focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(16), MY_TASKS_RELOAD_CONTROL]);
+      let focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(16), MY_TASKS_RELOAD_CONTROL]);
 
       await page.completeTask(tasks[2]);
-      expect(focused).toEqual([myTaskCompleteControlKey(16)]);
+      expect(focused).toEqual([buildMyTaskCompleteControlKey(16)]);
 
       mocks.todoStore.findMyTasks.mockResolvedValue({ businessDate: "2026-09-20", tasks: [] });
       focused = stubDocument([MY_TASKS_RELOAD_CONTROL]);
@@ -352,11 +352,11 @@ describe("useMyTasksPage", () => {
       mocks.todoStore.completeMyTask.mockRejectedValue(new TypeError("Failed to fetch"));
       const page = useMyTasksPage();
       await page.loadTasks();
-      const focused = stubDocument([myTaskCompleteControlKey(15), myTaskCompleteControlKey(16), myTaskCompleteControlKey(17)]);
+      const focused = stubDocument([buildMyTaskCompleteControlKey(15), buildMyTaskCompleteControlKey(16), buildMyTaskCompleteControlKey(17)]);
 
       await page.completeTask(tasks[1]);
 
-      expect(focused).toEqual([myTaskCompleteControlKey(16)]);
+      expect(focused).toEqual([buildMyTaskCompleteControlKey(16)]);
     });
   });
 });

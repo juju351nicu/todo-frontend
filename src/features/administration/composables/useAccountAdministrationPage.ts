@@ -31,7 +31,7 @@ import { focusFirstEnabledElement } from "@/shared/utils/focus";
  * @param accountId 行のaccount ID
  * @returns 属性の値
  */
-export const accountRoleEditControlKey = (accountId: number): string =>
+export const buildAccountRoleEditControlKey = (accountId: number): string =>
   `edit:${accountId}`;
 
 const ACCOUNT_TABLE_HEADERS: DataTableHeader[] = [
@@ -262,7 +262,7 @@ export const useAccountAdministrationPage = () => {
         accounts.value = [];
         await reloadAccountsAfterConflict(operationMessages, account);
         await focusFirstEnabledElement([
-          `[data-account-admin-control="${accountRoleEditControlKey(account.accountId)}"]`,
+          `[data-account-admin-control="${buildAccountRoleEditControlKey(account.accountId)}"]`,
         ]);
       }
     } finally {

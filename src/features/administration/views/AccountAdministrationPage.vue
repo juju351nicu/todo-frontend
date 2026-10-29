@@ -2,7 +2,7 @@
 import { onBeforeMount } from "vue";
 
 import {
-  accountRoleEditControlKey,
+  buildAccountRoleEditControlKey,
   useAccountAdministrationPage,
 } from "@/features/administration/composables/useAccountAdministrationPage";
 import {
@@ -95,7 +95,7 @@ onBeforeMount(initialize);
             square
             class="size-8"
             :aria-label="`${item.displayName}のロールを編集`"
-            :data-account-admin-control="accountRoleEditControlKey(item.accountId)"
+            :data-account-admin-control="buildAccountRoleEditControlKey(item.accountId)"
             @click="openRoleEditor(item)"
           />
           <span v-else class="text-muted">参照のみ</span>

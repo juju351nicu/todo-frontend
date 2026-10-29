@@ -28,7 +28,7 @@ import { toNumberList } from "@/shared/utils/number";
  * @param todoId Todo ID
  * @returns `"edit:{todoId}"`形式の属性値
  */
-export const todoEditControlKey = (todoId: number): string => `edit:${todoId}`;
+export const buildTodoEditControlKey = (todoId: number): string => `edit:${todoId}`;
 
 const TODO_TABLE_HEADERS: DataTableHeader[] = [
   { title: "重要度", align: "start", key: "priority" },
@@ -163,7 +163,7 @@ export const useTodoListPage = () => {
   const completeTodo = async (todo: TodoListItem): Promise<void> => {
     await submitComplete(todo);
     // 401でLoginへ移った後や、一覧から消えた後は部品が見つからないので何もしない。
-    await focusFirstEnabledElement([`[data-todo-control="${todoEditControlKey(todo.todoId)}"]`]);
+    await focusFirstEnabledElement([`[data-todo-control="${buildTodoEditControlKey(todo.todoId)}"]`]);
   };
 
   /** 完了APIを呼び、一覧を取り直して結果をmessageへ反映する。 */

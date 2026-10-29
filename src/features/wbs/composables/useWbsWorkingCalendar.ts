@@ -42,7 +42,7 @@ import { createDataAttributeSelector, focusFirstEnabledElement } from "@/shared/
  * @param workDate 行の日付（yyyy-MM-dd）
  * @returns 属性の値
  */
-export const workingDayEditControlKey = (workDate: string): string =>
+export const buildWorkingDayEditControlKey = (workDate: string): string =>
   `day:${workDate}:edit`;
 
 /**
@@ -500,7 +500,7 @@ export const useWbsWorkingCalendar = (
     workingCalendarSuccessMessage.value = "";
     // 削除後は削除ボタンが消えるため、成功・失敗にかかわらず同じ行の「登録・編集」へフォーカスを戻す。
     const editControl = buildWorkingCalendarControlSelector(
-      workingDayEditControlKey(override.workDate)
+      buildWorkingDayEditControlKey(override.workDate)
     );
     try {
       if (target.kind === "PROJECT") {

@@ -4,7 +4,7 @@ import { onBeforeMount } from "vue";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import {
   PROJECT_TEMPLATE_CONTROL,
-  templateItemControlKey,
+  buildTemplateItemControlKey,
   useProjectTemplatePage,
 } from "@/features/project/composables/useProjectTemplatePage";
 import {
@@ -97,7 +97,7 @@ onBeforeMount(initialize);
                     : 'hover:bg-elevated'
                 "
                 :disabled="isMutating || isLoadingDetail"
-                :data-project-template-control="templateItemControlKey(template.projectTemplateId)"
+                :data-project-template-control="buildTemplateItemControlKey(template.projectTemplateId)"
                 @click="selectTemplate(template)"
               >
                 <UIcon name="i-mdi-folder-star-outline" class="size-6 shrink-0 opacity-60" />

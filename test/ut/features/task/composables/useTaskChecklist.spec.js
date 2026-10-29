@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskChecklistApiError } from "@/features/task/api/taskChecklistApi";
 import {
-  checklistControlKey,
+  buildChecklistControlKey,
   useTaskChecklist,
 } from "@/features/task/composables/useTaskChecklist";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -446,7 +446,7 @@ describe("useTaskChecklist", () => {
 
       await page.toggleItem(page.items.value[0]);
 
-      expect(focused).toEqual([checklistControlKey(41, "toggle")]);
+      expect(focused).toEqual([buildChecklistControlKey(41, "toggle")]);
     });
 
     it("完了状態の切替に失敗した場合もcheckboxへフォーカスを戻す", async () => {
@@ -458,7 +458,7 @@ describe("useTaskChecklist", () => {
       await page.toggleItem(page.items.value[0]);
 
       expect(page.errorMessages.value).toEqual([DISPLAY_MESSAGES.common.connectionFailed]);
-      expect(focused).toEqual([checklistControlKey(41, "toggle")]);
+      expect(focused).toEqual([buildChecklistControlKey(41, "toggle")]);
     });
 
     it("下へ移動した後、同じ項目の下へ移動ボタンへフォーカスを戻す", async () => {
@@ -468,17 +468,17 @@ describe("useTaskChecklist", () => {
 
       await page.moveItem(page.items.value[0], 1);
 
-      expect(focused).toEqual([checklistControlKey(41, "move-down")]);
+      expect(focused).toEqual([buildChecklistControlKey(41, "move-down")]);
     });
 
     it("末尾へ移動して下へ移動ボタンがdisabledなら、上へ移動ボタンへフォーカスを戻す", async () => {
-      const focused = stubDocument([checklistControlKey(41, "move-down")]);
+      const focused = stubDocument([buildChecklistControlKey(41, "move-down")]);
       const page = createPage();
       await waitForInitialLoad();
 
       await page.moveItem(page.items.value[0], 1);
 
-      expect(focused).toEqual([checklistControlKey(41, "move-up")]);
+      expect(focused).toEqual([buildChecklistControlKey(41, "move-up")]);
     });
 
     it("本文を保存した後、その項目の編集ボタンへフォーカスを戻す", async () => {
@@ -491,7 +491,7 @@ describe("useTaskChecklist", () => {
       await page.saveEdit();
 
       expect(page.editingItemId.value).toBeNull();
-      expect(focused).toEqual([checklistControlKey(41, "edit")]);
+      expect(focused).toEqual([buildChecklistControlKey(41, "edit")]);
     });
 
     it("保存に失敗して編集欄が残る場合は、フォーカスを動かさない", async () => {
@@ -520,7 +520,7 @@ describe("useTaskChecklist", () => {
       expect(page.editingItemId.value).toBeNull();
       expect(page.editContent.value).toBe("");
       expect(mocks.taskChecklistApi.updateItem).not.toHaveBeenCalled();
-      expect(focused).toEqual([checklistControlKey(42, "edit")]);
+      expect(focused).toEqual([buildChecklistControlKey(42, "edit")]);
     });
   });
 });

@@ -67,7 +67,7 @@ export const PROJECT_TEMPLATE_CONTROL = {
  * @param projectTemplateId Project Template ID
  * @returns `"template:{projectTemplateId}"`形式の属性値
  */
-export const templateItemControlKey = (projectTemplateId: number): string =>
+export const buildTemplateItemControlKey = (projectTemplateId: number): string =>
   `template:${projectTemplateId}`;
 
 /** `data-project-template-control`属性の値から、その要素を探すselectorを作る。 */
@@ -189,7 +189,7 @@ export const useProjectTemplatePage = () => {
    * 操作の後に、候補の部品へフォーカスを戻す（候補は優先順。すべて消えた・disabledのときは動かさない）。
    * isSaving等をfalseへ戻した後に呼ぶ。
    *
-   * @param candidates `PROJECT_TEMPLATE_CONTROL`または`templateItemControlKey`の値
+   * @param candidates `PROJECT_TEMPLATE_CONTROL`または`buildTemplateItemControlKey`の値
    */
   const restoreControlFocus = (candidates: readonly string[]): Promise<void> =>
     focusFirstEnabledElement(candidates.map(buildTemplateControlSelector));
@@ -468,7 +468,7 @@ export const useProjectTemplatePage = () => {
     await restoreControlFocus([
       PROJECT_TEMPLATE_CONTROL.editButton,
       ...templates.value.slice(0, 1).map((candidate) =>
-        templateItemControlKey(candidate.projectTemplateId)
+        buildTemplateItemControlKey(candidate.projectTemplateId)
       ),
     ]);
   };

@@ -3,7 +3,7 @@ import { toRef } from "vue";
 
 import {
   COMMENT_COMPOSER_CONTROL,
-  commentEditControlKey,
+  buildCommentEditControlKey,
   useTaskComments,
 } from "@/features/task/composables/useTaskComments";
 import { TASK_COMMENT_MAX_LENGTH } from "@/features/task/constants/taskLimits";
@@ -123,7 +123,7 @@ const {
           class="text-inherit"
           :disabled="isMutating"
           :aria-label="`${comment.authorDisplayName}のコメント（${formatShortDateTime(comment.createdAt)}投稿）を編集`"
-          :data-comment-control="commentEditControlKey(comment.commentId)"
+          :data-comment-control="buildCommentEditControlKey(comment.commentId)"
           @click="startEditing(comment)"
         />
         <UButton

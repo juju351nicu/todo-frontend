@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {
   ATTENDANCE_ADMIN_CONTROL,
-  attendanceCorrectionRowControlKey,
+  buildAttendanceCorrectionRowControlKey,
 } from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import type {
@@ -102,7 +102,7 @@ defineEmits<{
               tabindex="0"
               :aria-label="`${request.displayName || 'Account ' + request.accountId}の${formatAttendanceDate(request.workDate)}修正申請を表示`"
               aria-keyshortcuts="Enter Space"
-              :data-attendance-admin-control="attendanceCorrectionRowControlKey(request.attendanceCorrectionRequestId)"
+              :data-attendance-admin-control="buildAttendanceCorrectionRowControlKey(request.attendanceCorrectionRequestId)"
               @click="$emit('select', request)"
               @keydown.enter="$emit('select', request)"
               @keydown.space.prevent="$emit('select', request)"

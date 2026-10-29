@@ -2,7 +2,7 @@
 import { computed } from "vue";
 
 import {
-  memberRoleControlKey,
+  buildMemberRoleControlKey,
   PROJECT_SETTINGS_CONTROL,
   useProjectSettingsDialog,
 } from "@/features/project/composables/useProjectSettingsDialog";
@@ -328,7 +328,7 @@ const SECTION_TABS = [
                     :disabled="isBusy || !canManageMembers"
                     :aria-label="`${member.displayName}（ID: ${member.accountId}）のProject role`"
                     class="w-full"
-                    :data-project-settings-control="memberRoleControlKey(member.accountId)"
+                    :data-project-settings-control="buildMemberRoleControlKey(member.accountId)"
                   />
                   <div v-if="isLastOwner(member)" class="mt-1 text-xs text-warning">最後のOWNERは降格・除外できません。</div>
                 </td>

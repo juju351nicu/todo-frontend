@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectTemplateApiError } from "@/features/project/api/projectTemplateApi";
 import {
   PROJECT_TEMPLATE_CONTROL,
-  templateItemControlKey,
+  buildTemplateItemControlKey,
   useProjectTemplatePage,
 } from "@/features/project/composables/useProjectTemplatePage";
 
@@ -428,7 +428,7 @@ describe("useProjectTemplatePage", () => {
 
       await page.archiveTemplate();
 
-      expect(focused).toEqual([templateItemControlKey(82)]);
+      expect(focused).toEqual([buildTemplateItemControlKey(82)]);
     });
   });
 

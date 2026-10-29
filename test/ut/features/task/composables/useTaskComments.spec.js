@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TaskCommentApiError } from "@/features/task/api/taskCommentApi";
 import {
   COMMENT_COMPOSER_CONTROL,
-  commentEditControlKey,
+  buildCommentEditControlKey,
   useTaskComments,
 } from "@/features/task/composables/useTaskComments";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
@@ -488,7 +488,7 @@ describe("useTaskComments", () => {
       await page.submitEdit();
 
       expect(page.editingCommentId.value).toBeNull();
-      expect(focused).toEqual([commentEditControlKey(41)]);
+      expect(focused).toEqual([buildCommentEditControlKey(41)]);
     });
 
     it("更新に失敗して編集欄が残る場合は、フォーカスを動かさない", async () => {
@@ -517,7 +517,7 @@ describe("useTaskComments", () => {
       expect(page.editingCommentId.value).toBeNull();
       expect(page.editBody.value).toBe("");
       expect(mocks.taskCommentApi.updateComment).not.toHaveBeenCalled();
-      expect(focused).toEqual([commentEditControlKey(41)]);
+      expect(focused).toEqual([buildCommentEditControlKey(41)]);
     });
   });
 });

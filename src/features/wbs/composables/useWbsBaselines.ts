@@ -39,7 +39,7 @@ export const WBS_BASELINE_CONTROL = {
  * @param baselineId 行のbaseline ID
  * @returns 属性の値
  */
-export const baselineActivateControlKey = (baselineId: number): string =>
+export const buildBaselineActivateControlKey = (baselineId: number): string =>
   `activate:${baselineId}`;
 
 /** `data-wbs-baseline-control`属性の値から、その要素を探すselectorを作る。 */
@@ -358,10 +358,10 @@ export const useWbsBaselines = (
     }
     if (!context.isSessionInvalidated()) {
       await focusFirstEnabledElement([
-        buildBaselineControlSelector(baselineActivateControlKey(baseline.baselineId)),
+        buildBaselineControlSelector(buildBaselineActivateControlKey(baseline.baselineId)),
         ...(previousActiveBaselineId === null
           ? []
-          : [buildBaselineControlSelector(baselineActivateControlKey(previousActiveBaselineId))]),
+          : [buildBaselineControlSelector(buildBaselineActivateControlKey(previousActiveBaselineId))]),
         buildBaselineControlSelector(WBS_BASELINE_CONTROL.create),
       ]);
     }

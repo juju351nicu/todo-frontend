@@ -52,7 +52,7 @@ export const ATTENDANCE_ADMIN_CONTROL = {
  * @param accountId 行のaccount ID
  * @returns 属性の値
  */
-export const attendanceMonthRowControlKey = (accountId: number): string =>
+export const buildAttendanceMonthRowControlKey = (accountId: number): string =>
   `month:${accountId}`;
 
 /**
@@ -61,7 +61,7 @@ export const attendanceMonthRowControlKey = (accountId: number): string =>
  * @param requestId 行の修正申請ID
  * @returns 属性の値
  */
-export const attendanceCorrectionRowControlKey = (requestId: number): string =>
+export const buildAttendanceCorrectionRowControlKey = (requestId: number): string =>
   `correction:${requestId}`;
 
 /** `data-attendance-admin-control`属性の値から、その部品を探すselectorを作る。 */
@@ -515,7 +515,7 @@ export const useAttendanceAdministrationPage = () => {
       buildAdminControlSelector(action),
       ...(selectedAccountId.value === null
         ? []
-        : [buildAdminControlSelector(attendanceMonthRowControlKey(selectedAccountId.value))]),
+        : [buildAdminControlSelector(buildAttendanceMonthRowControlKey(selectedAccountId.value))]),
       buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.search),
     ]);
   };
@@ -567,7 +567,7 @@ export const useAttendanceAdministrationPage = () => {
       buildAdminControlSelector(action),
       ...(requestId === null
         ? []
-        : [buildAdminControlSelector(attendanceCorrectionRowControlKey(requestId))]),
+        : [buildAdminControlSelector(buildAttendanceCorrectionRowControlKey(requestId))]),
       buildAdminControlSelector(ATTENDANCE_ADMIN_CONTROL.correctionSearch),
     ]);
   };

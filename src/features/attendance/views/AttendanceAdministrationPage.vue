@@ -4,7 +4,7 @@ import { onBeforeMount } from "vue";
 import AttendanceCorrectionAdministration from "@/features/attendance/components/AttendanceCorrectionAdministration.vue";
 import {
   ATTENDANCE_ADMIN_CONTROL,
-  attendanceMonthRowControlKey,
+  buildAttendanceMonthRowControlKey,
   useAttendanceAdministrationPage,
 } from "@/features/attendance/composables/useAttendanceAdministrationPage";
 import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
@@ -170,7 +170,7 @@ onBeforeMount(initialize);
                     role="button"
                     tabindex="0"
                     :aria-label="`${month.displayName}の${month.yearMonth}勤怠を表示`"
-                    :data-attendance-admin-control="attendanceMonthRowControlKey(month.accountId)"
+                    :data-attendance-admin-control="buildAttendanceMonthRowControlKey(month.accountId)"
                     @click="selectMonth(month)"
                     @keydown.enter="selectMonth(month)"
                     @keydown.space.prevent="selectMonth(month)"

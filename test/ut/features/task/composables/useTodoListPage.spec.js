@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { TaskApiError } from "@/features/task/api/taskApi";
 import {
-  todoEditControlKey,
+  buildTodoEditControlKey,
   useTodoListPage,
 } from "@/features/task/composables/useTodoListPage";
 
@@ -156,7 +156,7 @@ describe("useTodoListPage", () => {
 
       await page.completeTodo({ ...todo });
 
-      expect(focused).toEqual([todoEditControlKey(42)]);
+      expect(focused).toEqual([buildTodoEditControlKey(42)]);
     });
   });
 
