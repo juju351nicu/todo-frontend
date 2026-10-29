@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { ProjectApiError } from "@/features/project/api/projectApi";
+import { TaskApiError } from "@/features/task/api/taskApi";
 import {
   API_RECOVERY_PRIORITY_STATUSES,
+  ApiError,
   ensureApiSuccess,
+  isUnauthorizedApiError,
   hasApiFieldError,
   readErrorResponse,
   resolveApiErrorMessages,
@@ -11,6 +15,27 @@ import {
 const KNOWN_CODES = new Set(["KNOWN_ERROR", "VALIDATION_ERROR"]);
 
 describe("API error表示utility", () => {
+  it("feature API例外は基底ApiErrorを継承し、名前・message・status・本文を持つ", () => {
+    const errorResponse = { fieldErrors: [] };
+    const error = new ProjectApiError(409, errorResponse);
+
+    expect(error).toBeInstanceOf(ProjectApiError);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toBeInstanceOf(Error);
+    expect(error).not.toBeInstanceOf(TaskApiError);
+    expect(error.name).toBe("ProjectApiError");
+    expect(error.message).toBe("Project APIの実行に失敗しました。status=409");
+    expect(error.status).toBe(409);
+    expect(error.errorResponse).toBe(errorResponse);
+  });
+
+  it("401のfeature API例外だけをSession切れと判定する", () => {
+    expect(isUnauthorizedApiError(new TaskApiError(401, null))).toBe(true);
+    expect(isUnauthorizedApiError(new TaskApiError(403, null))).toBe(false);
+    expect(isUnauthorizedApiError(Object.assign(new Error("x"), { status: 401 }))).toBe(false);
+    expect(isUnauthorizedApiError(null)).toBe(false);
+  });
+
   it("競合回復では現在の認証・認可・公開範囲statusだけを優先する", () => {
     expect([...API_RECOVERY_PRIORITY_STATUSES]).toEqual([401, 403, 404]);
     expect(API_RECOVERY_PRIORITY_STATUSES.has(409)).toBe(false);

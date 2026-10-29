@@ -1,5 +1,48 @@
 import type { ErrorResponse } from "@/shared/types/error";
 
+/**
+ * feature APIのHTTPエラー（非2xx）の基底クラス。statusとBackendのエラー本文を持つ。
+ *
+ * featureごとのAPI例外（`ProjectApiError`等）はこのクラスを継承し、名前とAPIの表示名だけを渡す。
+ * 画面は`instanceof ProjectApiError`のようにfeatureの例外で判定でき、401の判定のように
+ * featureを問わない処理は`instanceof ApiError`で判定できる。
+ * `name`はクラス名から求めず引数で受け取る（本番buildの圧縮でクラス名が変わっても、同じ名前にするため）。
+ */
+export abstract class ApiError extends Error {
+  /** BackendのHTTP status。 */
+  readonly status: number;
+
+  /** Backendのエラー本文。空本文・非JSON本文の場合はnull。 */
+  readonly errorResponse: ErrorResponse | null;
+
+  /**
+   * @param name 例外の名前（継承したクラスの名前と同じ文字列）
+   * @param apiLabel メッセージに出すAPIの表示名（例: `Project API`）
+   * @param status BackendのHTTP status
+   * @param errorResponse Backendのエラー本文。読めなかった場合はnull
+   */
+  protected constructor(
+    name: string,
+    apiLabel: string,
+    status: number,
+    errorResponse: ErrorResponse | null
+  ) {
+    super(`${apiLabel}の実行に失敗しました。status=${status}`);
+    this.name = name;
+    this.status = status;
+    this.errorResponse = errorResponse;
+  }
+}
+
+/**
+ * Sessionが切れた（Backendが401を返した）feature APIのエラーか判定する。
+ *
+ * @param error 画面が受け取った例外
+ * @returns feature API例外で、statusが401の場合true
+ */
+export const isUnauthorizedApiError = (error: unknown): error is ApiError =>
+  error instanceof ApiError && error.status === 401;
+
 /** 競合回復中に旧エラーより優先する現在の認証・認可・公開範囲status。 */
 export const API_RECOVERY_PRIORITY_STATUSES: ReadonlySet<number> = new Set([
   401, 403, 404,

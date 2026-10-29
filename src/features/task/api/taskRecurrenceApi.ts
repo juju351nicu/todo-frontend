@@ -8,19 +8,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 繰り返しTask APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class TaskRecurrenceApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class TaskRecurrenceApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`繰り返しTask APIの実行に失敗しました。status=${status}`);
-    this.name = "TaskRecurrenceApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("TaskRecurrenceApiError", "繰り返しTask API", status, errorResponse);
   }
 }
 

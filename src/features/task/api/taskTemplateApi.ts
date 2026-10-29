@@ -8,19 +8,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Task Template APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class TaskTemplateApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class TaskTemplateApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Task Template APIの実行に失敗しました。status=${status}`);
-    this.name = "TaskTemplateApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("TaskTemplateApiError", "Task Template API", status, errorResponse);
   }
 }
 

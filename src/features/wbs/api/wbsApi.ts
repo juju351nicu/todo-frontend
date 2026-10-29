@@ -27,23 +27,16 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 const XLSX_CONTENT_TYPE =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const SAFE_XLSX_FILE_NAME_PATTERN = /^[A-Za-z0-9._-]+\.xlsx$/;
 
 /** WBS APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class WbsApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class WbsApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`WBS APIの実行に失敗しました。status=${status}`);
-    this.name = "WbsApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("WbsApiError", "WBS API", status, errorResponse);
   }
 }
 

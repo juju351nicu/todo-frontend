@@ -5,19 +5,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_BASE_URL, API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** 認証APIのHTTPエラーをstatusと安全に解析できたBackendエラー本文付きで表す。 */
-export class AuthApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class AuthApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`認証APIの実行に失敗しました。status=${status}`);
-    this.name = "AuthApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("AuthApiError", "認証API", status, errorResponse);
   }
 }
 

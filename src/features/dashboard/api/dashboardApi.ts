@@ -5,19 +5,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Basic Dashboard APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class DashboardApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class DashboardApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Dashboard APIの実行に失敗しました。status=${status}`);
-    this.name = "DashboardApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("DashboardApiError", "Dashboard API", status, errorResponse);
   }
 }
 

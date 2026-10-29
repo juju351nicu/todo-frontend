@@ -12,19 +12,12 @@ import type {
 import HttpClient from "@/shared/api/httpClient";
 import { API_PATHS } from "@/shared/constants/api";
 import type { ErrorResponse } from "@/shared/types/error";
-import { ensureApiSuccess } from "@/shared/utils/apiError";
+import { ApiError, ensureApiSuccess } from "@/shared/utils/apiError";
 
 /** Project APIのHTTPエラーをstatusとBackendエラー本文付きで表す。 */
-export class ProjectApiError extends Error {
-  readonly status: number;
-
-  readonly errorResponse: ErrorResponse | null;
-
+export class ProjectApiError extends ApiError {
   constructor(status: number, errorResponse: ErrorResponse | null) {
-    super(`Project APIの実行に失敗しました。status=${status}`);
-    this.name = "ProjectApiError";
-    this.status = status;
-    this.errorResponse = errorResponse;
+    super("ProjectApiError", "Project API", status, errorResponse);
   }
 }
 
