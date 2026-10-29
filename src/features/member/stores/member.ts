@@ -41,17 +41,15 @@ export const useMemberStore = defineStore("member", {
     /**
      * 会員一覧情報を取得してStoreへ保持する。
      *
-     * @returns 取得成功時は一覧Response、失敗時はnull
+     * @returns 会員一覧Response
+     * @throws MemberApiError 一覧APIが失敗した場合（Storeの一覧は変えない。表示と401の扱いは画面が行う）
      */
-    async findMemberList(): Promise<MemberListResponse | null> {
+    async findMemberList(): Promise<MemberListResponse> {
       this.isLoading = true;
       try {
         const data = await MemberApi.findList();
         this.memberListInfo = data.memberList;
         return data;
-      } catch (error: unknown) {
-        console.error(error);
-        return null;
       } finally {
         this.isLoading = false;
       }
@@ -59,22 +57,20 @@ export const useMemberStore = defineStore("member", {
 
     /**
      * 指定された会員を削除し、Backendが返した削除後の一覧でStoreの一覧を置き換える。
-     * 以前は削除後も一覧を取り直さず、削除した会員が画面に残っていた。
+     * 削除した会員が画面に残らないよう、一覧はBackendの削除後の一覧で置き換える。
      *
      * @param memberIds 削除対象の会員ID
-     * @returns 削除成功時はBackend Response（削除後の一覧）、失敗時はnull（一覧は変えない）
+     * @returns Backend Response（削除後の一覧）
+     * @throws MemberApiError 削除APIが失敗した場合（Storeの一覧は変えない）
      */
     async deleteMemberList(
       memberIds: ReadonlyArray<number | string>
-    ): Promise<MemberListResponse | null> {
+    ): Promise<MemberListResponse> {
       this.isLoading = true;
       try {
         const data = await MemberApi.deleteMembers(memberIds);
         this.memberListInfo = data.memberList;
         return data;
-      } catch (error: unknown) {
-        console.error(error);
-        return null;
       } finally {
         this.isLoading = false;
       }
@@ -84,17 +80,15 @@ export const useMemberStore = defineStore("member", {
      * 会員情報を登録または更新する。
      *
      * @param payload 会員IDが0なら登録、それ以外は更新する入力情報
-     * @returns 保存成功時は確定済み会員情報、失敗時はnull
+     * @returns 確定済み会員情報
+     * @throws MemberApiError 保存APIが失敗した場合
      */
     async upsertMemberInfo(
       payload: MemberUpsertRequest
-    ): Promise<MemberUpsertResponse | null> {
+    ): Promise<MemberUpsertResponse> {
       this.isLoading = true;
       try {
         return await MemberApi.upsert(payload);
-      } catch (error: unknown) {
-        console.error(error);
-        return null;
       } finally {
         this.isLoading = false;
       }
@@ -104,17 +98,15 @@ export const useMemberStore = defineStore("member", {
      * ログイン中の会員をパスワード確認付きで退会させる。
      *
      * @param payload 対象会員IDと平文パスワード。Storeへ保持しない
-     * @returns 退会成功時は対象会員ID、失敗時はnull
+     * @returns 対象会員ID
+     * @throws MemberApiError 退会APIが失敗した場合（パスワード不一致を含む）
      */
     async cancelMemberInfo(
       payload: MemberCancelRequest
-    ): Promise<MemberCancelResponse | null> {
+    ): Promise<MemberCancelResponse> {
       this.isLoading = true;
       try {
         return await MemberApi.cancel(payload);
-      } catch (error: unknown) {
-        console.error(error);
-        return null;
       } finally {
         this.isLoading = false;
       }

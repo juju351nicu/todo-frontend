@@ -20,6 +20,7 @@ const {
   memberForm,
   openConfirm,
   roleLabel,
+  submitError,
 } = useMemberDetailPage(toRef(props, "id"));
 </script>
 
@@ -34,6 +35,9 @@ const {
   <div class="page-container">
     <StatusAlert v-if="loadError" type="error" class="mb-4">
       {{ loadError }}
+    </StatusAlert>
+    <StatusAlert v-if="submitError" type="error" class="mb-4">
+      {{ submitError }}
     </StatusAlert>
     <!-- 固定幅800pxでは幅390pxで右が切れたため、16のTodo詳細と同じく画面幅に収める（動作確認/24_ログイン_会員 G-5）。 -->
     <UCard class="w-full max-w-200">

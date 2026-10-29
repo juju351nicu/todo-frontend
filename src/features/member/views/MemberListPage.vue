@@ -4,10 +4,12 @@ import { onBeforeMount } from "vue";
 import { formatMemberDateTime, useMemberListPage } from "@/features/member/composables/useMemberListPage";
 import AppDataTable from "@/shared/components/AppDataTable.vue";
 import LoadingIndicator from "@/shared/components/LoadingIndicator.vue";
+import StatusAlert from "@/shared/components/StatusAlert.vue";
 
 const {
   canDeleteMembers,
   deleteSelectedMembers,
+  errorMessages,
   headers,
   initialize,
   isLoading,
@@ -24,6 +26,9 @@ onBeforeMount(initialize);
 <template>
   <LoadingIndicator v-if="isLoading" />
   <h2 class="text-[1.5em] font-bold">会員一覧</h2>
+  <StatusAlert v-for="message in errorMessages" :key="message" type="error" class="my-2">
+    {{ message }}
+  </StatusAlert>
   <AppDataTable
     v-model:selected="selectedIds"
     v-model:items-per-page="itemsPerPage"

@@ -1,7 +1,10 @@
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 
+import { useSessionExpiry } from "@/features/auth/composables/useSessionExpiry";
 import { useUserStore } from "@/features/auth/stores/user";
+import { MemberApiError } from "@/features/member/api/memberApi";
+import { MEMBER_MESSAGES } from "@/features/member/constants/memberMessages";
 import { useMemberStore } from "@/features/member/stores/member";
 import type { MemberListItem } from "@/features/member/types/member";
 import {
@@ -9,6 +12,7 @@ import {
   DEFAULT_ITEMS_PER_PAGE,
 } from "@/shared/constants/ui";
 import type { DataTableHeader } from "@/shared/types/dataTable";
+import { isUnauthorizedApiError } from "@/shared/utils/apiError";
 import { formatShortDateTime } from "@/shared/utils/dateTime";
 
 const MEMBER_TABLE_HEADERS: DataTableHeader[] = [
@@ -48,6 +52,7 @@ export const useMemberListPage = () => {
   const router = useRouter();
   const memberStore = useMemberStore();
   const userStore = useUserStore();
+  const { expireSession } = useSessionExpiry();
 
   const headers = MEMBER_TABLE_HEADERS;
   const isLoading = computed<boolean>(() => memberStore.isLoading);
@@ -57,20 +62,64 @@ export const useMemberListPage = () => {
   );
   const itemsPerPageOptions = DATA_TABLE_PAGE_OPTIONS;
   const selectedIds = ref<number[]>([]);
+  /** 一覧の取得・削除に失敗したときの理由。次の操作を始めたときに消す。 */
+  const errorMessages = ref<string[]>([]);
   /** 会員を削除できるか（Backendの`MemberAccessLogic#canDeleteMembers`と同じ`ACCOUNT_UPDATE`）。 */
   const canDeleteMembers = computed<boolean>(() =>
     userStore.hasPermission("ACCOUNT_UPDATE")
   );
 
-  /** 会員一覧をBackendから取得する。 */
-  const initialize = async (): Promise<void> => {
-    await memberStore.findMemberList();
+  /**
+   * 会員APIの失敗を画面の文言にする。Sessionが切れていた（401）場合は、選択を捨ててログイン画面へ戻す。
+   *
+   * @param error 会員APIの例外
+   * @param fallbackMessage 401・403以外で出す文言
+   * @param forbiddenMessage 403で出す文言。省略時はfallbackMessage
+   */
+  const handleApiError = async (
+    error: unknown,
+    fallbackMessage: string,
+    forbiddenMessage: string = fallbackMessage
+  ): Promise<void> => {
+    if (isUnauthorizedApiError(error)) {
+      await expireSession(() => {
+        selectedIds.value = [];
+        errorMessages.value = [];
+      });
+      return;
+    }
+    errorMessages.value = [
+      error instanceof MemberApiError && error.status === 403
+        ? forbiddenMessage
+        : fallbackMessage,
+    ];
   };
 
-  /** 選択した会員を削除する。削除できたら、消えた行を選択したままにしないよう選択を外す。 */
+  /** 会員一覧をBackendから取得する。 */
+  const initialize = async (): Promise<void> => {
+    errorMessages.value = [];
+    try {
+      await memberStore.findMemberList();
+    } catch (error: unknown) {
+      await handleApiError(error, MEMBER_MESSAGES.listLoadFailed);
+    }
+  };
+
+  /**
+   * 選択した会員を削除する。削除できたら、消えた行を選択したままにしないよう選択を外す。
+   * 失敗したら選択を残し、理由を出して再操作できるようにする。
+   */
   const deleteSelectedMembers = async (): Promise<void> => {
-    if (await memberStore.deleteMemberList(selectedIds.value)) {
+    errorMessages.value = [];
+    try {
+      await memberStore.deleteMemberList(selectedIds.value);
       selectedIds.value = [];
+    } catch (error: unknown) {
+      await handleApiError(
+        error,
+        MEMBER_MESSAGES.deleteFailed,
+        MEMBER_MESSAGES.deleteForbidden
+      );
     }
   };
 
@@ -89,6 +138,7 @@ export const useMemberListPage = () => {
   return {
     canDeleteMembers,
     deleteSelectedMembers,
+    errorMessages,
     headers,
     initialize,
     isLoading,

@@ -1,9 +1,11 @@
 import { ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { MemberApiError } from "@/features/member/api/memberApi";
 import { useMemberDetailPage } from "@/features/member/composables/useMemberDetailPage";
 
 const mocks = vi.hoisted(() => ({
+  expireSession: vi.fn(),
   memberStore: {
     findMemberDetail: vi.fn(),
     isLoading: false,
@@ -15,11 +17,15 @@ vi.mock("@/features/member/stores/member", () => ({
   useMemberStore: () => mocks.memberStore,
 }));
 
+vi.mock("@/features/auth/composables/useSessionExpiry", () => ({
+  useSessionExpiry: () => ({ expireSession: mocks.expireSession }),
+}));
+
 describe("useMemberDetailPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.memberStore.isLoading = false;
-    mocks.memberStore.upsertMemberInfo.mockResolvedValue(null);
+    mocks.memberStore.upsertMemberInfo.mockResolvedValue({ memberId: 1 });
   });
 
   it("会員IDに対応する詳細をパスワードなしでフォームへ設定する", async () => {
@@ -107,5 +113,32 @@ describe("useMemberDetailPage", () => {
       role: 2,
       version: 0,
     });
+    expect(page.submitError.value).toBe("");
+  });
+
+  it.each([
+    [400, "会員情報を保存できませんでした。入力内容を確認してください。"],
+    [403, "この会員情報を変更する権限がありません。"],
+  ])("保存が%iで失敗したら理由を出す", async (status, expected) => {
+    mocks.memberStore.upsertMemberInfo.mockRejectedValue(new MemberApiError(status, null));
+    const page = useMemberDetailPage(ref(0));
+
+    await page.confirmSubmit();
+
+    expect(page.submitError.value).toBe(expected);
+    expect(mocks.expireSession).not.toHaveBeenCalled();
+  });
+
+  it("保存でSessionが切れていた（401）場合は、パスワードを含むフォームを捨ててログイン画面へ戻す", async () => {
+    mocks.memberStore.upsertMemberInfo.mockRejectedValue(new MemberApiError(401, null));
+    mocks.expireSession.mockImplementation(async (cleanup) => cleanup());
+    const page = useMemberDetailPage(ref(0));
+    page.memberForm.password = "password";
+
+    await page.confirmSubmit();
+
+    expect(mocks.expireSession).toHaveBeenCalledOnce();
+    expect(page.memberForm.password).toBe("");
+    expect(page.submitError.value).toBe("");
   });
 });
