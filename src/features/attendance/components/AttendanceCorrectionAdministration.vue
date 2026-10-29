@@ -3,6 +3,7 @@ import {
   ATTENDANCE_ADMIN_CONTROL,
   attendanceCorrectionRowControlKey,
 } from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import type {
   AttendanceCorrectionResponse,
   AttendanceCorrectionStatus,
@@ -180,13 +181,13 @@ defineEmits<{
               <UFormField label="承認コメント（任意）">
                 <UTextarea
                   :model-value="reviewComment"
-                  :maxlength="1000"
+                  :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
                   :rows="2"
                   class="w-full"
                   @update:model-value="$emit('updateReviewComment', String($event ?? ''))"
                 />
               </UFormField>
-              <FieldCounter :value="reviewComment" :max="1000" />
+              <FieldCounter :value="reviewComment" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
             </div>
             <UButton
               color="success"
@@ -202,14 +203,14 @@ defineEmits<{
               <UFormField label="却下理由（必須）" :error="rejectReasonError || undefined">
                 <UTextarea
                   :model-value="rejectReason"
-                  :maxlength="1000"
+                  :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
                   :rows="2"
                   class="w-full"
                   :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.correctionRejectReason"
                   @update:model-value="$emit('updateRejectReason', String($event ?? ''))"
                 />
               </UFormField>
-              <FieldCounter :value="rejectReason" :max="1000" />
+              <FieldCounter :value="rejectReason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
             </div>
             <UButton
               color="warning"

@@ -7,6 +7,7 @@ import {
   attendanceMonthRowControlKey,
   useAttendanceAdministrationPage,
 } from "@/features/attendance/composables/useAttendanceAdministrationPage";
+import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import {
   formatAttendanceDate,
   formatAttendanceInstant,
@@ -229,9 +230,9 @@ onBeforeMount(initialize);
               <template v-if="canApproveOrReject">
                 <div class="relative">
                   <UFormField label="承認コメント（任意）">
-                    <UTextarea v-model="reviewComment" :maxlength="1000" :rows="2" class="w-full" />
+                    <UTextarea v-model="reviewComment" :maxlength="ATTENDANCE_TEXT_MAX_LENGTH" :rows="2" class="w-full" />
                   </UFormField>
-                  <FieldCounter :value="reviewComment" :max="1000" />
+                  <FieldCounter :value="reviewComment" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
                 <UButton
                   color="success"
@@ -246,13 +247,13 @@ onBeforeMount(initialize);
                   <UFormField label="差戻し理由（必須）" :error="monthRejectReasonError || undefined">
                     <UTextarea
                       v-model="rejectReason"
-                      :maxlength="1000"
+                      :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
                       :rows="2"
                       class="w-full"
                       :data-attendance-admin-control="ATTENDANCE_ADMIN_CONTROL.rejectReason"
                     />
                   </UFormField>
-                  <FieldCounter :value="rejectReason" :max="1000" />
+                  <FieldCounter :value="rejectReason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
                 </div>
                 <UButton color="warning" :loading="processingAction === 'reject'" data-attendance-admin-control="reject" @click="reject">
                   差戻し

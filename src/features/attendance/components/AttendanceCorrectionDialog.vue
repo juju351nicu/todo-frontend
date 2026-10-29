@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ATTENDANCE_TEXT_MAX_LENGTH } from "@/features/attendance/constants/attendanceLimits";
 import type { AttendanceCorrectionForm } from "@/features/attendance/types/attendance";
 import FieldCounter from "@/shared/components/FieldCounter.vue";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -53,25 +54,25 @@ defineEmits<{
         <UFormField label="修正理由（必須）">
           <UTextarea
             :model-value="form.reason"
-            :maxlength="1000"
+            :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
             :rows="2"
             class="w-full"
             @update:model-value="$emit('updateReason', String($event ?? ''))"
           />
         </UFormField>
-        <FieldCounter :value="form.reason" :max="1000" />
+        <FieldCounter :value="form.reason" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
       </div>
       <div class="relative">
         <UFormField label="承認後のメモ">
           <UTextarea
             :model-value="form.note"
-            :maxlength="1000"
+            :maxlength="ATTENDANCE_TEXT_MAX_LENGTH"
             :rows="2"
             class="w-full"
             @update:model-value="$emit('updateNote', String($event ?? ''))"
           />
         </UFormField>
-        <FieldCounter :value="form.note" :max="1000" />
+        <FieldCounter :value="form.note" :max="ATTENDANCE_TEXT_MAX_LENGTH" />
       </div>
 
       <UCard v-for="(workPeriod, workIndex) in form.workPeriods" :key="workIndex" variant="outline" class="mb-4">

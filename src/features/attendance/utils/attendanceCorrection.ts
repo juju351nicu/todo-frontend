@@ -1,3 +1,7 @@
+import {
+  ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT,
+  ATTENDANCE_TEXT_MAX_LENGTH,
+} from "@/features/attendance/constants/attendanceLimits";
 import type {
   AttendanceCorrectionCreateRequest,
   AttendanceCorrectionForm,
@@ -7,8 +11,6 @@ import type {
 import type { SemanticColor } from "@/shared/types/color";
 
 const TOKYO_OFFSET = "+09:00";
-const MAX_PERIOD_COUNT = 20;
-const MAX_TEXT_LENGTH = 1000;
 
 /** 勤怠修正申請状態を画面表示用の日本語へ変換する。 */
 export const getAttendanceCorrectionStatusLabel = (
@@ -95,14 +97,14 @@ export const validateAttendanceCorrectionForm = (
   const errors: string[] = [];
   if (!form.reason.trim()) {
     errors.push("修正理由を入力してください。");
-  } else if (form.reason.trim().length > MAX_TEXT_LENGTH) {
-    errors.push("修正理由は1000文字以内で入力してください。");
+  } else if (form.reason.trim().length > ATTENDANCE_TEXT_MAX_LENGTH) {
+    errors.push(`修正理由は${ATTENDANCE_TEXT_MAX_LENGTH}文字以内で入力してください。`);
   }
-  if (form.note.length > MAX_TEXT_LENGTH) {
-    errors.push("メモは1000文字以内で入力してください。");
+  if (form.note.length > ATTENDANCE_TEXT_MAX_LENGTH) {
+    errors.push(`メモは${ATTENDANCE_TEXT_MAX_LENGTH}文字以内で入力してください。`);
   }
-  if (form.workPeriods.length > MAX_PERIOD_COUNT) {
-    errors.push("勤務区間は20件以内で入力してください。");
+  if (form.workPeriods.length > ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT) {
+    errors.push(`勤務区間は${ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT}件以内で入力してください。`);
   }
 
   const workRanges: Array<{ start: number; end: number }> = [];
@@ -118,8 +120,10 @@ export const validateAttendanceCorrectionForm = (
     if (range !== null) {
       workRanges.push(range);
     }
-    if (workPeriod.breakPeriods.length > MAX_PERIOD_COUNT) {
-      errors.push(`勤務区間${workIndex + 1}の休憩は20件以内で入力してください。`);
+    if (workPeriod.breakPeriods.length > ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT) {
+      errors.push(
+        `勤務区間${workIndex + 1}の休憩は${ATTENDANCE_CORRECTION_PERIOD_MAX_COUNT}件以内で入力してください。`
+      );
     }
     const breakRanges: Array<{ start: number; end: number }> = [];
     workPeriod.breakPeriods.forEach((breakPeriod, breakIndex) => {
