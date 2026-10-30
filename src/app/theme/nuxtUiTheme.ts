@@ -1,15 +1,11 @@
 /**
  * Nuxt UIの全体テーマ。`vite.config.js`の`@nuxt/ui/vite`プラグインへ`ui`として渡す。
  *
- * 移行前のVuetify 3既定デザイン（Material Design）を、参考デザイン（濃い紫のサイドバー、ピンクの主要button、
- * プラムのアクセント）へ段階的に寄せた（2026-10）。buttonとtabは大文字表記・字間・固定の高さをやめ、cardは影の代わりに枠線、
- * 入力欄はラベルを欄の上に出す枠線表示、badgeは高さを余白で決める。表の行の高さ（40px）は移行前のまま残している。
+ * 濃い紫のサイドバー、ピンクの主要button、プラムのアクセントのデザインにそろえる。buttonとtabは大文字表記・字間・
+ * 固定の高さを使わず、cardは影の代わりに枠線、入力欄はラベルを欄の上に出す枠線表示、badgeは高さを余白で決める。
+ * 表の行の高さは40pxにする。
  * 画面側では`class`による個別上書きを最小限にし、見た目の変更はこのファイルへ集約する。
- * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。移行計画は`../検討メモ/nuxt-ui-migration-plan.md`を参照。
- *
- * Vuetifyとの対応:
- * - `variant`: tonal→`soft`、text→`ghost`、outlined→`outline`、elevated／flat→`solid`
- * - `size`: x-small→`xs`、small→`sm`、default→`md`、large→`lg`
+ * 色の実値は`src/app/theme/main.css`の`@theme`で定義する。
  */
 
 /**

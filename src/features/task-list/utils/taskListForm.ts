@@ -38,7 +38,7 @@ export const createTaskListDetailForm = (
 
 /**
  * Task編集フォームを登録・更新APIのsnake_caseリクエストへ変換する。
- * 旧数値roleを送信せず、BackendがHttpSessionのAuthenticatedUserからpermissionを判定する。
+ * ロールは送信せず、BackendがHttpSessionのAuthenticatedUserからpermissionを判定する。
  */
 export const buildTaskListUpsertRequest = (form: TaskListDetailForm): TaskListUpsertRequest => ({
   task_id: form.taskId,
