@@ -180,7 +180,7 @@ src/
 - `src/features/wbs/composables/useWbsEstimateAccuracy.ts`: 完了済み通常Taskの予定工数と実績工数、最新完了評価revisionのHuman／Finalを比べた見積もり精度の取得（Backend `GET /wbs/estimate-accuracy`）
 - `src/features/wbs/composables/useEstimateAccuracyChart.ts`、`src/features/wbs/utils/estimateAccuracy.ts`: 見積もり精度の散布図の座標・目盛り・tooltip対象、評価revision比較の割合・sample境界・期間の表示文言（APIは呼ばない）
 - `src/features/wbs/components/WbsEstimateAccuracyCard.vue`: 絶対誤差の平均・中央値、見積もりどおりの割合・偏りの向き、散布図（予定どおりの対角線と±許容割合の帯）、誤差の大きい順の一覧
-- `src/features/wbs/components/WbsEstimateOutcomeComparison.vue`: Taskごとの最新評価revisionによるHuman Estimate／Final Planの同一Task比較、絶対誤差の平均・中央値、許容範囲内率、偏り、Human欠損、実績期間、実利用支援mode・誤差理由の分布
+- `src/features/wbs/components/WbsEstimateOutcomeComparison.vue`: Taskごとの最新評価revisionによるHuman Estimate／Final Planの同一Task比較、絶対誤差の平均・中央値、許容範囲内率、偏り、Human欠損、実績期間、実利用支援mode別の観測Actual・精度、誤差理由の分布
 - `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
 - `src/features/wbs/components/WbsReportExportCard.vue`: EVMと共有する基準日、週次／月次Excel download、処理中・error表示
 - `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形
@@ -294,7 +294,8 @@ Chromium WBS journeyも14／14件成功し、評価保存直後と再読込後�
 実利用支援mode別の比較表は、評価件数とHuman／Finalを比較できるペア件数を分け、平均・中央値絶対誤差、許容範囲内率、
 符号付き誤差の中央値と偏り、実績終了日範囲を同じペア集合で表示する。Human未入力だけのmodeは比較不能、最低sample件数未満は
 参考値と明示し、支援modeによる短縮・精度向上の因果効果とは表示しない。許容範囲内率の母数にはHuman未入力を含む評価件数ではなく、
-Human／Finalを同じActualへ比較できたペア件数を使用する。
+Human／Finalを同じActualへ比較できたペア件数を使用する。観測Actualの平均・中央値はHuman未入力を含むmode内の全評価Taskを
+母数とし、精度のペア集合とは区別して案内する。旧Backend Responseで観測Actualがない場合はnullへ正規化し、0分と表示しない。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 
@@ -616,7 +617,7 @@ Boardの「WBSを開く」導線からWBSを開き、見積もり精度cardに�
 登録後にworkloadが再集計されること、baselineの作成とactive baseline基準のEVM集計を確認する。日別予定保存後の
 workload再取得を外した変異buildではworkloadの確認で失敗することを確かめた。追加後のChromium全journeyは成功した。
 完了Task評価を保存するjourneyでは、最新評価revisionのHuman／Final比較が保存直後に更新され、再読込後も同じ値であること、
-平均・中央値、支援mode別の許容範囲内率・偏り、誤差理由の分布が表示されることも同じ専用fixtureで確認する。
+平均・中央値、支援mode別の観測Actual・許容範囲内率・偏り、誤差理由の分布が表示されることも同じ専用fixtureで確認する。
 
 ## APIエラー表示契約
 
