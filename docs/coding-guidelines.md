@@ -18,6 +18,7 @@
 - 変数・引数・関数は単語を省略しない。`v`→`value`、`res`→`response`、`req`→`request`、`idx`→`index`、`cnt`→`count`、`el`→`element`、`cb`→`callback`、`opts`→`options`。`tmp`・`obj`・`val`・`data`・`info`のように中身を表さない名前は、中身を表す名前（`assigneeAccountId`、`remainingMinutes`）にする。
 - 1文字の名前は、数行で終わるコールバックで、型と文脈から明らかな場合だけ許す（要素を表す単語を使えるならそちらを使う。`tasks.map((task) => ...)`）。`catch`の`error`も省略しない。
 - 関数は動詞から始める。値を返すだけの関数も`buildXxx`・`resolveXxx`・`findXxx`等、何をするかが分かる名前にする。
+- 関数名は短さより、対象、結果、副作用、重要な条件が読み取れることを優先する。長くなっても省略語や`process`・`handle`等の汎用名へ置き換えない。
 - `Todo`という名前は使わない。担当者ごとのTaskの一覧・カレンダー・登録の画面とAPI（`/api/v1/task-list`）は`TaskList`（Task一覧、`src/features/task-list`）と呼び、Board・WBS等のProject Taskの処理（`src/features/task`）とは名前の接頭辞で区別する。
 - Boardの標準列`TODO`は、コードとしてだけ`TODO`と書き、文章では表示名の「未着手」と書く。
 - コメントや文章で旧Todoを指すときは`Todo`と書き、大文字の`TODO`（未完了の作業の印と区別できなくなる）を使わない。

@@ -168,7 +168,7 @@ src/
 - `src/features/wbs/composables/useWbsPage.ts`: WBS画面の統括。Project・WBS・依存関係・baselineのスナップショット取得、権限判定、401処理、Board遷移と、下記の領域別composableの配線
 - `src/features/wbs/composables/wbsPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、WBS、階層行、権限、画面上部message、Session失効処理）の型
 - `src/features/wbs/composables/useWbsTaskEditor.ts`: Task編集Dialogと409時のWBS再取得
-- `src/features/wbs/composables/useTaskEstimates.ts`: 通常Taskの変更不能なHuman／AI Estimate履歴、Human Estimate追記、一回限りの採否・Final Plan反映、競合回復
+- `src/features/wbs/composables/useTaskEstimates.ts`: 通常Taskの変更不能なHuman／AI Estimate履歴、Human Estimate追記、一回限りの採否・Final Plan反映、完了Task評価revision、競合回復
 - `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得。操作結果はcard内のmessageへ出し、MEMBERは本人担当Taskだけを端点にできる
 - `src/features/wbs/components/WbsDependencyCard.vue`: Task依存関係の一覧・追加ボタン・削除ボタン・操作結果を表示するcard
 - `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
@@ -188,7 +188,7 @@ src/
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・実績期間tooltip・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
 - `src/features/wbs/components/TaskWorkLogDialog.vue`: 通常Taskの日別実績一覧・合計・登録・編集Dialog
 - `src/features/wbs/components/TaskEffortPlanDialog.vue`: 通常Taskの日別予定・配賦状況・登録・編集Dialog
-- `src/features/wbs/components/TaskEstimateDialog.vue`: 通常Taskの単一点／3点Human Estimate入力、未採否revisionの採否確定、revision・採否監査履歴Dialog
+- `src/features/wbs/components/TaskEstimateDialog.vue`: 通常Taskの単一点／3点Human Estimate入力、未採否revisionの採否確定、完了Task評価、revision・採否・評価監査履歴Dialog
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
@@ -259,6 +259,19 @@ Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Task�
 WBS本体へのFinal Plan同期を故意に外すとcomposable testが期待420分に対して480分のまま残る差で失敗し、復元後に成功した。
 V32適用済みMySQLとstrict Security構成Backendを使うChromium WBS journeyは認証準備を含む14／14件が成功し、画面操作後の
 revision 2の`ADOPTED`、Final Plan 360分、Task version 1をDBで照合した。
+
+続いて、外部AI送信を伴わない完了Task評価を接続した。実績終了日、正のFinal Plan、正のActualがそろった完了済み通常Taskだけに
+評価Formを表示し、実際に利用したAI支援方法、集計可能な誤差理由、任意補足、取得時点Task versionを送る。ActualとFinal Planに
+差がある場合は理由を必須とし、`OTHER`では空白でない補足も必須にする。画面の検証は早期案内であり、完了状態、認可、最新version、
+実績・見積もりsnapshotの最終判定はBackendへ委ねる。評価後は変更不能なrevision履歴を同じDialogへ表示し、Human Estimate、
+Final Plan、Actual、実利用支援、誤差理由、実績終了日、評価者、評価時刻を評価時点の組として確認できる。Actual訂正後の再評価は
+既存行を更新せず、新しいrevisionとして追記する。UIと型はprovider、model、prompt、送信snapshotを持たない。
+
+実装後はPrettier、ESLint、TypeScript／Vue／E2E型検査、production build、全142 file／1439 Vitestが成功した。
+誤差理由の必須条件を故意に反転すると、差あり・差なしの境界を固定したutility test 2件が意図どおり失敗し、復元後に成功した。
+V33適用済みMySQLとstrict Security構成Backendを使うChromium WBS journeyは認証準備を含む14／14件が成功した。完了Taskへ
+Human Estimate 120分を追加し、Final Plan 120分、Actual 150分、実利用支援`CODING_AGENT`、誤差理由
+`TEST_SCOPE_INCREASED`を評価revision 1として保存した。再読込後の画面表示とDB inspect、global teardownも成功した。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 

@@ -23,6 +23,7 @@ Stage 10D-2の主要journeyは次を確認する。
 - My Tasksから同じTask IDのBoard詳細へのdeep link
 - Boardでのタイトル・詳細更新と再読込後の保持
 - 同じTask IDを指定したWBS日別実績Dialogへの遷移
+- WBSでのHuman Estimate追記、採否・Final Plan反映、完了Task評価と再読込後の監査履歴
 - 更新後タイトル、詳細、WBS code、状態、versionのMySQL inspect
 - BoardでのTask作成とkeyboardによる未着手から進行中への列移動
 - 移動後の再読込と、2 tabから同じversionを更新した場合の409競合回復
