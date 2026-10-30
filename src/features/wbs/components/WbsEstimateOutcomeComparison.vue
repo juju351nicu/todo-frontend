@@ -8,6 +8,7 @@ import {
   formatOptionalSignedEffortMinutes,
   formatOutcomeActualEndDateRange,
   formatOutcomeWithinToleranceRate,
+  isAssistanceModeComparisonReferenceOnly,
   isOutcomeComparisonReferenceOnly,
 } from "@/features/wbs/utils/estimateAccuracy";
 import {
@@ -127,6 +128,84 @@ const accuracyMetrics = computed(() => [
             </div>
           </dl>
         </UCard>
+      </div>
+
+      <div v-if="comparison.assistanceModeComparisons.length > 0" class="mt-5">
+        <h4 class="text-sm font-medium">支援mode別の観測精度</h4>
+        <p class="mt-1 mb-2 text-xs text-muted">
+          利用者が記録した実利用支援mode別の関連です。AI支援による短縮・精度向上の因果効果は表しません。
+        </p>
+        <div class="overflow-x-auto">
+          <table class="app-table min-w-210 [&_td]:h-13 [&_th]:h-13">
+            <caption class="sr-only">
+              実利用支援modeごとのHuman EstimateとFinal Planの見積もり精度
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">実利用支援mode</th>
+                <th scope="col">比較対象</th>
+                <th scope="col">実績終了日</th>
+                <th scope="col">Human 絶対誤差</th>
+                <th scope="col">Final 絶対誤差</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="mode in comparison.assistanceModeComparisons" :key="mode.code">
+                <td>
+                  <div class="font-medium">{{ formatEstimateAssistanceMode(mode.code) }}</div>
+                  <UBadge
+                    v-if="mode.pairedSampleCount === 0"
+                    size="sm"
+                    color="neutral"
+                    variant="soft"
+                    class="mt-1"
+                  >
+                    比較不可
+                  </UBadge>
+                  <UBadge
+                    v-else-if="
+                      isAssistanceModeComparisonReferenceOnly(mode, comparison.minimumSampleCount)
+                    "
+                    size="sm"
+                    color="neutral"
+                    variant="soft"
+                    class="mt-1"
+                  >
+                    参考値
+                  </UBadge>
+                </td>
+                <td>
+                  <div>
+                    評価 {{ mode.evaluatedTaskCount }}件 / ペア {{ mode.pairedSampleCount }}件
+                  </div>
+                  <div v-if="mode.missingHumanEstimateTaskCount > 0" class="text-xs text-muted">
+                    Human未入力 {{ mode.missingHumanEstimateTaskCount }}件
+                  </div>
+                </td>
+                <td>{{ formatOutcomeActualEndDateRange(mode) }}</td>
+                <td>
+                  <div>
+                    平均
+                    {{ formatOptionalEffortMinutes(mode.humanEstimate.meanAbsoluteErrorMinutes) }}
+                  </div>
+                  <div class="text-xs text-muted">
+                    中央値
+                    {{ formatOptionalEffortMinutes(mode.humanEstimate.medianAbsoluteErrorMinutes) }}
+                  </div>
+                </td>
+                <td>
+                  <div>
+                    平均 {{ formatOptionalEffortMinutes(mode.finalPlan.meanAbsoluteErrorMinutes) }}
+                  </div>
+                  <div class="text-xs text-muted">
+                    中央値
+                    {{ formatOptionalEffortMinutes(mode.finalPlan.medianAbsoluteErrorMinutes) }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div class="mt-5 grid gap-5 md:grid-cols-2">

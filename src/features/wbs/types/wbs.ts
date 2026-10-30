@@ -551,6 +551,29 @@ export interface EstimateOutcomeCategoryCount<
 }
 
 /**
+ * 実利用支援modeが同じ最新完了評価revisionにおけるHuman Estimate・Final Planの対Actual比較。
+ * mode別の観測値であり、支援modeによる工数短縮や精度向上の因果効果は表さない。
+ */
+export interface EstimateAssistanceModeAccuracy {
+  /** Backend enumと一致する実利用支援mode code。 */
+  code: EstimateAssistanceMode;
+  /** このmodeで最新評価revisionがあるTask件数。 */
+  evaluatedTaskCount: number;
+  /** HumanとFinalを同じActualに対して比較できたTask件数。 */
+  pairedSampleCount: number;
+  /** Human Estimateがなくペア比較から除外したTask件数。 */
+  missingHumanEstimateTaskCount: number;
+  /** このmodeで最も早いTask実績終了日。 */
+  earliestActualEndDate: string;
+  /** このmodeで最も遅いTask実績終了日。 */
+  latestActualEndDate: string;
+  /** Human Estimate対Actualの精度。 */
+  humanEstimate: EstimateAccuracyMetric;
+  /** Humanと同じTask集合におけるFinal Plan対Actualの精度。 */
+  finalPlan: EstimateAccuracyMetric;
+}
+
+/**
  * Taskごとの最新完了評価revisionによるHuman Estimate・Final Planの対Actual比較。
  * HumanとFinalはHuman Estimateがある同じTask集合で比較し、欠損Taskは別件数で保持する。
  */
@@ -573,6 +596,8 @@ export interface TaskEstimateOutcomeComparison {
   humanEstimate: EstimateAccuracyMetric;
   /** Humanと同じTask集合におけるFinal Plan対Actualの精度。 */
   finalPlan: EstimateAccuracyMetric;
+  /** 実利用支援mode別のHuman／Final精度。0件のmodeは含めない。 */
+  assistanceModeComparisons: EstimateAssistanceModeAccuracy[];
   /** 最新評価revisionの実利用支援mode別件数。 */
   actualAssistanceModes: EstimateOutcomeCategoryCount<EstimateAssistanceMode>[];
   /** 最新評価revisionの誤差理由別件数。差なしは含めない。 */

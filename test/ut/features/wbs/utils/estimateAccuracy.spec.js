@@ -9,6 +9,7 @@ import {
   formatOutcomeWithinToleranceRate,
   formatWithinToleranceRate,
   isEstimateAccuracyReferenceOnly,
+  isAssistanceModeComparisonReferenceOnly,
   isOutcomeComparisonReferenceOnly,
   sortByAbsoluteErrorDescending,
 } from "@/features/wbs/utils/estimateAccuracy";
@@ -66,6 +67,7 @@ function buildOutcomeComparison(overrides = {}) {
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
+    assistanceModeComparisons: [],
     actualAssistanceModes: [],
     varianceReasons: [],
     noVarianceTaskCount: 0,
@@ -151,6 +153,14 @@ describe("見積もり精度の表示", () => {
     expect(isOutcomeComparisonReferenceOnly(buildOutcomeComparison({ pairedSampleCount }))).toBe(
       expected
     );
+  });
+
+  it.each([
+    [0, false],
+    [9, true],
+    [10, false],
+  ])("支援mode別のペア比較が%i件なら参考値扱いは%s", (pairedSampleCount, expected) => {
+    expect(isAssistanceModeComparisonReferenceOnly({ pairedSampleCount }, 10)).toBe(expected);
   });
 
   it("評価revisionの実績終了日は単日・期間・未評価を区別して表示する", () => {

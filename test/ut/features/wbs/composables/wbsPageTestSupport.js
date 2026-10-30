@@ -251,6 +251,48 @@ export const estimateAccuracyResponse = {
       medianAbsoluteErrorMinutes: 30,
       medianSignedVarianceMinutes: 0,
     },
+    assistanceModeComparisons: [
+      {
+        code: "NONE",
+        evaluatedTaskCount: 1,
+        pairedSampleCount: 0,
+        missingHumanEstimateTaskCount: 1,
+        earliestActualEndDate: "2026-10-20",
+        latestActualEndDate: "2026-10-20",
+        humanEstimate: {
+          withinToleranceTaskCount: 0,
+          meanAbsoluteErrorMinutes: null,
+          medianAbsoluteErrorMinutes: null,
+          medianSignedVarianceMinutes: null,
+        },
+        finalPlan: {
+          withinToleranceTaskCount: 0,
+          meanAbsoluteErrorMinutes: null,
+          medianAbsoluteErrorMinutes: null,
+          medianSignedVarianceMinutes: null,
+        },
+      },
+      {
+        code: "CODING_AGENT",
+        evaluatedTaskCount: 2,
+        pairedSampleCount: 2,
+        missingHumanEstimateTaskCount: 0,
+        earliestActualEndDate: "2026-10-30",
+        latestActualEndDate: "2026-10-31",
+        humanEstimate: {
+          withinToleranceTaskCount: 1,
+          meanAbsoluteErrorMinutes: 75,
+          medianAbsoluteErrorMinutes: 90,
+          medianSignedVarianceMinutes: 30,
+        },
+        finalPlan: {
+          withinToleranceTaskCount: 2,
+          meanAbsoluteErrorMinutes: 25,
+          medianAbsoluteErrorMinutes: 30,
+          medianSignedVarianceMinutes: 0,
+        },
+      },
+    ],
     actualAssistanceModes: [
       { code: "NONE", count: 1 },
       { code: "CODING_AGENT", count: 2 },

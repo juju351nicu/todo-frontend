@@ -2,6 +2,7 @@ import type {
   EstimateAccuracyMetric,
   EstimateAccuracyResponse,
   EstimateAccuracyTask,
+  EstimateAssistanceModeAccuracy,
   TaskEstimateOutcomeComparison,
 } from "@/features/wbs/types/wbs";
 import { formatEffortMinutes, formatSignedEffortMinutes } from "@/features/wbs/utils/effort";
@@ -160,7 +161,25 @@ export const formatOutcomeWithinToleranceRate = (
 export const isOutcomeComparisonReferenceOnly = (
   comparison: Readonly<TaskEstimateOutcomeComparison>
 ): boolean =>
-  comparison.pairedSampleCount > 0 && comparison.pairedSampleCount < comparison.minimumSampleCount;
+  isPairedSampleReferenceOnly(comparison.pairedSampleCount, comparison.minimumSampleCount);
+
+/**
+ * 1つの実利用支援modeのペア比較が最低件数未満で、参考値として扱うかを返す。
+ *
+ * @param comparison Backendが確定したmode別比較
+ * @param minimumSampleCount 精度を傾向として読める最低件数
+ * @returns 1件以上かつ最低件数未満の場合はtrue
+ */
+export const isAssistanceModeComparisonReferenceOnly = (
+  comparison: Readonly<EstimateAssistanceModeAccuracy>,
+  minimumSampleCount: number
+): boolean => isPairedSampleReferenceOnly(comparison.pairedSampleCount, minimumSampleCount);
+
+/** 実際にペア比較できた件数が1件以上かつ最低件数未満かを判定する。 */
+const isPairedSampleReferenceOnly = (
+  pairedSampleCount: number,
+  minimumSampleCount: number
+): boolean => pairedSampleCount > 0 && pairedSampleCount < minimumSampleCount;
 
 /**
  * 最新評価revisionが表すTask実績終了日の範囲を表示する。
@@ -169,7 +188,9 @@ export const isOutcomeComparisonReferenceOnly = (
  * @returns 単日の場合はその日、範囲がある場合は`開始日 〜 終了日`、評価0件では`—`
  */
 export const formatOutcomeActualEndDateRange = (
-  comparison: Readonly<TaskEstimateOutcomeComparison>
+  comparison: Readonly<
+    Pick<TaskEstimateOutcomeComparison, "earliestActualEndDate" | "latestActualEndDate">
+  >
 ): string => {
   const earliestDate = comparison.earliestActualEndDate;
   const latestDate = comparison.latestActualEndDate;

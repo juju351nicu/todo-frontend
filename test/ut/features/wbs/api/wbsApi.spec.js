@@ -606,6 +606,7 @@ describe("WBS API", () => {
           medianAbsoluteErrorMinutes: null,
           medianSignedVarianceMinutes: null,
         },
+        assistanceModeComparisons: [],
         actualAssistanceModes: [],
         varianceReasons: [],
         noVarianceTaskCount: 0,
@@ -641,6 +642,26 @@ describe("WBS API", () => {
             medianAbsoluteErrorMinutes: 10,
             medianSignedVarianceMinutes: 10,
           },
+          assistanceModeComparisons: [
+            {
+              code: "CODING_AGENT",
+              evaluatedTaskCount: 1,
+              pairedSampleCount: 1,
+              missingHumanEstimateTaskCount: 0,
+              earliestActualEndDate: "2026-10-31",
+              latestActualEndDate: "2026-10-31",
+              humanEstimate: {
+                withinToleranceTaskCount: 1,
+                medianAbsoluteErrorMinutes: 20,
+                medianSignedVarianceMinutes: 20,
+              },
+              finalPlan: {
+                withinToleranceTaskCount: 1,
+                medianAbsoluteErrorMinutes: 10,
+                medianSignedVarianceMinutes: 10,
+              },
+            },
+          ],
           actualAssistanceModes: [],
           varianceReasons: [],
           noVarianceTaskCount: 0,
@@ -653,6 +674,12 @@ describe("WBS API", () => {
     expect(response.meanAbsoluteErrorMinutes).toBeNull();
     expect(response.outcomeComparison.humanEstimate.meanAbsoluteErrorMinutes).toBeNull();
     expect(response.outcomeComparison.finalPlan.meanAbsoluteErrorMinutes).toBeNull();
+    expect(
+      response.outcomeComparison.assistanceModeComparisons[0].humanEstimate.meanAbsoluteErrorMinutes
+    ).toBeNull();
+    expect(
+      response.outcomeComparison.assistanceModeComparisons[0].finalPlan.meanAbsoluteErrorMinutes
+    ).toBeNull();
   });
 
   it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {

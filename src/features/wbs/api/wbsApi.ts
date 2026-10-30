@@ -688,6 +688,7 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
+    assistanceModeComparisons: [],
     actualAssistanceModes: [],
     varianceReasons: [],
     noVarianceTaskCount: 0,
@@ -700,6 +701,13 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
       ...outcomeComparison,
       humanEstimate: normalizeEstimateAccuracyMetric(outcomeComparison.humanEstimate),
       finalPlan: normalizeEstimateAccuracyMetric(outcomeComparison.finalPlan),
+      assistanceModeComparisons: (outcomeComparison.assistanceModeComparisons ?? []).map(
+        (comparison) => ({
+          ...comparison,
+          humanEstimate: normalizeEstimateAccuracyMetric(comparison.humanEstimate),
+          finalPlan: normalizeEstimateAccuracyMetric(comparison.finalPlan),
+        })
+      ),
       actualAssistanceModes: outcomeComparison.actualAssistanceModes ?? [],
       varianceReasons: outcomeComparison.varianceReasons ?? [],
     },
