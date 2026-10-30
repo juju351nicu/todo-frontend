@@ -6,6 +6,8 @@
 export const ROUTE_NAMES = {
   login: "Login",
   dashboard: "Dashboard",
+  billing: "Billing",
+  billingAdministration: "BillingAdministration",
   attendance: "Attendance",
   attendanceAdministration: "AttendanceAdministration",
   accountAdministration: "AccountAdministration",

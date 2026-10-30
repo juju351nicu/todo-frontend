@@ -28,6 +28,21 @@ describe("Vue routes", () => {
     expect(dashboard.meta.requiredAnyPermissions).toBeUndefined();
   });
 
+  it("本人の料金・契約画面を全認証利用者向けルートとして公開する", () => {
+    const billing = findRoute("Billing");
+
+    expect(billing.path).toBe("/billing");
+    expect(billing.meta.requiresAuth).toBe(true);
+    expect(billing.meta.requiredAnyPermissions).toBeUndefined();
+  });
+
+  it("課金管理画面をBILLING_ADMIN_READで保護する", () => {
+    const billingAdministration = findRoute("BillingAdministration");
+
+    expect(billingAdministration.path).toBe("/administration/billing");
+    expect(billingAdministration.meta.requiredAnyPermissions).toEqual(["BILLING_ADMIN_READ"]);
+  });
+
   it("Task一覧の画面にBackendと一致するpermissionメタデータを設定する", () => {
     expect(findRoute("TaskList").meta.requiredAnyPermissions).toEqual([
       "TASK_READ_ALL",

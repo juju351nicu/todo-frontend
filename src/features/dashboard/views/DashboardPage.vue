@@ -47,7 +47,7 @@ const {
   isLoading,
   isNotificationExpanded,
   loadDashboard,
-  openAdvancedAccessInquiry,
+  openBilling,
   openAdvancedProject,
   openAttendance,
   openMyTasks,
@@ -472,11 +472,9 @@ const dividedCardUi = { header: "border-b border-default", body: "not-first:pt-4
         >
           <div class="flex flex-wrap items-center gap-2">
             <span class="flex-1">
-              Project横断EVMと本人の週次予定負荷を利用する場合は、利用プランについてお問い合わせください。
+              Project横断EVMと本人の週次予定負荷を利用する場合は、Proプランの契約状態を確認してください。
             </span>
-            <UButton variant="ghost" color="primary" @click="openAdvancedAccessInquiry"
-              >問い合わせる</UButton
-            >
+            <UButton variant="ghost" color="primary" @click="openBilling">料金・契約を確認</UButton>
           </div>
         </StatusAlert>
 

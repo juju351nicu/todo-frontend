@@ -86,6 +86,11 @@ export const useAppNavigation = (): AppNavigation => {
     if (userStore.accountId !== null) {
       links.push(
         {
+          icon: "i-mdi-credit-card-outline",
+          label: "料金・契約",
+          to: "/billing",
+        },
+        {
           icon: "i-mdi-account",
           label: "アカウント設定",
           to: `/accounts/detail/${userStore.accountId}`,
@@ -112,6 +117,13 @@ export const useAppNavigation = (): AppNavigation => {
         icon: "i-mdi-history",
         label: "権限変更監査ログ",
         to: "/administration/authorization-audit-logs",
+      });
+    }
+    if (userStore.hasPermission("BILLING_ADMIN_READ")) {
+      links.push({
+        icon: "i-mdi-credit-card-search-outline",
+        label: "課金管理",
+        to: "/administration/billing",
       });
     }
     if (userStore.hasPermission("NOTIFICATION_ANNOUNCEMENT_CREATE")) {

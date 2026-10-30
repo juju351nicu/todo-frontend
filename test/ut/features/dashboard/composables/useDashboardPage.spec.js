@@ -429,18 +429,18 @@ describe("useDashboardPage", () => {
     });
   });
 
-  it("高度ProjectをWBSへ、upgrade相談を問い合わせへ遷移させる", async () => {
+  it("高度ProjectをWBSへ、upgrade導線を料金・契約画面へ遷移させる", async () => {
     const page = useDashboardPage();
 
     await page.openAdvancedProject(advancedDashboard.projects[0]);
-    await page.openAdvancedAccessInquiry();
+    await page.openBilling();
 
     expect(mocks.router.push).toHaveBeenNthCalledWith(1, {
       name: "Wbs",
       params: { projectId: 7 },
     });
     expect(mocks.router.push).toHaveBeenNthCalledWith(2, {
-      name: "InquiryForm",
+      name: "Billing",
     });
   });
 

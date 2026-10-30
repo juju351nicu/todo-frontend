@@ -46,6 +46,26 @@ export const DISPLAY_MESSAGES = {
       loadFailed: "権限変更監査ログを取得できませんでした。",
     },
   },
+  billing: {
+    loadFailed: "契約状態を取得できませんでした。",
+    operationForbidden: "課金操作を開始できませんでした。画面を再読み込みしてください。",
+    checkoutFailed: "Checkoutを開始できませんでした。",
+    portalFailed: "請求情報の管理画面を開けませんでした。",
+    invalidHostedUrl: "安全なStripe画面を開けませんでした。再度お試しください。",
+    checkoutCanceled: "Checkoutをキャンセルしました。契約状態は変更されていません。",
+    checkoutPending:
+      "決済結果を確認しています。しばらくしてから「契約状態を再読み込み」を実行してください。",
+    checkoutCompleted: "Pro契約が反映されました。有料機能を利用できます。",
+    administration: {
+      readForbidden: "課金状態を参照するpermissionがありません。",
+      reconcileForbidden: "課金状態を再照合するpermissionがありません。",
+      loadFailed: "課金Account一覧を取得できませんでした。",
+      reconcileFailed: "Stripe最新状態と再照合できませんでした。",
+      reloadFailed: "再照合は完了しましたが、最新の課金状態を取得できませんでした。",
+      reconciled: (displayName: string): string =>
+        `${displayName}さんの課金状態をStripe最新状態と照合しました。`,
+    },
+  },
   notification: {
     announcement: {
       invalidInput: "件名と本文を入力上限内で入力してください。",

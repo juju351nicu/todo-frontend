@@ -26,6 +26,21 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/billing",
+    name: ROUTE_NAMES.billing,
+    component: () => import("@/features/billing/views/BillingPage.vue"),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/administration/billing",
+    name: ROUTE_NAMES.billingAdministration,
+    component: () => import("@/features/billing/views/BillingAdministrationPage.vue"),
+    meta: {
+      requiresAuth: true,
+      requiredAnyPermissions: ["BILLING_ADMIN_READ"],
+    },
+  },
+  {
     path: "/attendance",
     name: ROUTE_NAMES.attendance,
     component: () => import("@/features/attendance/views/AttendancePage.vue"),

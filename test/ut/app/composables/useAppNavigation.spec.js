@@ -34,13 +34,14 @@ describe("useAppNavigation", () => {
     mocks.router.push.mockResolvedValue(undefined);
   });
 
-  it("permissionがない利用者にはDashboard・アカウント設定・退会だけを表示し、アカウント設定は自分のアカウントを開く", () => {
+  it("permissionがない利用者にも本人の料金・契約を表示し、アカウント設定は自分のアカウントを開く", () => {
     signIn();
     const navigation = useAppNavigation();
 
-    expect(labelsOf(navigation)).toEqual(["Dashboard", "アカウント設定", "退会"]);
+    expect(labelsOf(navigation)).toEqual(["Dashboard", "料金・契約", "アカウント設定", "退会"]);
     expect(navigation.navigationLinks.value.map((link) => link.to)).toEqual([
       "/dashboard",
+      "/billing",
       "/accounts/detail/7",
       "/accounts/cancel/7",
     ]);
@@ -59,6 +60,8 @@ describe("useAppNavigation", () => {
         "ACCOUNT_READ",
         "ACCOUNT_UPDATE",
         "AUTHORIZATION_AUDIT_READ",
+        "BILLING_ADMIN_READ",
+        "BILLING_RECONCILE",
         "NOTIFICATION_ANNOUNCEMENT_CREATE",
       ],
     });
@@ -74,11 +77,13 @@ describe("useAppNavigation", () => {
       "Project Template",
       "勤怠月次確認",
       "勤怠",
+      "料金・契約",
       "アカウント設定",
       "退会",
       "Task新規登録",
       "アカウント・ロール管理",
       "権限変更監査ログ",
+      "課金管理",
       "お知らせ配信",
       "アカウント登録",
       "アカウント一覧",

@@ -498,6 +498,25 @@ My Tasksは`TASK_UPDATE`を持つ本人担当Task、Board詳細はACTIVE Project
 0分停止、409再取得、二重送信、401、403、paging端、日時・経過表示をVitestで固定した。全79 test file・574 Vitest、
 TypeScript／Vue型検査、production buildが成功している。次はStage 10C-5の実ブラウザ・DB回帰である。
 
+## Stripe Billing Frontend
+
+本人向け`/billing`は、Backendの課金projectionからFree／Pro、Subscription状態、契約期間末、解約予約、
+現在利用できる有料機能を取得する。Checkout成功から戻った直後もredirectだけではProと判断せず、
+`GET /api/v1/billing/me`がFreeなら反映待ちを表示する。Sessionを延長する定期pollingは行わず、利用者の明示再読込で
+最新状態を取得する。
+
+Pro月額CheckoutとCustomer Portalは、FrontendからPrice ID、Customer ID、success／cancel／return URLを送らない。
+Backendが返した短命URLはHTTPSかつ用途別のStripe公式hostnameであることを確認して外部遷移にだけ使用し、Router、Store、
+Web Storage、ログへ保存しない。401は契約snapshotとSession表示を破棄し、403、409、503はstatusと契約済みerror codeで
+案内を分ける。カード情報はStripe-hosted画面だけが扱う。
+
+運用担当者向け`/administration/billing`は`BILLING_ADMIN_READ`でrouteを案内し、Customer未作成のFree利用者を含む
+ページング済み一覧を表示する。`BILLING_RECONCILE`保持者だけに手動再照合を許可し、処理中の二重実行を防ぐ。
+Stripe Customer／Subscription／Price ID、請求先email、照合lease tokenは型にも画面にも保持しない。
+
+高度Dashboardの`FEATURE_NOT_ENTITLED`導線は問い合わせ画面ではなく本人の料金・契約画面へ接続する。
+繰り返しTask、Task／Project Template、高度Dashboardの最終資格判定は引き続きBackendを正本とする。
+
 ## Playwright E2E
 
 Stage 10D-1では`test/e2e`へPlaywrightの認証setup、未認証smoke、認証済みsmoke、診断fixtureを追加した。

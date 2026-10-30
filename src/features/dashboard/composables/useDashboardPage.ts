@@ -211,9 +211,9 @@ export const useDashboardPage = () => {
     ]);
   };
 
-  /** 課金画面導入前の高度機能利用相談を既存問い合わせ画面へ接続する。 */
-  const openAdvancedAccessInquiry = async (): Promise<void> => {
-    await router.push({ name: ROUTE_NAMES.inquiryForm });
+  /** 高度機能の資格不足案内から本人の料金・契約画面へ遷移する。 */
+  const openBilling = async (): Promise<void> => {
+    await router.push({ name: ROUTE_NAMES.billing });
   };
 
   /**
@@ -258,7 +258,7 @@ export const useDashboardPage = () => {
     isNotificationExpanded,
     loadAdvancedDashboard,
     loadDashboard,
-    openAdvancedAccessInquiry,
+    openBilling,
     openAdvancedProject,
     openAttendance,
     openMyTasks,
