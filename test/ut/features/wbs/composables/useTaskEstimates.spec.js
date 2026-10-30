@@ -48,6 +48,33 @@ describe("useTaskEstimates", () => {
     expect(state.canCreateHumanEstimate.value).toBe(true);
   });
 
+  it("見積もりResponseの最新Task versionと正式予定工数を選択Taskへ反映する", async () => {
+    mocks.wbsApi.getTaskEstimates.mockResolvedValue({
+      ...structuredClone(taskEstimateList),
+      taskVersion: 8,
+      finalPlannedEffortMinutes: 600,
+    });
+
+    const { state } = await openEstimates();
+
+    expect(state.estimateTask.value).toMatchObject({
+      taskId: 2,
+      version: 8,
+      plannedEffortMinutes: 600,
+    });
+    await state.saveHumanEstimate({
+      assistanceMode: "NONE",
+      estimateLowMinutes: null,
+      estimateLikelyMinutes: 360,
+      estimateHighMinutes: null,
+    });
+    expect(mocks.wbsApi.createHumanEstimate).toHaveBeenCalledWith(
+      7,
+      2,
+      expect.objectContaining({ taskVersion: 8 })
+    );
+  });
+
   it("Summaryでは見積もりAPIを呼ばず通常Taskだけが対象だと案内する", async () => {
     const context = buildWbsPageContext();
     const state = useTaskEstimates(context, {
@@ -142,12 +169,16 @@ describe("useTaskEstimates", () => {
   });
 
   it("409競合ではWBSと履歴を再取得し次回は最新Task versionを送る", async () => {
+    const latestEstimateList = {
+      ...structuredClone(updatedTaskEstimateList),
+      taskVersion: 5,
+    };
     mocks.wbsApi.createHumanEstimate
       .mockRejectedValueOnce(new WbsApiError(409, null))
-      .mockResolvedValueOnce(structuredClone(updatedTaskEstimateList));
+      .mockResolvedValueOnce(latestEstimateList);
     mocks.wbsApi.getTaskEstimates
       .mockResolvedValueOnce(structuredClone(taskEstimateList))
-      .mockResolvedValueOnce(structuredClone(updatedTaskEstimateList));
+      .mockResolvedValueOnce(latestEstimateList);
     const context = buildWbsPageContext();
     const options = {
       reloadPageSnapshot: vi.fn(async () => {

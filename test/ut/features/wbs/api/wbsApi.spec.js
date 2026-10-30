@@ -59,12 +59,21 @@ describe("WBS API", () => {
   it("Task IDを含む見積もりAPIから未登録時も空配列を取得する", async () => {
     HttpClient.getRequest.mockResolvedValue({
       ok: true,
-      json: vi.fn().mockResolvedValue({ projectId: 7, taskId: 11 }),
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        taskId: 11,
+        taskVersion: 4,
+        finalPlannedEffortMinutes: 480,
+        actualEffortMinutes: 0,
+      }),
     });
 
     await expect(WbsApi.getTaskEstimates(7, 11)).resolves.toEqual({
       projectId: 7,
       taskId: 11,
+      taskVersion: 4,
+      finalPlannedEffortMinutes: 480,
+      actualEffortMinutes: 0,
       estimates: [],
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11/estimates");
@@ -78,7 +87,14 @@ describe("WBS API", () => {
       estimateHighMinutes: 480,
       taskVersion: 4,
     };
-    const response = { projectId: 7, taskId: 11, estimates: [] };
+    const response = {
+      projectId: 7,
+      taskId: 11,
+      taskVersion: 4,
+      finalPlannedEffortMinutes: 480,
+      actualEffortMinutes: 0,
+      estimates: [],
+    };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue(response),

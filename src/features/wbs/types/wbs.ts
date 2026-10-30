@@ -106,6 +106,12 @@ export interface TaskEstimateSnapshot {
 export interface TaskEstimateListResponse {
   projectId: number;
   taskId: number;
+  /** Response作成時点のTask version。Human Estimate追加時の楽観ロックに使う。 */
+  taskVersion: number;
+  /** 現在の正式予定工数（分）。 */
+  finalPlannedEffortMinutes: number;
+  /** 現在の日別実績工数合計（分）。未登録の場合は0。 */
+  actualEffortMinutes: number;
   /** 未作成の場合は空配列。 */
   estimates: TaskEstimateSnapshot[];
 }

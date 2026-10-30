@@ -13,6 +13,7 @@ import {
   formatTaskEstimateRange,
   formatTaskEstimateSource,
 } from "@/features/wbs/utils/taskEstimate";
+import { formatEffortMinutes } from "@/features/wbs/utils/effort";
 import { formatWbsTaskDialogTitle } from "@/features/wbs/utils/wbsDialog";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
 import { useDialogForm } from "@/shared/composables/useDialogForm";
@@ -38,6 +39,7 @@ const emit = defineEmits<{
 
 const isBusy = computed(() => props.isLoading || props.isSaving);
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task見積もり", props.task));
+const latestEstimate = computed(() => props.estimateList?.estimates.at(-1) ?? null);
 
 // 保存後の一覧Responseが変わるたびに空Formへ戻し、直前の見積もりを誤って再送しない。
 const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
@@ -73,6 +75,35 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
         <USkeleton v-for="row in 3" :key="row" class="h-10 w-full" />
       </div>
       <template v-else-if="task">
+        <div v-if="estimateList" class="mb-5 grid gap-3 md:grid-cols-3">
+          <UCard variant="subtle">
+            <div class="text-xs text-muted">最新Estimate</div>
+            <div class="mt-1 font-medium">
+              {{ latestEstimate ? formatTaskEstimateRange(latestEstimate) : "未入力" }}
+            </div>
+          </UCard>
+          <UCard variant="subtle">
+            <div class="text-xs text-muted">Final Plan（正式予定）</div>
+            <div class="mt-1 font-medium">
+              {{
+                estimateList.finalPlannedEffortMinutes > 0
+                  ? formatEffortMinutes(estimateList.finalPlannedEffortMinutes)
+                  : "未入力"
+              }}
+            </div>
+          </UCard>
+          <UCard variant="subtle">
+            <div class="text-xs text-muted">Actual（実績）</div>
+            <div class="mt-1 font-medium">
+              {{
+                estimateList.actualEffortMinutes > 0
+                  ? formatEffortMinutes(estimateList.actualEffortMinutes)
+                  : "未入力"
+              }}
+            </div>
+          </UCard>
+        </div>
+
         <UCard v-if="canCreate" variant="outline" class="mb-5">
           <template #header>
             <div>

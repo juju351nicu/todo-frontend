@@ -391,6 +391,9 @@ export const updatedEffortPlanList = {
 export const taskEstimateList = {
   projectId: 7,
   taskId: 2,
+  taskVersion: 4,
+  finalPlannedEffortMinutes: 480,
+  actualEffortMinutes: 300,
   estimates: [
     {
       taskEstimateSnapshotId: 61,

@@ -55,6 +55,21 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const isSelectedTaskAvailableForCreate = ref(false);
 
   /**
+   * Backendが同じ読込で確定したTask version・正式予定工数と見積もり履歴を一緒に反映する。
+   * 初期WBS取得後にTaskが更新されても、古いversionをHuman Estimate登録へ再送しない。
+   */
+  const applyEstimateList = (response: TaskEstimateListResponse): void => {
+    estimateList.value = response;
+    if (estimateTask.value?.taskId === response.taskId) {
+      estimateTask.value = {
+        ...estimateTask.value,
+        plannedEffortMinutes: response.finalPlannedEffortMinutes,
+        version: response.taskVersion,
+      };
+    }
+  };
+
+  /**
    * 選択中TaskへHuman Estimateを追加できるか。
    * Project管理者以外のMEMBERは、自身が担当する通常Taskだけを変更できる。
    */
@@ -103,7 +118,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     }
     isLoadingEstimates.value = true;
     try {
-      estimateList.value = await WbsApi.getTaskEstimates(projectId, task.taskId);
+      applyEstimateList(await WbsApi.getTaskEstimates(projectId, task.taskId));
     } catch (error: unknown) {
       await handleEstimateReadError(error);
     } finally {
@@ -167,10 +182,12 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     estimateEditorErrorMessages.value = [];
     estimateSuccessMessage.value = "";
     try {
-      estimateList.value = await WbsApi.createHumanEstimate(
-        projectId,
-        task.taskId,
-        buildHumanEstimateCreateRequest(form, task.version)
+      applyEstimateList(
+        await WbsApi.createHumanEstimate(
+          projectId,
+          task.taskId,
+          buildHumanEstimateCreateRequest(form, task.version)
+        )
       );
       estimateSuccessMessage.value = "Human Estimateを保存しました。";
     } catch (error: unknown) {
@@ -229,7 +246,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       if (latestTask !== undefined) {
         estimateTask.value = { ...latestTask };
       }
-      estimateList.value = await WbsApi.getTaskEstimates(projectId, selectedTask.taskId);
+      applyEstimateList(await WbsApi.getTaskEstimates(projectId, selectedTask.taskId));
     } catch (refreshError: unknown) {
       if (
         (refreshError instanceof WbsApiError || refreshError instanceof ProjectApiError) &&

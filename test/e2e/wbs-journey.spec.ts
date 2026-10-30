@@ -46,6 +46,10 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
     name: `Task見積もり: 1 ${PLANNING_TASK_TITLE}`,
   });
   await expect(estimateDialog).toBeVisible();
+  await expect(
+    estimateDialog.getByText("Final Plan（正式予定）").locator("..").getByText("4時間")
+  ).toBeVisible();
+  await expect(estimateDialog.getByText("Actual（実績）").locator("..")).toContainText("未入力");
   await estimateDialog.getByLabel("最頻値・単一点（分）").fill("360");
   await estimateDialog.getByRole("button", { name: "見積もりを追加", exact: true }).click();
   await expect(estimateDialog.getByText("Human Estimateを保存しました。")).toBeVisible();
