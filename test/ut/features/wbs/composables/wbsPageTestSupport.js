@@ -228,6 +228,7 @@ export const estimateAccuracyResponse = {
   minimumSampleCount: 10,
   tolerancePercent: 20,
   withinToleranceTaskCount: 1,
+  meanAbsoluteErrorMinutes: 60,
   medianAbsoluteErrorMinutes: 60,
   medianSignedVarianceMinutes: 60,
   outcomeComparison: {
@@ -240,11 +241,13 @@ export const estimateAccuracyResponse = {
     latestActualEndDate: "2026-10-31",
     humanEstimate: {
       withinToleranceTaskCount: 1,
+      meanAbsoluteErrorMinutes: 75,
       medianAbsoluteErrorMinutes: 90,
       medianSignedVarianceMinutes: 30,
     },
     finalPlan: {
       withinToleranceTaskCount: 2,
+      meanAbsoluteErrorMinutes: 25,
       medianAbsoluteErrorMinutes: 30,
       medianSignedVarianceMinutes: 0,
     },

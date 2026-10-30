@@ -36,6 +36,7 @@ const buildResponse = (overrides = {}) => ({
   minimumSampleCount: 10,
   tolerancePercent: 20,
   withinToleranceTaskCount: 0,
+  meanAbsoluteErrorMinutes: null,
   medianAbsoluteErrorMinutes: null,
   medianSignedVarianceMinutes: null,
   outcomeComparison: buildOutcomeComparison(),
@@ -55,11 +56,13 @@ function buildOutcomeComparison(overrides = {}) {
     latestActualEndDate: null,
     humanEstimate: {
       withinToleranceTaskCount: 0,
+      meanAbsoluteErrorMinutes: null,
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
     finalPlan: {
       withinToleranceTaskCount: 0,
+      meanAbsoluteErrorMinutes: null,
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },

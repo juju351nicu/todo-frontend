@@ -95,7 +95,13 @@ const accuracyMetrics = computed(() => [
         <UCard v-for="accuracy in accuracyMetrics" :key="accuracy.key" variant="subtle">
           <div class="font-medium">{{ accuracy.title }}</div>
           <p class="mt-1 mb-3 text-xs text-muted">{{ accuracy.description }}</p>
-          <dl class="grid gap-3 sm:grid-cols-3">
+          <dl class="grid gap-3 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs text-muted">絶対誤差の平均</dt>
+              <dd class="font-medium">
+                {{ formatOptionalEffortMinutes(accuracy.metric.meanAbsoluteErrorMinutes) }}
+              </dd>
+            </div>
             <div>
               <dt class="text-xs text-muted">絶対誤差の中央値</dt>
               <dd class="font-medium">

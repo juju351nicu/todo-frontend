@@ -140,11 +140,13 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   const humanAccuracy = outcomeComparison
     .getByText("Human Estimate", { exact: true })
     .locator("..");
+  await expect(humanAccuracy).toContainText("絶対誤差の平均30分");
   await expect(humanAccuracy).toContainText("30分");
   await expect(humanAccuracy).toContainText("0 / 1件（0%）");
   const finalPlanAccuracy = outcomeComparison
     .getByText("Final Plan", { exact: true })
     .locator("..");
+  await expect(finalPlanAccuracy).toContainText("絶対誤差の平均30分");
   await expect(finalPlanAccuracy).toContainText("30分");
   await expect(finalPlanAccuracy).toContainText("0 / 1件（0%）");
   await expect(outcomeComparison.getByText("Coding Agent 1件", { exact: true })).toBeVisible();

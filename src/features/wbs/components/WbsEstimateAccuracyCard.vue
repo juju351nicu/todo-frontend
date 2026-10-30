@@ -89,9 +89,15 @@ const toleranceBandPoints = computed(
       <USkeleton class="h-64 w-full" />
     </div>
     <template v-else-if="estimateAccuracy">
-      <dl class="mt-5 grid gap-4 sm:grid-cols-3">
+      <dl class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <dt class="text-xs text-muted">誤差の中央値</dt>
+          <dt class="text-xs text-muted">絶対誤差の平均</dt>
+          <dd class="text-xl font-medium">
+            {{ formatOptionalEffortMinutes(estimateAccuracy.meanAbsoluteErrorMinutes) }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">絶対誤差の中央値</dt>
           <dd class="text-xl font-medium">
             {{ formatOptionalEffortMinutes(estimateAccuracy.medianAbsoluteErrorMinutes) }}
           </dd>

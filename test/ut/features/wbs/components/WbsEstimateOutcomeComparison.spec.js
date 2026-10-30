@@ -15,11 +15,13 @@ const buildComparison = (overrides = {}) => ({
   latestActualEndDate: "2026-10-31",
   humanEstimate: {
     withinToleranceTaskCount: 1,
+    meanAbsoluteErrorMinutes: 75,
     medianAbsoluteErrorMinutes: 90,
     medianSignedVarianceMinutes: 30,
   },
   finalPlan: {
     withinToleranceTaskCount: 2,
+    meanAbsoluteErrorMinutes: 25,
     medianAbsoluteErrorMinutes: 30,
     medianSignedVarianceMinutes: 0,
   },
@@ -50,6 +52,8 @@ describe("WbsEstimateOutcomeComparison", () => {
     expect(wrapper.text()).toContain("2026-10-20 〜 2026-10-31");
     expect(wrapper.text()).toContain("Human Estimate");
     expect(wrapper.text()).toContain("Final Plan");
+    expect(wrapper.text()).toContain("絶対誤差の平均1時間15分");
+    expect(wrapper.text()).toContain("絶対誤差の平均25分");
     expect(wrapper.text()).toContain("1 / 2件（50%）");
     expect(wrapper.text()).toContain("2 / 2件（100%）");
     expect(wrapper.text()).toContain("Coding Agent 2件");

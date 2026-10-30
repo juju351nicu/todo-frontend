@@ -1,5 +1,6 @@
 import type {
   EarnedValueResponse,
+  EstimateAccuracyMetric,
   EstimateAccuracyResponse,
   HumanEstimateCreateRequest,
   TaskDependencyCreateRequest,
@@ -640,6 +641,21 @@ const getTaskWorkload = async (
 };
 
 /**
+ * 平均絶対誤差を返さない旧Backend Responseをnullへ補い、未計算と0分を区別する。
+ *
+ * @param metric Backend確定済み精度指標。比較項目がない旧Responseではundefined
+ * @returns 平均・中央値・許容範囲内件数を省略しない表示用指標
+ */
+const normalizeEstimateAccuracyMetric = (
+  metric: EstimateAccuracyMetric | undefined
+): EstimateAccuracyMetric => ({
+  withinToleranceTaskCount: metric?.withinToleranceTaskCount ?? 0,
+  meanAbsoluteErrorMinutes: metric?.meanAbsoluteErrorMinutes ?? null,
+  medianAbsoluteErrorMinutes: metric?.medianAbsoluteErrorMinutes ?? null,
+  medianSignedVarianceMinutes: metric?.medianSignedVarianceMinutes ?? null,
+});
+
+/**
  * Project内の完了済み通常Taskについて、予定工数と実績工数の見積もり精度を取得する。
  *
  * @param projectId 集計対象Project ID
@@ -662,11 +678,13 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
     latestActualEndDate: null,
     humanEstimate: {
       withinToleranceTaskCount: 0,
+      meanAbsoluteErrorMinutes: null,
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
     finalPlan: {
       withinToleranceTaskCount: 0,
+      meanAbsoluteErrorMinutes: null,
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
@@ -676,9 +694,12 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
   };
   return {
     ...payload,
+    meanAbsoluteErrorMinutes: payload.meanAbsoluteErrorMinutes ?? null,
     tasks: payload.tasks ?? [],
     outcomeComparison: {
       ...outcomeComparison,
+      humanEstimate: normalizeEstimateAccuracyMetric(outcomeComparison.humanEstimate),
+      finalPlan: normalizeEstimateAccuracyMetric(outcomeComparison.finalPlan),
       actualAssistanceModes: outcomeComparison.actualAssistanceModes ?? [],
       varianceReasons: outcomeComparison.varianceReasons ?? [],
     },

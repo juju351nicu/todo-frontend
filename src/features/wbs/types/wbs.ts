@@ -532,6 +532,8 @@ export interface EstimateAccuracyTask {
 export interface EstimateAccuracyMetric {
   /** 許容割合以内だったTask件数。 */
   withinToleranceTaskCount: number;
+  /** 絶対誤差の平均（分）。1分未満の端数はBackendで四捨五入する。比較対象がない場合はnull。 */
+  meanAbsoluteErrorMinutes: number | null;
   /** 絶対誤差の中央値（分）。比較対象がない場合はnull。 */
   medianAbsoluteErrorMinutes: number | null;
   /** `Actual - Estimate`の中央値（分）。比較対象がない場合はnull。 */
@@ -600,6 +602,8 @@ export interface EstimateAccuracyResponse {
   tolerancePercent: number;
   /** 絶対誤差が`tolerancePercent`以内のTaskの件数。 */
   withinToleranceTaskCount: number;
+  /** 絶対誤差の平均（分）。1分未満の端数はBackendで四捨五入する。`sampleCount`が0の場合はnull。 */
+  meanAbsoluteErrorMinutes: number | null;
   /** 絶対誤差の中央値（分）。`sampleCount`が0の場合はnull。 */
   medianAbsoluteErrorMinutes: number | null;
   /** `実績 - 予定`の中央値（分）。正は過小見積もりの傾向。`sampleCount`が0の場合はnull。 */

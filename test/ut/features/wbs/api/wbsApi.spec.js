@@ -583,6 +583,7 @@ describe("WBS API", () => {
       sampleCount: 0,
       minimumSampleCount: 10,
       tolerancePercent: 20,
+      meanAbsoluteErrorMinutes: null,
       medianAbsoluteErrorMinutes: null,
       tasks: [],
       outcomeComparison: {
@@ -595,11 +596,13 @@ describe("WBS API", () => {
         latestActualEndDate: null,
         humanEstimate: {
           withinToleranceTaskCount: 0,
+          meanAbsoluteErrorMinutes: null,
           medianAbsoluteErrorMinutes: null,
           medianSignedVarianceMinutes: null,
         },
         finalPlan: {
           withinToleranceTaskCount: 0,
+          meanAbsoluteErrorMinutes: null,
           medianAbsoluteErrorMinutes: null,
           medianSignedVarianceMinutes: null,
         },
@@ -609,6 +612,47 @@ describe("WBS API", () => {
       },
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/estimate-accuracy");
+  });
+
+  it("旧Responseの評価revision指標に平均絶対誤差がなければ未計算のnullへ正規化する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        projectId: 7,
+        completedTaskCount: 1,
+        sampleCount: 1,
+        minimumSampleCount: 10,
+        tolerancePercent: 20,
+        outcomeComparison: {
+          evaluatedTaskCount: 1,
+          pairedSampleCount: 1,
+          missingHumanEstimateTaskCount: 0,
+          minimumSampleCount: 10,
+          tolerancePercent: 20,
+          earliestActualEndDate: "2026-10-31",
+          latestActualEndDate: "2026-10-31",
+          humanEstimate: {
+            withinToleranceTaskCount: 1,
+            medianAbsoluteErrorMinutes: 20,
+            medianSignedVarianceMinutes: 20,
+          },
+          finalPlan: {
+            withinToleranceTaskCount: 1,
+            medianAbsoluteErrorMinutes: 10,
+            medianSignedVarianceMinutes: 10,
+          },
+          actualAssistanceModes: [],
+          varianceReasons: [],
+          noVarianceTaskCount: 0,
+        },
+      }),
+    });
+
+    const response = await WbsApi.getEstimateAccuracy(7);
+
+    expect(response.meanAbsoluteErrorMinutes).toBeNull();
+    expect(response.outcomeComparison.humanEstimate.meanAbsoluteErrorMinutes).toBeNull();
+    expect(response.outcomeComparison.finalPlan.meanAbsoluteErrorMinutes).toBeNull();
   });
 
   it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {
