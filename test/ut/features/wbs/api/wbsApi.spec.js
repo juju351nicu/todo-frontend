@@ -571,6 +571,8 @@ describe("WBS API", () => {
         projectId: 7,
         completedTaskCount: 0,
         sampleCount: 0,
+        minimumSampleCount: 10,
+        tolerancePercent: 20,
         medianAbsoluteErrorMinutes: null,
       }),
     });
@@ -579,8 +581,32 @@ describe("WBS API", () => {
       projectId: 7,
       completedTaskCount: 0,
       sampleCount: 0,
+      minimumSampleCount: 10,
+      tolerancePercent: 20,
       medianAbsoluteErrorMinutes: null,
       tasks: [],
+      outcomeComparison: {
+        evaluatedTaskCount: 0,
+        pairedSampleCount: 0,
+        missingHumanEstimateTaskCount: 0,
+        minimumSampleCount: 10,
+        tolerancePercent: 20,
+        earliestActualEndDate: null,
+        latestActualEndDate: null,
+        humanEstimate: {
+          withinToleranceTaskCount: 0,
+          medianAbsoluteErrorMinutes: null,
+          medianSignedVarianceMinutes: null,
+        },
+        finalPlan: {
+          withinToleranceTaskCount: 0,
+          medianAbsoluteErrorMinutes: null,
+          medianSignedVarianceMinutes: null,
+        },
+        actualAssistanceModes: [],
+        varianceReasons: [],
+        noVarianceTaskCount: 0,
+      },
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/estimate-accuracy");
   });

@@ -5,8 +5,11 @@ import {
   describeEstimateBias,
   formatEstimateAccuracyTaskLabel,
   formatOptionalSignedEffortMinutes,
+  formatOutcomeActualEndDateRange,
+  formatOutcomeWithinToleranceRate,
   formatWithinToleranceRate,
   isEstimateAccuracyReferenceOnly,
+  isOutcomeComparisonReferenceOnly,
   sortByAbsoluteErrorDescending,
 } from "@/features/wbs/utils/estimateAccuracy";
 
@@ -35,9 +38,37 @@ const buildResponse = (overrides = {}) => ({
   withinToleranceTaskCount: 0,
   medianAbsoluteErrorMinutes: null,
   medianSignedVarianceMinutes: null,
+  outcomeComparison: buildOutcomeComparison(),
   tasks: [],
   ...overrides,
 });
+
+/** 最新完了評価revision比較。既定は評価0件。 */
+function buildOutcomeComparison(overrides = {}) {
+  return {
+    evaluatedTaskCount: 0,
+    pairedSampleCount: 0,
+    missingHumanEstimateTaskCount: 0,
+    minimumSampleCount: 10,
+    tolerancePercent: 20,
+    earliestActualEndDate: null,
+    latestActualEndDate: null,
+    humanEstimate: {
+      withinToleranceTaskCount: 0,
+      medianAbsoluteErrorMinutes: null,
+      medianSignedVarianceMinutes: null,
+    },
+    finalPlan: {
+      withinToleranceTaskCount: 0,
+      medianAbsoluteErrorMinutes: null,
+      medianSignedVarianceMinutes: null,
+    },
+    actualAssistanceModes: [],
+    varianceReasons: [],
+    noVarianceTaskCount: 0,
+    ...overrides,
+  };
+}
 
 describe("見積もり精度の散布図", () => {
   it("誤差を計算したTaskがなければ散布図を作らない", () => {
@@ -100,6 +131,43 @@ describe("見積もり精度の表示", () => {
       formatWithinToleranceRate(buildResponse({ sampleCount: 3, withinToleranceTaskCount: 2 }))
     ).toBe("2 / 3件（67%）");
     expect(formatWithinToleranceRate(buildResponse())).toBe("—");
+  });
+
+  it("評価revisionの指標も同じ母数で許容範囲内の割合を表示する", () => {
+    expect(formatOutcomeWithinToleranceRate({ withinToleranceTaskCount: 2 }, 3)).toBe(
+      "2 / 3件（67%）"
+    );
+    expect(formatOutcomeWithinToleranceRate({ withinToleranceTaskCount: 0 }, 0)).toBe("—");
+  });
+
+  it.each([
+    [0, false],
+    [9, true],
+    [10, false],
+  ])("評価revisionのペア比較が%i件なら参考値扱いは%s", (pairedSampleCount, expected) => {
+    expect(isOutcomeComparisonReferenceOnly(buildOutcomeComparison({ pairedSampleCount }))).toBe(
+      expected
+    );
+  });
+
+  it("評価revisionの実績終了日は単日・期間・未評価を区別して表示する", () => {
+    expect(
+      formatOutcomeActualEndDateRange(
+        buildOutcomeComparison({
+          earliestActualEndDate: "2026-10-01",
+          latestActualEndDate: "2026-10-31",
+        })
+      )
+    ).toBe("2026-10-01 〜 2026-10-31");
+    expect(
+      formatOutcomeActualEndDateRange(
+        buildOutcomeComparison({
+          earliestActualEndDate: "2026-10-31",
+          latestActualEndDate: "2026-10-31",
+        })
+      )
+    ).toBe("2026-10-31");
+    expect(formatOutcomeActualEndDateRange(buildOutcomeComparison())).toBe("—");
   });
 
   it.each([

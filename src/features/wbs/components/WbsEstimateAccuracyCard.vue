@@ -2,6 +2,7 @@
 import { computed } from "vue";
 
 import { useEstimateAccuracyChart } from "@/features/wbs/composables/useEstimateAccuracyChart";
+import WbsEstimateOutcomeComparison from "@/features/wbs/components/WbsEstimateOutcomeComparison.vue";
 import type { EstimateAccuracyResponse } from "@/features/wbs/types/wbs";
 import {
   formatEffortMinutes,
@@ -296,6 +297,8 @@ const toleranceBandPoints = computed(
       <StatusAlert v-else type="info" variant="soft" class="mt-4">
         予定工数と実績の両方がある完了Taskはまだありません。予定工数を入れたTaskを完了し、日別実績を登録すると表示されます。
       </StatusAlert>
+
+      <WbsEstimateOutcomeComparison :comparison="estimateAccuracy.outcomeComparison" />
     </template>
   </UCard>
 </template>

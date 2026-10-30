@@ -528,6 +528,57 @@ export interface EstimateAccuracyTask {
   withinTolerance: boolean;
 }
 
+/** 同じTask集合について、1種類の見積もりとActualを比較したBackend確定済み精度指標。 */
+export interface EstimateAccuracyMetric {
+  /** 許容割合以内だったTask件数。 */
+  withinToleranceTaskCount: number;
+  /** 絶対誤差の中央値（分）。比較対象がない場合はnull。 */
+  medianAbsoluteErrorMinutes: number | null;
+  /** `Actual - Estimate`の中央値（分）。比較対象がない場合はnull。 */
+  medianSignedVarianceMinutes: number | null;
+}
+
+/** 最新完了評価revisionを支援modeまたは誤差理由codeごとに数えた項目。 */
+export interface EstimateOutcomeCategoryCount<
+  Code extends EstimateAssistanceMode | EstimateVarianceReasonCode,
+> {
+  /** Backend enumと一致する変更不可code。 */
+  code: Code;
+  /** 最新評価revisionの該当件数。 */
+  count: number;
+}
+
+/**
+ * Taskごとの最新完了評価revisionによるHuman Estimate・Final Planの対Actual比較。
+ * HumanとFinalはHuman Estimateがある同じTask集合で比較し、欠損Taskは別件数で保持する。
+ */
+export interface TaskEstimateOutcomeComparison {
+  /** 最新評価revisionがあるTask件数。 */
+  evaluatedTaskCount: number;
+  /** HumanとFinalを同じActualに対して比較できたTask件数。 */
+  pairedSampleCount: number;
+  /** Human Estimateがなくペア比較から除外したTask件数。 */
+  missingHumanEstimateTaskCount: number;
+  /** 精度を傾向として読める最低件数。これ未満は参考値。 */
+  minimumSampleCount: number;
+  /** 見積もりどおりとみなす絶対誤差の上限割合（%）。 */
+  tolerancePercent: number;
+  /** 最新評価revision群で最も早いTask実績終了日。評価0件ではnull。 */
+  earliestActualEndDate: string | null;
+  /** 最新評価revision群で最も遅いTask実績終了日。評価0件ではnull。 */
+  latestActualEndDate: string | null;
+  /** Human Estimate対Actualの精度。 */
+  humanEstimate: EstimateAccuracyMetric;
+  /** Humanと同じTask集合におけるFinal Plan対Actualの精度。 */
+  finalPlan: EstimateAccuracyMetric;
+  /** 最新評価revisionの実利用支援mode別件数。 */
+  actualAssistanceModes: EstimateOutcomeCategoryCount<EstimateAssistanceMode>[];
+  /** 最新評価revisionの誤差理由別件数。差なしは含めない。 */
+  varianceReasons: EstimateOutcomeCategoryCount<EstimateVarianceReasonCode>[];
+  /** Final PlanとActualが一致して誤差理由がないTask件数。 */
+  noVarianceTaskCount: number;
+}
+
 /**
  * Project内の完了済み通常Taskについて、正式な予定工数（Final Plan）と実績工数（Actual）を比べた見積もり精度。
  * 計算規則はBackendの`docs/ai-assisted-effort-estimation-design.md`「16. 先行提供」を正本とし、Frontendでは再計算しない。
@@ -555,6 +606,8 @@ export interface EstimateAccuracyResponse {
   medianSignedVarianceMinutes: number | null;
   /** 誤差を計算したTask。Task ID順。 */
   tasks: EstimateAccuracyTask[];
+  /** 最新完了評価revisionによるHuman Estimate・Final Planの同一Task比較。 */
+  outcomeComparison: TaskEstimateOutcomeComparison;
 }
 
 /** 稼働日calendarの1日を稼働日または休日として扱う種別。Backendコードと一致する。 */

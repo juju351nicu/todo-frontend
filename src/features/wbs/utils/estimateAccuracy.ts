@@ -1,4 +1,9 @@
-import type { EstimateAccuracyResponse, EstimateAccuracyTask } from "@/features/wbs/types/wbs";
+import type {
+  EstimateAccuracyMetric,
+  EstimateAccuracyResponse,
+  EstimateAccuracyTask,
+  TaskEstimateOutcomeComparison,
+} from "@/features/wbs/types/wbs";
 import { formatEffortMinutes, formatSignedEffortMinutes } from "@/features/wbs/utils/effort";
 
 /**
@@ -128,11 +133,62 @@ export const isEstimateAccuracyReferenceOnly = (
  * @returns `2 / 3件（67%）`の形式。対象が0件の場合は`—`
  */
 export const formatWithinToleranceRate = (response: Readonly<EstimateAccuracyResponse>): string => {
-  if (response.sampleCount === 0) {
+  return formatAccuracyMetricWithinToleranceRate(
+    response.withinToleranceTaskCount,
+    response.sampleCount
+  );
+};
+
+/**
+ * 最新評価revisionのHumanまたはFinal指標について、許容割合内の件数と割合を整形する。
+ *
+ * @param metric Backendが同じペア集合で確定した精度指標
+ * @param sampleCount Human Estimateがあるペア比較対象件数
+ * @returns `2 / 3件（67%）`の形式。対象が0件の場合は`—`
+ */
+export const formatOutcomeWithinToleranceRate = (
+  metric: Readonly<EstimateAccuracyMetric>,
+  sampleCount: number
+): string => formatAccuracyMetricWithinToleranceRate(metric.withinToleranceTaskCount, sampleCount);
+
+/**
+ * 最新評価revisionのペア比較が最低件数未満で、参考値として扱うかを返す。
+ *
+ * @param comparison Backendが確定した最新評価revision比較
+ * @returns 1件以上かつ最低件数未満の場合はtrue
+ */
+export const isOutcomeComparisonReferenceOnly = (
+  comparison: Readonly<TaskEstimateOutcomeComparison>
+): boolean =>
+  comparison.pairedSampleCount > 0 && comparison.pairedSampleCount < comparison.minimumSampleCount;
+
+/**
+ * 最新評価revisionが表すTask実績終了日の範囲を表示する。
+ *
+ * @param comparison Backendが確定した最新評価revision比較
+ * @returns 単日の場合はその日、範囲がある場合は`開始日 〜 終了日`、評価0件では`—`
+ */
+export const formatOutcomeActualEndDateRange = (
+  comparison: Readonly<TaskEstimateOutcomeComparison>
+): string => {
+  const earliestDate = comparison.earliestActualEndDate;
+  const latestDate = comparison.latestActualEndDate;
+  if (earliestDate === null || latestDate === null) {
     return "—";
   }
-  const percent = Math.round((response.withinToleranceTaskCount / response.sampleCount) * 100);
-  return `${response.withinToleranceTaskCount} / ${response.sampleCount}件（${percent}%）`;
+  return earliestDate === latestDate ? earliestDate : `${earliestDate} 〜 ${latestDate}`;
+};
+
+/** 許容割合内の件数と母数から表示用の件数・割合を作る。 */
+const formatAccuracyMetricWithinToleranceRate = (
+  withinToleranceTaskCount: number,
+  sampleCount: number
+): string => {
+  if (sampleCount === 0) {
+    return "—";
+  }
+  const percent = Math.round((withinToleranceTaskCount / sampleCount) * 100);
+  return `${withinToleranceTaskCount} / ${sampleCount}件（${percent}%）`;
 };
 
 /**

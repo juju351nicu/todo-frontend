@@ -230,6 +230,34 @@ export const estimateAccuracyResponse = {
   withinToleranceTaskCount: 1,
   medianAbsoluteErrorMinutes: 60,
   medianSignedVarianceMinutes: 60,
+  outcomeComparison: {
+    evaluatedTaskCount: 3,
+    pairedSampleCount: 2,
+    missingHumanEstimateTaskCount: 1,
+    minimumSampleCount: 10,
+    tolerancePercent: 20,
+    earliestActualEndDate: "2026-10-20",
+    latestActualEndDate: "2026-10-31",
+    humanEstimate: {
+      withinToleranceTaskCount: 1,
+      medianAbsoluteErrorMinutes: 90,
+      medianSignedVarianceMinutes: 30,
+    },
+    finalPlan: {
+      withinToleranceTaskCount: 2,
+      medianAbsoluteErrorMinutes: 30,
+      medianSignedVarianceMinutes: 0,
+    },
+    actualAssistanceModes: [
+      { code: "NONE", count: 1 },
+      { code: "CODING_AGENT", count: 2 },
+    ],
+    varianceReasons: [
+      { code: "TEST_SCOPE_INCREASED", count: 1 },
+      { code: "SIMPLER_THAN_EXPECTED", count: 1 },
+    ],
+    noVarianceTaskCount: 1,
+  },
   tasks: [
     {
       taskId: 2,

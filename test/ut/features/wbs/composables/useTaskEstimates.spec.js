@@ -45,12 +45,14 @@ describe("useTaskEstimates", () => {
     context.wbs.value.tasks = context.wbs.value.tasks.map((task) =>
       task.taskId === 2 ? { ...task, actualEndDate: "2026-08-24" } : task
     );
-    const state = useTaskEstimates(context, {
+    const options = {
       reloadPageSnapshot: vi.fn(async () => {}),
       handleReadApiError: vi.fn(async () => {}),
-    });
+      reloadEstimateAccuracy: vi.fn(async () => {}),
+    };
+    const state = useTaskEstimates(context, options);
     await state.openEstimateDialog(2);
-    return { context, state };
+    return { context, options, state };
   };
 
   it("通常Taskを選ぶと見積もり履歴を遅延取得する", async () => {
@@ -90,7 +92,7 @@ describe("useTaskEstimates", () => {
   });
 
   it("完了Taskを実利用支援方法・誤差理由・最新Task version付き評価revisionへ保存する", async () => {
-    const { state } = await openEvaluableEstimates();
+    const { options, state } = await openEvaluableEstimates();
 
     expect(state.canEvaluateEstimate.value).toBe(true);
     await state.saveTaskEstimateOutcome({
@@ -106,6 +108,7 @@ describe("useTaskEstimates", () => {
       taskVersion: 4,
     });
     expect(state.estimateList.value).toEqual(evaluatedTaskEstimateList);
+    expect(options.reloadEstimateAccuracy).toHaveBeenCalledOnce();
     expect(state.estimateSuccessMessage.value).toBe("完了Taskの見積もり評価を保存しました。");
   });
 

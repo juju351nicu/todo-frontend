@@ -652,9 +652,36 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
   );
   await ensureSuccess(response);
   const payload = (await response.json()) as EstimateAccuracyResponse;
+  const outcomeComparison = payload.outcomeComparison ?? {
+    evaluatedTaskCount: 0,
+    pairedSampleCount: 0,
+    missingHumanEstimateTaskCount: 0,
+    minimumSampleCount: payload.minimumSampleCount,
+    tolerancePercent: payload.tolerancePercent,
+    earliestActualEndDate: null,
+    latestActualEndDate: null,
+    humanEstimate: {
+      withinToleranceTaskCount: 0,
+      medianAbsoluteErrorMinutes: null,
+      medianSignedVarianceMinutes: null,
+    },
+    finalPlan: {
+      withinToleranceTaskCount: 0,
+      medianAbsoluteErrorMinutes: null,
+      medianSignedVarianceMinutes: null,
+    },
+    actualAssistanceModes: [],
+    varianceReasons: [],
+    noVarianceTaskCount: 0,
+  };
   return {
     ...payload,
     tasks: payload.tasks ?? [],
+    outcomeComparison: {
+      ...outcomeComparison,
+      actualAssistanceModes: outcomeComparison.actualAssistanceModes ?? [],
+      varianceReasons: outcomeComparison.varianceReasons ?? [],
+    },
   };
 };
 

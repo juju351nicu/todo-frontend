@@ -154,6 +154,7 @@ export const useWbsPage = () => {
   const taskEstimateState = useTaskEstimates(context, {
     reloadPageSnapshot: () => loadPageSnapshot(),
     handleReadApiError: (error) => handleReadApiError(error),
+    reloadEstimateAccuracy: () => estimateAccuracyState.loadEstimateAccuracy(),
   });
   const effortPlanState = useTaskEffortPlans(context, {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),

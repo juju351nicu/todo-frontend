@@ -128,7 +128,32 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("テスト範囲を追加");
   await completedEstimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
 
+  const outcomeComparison = page.getByRole("region", { name: "評価revision比較" });
+  await expect(outcomeComparison.getByText("評価済み 1件", { exact: true })).toBeVisible();
+  await expect(
+    outcomeComparison.getByText("ペア比較できたTask", { exact: true }).locator("..")
+  ).toContainText("1件");
+  await expect(
+    outcomeComparison.getByText("Human Estimate未入力", { exact: true }).locator("..")
+  ).toContainText("0件");
+  await expect(outcomeComparison).toContainText("ペア比較できたTaskが1件のため参考値です。");
+  const humanAccuracy = outcomeComparison
+    .getByText("Human Estimate", { exact: true })
+    .locator("..");
+  await expect(humanAccuracy).toContainText("30分");
+  await expect(humanAccuracy).toContainText("0 / 1件（0%）");
+  const finalPlanAccuracy = outcomeComparison
+    .getByText("Final Plan", { exact: true })
+    .locator("..");
+  await expect(finalPlanAccuracy).toContainText("30分");
+  await expect(finalPlanAccuracy).toContainText("0 / 1件（0%）");
+  await expect(outcomeComparison.getByText("Coding Agent 1件", { exact: true })).toBeVisible();
+  await expect(outcomeComparison.getByText("テスト範囲の増加 1件", { exact: true })).toBeVisible();
+
   await page.reload();
+  await expect(page.getByRole("region", { name: "評価revision比較" })).toContainText(
+    "評価済み 1件"
+  );
   await page.getByRole("button", { name: `${COMPLETED_TASK_TITLE}の見積もり履歴を開く` }).click();
   await expect(completedEstimateDialog.locator("table").nth(1).getByRole("row")).toHaveCount(2);
   await completedEstimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();

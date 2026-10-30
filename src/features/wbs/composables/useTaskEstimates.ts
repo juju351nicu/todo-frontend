@@ -33,6 +33,8 @@ export interface UseTaskEstimatesOptions {
   readonly reloadPageSnapshot: () => Promise<void>;
   /** 競合回復中の参照失敗を、Session動作または画面上部の案内へ変換する。 */
   readonly handleReadApiError: (error: unknown) => Promise<void>;
+  /** 完了評価保存後に、最新評価revisionを使う精度集計を再取得する。 */
+  readonly reloadEstimateAccuracy?: () => Promise<void>;
 }
 
 /**
@@ -347,6 +349,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
           buildTaskEstimateOutcomeCreateRequest(form, task.version)
         )
       );
+      await options.reloadEstimateAccuracy?.();
       estimateSuccessMessage.value = "完了Taskの見積もり評価を保存しました。";
     } catch (error: unknown) {
       await handleEstimateMutationError(error);
