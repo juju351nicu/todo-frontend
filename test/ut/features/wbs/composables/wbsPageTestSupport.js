@@ -37,6 +37,7 @@ export const mocks = {
     createMemberWorkingDay: vi.fn(),
     createProjectWorkingDay: vi.fn(),
     createHumanEstimate: vi.fn(),
+    createTaskEstimateDecision: vi.fn(),
     createTaskDependency: vi.fn(),
     createTaskEffortPlan: vi.fn(),
     createTaskWorkLog: vi.fn(),
@@ -394,6 +395,7 @@ export const taskEstimateList = {
   taskVersion: 4,
   finalPlannedEffortMinutes: 480,
   actualEffortMinutes: 300,
+  decisions: [],
   estimates: [
     {
       taskEstimateSnapshotId: 61,
@@ -430,6 +432,26 @@ export const updatedTaskEstimateList = {
       sourceTaskVersion: 4,
       requestedByAccountId: 2,
       createdAt: "2026-08-22T02:00:00Z",
+    },
+  ],
+};
+
+/** revision 1をそのまま採用し、Final PlanとTask versionを更新した後の一覧。 */
+export const decidedTaskEstimateList = {
+  ...taskEstimateList,
+  taskVersion: 5,
+  finalPlannedEffortMinutes: 420,
+  decisions: [
+    {
+      taskEstimateDecisionId: 71,
+      taskEstimateSnapshotId: 61,
+      decisionCode: "ADOPTED",
+      beforePlannedEffortMinutes: 480,
+      afterPlannedEffortMinutes: 420,
+      sourceTaskVersion: 4,
+      resultTaskVersion: 5,
+      decidedByAccountId: 2,
+      decidedAt: "2026-08-22T03:00:00Z",
     },
   ],
 };
@@ -564,6 +586,9 @@ export const resetWbsPageMocks = () => {
   );
   mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(structuredClone(workingCalendarResponse));
   mocks.wbsApi.createHumanEstimate.mockResolvedValue(structuredClone(updatedTaskEstimateList));
+  mocks.wbsApi.createTaskEstimateDecision.mockResolvedValue(
+    structuredClone(decidedTaskEstimateList)
+  );
   mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskEffortPlan.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);

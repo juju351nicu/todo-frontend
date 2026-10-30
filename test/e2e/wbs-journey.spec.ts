@@ -40,7 +40,7 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(accuracyRow).toContainText("2時間30分");
   await expect(accuracyRow).toContainText("+30分");
 
-  // Human Estimateは単一点と3点を変更不能なrevisionとして追記し、再読込後も古い順で表示する。
+  // Human Estimateを2 revision追記し、最新revisionの採用とFinal Plan反映を監査する。
   await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の見積もり履歴を開く` }).click();
   const estimateDialog = page.getByRole("dialog", {
     name: `Task見積もり: 1 ${PLANNING_TASK_TITLE}`,
@@ -58,16 +58,36 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await estimateDialog.getByLabel("最頻値・単一点（分）").fill("360");
   await estimateDialog.getByLabel("悲観値（分）").fill("480");
   await estimateDialog.getByRole("button", { name: "見積もりを追加", exact: true }).click();
-  await expect(estimateDialog.getByRole("row")).toHaveCount(3);
-  await expect(estimateDialog.getByRole("row").nth(1)).toContainText("6時間");
-  await expect(estimateDialog.getByRole("row").nth(2)).toContainText("5時間 / 6時間 / 8時間");
+  const estimateHistoryTable = estimateDialog.locator("table").first();
+  await expect(estimateHistoryTable.getByRole("row")).toHaveCount(3);
+  await expect(estimateHistoryTable.getByRole("row").nth(1)).toContainText("6時間");
+  await expect(estimateHistoryTable.getByRole("row").nth(2)).toContainText("5時間 / 6時間 / 8時間");
+
+  await estimateDialog.getByRole("button", { name: "採否を確定", exact: true }).click();
+  await expect(
+    estimateDialog.getByText("見積もりをFinal Planへ反映し、採否履歴へ保存しました。")
+  ).toBeVisible();
+  await expect(
+    estimateDialog.getByText("Final Plan（正式予定）").locator("..").getByText("6時間")
+  ).toBeVisible();
+  const decisionHistoryTable = estimateDialog.locator("table").nth(1);
+  await expect(decisionHistoryTable.getByRole("row")).toHaveCount(2);
+  await expect(decisionHistoryTable.getByRole("row").nth(1)).toContainText("revision 2");
+  await expect(decisionHistoryTable.getByRole("row").nth(1)).toContainText("そのまま採用");
+  await expect(decisionHistoryTable.getByRole("row").nth(1)).toContainText("4時間 → 6時間");
+  await expect(decisionHistoryTable.getByRole("row").nth(1)).toContainText("0 → 1");
   await estimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
 
   await page.reload();
   await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の見積もり履歴を開く` }).click();
-  await expect(estimateDialog.getByRole("row")).toHaveCount(3);
-  await expect(estimateDialog.getByRole("row").nth(1)).toContainText("Human Estimate");
-  await expect(estimateDialog.getByRole("row").nth(2)).toContainText("Human Estimate");
+  await expect(estimateDialog.locator("table").first().getByRole("row")).toHaveCount(3);
+  await expect(estimateDialog.locator("table").first().getByRole("row").nth(1)).toContainText(
+    "Human Estimate"
+  );
+  await expect(estimateDialog.locator("table").first().getByRole("row").nth(2)).toContainText(
+    "Human Estimate"
+  );
+  await expect(estimateDialog.locator("table").nth(1).getByRole("row")).toHaveCount(2);
   await estimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
 
   // 未完了Taskへ日別予定（90分）を登録すると、Dialogを閉じなくてもworkloadが再集計される。
@@ -106,6 +126,7 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   if (process.env.E2E_SKIP_DATABASE_FIXTURE !== "true") {
     const inspection = runBrowserRegressionFixture("wbs-journey", "inspect-stage10d2");
     expect(inspection).toContain("human_estimate_revision_count=2");
-    expect(inspection).toContain("human_estimate_task_invariant_count=1");
+    expect(inspection).toContain("estimate_decision_count=1");
+    expect(inspection).toContain("estimate_decision_task_result_count=1");
   }
 });

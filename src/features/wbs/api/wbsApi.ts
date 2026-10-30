@@ -8,6 +8,7 @@ import type {
   TaskEffortPlanListResponse,
   TaskEffortPlanUpdateRequest,
   TaskEstimateListResponse,
+  TaskEstimateDecisionCreateRequest,
   TaskWorkLogCreateRequest,
   TaskWorkLogListResponse,
   TaskWorkLogUpdateRequest,
@@ -88,12 +89,13 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
   return normalizeWbsResponse((await response.json()) as WbsResponse);
 };
 
-/** API Responseで欠落した見積もりrevision一覧を空配列へ正規化する。 */
+/** API Responseで欠落した見積もりrevision・採否監査一覧を空配列へ正規化する。 */
 const normalizeTaskEstimateList = (
   payload: TaskEstimateListResponse
 ): TaskEstimateListResponse => ({
   ...payload,
   estimates: payload.estimates ?? [],
+  decisions: payload.decisions ?? [],
 });
 
 /**
@@ -132,6 +134,31 @@ const createHumanEstimate = async (
 ): Promise<TaskEstimateListResponse> => {
   const response = await HttpClient.postRequest(
     `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/human-estimates`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEstimateList((await response.json()) as TaskEstimateListResponse);
+};
+
+/**
+ * 見積もりrevisionの採否をTask version条件付きで一度だけ確定する。
+ * 共通HTTP clientがSession CookieとCSRF headerを設定し、採用時だけBackendがFinal Planを更新する。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param taskEstimateSnapshotId 採否対象の見積もりsnapshot ID
+ * @param request 採否code、調整採用値、取得時点Task version
+ * @returns 採否確定後の見積もり・Final Plan・Actual・監査一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、archive・version・採否済み競合またはBackendエラーの場合
+ */
+const createTaskEstimateDecision = async (
+  projectId: number,
+  taskId: number,
+  taskEstimateSnapshotId: number,
+  request: TaskEstimateDecisionCreateRequest
+): Promise<TaskEstimateListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/estimates/${taskEstimateSnapshotId}/decisions`,
     request
   );
   await ensureSuccess(response);
@@ -782,6 +809,7 @@ export default {
   deleteTaskWorkLog,
   deleteMemberWorkingDay,
   deleteProjectWorkingDay,
+  createTaskEstimateDecision,
   downloadWbsReport,
   getTaskDependencies,
   getTaskEstimates,

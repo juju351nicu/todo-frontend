@@ -7,6 +7,7 @@ import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
   HumanEstimateForm,
+  TaskEstimateDecisionForm,
   TaskEstimateListResponse,
   WbsTask,
 } from "@/features/wbs/types/wbs";
@@ -17,7 +18,9 @@ import {
 } from "@/features/wbs/utils/apiErrors";
 import {
   buildHumanEstimateCreateRequest,
+  buildTaskEstimateDecisionCreateRequest,
   validateHumanEstimateForm,
+  validateTaskEstimateDecisionForm,
 } from "@/features/wbs/utils/taskEstimate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
@@ -51,6 +54,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const isEstimateDialogOpen = ref(false);
   const isLoadingEstimates = ref(false);
   const isSavingEstimate = ref(false);
+  const isDecidingEstimate = ref(false);
   /** 競合再取得後もWBSに存在するactive Taskか。archive後の履歴参照ではfalse。 */
   const isSelectedTaskAvailableForCreate = ref(false);
 
@@ -65,6 +69,20 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
         ...estimateTask.value,
         plannedEffortMinutes: response.finalPlannedEffortMinutes,
         version: response.taskVersion,
+      };
+    }
+    if (context.wbs.value?.tasks.some((task) => task.taskId === response.taskId)) {
+      context.wbs.value = {
+        ...context.wbs.value,
+        tasks: context.wbs.value.tasks.map((task) =>
+          task.taskId === response.taskId
+            ? {
+                ...task,
+                plannedEffortMinutes: response.finalPlannedEffortMinutes,
+                version: response.taskVersion,
+              }
+            : task
+        ),
       };
     }
   };
@@ -83,9 +101,12 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
         estimateTask.value.assigneeAccountId === userStore.accountId)
   );
 
+  /** Human Estimate追加と同じTask更新境界で、選択中revisionの採否を確定できるか。 */
+  const canDecideEstimate = computed(() => canCreateHumanEstimate.value);
+
   /** 通常Taskを選択し、変更不能な見積もり履歴を取得してDialogを開く。 */
   const openEstimateDialog = async (taskId: number): Promise<void> => {
-    if (isLoadingEstimates.value || isSavingEstimate.value) {
+    if (isLoadingEstimates.value || isSavingEstimate.value || isDecidingEstimate.value) {
       return;
     }
     context.errorMessages.value = [];
@@ -142,7 +163,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
 
   /** 読込・保存中でなければDialogと選択Task・履歴を破棄する。 */
   const closeEstimateDialog = (): void => {
-    if (!isLoadingEstimates.value && !isSavingEstimate.value) {
+    if (!isLoadingEstimates.value && !isSavingEstimate.value && !isDecidingEstimate.value) {
       discardEstimateDialog();
     }
   };
@@ -165,7 +186,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const saveHumanEstimate = async (form: HumanEstimateForm): Promise<void> => {
     const task = estimateTask.value;
     const projectId = context.projectId.value;
-    if (task === null || projectId === null || isSavingEstimate.value) {
+    if (task === null || projectId === null || isSavingEstimate.value || isDecidingEstimate.value) {
       return;
     }
     if (!canCreateHumanEstimate.value) {
@@ -194,6 +215,53 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       await handleEstimateMutationError(error);
     } finally {
       isSavingEstimate.value = false;
+    }
+  };
+
+  /**
+   * 見積もり採否Formを検証し、Dialogの最新Task version付きで採否とFinal Plan反映を確定する。
+   *
+   * @param form 採否対象revision、採否code、必要な場合の調整後正式予定工数
+   */
+  const saveTaskEstimateDecision = async (form: TaskEstimateDecisionForm): Promise<void> => {
+    const task = estimateTask.value;
+    const projectId = context.projectId.value;
+    if (task === null || projectId === null || isSavingEstimate.value || isDecidingEstimate.value) {
+      return;
+    }
+    if (!canDecideEstimate.value) {
+      estimateEditorErrorMessages.value = [DISPLAY_MESSAGES.wbs.taskEstimate.updateForbidden];
+      return;
+    }
+    const selectedEstimate = estimateList.value?.estimates.find(
+      (estimate) => estimate.taskEstimateSnapshotId === form.taskEstimateSnapshotId
+    );
+    const validationMessages = validateTaskEstimateDecisionForm(form, selectedEstimate);
+    if (validationMessages.length > 0 || form.taskEstimateSnapshotId === null) {
+      estimateEditorErrorMessages.value = validationMessages;
+      return;
+    }
+
+    isDecidingEstimate.value = true;
+    estimateEditorErrorMessages.value = [];
+    estimateSuccessMessage.value = "";
+    try {
+      applyEstimateList(
+        await WbsApi.createTaskEstimateDecision(
+          projectId,
+          task.taskId,
+          form.taskEstimateSnapshotId,
+          buildTaskEstimateDecisionCreateRequest(form, task.version)
+        )
+      );
+      estimateSuccessMessage.value =
+        form.decisionCode === "REJECTED"
+          ? "見積もりを却下し、採否履歴へ保存しました。"
+          : "見積もりをFinal Planへ反映し、採否履歴へ保存しました。";
+    } catch (error: unknown) {
+      await handleEstimateMutationError(error);
+    } finally {
+      isDecidingEstimate.value = false;
     }
   };
 
@@ -261,6 +329,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
 
   return {
     canCreateHumanEstimate,
+    canDecideEstimate,
     closeEstimateDialog,
     discardEstimateDialog,
     estimateEditorErrorMessages,
@@ -269,8 +338,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     estimateTask,
     isEstimateDialogOpen,
     isLoadingEstimates,
+    isDecidingEstimate,
     isSavingEstimate,
     openEstimateDialog,
     saveHumanEstimate,
+    saveTaskEstimateDecision,
   };
 };

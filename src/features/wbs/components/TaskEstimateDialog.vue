@@ -3,13 +3,18 @@ import { computed } from "vue";
 
 import type {
   HumanEstimateForm,
+  TaskEstimateDecision,
+  TaskEstimateDecisionForm,
   TaskEstimateListResponse,
   WbsTask,
 } from "@/features/wbs/types/wbs";
 import {
   buildHumanEstimateForm,
+  buildTaskEstimateDecisionForm,
   ESTIMATE_ASSISTANCE_MODE_OPTIONS,
+  ESTIMATE_DECISION_OPTIONS,
   formatEstimateAssistanceMode,
+  formatTaskEstimateDecision,
   formatTaskEstimateRange,
   formatTaskEstimateSource,
 } from "@/features/wbs/utils/taskEstimate";
@@ -25,8 +30,10 @@ interface Props {
   task: WbsTask | null;
   estimateList: TaskEstimateListResponse | null;
   canCreate: boolean;
+  canDecide: boolean;
   isLoading: boolean;
   isSaving: boolean;
+  isDeciding: boolean;
   errorMessages: string[];
   successMessage: string;
 }
@@ -35,14 +42,52 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   close: [];
   save: [form: HumanEstimateForm];
+  decide: [form: TaskEstimateDecisionForm];
 }>();
 
-const isBusy = computed(() => props.isLoading || props.isSaving);
+const isBusy = computed(() => props.isLoading || props.isSaving || props.isDeciding);
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task見積もり", props.task));
 const latestEstimate = computed(() => props.estimateList?.estimates.at(-1) ?? null);
+const decidedEstimateIds = computed(
+  () =>
+    new Set(props.estimateList?.decisions.map((decision) => decision.taskEstimateSnapshotId) ?? [])
+);
+const undecidedEstimates = computed(
+  () =>
+    props.estimateList?.estimates.filter(
+      (estimate) => !decidedEstimateIds.value.has(estimate.taskEstimateSnapshotId)
+    ) ?? []
+);
+const estimateDecisionOptions = computed(() =>
+  undecidedEstimates.value.map((estimate) => ({
+    title: `revision ${estimate.revision}：${formatTaskEstimateRange(estimate)}`,
+    value: estimate.taskEstimateSnapshotId,
+  }))
+);
+
+/** 採否監査が参照する見積もりrevisionを表示する。 */
+const formatDecisionRevision = (decision: TaskEstimateDecision): string => {
+  const estimate = props.estimateList?.estimates.find(
+    (candidate) => candidate.taskEstimateSnapshotId === decision.taskEstimateSnapshotId
+  );
+  return estimate === undefined
+    ? `ID ${decision.taskEstimateSnapshotId}`
+    : `revision ${estimate.revision}`;
+};
+
+/** 採否監査のFinal Plan変更前後を同じ単位で表示する。 */
+const formatDecisionPlanTransition = (decision: TaskEstimateDecision): string =>
+  `${formatEffortMinutes(decision.beforePlannedEffortMinutes)} → ${formatEffortMinutes(
+    decision.afterPlannedEffortMinutes
+  )}`;
 
 // 保存後の一覧Responseが変わるたびに空Formへ戻し、直前の見積もりを誤って再送しない。
-const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm({
+const {
+  closeDialog,
+  form: humanEstimateForm,
+  handleDialogVisibility,
+  submitForm: submitHumanEstimateForm,
+} = useDialogForm({
   initialForm: buildHumanEstimateForm(),
   syncSources: [() => props.open, () => props.estimateList],
   buildForm: () => (props.open ? buildHumanEstimateForm() : undefined),
@@ -50,6 +95,27 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
   canSubmit: () => props.canCreate,
   onClose: () => emit("close"),
   onSave: (value) => emit("save", value),
+});
+
+// 採否確定後は次の未採否revisionを選び直し、確定済みrevisionの再送を画面でも防ぐ。
+const { form: decisionForm, submitForm: submitDecisionForm } = useDialogForm({
+  initialForm: buildTaskEstimateDecisionForm(),
+  syncSources: [() => props.open, () => props.estimateList],
+  buildForm: () =>
+    props.open
+      ? buildTaskEstimateDecisionForm(
+          undecidedEstimates.value.at(-1)?.taskEstimateSnapshotId ?? null
+        )
+      : undefined,
+  isBusy,
+  canSubmit: (value) =>
+    props.canDecide &&
+    value.taskEstimateSnapshotId !== null &&
+    undecidedEstimates.value.some(
+      (estimate) => estimate.taskEstimateSnapshotId === value.taskEstimateSnapshotId
+    ),
+  onClose: () => undefined,
+  onSave: (value) => emit("decide", value),
 });
 </script>
 
@@ -113,16 +179,16 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
               </p>
             </div>
           </template>
-          <form @submit.prevent="submitForm">
+          <form @submit.prevent="submitHumanEstimateForm">
             <div class="-m-3 flex flex-wrap">
               <div class="w-full p-3 md:w-1/2">
                 <UFormField label="想定するAI支援">
                   <USelect
-                    v-model="form.assistanceMode"
+                    v-model="humanEstimateForm.assistanceMode"
                     :items="ESTIMATE_ASSISTANCE_MODE_OPTIONS"
                     label-key="title"
                     value-key="value"
-                    :disabled="isSaving"
+                    :disabled="isBusy"
                     class="w-full"
                   />
                 </UFormField>
@@ -130,11 +196,11 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
               <div class="w-full p-3 md:w-1/2">
                 <UFormField label="最頻値・単一点（分）" help="必須。1分以上の整数です。">
                   <UInput
-                    v-model.nullable="form.estimateLikelyMinutes"
+                    v-model.nullable="humanEstimateForm.estimateLikelyMinutes"
                     type="number"
                     min="1"
                     step="1"
-                    :disabled="isSaving"
+                    :disabled="isBusy"
                     class="w-full"
                   />
                 </UFormField>
@@ -142,11 +208,11 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
               <div class="w-full p-3 md:w-1/2">
                 <UFormField label="楽観値（分）" help="単一点見積もりでは空欄にします。">
                   <UInput
-                    v-model.nullable="form.estimateLowMinutes"
+                    v-model.nullable="humanEstimateForm.estimateLowMinutes"
                     type="number"
                     min="1"
                     step="1"
-                    :disabled="isSaving"
+                    :disabled="isBusy"
                     class="w-full"
                   />
                 </UFormField>
@@ -154,11 +220,11 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
               <div class="w-full p-3 md:w-1/2">
                 <UFormField label="悲観値（分）" help="3点見積もりでは楽観値と両方入力します。">
                   <UInput
-                    v-model.nullable="form.estimateHighMinutes"
+                    v-model.nullable="humanEstimateForm.estimateHighMinutes"
                     type="number"
                     min="1"
                     step="1"
-                    :disabled="isSaving"
+                    :disabled="isBusy"
                     class="w-full"
                   />
                 </UFormField>
@@ -171,7 +237,7 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
               variant="ghost"
               class="ms-auto"
               :loading="isSaving"
-              @click="submitForm"
+              @click="submitHumanEstimateForm"
             >
               見積もりを追加
             </UButton>
@@ -181,6 +247,82 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
         <StatusAlert v-else type="info" variant="soft" class="mb-5">
           このTaskの見積もり履歴は参照できますが、Human
           Estimateを追加する権限または状態ではありません。
+        </StatusAlert>
+
+        <UCard v-if="canDecide && undecidedEstimates.length" variant="outline" class="mb-5">
+          <template #header>
+            <div>
+              <div class="text-base font-normal">見積もりの採否を確定</div>
+              <p class="mt-1 mb-0 text-xs text-muted">
+                採否はrevisionごとに一度だけ確定できます。確定内容とFinal
+                Planの変更前後は監査履歴に残ります。
+              </p>
+            </div>
+          </template>
+          <form @submit.prevent="submitDecisionForm">
+            <div class="-m-3 flex flex-wrap">
+              <div class="w-full p-3 md:w-1/2">
+                <UFormField label="対象revision">
+                  <USelect
+                    :model-value="decisionForm.taskEstimateSnapshotId ?? undefined"
+                    :items="estimateDecisionOptions"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isBusy"
+                    class="w-full"
+                    @update:model-value="decisionForm.taskEstimateSnapshotId = $event"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 md:w-1/2">
+                <UFormField label="採否">
+                  <USelect
+                    v-model="decisionForm.decisionCode"
+                    :items="ESTIMATE_DECISION_OPTIONS"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isBusy"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div v-if="decisionForm.decisionCode === 'ADJUSTED'" class="w-full p-3 md:w-1/2">
+                <UFormField
+                  label="調整後のFinal Plan（分）"
+                  help="対象revisionの最頻値とは異なる、1分以上の整数です。"
+                >
+                  <UInput
+                    v-model.nullable="decisionForm.adjustedPlannedEffortMinutes"
+                    type="number"
+                    min="1"
+                    step="1"
+                    :disabled="isBusy"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+            </div>
+          </form>
+          <template #footer>
+            <UButton
+              color="primary"
+              variant="ghost"
+              class="ms-auto"
+              :loading="isDeciding"
+              @click="submitDecisionForm"
+            >
+              採否を確定
+            </UButton>
+          </template>
+        </UCard>
+
+        <StatusAlert
+          v-else-if="canDecide && estimateList?.estimates.length"
+          type="info"
+          variant="soft"
+          class="mb-5"
+        >
+          すべての見積もりrevisionで採否が確定しています。
         </StatusAlert>
 
         <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -225,6 +367,51 @@ const { closeDialog, form, handleDialogVisibility, submitForm } = useDialogForm(
         <StatusAlert v-else type="info" variant="soft">
           このTaskの見積もり履歴はまだありません。
         </StatusAlert>
+
+        <template v-if="estimateList?.decisions.length">
+          <div class="mt-6 mb-3 flex flex-wrap items-center gap-2">
+            <h2 class="text-base">採否監査履歴</h2>
+            <UBadge size="sm" variant="outline">
+              {{ estimateList.decisions.length }} decision
+            </UBadge>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="app-table app-table-hover min-w-230 [&_td]:h-13 [&_th]:h-13">
+              <thead>
+                <tr>
+                  <th scope="col">対象</th>
+                  <th scope="col">採否</th>
+                  <th scope="col">Final Plan（変更前 → 変更後）</th>
+                  <th scope="col">Task version</th>
+                  <th scope="col">確定者</th>
+                  <th scope="col">確定日時</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="decision in estimateList.decisions"
+                  :key="decision.taskEstimateDecisionId"
+                >
+                  <td class="whitespace-nowrap">{{ formatDecisionRevision(decision) }}</td>
+                  <td class="whitespace-nowrap">
+                    <UBadge
+                      :color="decision.decisionCode === 'REJECTED' ? 'warning' : 'success'"
+                      size="xs"
+                    >
+                      {{ formatTaskEstimateDecision(decision.decisionCode) }}
+                    </UBadge>
+                  </td>
+                  <td class="whitespace-nowrap">{{ formatDecisionPlanTransition(decision) }}</td>
+                  <td class="whitespace-nowrap">
+                    {{ decision.sourceTaskVersion }} → {{ decision.resultTaskVersion }}
+                  </td>
+                  <td>{{ decision.decidedByAccountId }}</td>
+                  <td class="whitespace-nowrap">{{ formatShortDateTime(decision.decidedAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </template>
     </template>
     <template #footer>

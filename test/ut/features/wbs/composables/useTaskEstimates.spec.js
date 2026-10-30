@@ -6,6 +6,7 @@ import { useTaskEstimates } from "@/features/wbs/composables/useTaskEstimates";
 
 import {
   buildWbsPageContext,
+  decidedTaskEstimateList,
   mocks,
   project,
   resetWbsPageMocks,
@@ -46,6 +47,47 @@ describe("useTaskEstimates", () => {
     expect(state.estimateTask.value).toMatchObject({ taskId: 2, version: 4 });
     expect(state.estimateList.value).toEqual(taskEstimateList);
     expect(state.canCreateHumanEstimate.value).toBe(true);
+    expect(state.canDecideEstimate.value).toBe(true);
+  });
+
+  it("取得時点Task versionで採否を確定しFinal PlanとWBS Taskを同じResponseへ更新する", async () => {
+    const { context, state } = await openEstimates();
+
+    await state.saveTaskEstimateDecision({
+      taskEstimateSnapshotId: 61,
+      decisionCode: "ADOPTED",
+      adjustedPlannedEffortMinutes: null,
+    });
+
+    expect(mocks.wbsApi.createTaskEstimateDecision).toHaveBeenCalledWith(7, 2, 61, {
+      decisionCode: "ADOPTED",
+      adjustedPlannedEffortMinutes: null,
+      taskVersion: 4,
+    });
+    expect(state.estimateList.value).toEqual(decidedTaskEstimateList);
+    expect(state.estimateTask.value).toMatchObject({ version: 5, plannedEffortMinutes: 420 });
+    expect(context.wbs.value.tasks.find((task) => task.taskId === 2)).toMatchObject({
+      version: 5,
+      plannedEffortMinutes: 420,
+    });
+    expect(state.estimateSuccessMessage.value).toBe(
+      "見積もりをFinal Planへ反映し、採否履歴へ保存しました。"
+    );
+  });
+
+  it("不正な調整採用では確定APIを呼ばず理由を表示する", async () => {
+    const { state } = await openEstimates();
+
+    await state.saveTaskEstimateDecision({
+      taskEstimateSnapshotId: 61,
+      decisionCode: "ADJUSTED",
+      adjustedPlannedEffortMinutes: 420,
+    });
+
+    expect(mocks.wbsApi.createTaskEstimateDecision).not.toHaveBeenCalled();
+    expect(state.estimateEditorErrorMessages.value).toEqual([
+      "最頻値を変更せず採用する場合は「そのまま採用」を選択してください。",
+    ]);
   });
 
   it("見積もりResponseの最新Task versionと正式予定工数を選択Taskへ反映する", async () => {

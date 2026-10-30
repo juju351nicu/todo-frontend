@@ -75,6 +75,7 @@ describe("WBS API", () => {
       finalPlannedEffortMinutes: 480,
       actualEffortMinutes: 0,
       estimates: [],
+      decisions: [],
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11/estimates");
   });
@@ -94,6 +95,7 @@ describe("WBS API", () => {
       finalPlannedEffortMinutes: 480,
       actualEffortMinutes: 0,
       estimates: [],
+      decisions: [],
     };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
@@ -103,6 +105,33 @@ describe("WBS API", () => {
     await expect(WbsApi.createHumanEstimate(7, 11, request)).resolves.toEqual(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/human-estimates",
+      request
+    );
+  });
+
+  it("見積もりsnapshot IDとTask versionを採否確定APIへ送る", async () => {
+    const request = {
+      decisionCode: "ADJUSTED",
+      adjustedPlannedEffortMinutes: 360,
+      taskVersion: 4,
+    };
+    const response = {
+      projectId: 7,
+      taskId: 11,
+      taskVersion: 5,
+      finalPlannedEffortMinutes: 360,
+      actualEffortMinutes: 0,
+      estimates: [],
+      decisions: [],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createTaskEstimateDecision(7, 11, 61, request)).resolves.toEqual(response);
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/estimates/61/decisions",
       request
     );
   });

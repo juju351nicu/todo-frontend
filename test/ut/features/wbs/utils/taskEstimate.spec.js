@@ -3,10 +3,14 @@ import { describe, expect, it } from "vitest";
 import {
   buildHumanEstimateCreateRequest,
   buildHumanEstimateForm,
+  buildTaskEstimateDecisionCreateRequest,
+  buildTaskEstimateDecisionForm,
   formatEstimateAssistanceMode,
+  formatTaskEstimateDecision,
   formatTaskEstimateRange,
   formatTaskEstimateSource,
   validateHumanEstimateForm,
+  validateTaskEstimateDecisionForm,
 } from "@/features/wbs/utils/taskEstimate";
 
 describe("Human Estimate入力", () => {
@@ -89,6 +93,104 @@ describe("Human Estimate入力", () => {
   });
 });
 
+describe("見積もり採否入力", () => {
+  const estimate = {
+    taskEstimateSnapshotId: 61,
+    projectId: 7,
+    taskId: 2,
+    revision: 1,
+    sourceCode: "HUMAN",
+    assistanceMode: "NONE",
+    estimateLowMinutes: null,
+    estimateLikelyMinutes: 420,
+    estimateHighMinutes: null,
+    sourceTaskVersion: 4,
+    requestedByAccountId: 2,
+    createdAt: "2026-08-22T01:00:00Z",
+  };
+
+  it("最新の未採否snapshotをそのまま採用するFormとして初期化する", () => {
+    expect(buildTaskEstimateDecisionForm(61)).toEqual({
+      taskEstimateSnapshotId: 61,
+      decisionCode: "ADOPTED",
+      adjustedPlannedEffortMinutes: null,
+    });
+  });
+
+  it.each([
+    ["そのまま採用", "ADOPTED", null],
+    ["調整して採用", "ADJUSTED", 360],
+    ["却下", "REJECTED", null],
+  ])("%sを有効な採否として検証する", (_condition, decisionCode, adjustedMinutes) => {
+    expect(
+      validateTaskEstimateDecisionForm(
+        {
+          taskEstimateSnapshotId: 61,
+          decisionCode,
+          adjustedPlannedEffortMinutes: adjustedMinutes,
+        },
+        estimate
+      )
+    ).toEqual([]);
+  });
+
+  it.each([
+    [
+      "revision未選択",
+      { taskEstimateSnapshotId: null, decisionCode: "ADOPTED", adjustedPlannedEffortMinutes: null },
+      ["採否を決める見積もりrevisionを選択してください。"],
+    ],
+    [
+      "採用時に調整値を指定",
+      { taskEstimateSnapshotId: 61, decisionCode: "ADOPTED", adjustedPlannedEffortMinutes: 360 },
+      ["調整後の正式予定工数は「調整して採用」の場合だけ入力してください。"],
+    ],
+    [
+      "調整値が0",
+      { taskEstimateSnapshotId: 61, decisionCode: "ADJUSTED", adjustedPlannedEffortMinutes: 0 },
+      ["調整後の正式予定工数は1分以上の整数で入力してください。"],
+    ],
+    [
+      "調整値が最頻値と同じ",
+      { taskEstimateSnapshotId: 61, decisionCode: "ADJUSTED", adjustedPlannedEffortMinutes: 420 },
+      ["最頻値を変更せず採用する場合は「そのまま採用」を選択してください。"],
+    ],
+  ])("%sでは確定理由を返す", (_condition, form, expected) => {
+    expect(validateTaskEstimateDecisionForm(form, estimate)).toEqual(expected);
+  });
+
+  it("調整採用だけ調整値を残し取得時点Task version付きRequestを作る", () => {
+    expect(
+      buildTaskEstimateDecisionCreateRequest(
+        {
+          taskEstimateSnapshotId: 61,
+          decisionCode: "ADJUSTED",
+          adjustedPlannedEffortMinutes: 360,
+        },
+        4
+      )
+    ).toEqual({
+      decisionCode: "ADJUSTED",
+      adjustedPlannedEffortMinutes: 360,
+      taskVersion: 4,
+    });
+    expect(
+      buildTaskEstimateDecisionCreateRequest(
+        {
+          taskEstimateSnapshotId: 61,
+          decisionCode: "REJECTED",
+          adjustedPlannedEffortMinutes: 360,
+        },
+        4
+      )
+    ).toEqual({
+      decisionCode: "REJECTED",
+      adjustedPlannedEffortMinutes: null,
+      taskVersion: 4,
+    });
+  });
+});
+
 describe("Task見積もり表示", () => {
   const estimate = {
     taskEstimateSnapshotId: 61,
@@ -109,6 +211,7 @@ describe("Task見積もり表示", () => {
     expect(formatTaskEstimateSource("HUMAN")).toBe("Human Estimate");
     expect(formatTaskEstimateSource("AI")).toBe("AI Estimate");
     expect(formatEstimateAssistanceMode("CODING_AGENT")).toBe("Coding Agent");
+    expect(formatTaskEstimateDecision("ADJUSTED")).toBe("調整して採用");
   });
 
   it("単一点と3点見積もりを分・時間表記へ変換する", () => {

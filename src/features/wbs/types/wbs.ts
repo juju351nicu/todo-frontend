@@ -66,6 +66,9 @@ export type TaskEstimateSource = "HUMAN" | "AI";
 /** 見積もりで前提としたAI支援方法。特定providerやmodelは表さない。 */
 export type EstimateAssistanceMode = "NONE" | "GENERAL_AI" | "CODING_AGENT";
 
+/** 見積もりrevisionの採否とFinal Plan反映方法。BackendのEstimateDecisionCodeと一致する。 */
+export type TaskEstimateDecisionCode = "ADOPTED" | "ADJUSTED" | "REJECTED";
+
 /** Human Estimate入力欄で選択できるAI支援方法。 */
 export interface EstimateAssistanceModeOption {
   /** 利用者へ表示する支援方法名。 */
@@ -102,6 +105,24 @@ export interface TaskEstimateSnapshot {
   createdAt: string;
 }
 
+/** 見積もりrevisionの採否とFinal Plan反映前後を保持する変更不能な監査記録。 */
+export interface TaskEstimateDecision {
+  taskEstimateDecisionId: number;
+  taskEstimateSnapshotId: number;
+  decisionCode: TaskEstimateDecisionCode;
+  /** 採否操作前の正式予定工数（分）。 */
+  beforePlannedEffortMinutes: number;
+  /** 採否操作後の正式予定工数（分）。 */
+  afterPlannedEffortMinutes: number;
+  /** 採否操作時にBackendが検査したTask version。 */
+  sourceTaskVersion: number;
+  /** 採否操作完了後のTask version。 */
+  resultTaskVersion: number;
+  decidedByAccountId: number;
+  /** Backendが採否を確定したISO-8601時刻。 */
+  decidedAt: string;
+}
+
 /** 1 Taskの見積もりrevisionを古い順に返すAPI Response。 */
 export interface TaskEstimateListResponse {
   projectId: number;
@@ -114,6 +135,8 @@ export interface TaskEstimateListResponse {
   actualEffortMinutes: number;
   /** 未作成の場合は空配列。 */
   estimates: TaskEstimateSnapshot[];
+  /** 確定時刻順の採否監査。未作成の場合は空配列。 */
+  decisions: TaskEstimateDecision[];
 }
 
 /** Human Estimate Dialogが保持する、Backend型へ変換する前の入力値。 */
@@ -134,6 +157,23 @@ export interface HumanEstimateCreateRequest {
   estimateLikelyMinutes: number;
   estimateHighMinutes: number | null;
   /** Dialogを開いたTaskの取得時点version。 */
+  taskVersion: number;
+}
+
+/** 見積もり採否欄が保持する、Backend型へ変換する前の入力値。 */
+export interface TaskEstimateDecisionForm {
+  /** 採否対象の見積もりsnapshot ID。未選択ではnull。 */
+  taskEstimateSnapshotId: number | null;
+  decisionCode: TaskEstimateDecisionCode;
+  /** ADJUSTEDだけで使用する分単位のFinal Plan。 */
+  adjustedPlannedEffortMinutes: number | null;
+}
+
+/** 見積もり採否確定APIへ送る検証済みRequest。 */
+export interface TaskEstimateDecisionCreateRequest {
+  decisionCode: TaskEstimateDecisionCode;
+  adjustedPlannedEffortMinutes: number | null;
+  /** Dialogが取得したTask version。 */
   taskVersion: number;
 }
 

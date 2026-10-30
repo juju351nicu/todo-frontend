@@ -380,12 +380,15 @@ const VIEW_OPTIONS = [
       :task="page.estimateTask"
       :estimate-list="page.estimateList"
       :can-create="page.canCreateHumanEstimate"
+      :can-decide="page.canDecideEstimate"
       :is-loading="page.isLoadingEstimates"
       :is-saving="page.isSavingEstimate"
+      :is-deciding="page.isDecidingEstimate"
       :error-messages="page.estimateEditorErrorMessages"
       :success-message="page.estimateSuccessMessage"
       @close="page.closeEstimateDialog"
       @save="page.saveHumanEstimate"
+      @decide="page.saveTaskEstimateDecision"
     />
 
     <TaskEffortPlanDialog

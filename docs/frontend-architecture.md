@@ -168,7 +168,7 @@ src/
 - `src/features/wbs/composables/useWbsPage.ts`: WBS画面の統括。Project・WBS・依存関係・baselineのスナップショット取得、権限判定、401処理、Board遷移と、下記の領域別composableの配線
 - `src/features/wbs/composables/wbsPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、WBS、階層行、権限、画面上部message、Session失効処理）の型
 - `src/features/wbs/composables/useWbsTaskEditor.ts`: Task編集Dialogと409時のWBS再取得
-- `src/features/wbs/composables/useTaskEstimates.ts`: 通常Taskの変更不能なHuman／AI Estimate履歴と、Human Estimate追記・競合回復
+- `src/features/wbs/composables/useTaskEstimates.ts`: 通常Taskの変更不能なHuman／AI Estimate履歴、Human Estimate追記、一回限りの採否・Final Plan反映、競合回復
 - `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得。操作結果はcard内のmessageへ出し、MEMBERは本人担当Taskだけを端点にできる
 - `src/features/wbs/components/WbsDependencyCard.vue`: Task依存関係の一覧・追加ボタン・削除ボタン・操作結果を表示するcard
 - `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
@@ -188,7 +188,7 @@ src/
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・実績期間tooltip・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
 - `src/features/wbs/components/TaskWorkLogDialog.vue`: 通常Taskの日別実績一覧・合計・登録・編集Dialog
 - `src/features/wbs/components/TaskEffortPlanDialog.vue`: 通常Taskの日別予定・配賦状況・登録・編集Dialog
-- `src/features/wbs/components/TaskEstimateDialog.vue`: 通常Taskの単一点／3点Human Estimate入力とrevision履歴Dialog
+- `src/features/wbs/components/TaskEstimateDialog.vue`: 通常Taskの単一点／3点Human Estimate入力、未採否revisionの採否確定、revision・採否監査履歴Dialog
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
@@ -248,6 +248,12 @@ consoleはwarning 0件、error 0件で、DB cleanup後の再inspectも0件だっ
 Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Taskの予定担当者・予定日・分工数と、Projectの期間・担当者別workloadを扱う。Task全体予定との差は未配賦または過配賦として表示し、予定・実績変更後はworkloadを再取得する。専用fixtureで登録・更新・重複拒否・代理配賦・過配賦・409・再読込・DB inspect・cleanupまで確認済みである。
 
 2026-10-31にHuman Estimate revisionをWBS画面へ接続した。通常Taskの見積もりDialogを開いたときだけ履歴を取得し、単一点または楽観・最頻・悲観の3点見積もり、AI支援方法、取得時点Task versionをBackendへ送る。revision履歴は更新・削除せず、正式予定工数とも分離する。同じResponseで確定した最新Estimate、Final Plan、Actualを並べ、Task versionと正式予定工数も選択Taskへ反映するため、WBS初期取得後にTaskが変わっても古いversionをそのまま再送しない。通常memberは本人担当Task、Project管理者はProject内の通常Taskへ追記できることを画面でも案内するが、Project参加、permission、role、Task種別・archive・version・revisionの最終判定はBackendへ委ねる。404・409ではProject、WBS、依存関係、baselineと選択Taskの見積もり履歴を再取得し、最新Task versionへ置き換える。
+
+同日に、外部AI送信を伴わない見積もり採否を接続した。Dialogは採否監査のないrevisionだけを候補にし、そのまま採用、
+調整して採用、却下のいずれかを取得時点Task version付きで送る。成功ResponseのFinal Planとversionを選択TaskとWBS本体へ
+同時に反映し、変更前後のFinal Plan、操作前後のversion、確定者、確定日時を監査表へ表示する。保存中はHuman Estimate追加、
+採否確定、Dialog closeを相互に抑止し、二重送信を防ぐ。404・409では既存の競合回復を再利用し、確定済みrevisionと最新versionへ
+置き換える。UIと型はprovider名・model名を持たず、将来のAI実行provider変更から採否契約を分離する。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 
