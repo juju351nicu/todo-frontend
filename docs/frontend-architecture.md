@@ -2,7 +2,7 @@
 
 ## 方針
 
-Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`project`、`task`、`wbs`、
+Backendの機能別パッケージと対応させ、Frontendも`auth`、`account`、`project`、`task`、`wbs`、
 `attendance`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、
 テスト、ビルドを成功させてから次へ進む。
 
@@ -25,7 +25,7 @@ src/
 │   │   ├── stores/
 │   │   ├── types/
 │   │   └── views/
-│   ├── member/
+│   ├── account/
 │   ├── project/
 │   ├── task/
 │   ├── wbs/
@@ -104,17 +104,17 @@ src/
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
 - `src/features/auth/composables/useLoginPage.ts`: ログイン画面の状態、Session復元、入力送信、OAuth2エラー表示
 - `src/features/auth/views/LoginPage.vue`: composableを利用して表示を組み立てるログイン画面
-- `src/features/member/api/memberApi.ts`: 会員一覧・詳細・登録更新・削除・退会API
-- `src/features/member/stores/member.ts`: 会員情報とAPI実行中状態
-- `src/features/member/types/member.ts`: 会員APIのRequest / Response型
-- `src/features/member/composables/useMemberListPage.ts`: 会員一覧、選択ID、ページング、削除、詳細画面遷移
-- `src/features/member/views/MemberListPage.vue`: composableを利用して表示を組み立てる会員一覧画面
-- `src/features/member/composables/useMemberDetailPage.ts`: 会員詳細取得、登録更新フォーム、確認モーダル
-- `src/features/member/composables/useMemberCancelPage.ts`: 退会パスワード入力、退会処理、エラー表示
-- `src/features/member/components/MemberUpsertConfirm.vue`: 会員登録更新の確認部品
-- `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
-- `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
-- `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
+- `src/features/account/api/accountApi.ts`: アカウントAPI（`/api/v1/accounts`）の一覧・詳細・登録・更新・削除・退会
+- `src/features/account/stores/account.ts`: アカウント一覧とAPI実行中状態
+- `src/features/account/types/account.ts`: アカウントAPIのRequest / Response型
+- `src/features/account/composables/useAccountListPage.ts`: アカウント一覧、選択ID、ページング、削除、設定画面への遷移
+- `src/features/account/views/AccountListPage.vue`: composableを利用して表示を組み立てるアカウント一覧画面（`/accounts`）
+- `src/features/account/composables/useAccountDetailPage.ts`: アカウント詳細取得、登録・更新フォーム、確認モーダル
+- `src/features/account/composables/useAccountCancelPage.ts`: 退会パスワード入力、退会処理、エラー表示
+- `src/features/account/components/AccountUpsertConfirm.vue`: アカウント登録・更新の確認部品
+- `src/features/account/utils/accountForm.ts`: アカウント詳細Responseからフォーム、フォームから登録・更新Requestへの変換（ロールは送らない）
+- `src/features/account/views/AccountDetailPage.vue`: アカウント登録・アカウント設定画面（`/accounts/detail/:id?`）
+- `src/features/account/views/AccountCancelPage.vue`: 退会画面（`/accounts/cancel/:id`）
 - `src/features/task/api/myTaskApi.ts`: My Tasks（本人担当のProject Task）の一覧・完了API
 - `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
 - `src/features/task/types/myTask.ts`: My Tasks APIのResponse型
@@ -125,14 +125,15 @@ src/
 - `src/features/task/utils/taskDisplay.ts`: Project Taskの優先度の表示名・色、残り日数の表示変換
 - `src/features/task/views/MyTasksPage.vue`: Project横断の本人担当・未完了Task一覧
 - `src/features/task/views/TaskSearchPage.vue`: 認可済みProjectのTask検索とSaved View画面
-- `src/features/todo/`: 旧Todo（`/api/v1/todo/*`）の画面。Project Taskと混ざらないよう分けて置き、旧Todo APIを廃止するときに丸ごと消す
-  - `api/todoApi.ts`（`TodoApi`・`TodoApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
-  - `stores/todo.ts`: 画面のAPI呼び出しと通信中状態
-  - `types/todo.ts`: Request / Response型（snake_caseの項目を含む）
-  - `composables/useTodoListPage.ts`・`useTodoDetailPage.ts`・`useTodoCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
-  - `components/TodoSearchCard.vue`・`TodoUpsertConfirm.vue`・`TodoPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
-  - `utils/todoForm.ts`・`todoCalendar.ts`・`todoDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
-  - `views/TodoListPage.vue`・`TodoDetailPage.vue`・`TodoCalendarPage.vue`: 一覧・登録更新・カレンダー画面
+- `src/features/task-list/`: Task一覧（`/api/v1/task-list/*`）の画面。担当者ごとに、利用中の全ProjectのTaskを一覧・カレンダーで見て、登録・更新・完了する。Board・WBS等のProject Task（`src/features/task/`）と混ざらないよう分けて置く
+  - `api/taskListApi.ts`（`TaskListApi`・`TaskListApiError`）: 一覧・詳細・カレンダー・完了・登録更新API
+  - `stores/taskList.ts`: 画面のAPI呼び出しと通信中状態
+  - `types/taskList.ts`: Request / Response型（snake_caseの項目を含む）
+  - `composables/useTaskListPage.ts`・`useTaskListDetailPage.ts`・`useTaskCalendarPage.ts`: 一覧（検索・完了）、詳細（登録・更新・確認）、カレンダー
+  - `components/TaskListSearchCard.vue`・`TaskListUpsertConfirm.vue`・`TaskListPriorityBadge.vue`: 検索条件、登録更新の確認、重要度badge
+  - `utils/taskListForm.ts`・`taskCalendar.ts`・`taskListDisplay.ts`・`apiErrors.ts`: フォーム変換、FullCalendar変換、表示変換、error code
+  - `views/TaskListPage.vue`・`TaskListDetailPage.vue`・`TaskCalendarPage.vue`: 一覧・登録更新・カレンダー画面（`/tasks/list`・`/tasks/list/:id`・`/tasks/register`・`/tasks/calendar`）
+  - 2026-10-30に、旧Todo画面（`src/features/todo`、`/todo/*`、`/api/v1/todo/*`）を機能を変えずにTask一覧へ改名した。この資料と`browser-regression-checklist.md`の日付付きの記録は、当時の名前のまま残している
 - `src/features/project/api/projectApi.ts`: Project一覧・詳細・Board参照、Project更新・archive、member管理API
 - `src/features/project/api/projectTemplateApi.ts`: 本人所有Project Templateのcapture・一覧・詳細・更新・archive・適用API
 - `src/features/project/types/project.ts`: Project・Project member・Board・Taskの新API契約型

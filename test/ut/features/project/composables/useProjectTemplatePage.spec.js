@@ -62,7 +62,7 @@ const template = {
   statuses: [
     {
       statusCode: "TODO",
-      name: "Todo",
+      name: "未着手",
       position: 1000,
       completed: false,
     },

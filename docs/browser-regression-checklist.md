@@ -23,11 +23,11 @@ npm run dev -- --host localhost
 
 | No. | 操作 | 期待結果 |
 |---:|---|---|
-| 1 | ローカルアカウントでログインする | 会員一覧へ遷移し、ログイン利用者向けメニューが表示される |
-| 2 | 会員一覧を再読み込みする | `GET /api/v1/session`により認証状態が復元され、ログイン画面へ戻らない |
-| 3 | 会員一覧と会員詳細を開く | 一覧データと対象会員のフォーム値が表示される |
-| 4 | Todo一覧とTodo詳細を開く | 一覧データと対象Todoのフォーム値が表示される |
-| 5 | Todoカレンダーを開く | カレンダーが表示され、画面エラーが発生しない |
+| 1 | ローカルアカウントでログインする | ログイン後の画面へ遷移し、ログイン利用者向けメニューが表示される |
+| 2 | アカウント一覧を再読み込みする | `GET /api/v1/session`により認証状態が復元され、ログイン画面へ戻らない |
+| 3 | アカウント一覧とアカウント設定を開く | 一覧データと対象アカウントのフォーム値が表示される |
+| 4 | Task一覧とTask詳細を開く | 一覧データと対象Taskのフォーム値が表示される |
+| 5 | Taskカレンダーを開く | カレンダーが表示され、画面エラーが発生しない |
 | 6 | 問い合わせ画面を開く | 入力フォームが表示される。メール送信環境を用意していない場合は送信しない |
 | 7 | ログアウトする | ログイン画面へ遷移する |
 | 8 | ログアウト後に保護ルートを直接開く | ログイン画面へ戻り、保護画面を表示しない |
@@ -185,7 +185,7 @@ Taskのarchive操作追加後に、`user01`でログインしてProject一覧と
 
 ## 2026-08-14 専用fixtureによる更新回帰結果
 
-Backendの`scripts/browser-regression`にある`BROWSER-REGRESSION`専用fixtureを使用し、通常のローカルProject・Todoから分離して更新操作を確認した。
+Backendの`scripts/browser-regression`にある`BROWSER-REGRESSION`専用fixtureを使用し、通常のローカルProject・Taskから分離して更新操作を確認した。
 
 - `user01`でログインし、`Browser Regression`の標準3列とTask 3件を表示した。
 - `Browser Move Target`の移動ハンドルへ右方向キーを入力し、成功通知と「Todo」2件・「進行中」1件への更新を確認した。
@@ -235,7 +235,7 @@ Backendの`BROWSER-WBS-DEPENDENCY`専用fixtureをDocker MySQLへ投入し、`us
 - 安定表示後のブラウザconsoleはwarning 0件、error 0件だった。
 - DB inspectでは初期依存だけが残り、cleanup後の再inspectは0件だった。
 
-通常のProject、Todo、account、Sessionおよび他のブラウザ回帰fixtureは変更していない。
+通常のProject、Task、account、Sessionおよび他のブラウザ回帰fixtureは変更していない。
 
 依存線表示をFrontendへ反映した後、同じfixtureを再投入してProject ID 5で追加回帰を行った。
 
@@ -251,7 +251,7 @@ fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を�
 
 ## 勤怠修正申請・審査の回帰（Stage 8C-2）
 
-通常のaccount・勤怠・Project・Todo・Taskを変更しないよう、Backendの
+通常のaccount・勤怠・Project・Taskを変更しないよう、Backendの
 `scripts/browser-regression/attendance-correction`が作成する専用accountと当月勤怠だけを使用する。
 実施手順、期待するversion・監査順、DB確認値、cleanupはBackendの
 `scripts/browser-regression/README.md`に記載する。
@@ -293,7 +293,7 @@ fixtureの作成・削除は引き続き`project_key=BROWSER-WBS-DEPENDENCY`を�
 ## 管理者向け月次勤怠CSVの回帰（Stage 8E-2）
 
 Backendの`scripts/browser-regression/attendance-export`が作成する専用2 account、勤怠、Task実績だけを使用する。
-通常のaccount、Project、Todo、WBS、Sessionは変更しない。詳しい投入・照合・cleanupコマンドはBackendの
+通常のaccount、Project、Task、WBS、Sessionは変更しない。詳しい投入・照合・cleanupコマンドはBackendの
 `scripts/browser-regression/README.md`を参照する。
 
 - [x] `attendance-export-manager`でログインし、勤怠月次確認画面を表示する。

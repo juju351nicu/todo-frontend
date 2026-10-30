@@ -81,7 +81,7 @@ export const buildTask = (overrides = {}) => ({
   priority: 2,
   taskStatusId: 11,
   taskStatusCode: "TODO",
-  taskStatusName: "Todo",
+  taskStatusName: "未着手",
   position: 1000,
   version: 4,
   ...overrides,

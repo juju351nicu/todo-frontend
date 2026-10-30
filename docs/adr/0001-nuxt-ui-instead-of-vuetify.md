@@ -43,7 +43,7 @@
   - FullCalendar・dhtmlx-gantt・vuedraggable は移行の対象外（周りの UI だけ移した）。
   - Vite 8（rolldown）で遅延読み込みの route が白画面になるため、`vite.config.js` で UI 基盤を `vendor-ui` chunk にまとめている。外すと再発する。
   - Nuxt UI の型宣言は build のときに生成されるため、CI は build → typecheck → test の順に実行する。
-- あとで決めること：Todo の重要度 badge（低・中・高）の固定の色（`getTodoPriorityColor`）を semantic color に揃えるか。
+- あとで決めること：Task一覧の重要度 badge（低・中・高）の固定の色（`getTaskListPriorityColor`）を semantic color に揃えるか。
 
 ## 関連資料
 

@@ -7,8 +7,8 @@ import { useUserStore } from "@/features/auth/stores/user";
 import {
   ATTENDANCE_ADMINISTRATION_READ_PERMISSION_CODES,
   ATTENDANCE_READ_PERMISSION_CODES,
-  TASK_READ_PERMISSION_CODES,
-  TASK_WRITE_PERMISSION_CODES,
+  TASK_LIST_READ_PERMISSION_CODES,
+  TASK_LIST_WRITE_PERMISSION_CODES,
 } from "@/features/auth/types/auth";
 
 /** サイドメニューの1項目。 */
@@ -48,10 +48,10 @@ export const useAppNavigation = (): AppNavigation => {
     const links: NavigationLink[] = [
       { icon: "i-mdi-view-dashboard", label: "Dashboard", to: "/dashboard" },
     ];
-    if (userStore.hasAnyPermission(TASK_READ_PERMISSION_CODES)) {
+    if (userStore.hasAnyPermission(TASK_LIST_READ_PERMISSION_CODES)) {
       links.push(
-        { icon: "i-mdi-calendar", label: "Todoカレンダー", to: "/todo/calendar" },
-        { icon: "i-mdi-format-list-checks", label: "Todo一覧", to: "/todo/todoList" }
+        { icon: "i-mdi-calendar", label: "Taskカレンダー", to: "/tasks/calendar" },
+        { icon: "i-mdi-format-list-checks", label: "Task一覧", to: "/tasks/list" }
       );
     }
     if (userStore.hasPermission("TASK_READ")) {
@@ -81,16 +81,24 @@ export const useAppNavigation = (): AppNavigation => {
       links.push({ icon: "i-mdi-clock-outline", label: "勤怠", to: "/attendance" });
     }
     // 未認証でも共通レイアウトを表示する画面（問い合わせ）があるため、利用者IDがない場合は本人向けの導線を出さない。
-    // 「アカウント」は自分の会員情報（詳細画面）を開く。会員の一覧は、ACCOUNT_READを持つ管理者だけが「会員一覧」から開く
-    // （同じ一覧画面へのリンクが2つ並んでいたため。確認依頼「会員一覧の見え方の変更」3、2026-10-28決定）。
+    // 「アカウント設定」は自分のアカウント情報（設定画面）を開く。アカウントの一覧は、ACCOUNT_READを持つ管理者だけが「アカウント一覧」から開く
+    // （同じ一覧画面へのリンクを2つ並べないため）。
     if (userStore.accountId !== null) {
       links.push(
-        { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.accountId}` },
-        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` }
+        {
+          icon: "i-mdi-account",
+          label: "アカウント設定",
+          to: `/accounts/detail/${userStore.accountId}`,
+        },
+        {
+          icon: "i-mdi-account-cancel",
+          label: "退会",
+          to: `/accounts/cancel/${userStore.accountId}`,
+        }
       );
     }
-    if (userStore.hasAnyPermission(TASK_WRITE_PERMISSION_CODES)) {
-      links.push({ icon: "i-mdi-plus-box", label: "Todo新規登録", to: "/todo/register" });
+    if (userStore.hasAnyPermission(TASK_LIST_WRITE_PERMISSION_CODES)) {
+      links.push({ icon: "i-mdi-plus-box", label: "Task新規登録", to: "/tasks/register" });
     }
     if (userStore.hasPermission("ACCOUNT_READ")) {
       links.push({
@@ -113,12 +121,12 @@ export const useAppNavigation = (): AppNavigation => {
         to: "/administration/notifications",
       });
     }
-    // 会員の登録・一覧はBackend（MemberAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
+    // アカウントの登録・一覧はBackend（AccountAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
     if (userStore.hasPermission("ACCOUNT_UPDATE")) {
-      links.push({ icon: "i-mdi-account-plus", label: "会員新規登録", to: "/member/detail" });
+      links.push({ icon: "i-mdi-account-plus", label: "アカウント登録", to: "/accounts/detail" });
     }
     if (userStore.hasPermission("ACCOUNT_READ")) {
-      links.push({ icon: "i-mdi-account-multiple", label: "会員一覧", to: "/member/memberList" });
+      links.push({ icon: "i-mdi-account-multiple", label: "アカウント一覧", to: "/accounts" });
     }
     return links;
   });

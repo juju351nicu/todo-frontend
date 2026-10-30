@@ -13,7 +13,7 @@ import { MY_TASKS_RELOAD_CONTROL } from "@/features/task/composables/useMyTasksP
 import { COMMENT_COMPOSER_CONTROL } from "@/features/task/composables/useTaskComments";
 import { TASK_SEARCH_CONTROL } from "@/features/task/composables/useTaskSearchPage";
 import { TASK_TIMER_HISTORY_CONTROL } from "@/features/time-tracking/composables/useCurrentTaskTimer";
-import { TODO_SUBMIT_CONTROL } from "@/features/todo/composables/useTodoDetailPage";
+import { TASK_LIST_SUBMIT_CONTROL } from "@/features/task-list/composables/useTaskListDetailPage";
 import { WBS_BASELINE_CONTROL } from "@/features/wbs/composables/useWbsBaselines";
 import { EARNED_VALUE_SUBMIT_CONTROL } from "@/features/wbs/composables/useWbsEarnedValue";
 import { WBS_TASK_EDITOR_CONTROL } from "@/features/wbs/composables/useWbsTaskEditor";
@@ -66,7 +66,7 @@ const SINGLE_CONTROLS = [
   ["data-my-task-control", "MY_TASKS_RELOAD_CONTROL", MY_TASKS_RELOAD_CONTROL],
   ["data-comment-control", "COMMENT_COMPOSER_CONTROL", COMMENT_COMPOSER_CONTROL],
   ["data-task-timer-control", "TASK_TIMER_HISTORY_CONTROL", TASK_TIMER_HISTORY_CONTROL],
-  ["data-todo-detail-control", "TODO_SUBMIT_CONTROL", TODO_SUBMIT_CONTROL],
+  ["data-task-list-detail-control", "TASK_LIST_SUBMIT_CONTROL", TASK_LIST_SUBMIT_CONTROL],
   ["data-earned-value-control", "EARNED_VALUE_SUBMIT_CONTROL", EARNED_VALUE_SUBMIT_CONTROL],
   [
     "data-working-calendar-control",

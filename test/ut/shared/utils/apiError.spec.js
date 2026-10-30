@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { ProjectApiError } from "@/features/project/api/projectApi";
-import { TodoApiError } from "@/features/todo/api/todoApi";
+import { TaskListApiError } from "@/features/task-list/api/taskListApi";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 import {
   API_RECOVERY_PRIORITY_STATUSES,
@@ -24,7 +24,7 @@ describe("API error表示utility", () => {
     expect(error).toBeInstanceOf(ProjectApiError);
     expect(error).toBeInstanceOf(ApiError);
     expect(error).toBeInstanceOf(Error);
-    expect(error).not.toBeInstanceOf(TodoApiError);
+    expect(error).not.toBeInstanceOf(TaskListApiError);
     expect(error.name).toBe("ProjectApiError");
     expect(error.message).toBe("Project APIの実行に失敗しました。status=409");
     expect(error.status).toBe(409);
@@ -32,8 +32,8 @@ describe("API error表示utility", () => {
   });
 
   it("401のfeature API例外だけをSession切れと判定する", () => {
-    expect(isUnauthorizedApiError(new TodoApiError(401, null))).toBe(true);
-    expect(isUnauthorizedApiError(new TodoApiError(403, null))).toBe(false);
+    expect(isUnauthorizedApiError(new TaskListApiError(401, null))).toBe(true);
+    expect(isUnauthorizedApiError(new TaskListApiError(403, null))).toBe(false);
     expect(isUnauthorizedApiError(Object.assign(new Error("x"), { status: 401 }))).toBe(false);
     expect(isUnauthorizedApiError(null)).toBe(false);
   });
@@ -225,7 +225,7 @@ describe("resolveStandardErrorMessages", () => {
       DISPLAY_MESSAGES.common.connectionFailed,
     ]);
     expect(
-      resolveStandardErrorMessages(new TodoApiError(500, null), ProjectApiError, options)
+      resolveStandardErrorMessages(new TaskListApiError(500, null), ProjectApiError, options)
     ).toEqual([DISPLAY_MESSAGES.common.connectionFailed]);
   });
 

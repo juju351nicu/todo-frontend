@@ -52,9 +52,9 @@ const openDedicatedBoard = async (page: Page): Promise<void> => {
 test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復する", async ({ page }) => {
   await openDedicatedBoard(page);
 
-  const todoColumn = getBoardColumn(page, "Todo");
+  const notStartedColumn = getBoardColumn(page, "未着手");
   const progressColumn = getBoardColumn(page, "進行中");
-  await todoColumn.getByRole("button", { name: "TodoへTaskを追加", exact: true }).click();
+  await notStartedColumn.getByRole("button", { name: "未着手へTaskを追加", exact: true }).click();
 
   const createDialog = page.getByRole("dialog");
   await expect(createDialog.getByText("Taskを追加", { exact: true })).toBeVisible();
@@ -63,14 +63,14 @@ test("BoardでTaskを作成・列移動し2 tab競合後に先行更新へ回復
   await createDialog.getByRole("button", { name: "保存", exact: true }).click();
 
   await expect(page.getByText("Taskを登録しました。", { exact: true })).toBeVisible();
-  await expect(getTaskCard(todoColumn, INITIAL_TITLE)).toHaveCount(1);
+  await expect(getTaskCard(notStartedColumn, INITIAL_TITLE)).toHaveCount(1);
 
-  await getTaskCard(todoColumn, INITIAL_TITLE)
+  await getTaskCard(notStartedColumn, INITIAL_TITLE)
     .getByRole("button", { name: new RegExp(`^${INITIAL_TITLE}を移動`) })
     .press("ArrowRight");
 
   await expect(page.getByText("Taskを移動しました。", { exact: true })).toBeVisible();
-  await expect(getTaskCard(todoColumn, INITIAL_TITLE)).toHaveCount(0);
+  await expect(getTaskCard(notStartedColumn, INITIAL_TITLE)).toHaveCount(0);
   await expect(getTaskCard(progressColumn, INITIAL_TITLE)).toHaveCount(1);
 
   await page.reload();

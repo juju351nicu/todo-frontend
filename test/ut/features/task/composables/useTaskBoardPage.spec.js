@@ -67,7 +67,7 @@ const project = {
     {
       taskStatusId: 11,
       statusCode: "TODO",
-      name: "Todo",
+      name: "未着手",
       position: 1024,
       completed: false,
       version: 1,

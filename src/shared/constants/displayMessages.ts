@@ -140,22 +140,22 @@ export const DISPLAY_MESSAGES = {
       /** 完了したTaskは一覧から消えるため、何が完了したかを示す。 */
       completed: (title: string): string => `「${title}」を完了しました。`,
     },
-    todo: {
-      readForbidden: "Todoを参照するpermissionがありません。",
-      operationForbidden: "Todoを更新するpermissionがありません。",
-      resourceNotFound: "対象のTodoが見つかりません。",
-      listLoadFailed: "Todo情報を取得できませんでした。",
-      calendarLoadFailed: "Todoカレンダーを取得できませんでした。",
-      detailLoadFailed: "Todo情報を取得できませんでした。Todo一覧から開き直してください。",
-      saveFailed: "Todo情報を保存できませんでした。",
-      conflict: "Todoが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
+    taskList: {
+      readForbidden: "Taskを参照するpermissionがありません。",
+      operationForbidden: "Taskを更新するpermissionがありません。",
+      resourceNotFound: "対象のTaskが見つかりません。",
+      listLoadFailed: "Task情報を取得できませんでした。",
+      calendarLoadFailed: "Taskカレンダーを取得できませんでした。",
+      detailLoadFailed: "Task情報を取得できませんでした。Task一覧から開き直してください。",
+      saveFailed: "Task情報を保存できませんでした。",
+      conflict: "Taskが別の操作で更新されたか、対象が存在しません。最新情報を確認してください。",
       savedRefreshFailed:
-        "Todoは保存されましたが、最新情報を取得できませんでした。Todo一覧から開き直してください。",
-      completeFailed: "Todoを完了状態へ更新できませんでした。",
+        "Taskは保存されましたが、最新情報を取得できませんでした。Task一覧から開き直してください。",
+      completeFailed: "Taskを完了状態へ更新できませんでした。",
       completedRefreshFailed:
-        "Todoは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
-      reloadFailed: "最新のTodo情報を取得できませんでした。Todo一覧から開き直してください。",
-      /** 一覧の「完了」の後に、どのTodoを完了したかを示す。 */
+        "Taskは完了しましたが、最新の一覧を取得できませんでした。再読込してください。",
+      reloadFailed: "最新のTask情報を取得できませんでした。Task一覧から開き直してください。",
+      /** 一覧の「完了」の後に、どのTaskを完了したかを示す。 */
       completed: (title: string): string => `「${title}」を完了しました。`,
     },
     board: {
