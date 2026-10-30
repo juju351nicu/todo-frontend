@@ -45,6 +45,12 @@ export const ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH = resolve(
 /** WBS主要journey専用accountのSession Cookieを保存するGit管理外path。 */
 export const WBS_AUTH_STATE_PATH = resolve("playwright/.auth/wbs-browser.json");
 
+/** Stripe課金journeyの本人Session Cookieを保存するGit管理外path。 */
+export const BILLING_AUTH_STATE_PATH = resolve("playwright/.auth/billing-browser.json");
+
+/** Stripe課金journeyの管理者Session Cookieを保存するGit管理外path。 */
+export const BILLING_ADMIN_AUTH_STATE_PATH = resolve("playwright/.auth/billing-admin-browser.json");
+
 /** setupとteardownで同時に管理する全認証状態path。 */
 export const AUTH_STATE_PATHS = [
   DASHBOARD_AUTH_STATE_PATH,
@@ -58,6 +64,8 @@ export const AUTH_STATE_PATHS = [
   ATTENDANCE_MONTH_REVIEWER_AUTH_STATE_PATH,
   ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH,
   WBS_AUTH_STATE_PATH,
+  BILLING_AUTH_STATE_PATH,
+  BILLING_ADMIN_AUTH_STATE_PATH,
 ] as const;
 
 /** Playwrightから参照するBackend repositoryのpath。CIではcheckout先を環境変数で指定する。 */

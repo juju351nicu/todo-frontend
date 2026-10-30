@@ -6,6 +6,8 @@ import {
   ATTENDANCE_MONTH_CLOSER_AUTH_STATE_PATH,
   ATTENDANCE_MONTH_EMPLOYEE_AUTH_STATE_PATH,
   ATTENDANCE_MONTH_REVIEWER_AUTH_STATE_PATH,
+  BILLING_ADMIN_AUTH_STATE_PATH,
+  BILLING_AUTH_STATE_PATH,
   BOARD_AUTH_STATE_PATH,
   DASHBOARD_AUTH_STATE_PATH,
   MY_TASKS_AUTH_STATE_PATH,
@@ -31,6 +33,8 @@ const ATTENDANCE_MONTH_REVIEWER_LOGIN_ID =
 const ATTENDANCE_MONTH_CLOSER_LOGIN_ID =
   process.env.E2E_ATTENDANCE_MONTH_CLOSER_LOGIN_ID ?? "attendance-month-closer";
 const WBS_LOGIN_ID = process.env.E2E_WBS_LOGIN_ID ?? "wbs-browser";
+const BILLING_LOGIN_ID = process.env.E2E_BILLING_LOGIN_ID ?? "billing-browser";
+const BILLING_ADMIN_LOGIN_ID = process.env.E2E_BILLING_ADMIN_LOGIN_ID ?? "billing-admin-browser";
 const PASSWORD = process.env.E2E_PASSWORD ?? "password";
 
 /** 専用accountでログインし、Session Cookieを指定されたGit管理外fileへ保存する。 */
@@ -101,4 +105,12 @@ setup("勤怠月次締め担当accountで認証状態を準備する", async ({ 
 
 setup("WBS専用accountで認証状態を準備する", async ({ page }) => {
   await authenticate(page, WBS_LOGIN_ID, WBS_AUTH_STATE_PATH);
+});
+
+setup("Stripe課金本人accountで認証状態を準備する", async ({ page }) => {
+  await authenticate(page, BILLING_LOGIN_ID, BILLING_AUTH_STATE_PATH);
+});
+
+setup("Stripe課金管理者accountで認証状態を準備する", async ({ page }) => {
+  await authenticate(page, BILLING_ADMIN_LOGIN_ID, BILLING_ADMIN_AUTH_STATE_PATH);
 });

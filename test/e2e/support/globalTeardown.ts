@@ -10,6 +10,7 @@ const FIXTURES: readonly BrowserRegressionFixture[] = [
   "board",
   "my-tasks",
   "dashboard",
+  "billing",
 ];
 
 /** 成否にかかわらず全専用DB fixtureとSession Cookieを削除する。 */

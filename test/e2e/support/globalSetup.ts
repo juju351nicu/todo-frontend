@@ -2,6 +2,7 @@ import { removeAuthStates, resetAuthStates } from "./authState";
 import { runBrowserRegressionFixture, type BrowserRegressionFixture } from "./databaseFixture";
 
 const FIXTURES: readonly BrowserRegressionFixture[] = [
+  "billing",
   "dashboard",
   "my-tasks",
   "board",

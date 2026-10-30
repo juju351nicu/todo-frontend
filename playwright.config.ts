@@ -14,6 +14,7 @@ const attendanceMonthEmployeeAuthStatePath = resolve(
   "playwright/.auth/attendance-month-browser.json"
 );
 const wbsAuthStatePath = resolve("playwright/.auth/wbs-browser.json");
+const billingAdminAuthStatePath = resolve("playwright/.auth/billing-admin-browser.json");
 
 /**
  * Stage 10DのブラウザE2E設定。
@@ -204,6 +205,18 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: attendanceMonthEmployeeAuthStatePath,
         // 3 accountの認証Cookieを扱うためtraceへ保存せず、画面状態と監査DBで診断する。
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "chromium-billing-journey",
+      testMatch: /billing-journey\.spec\.ts/,
+      dependencies: ["auth-setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: billingAdminAuthStatePath,
+        // 本人・管理者のSession Cookieを扱うためtraceへ保存せず、画面とDBの確定値で診断する。
         trace: "off",
         screenshot: "only-on-failure",
       },

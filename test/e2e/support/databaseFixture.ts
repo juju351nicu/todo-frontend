@@ -7,13 +7,22 @@ import { BACKEND_PATH } from "./paths";
 export type BrowserRegressionFixture =
   | "attendance-month"
   | "authorization"
+  | "billing"
   | "board"
   | "dashboard"
   | "my-tasks"
   | "project-template"
   | "task-recurrence"
   | "wbs-journey";
-export type BrowserRegressionFixtureAction = "prepare" | "cleanup" | "inspect-stage10d2";
+export type BrowserRegressionFixtureAction =
+  | "prepare"
+  | "cleanup"
+  | "inspect-stage10d2"
+  | "inspect-stage11d"
+  | "set-active"
+  | "claim-reconciliation"
+  | "clear-reconciliation-claim"
+  | "set-canceled";
 
 const MYSQL_CONTAINER = process.env.E2E_MYSQL_CONTAINER ?? "work-management-mysql";
 const MYSQL_DATABASE = process.env.E2E_DB_NAME ?? "todo";
