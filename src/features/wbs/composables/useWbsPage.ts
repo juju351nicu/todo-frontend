@@ -11,6 +11,7 @@ import { canManageProjectTasks, findProjectRole } from "@/features/project/utils
 import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useTaskEffortPlans } from "@/features/wbs/composables/useTaskEffortPlans";
+import { useTaskEstimates } from "@/features/wbs/composables/useTaskEstimates";
 import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
 import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsDependencies } from "@/features/wbs/composables/useWbsDependencies";
@@ -58,7 +59,8 @@ const parsePositiveId = (value: string | null | (string | null)[] | undefined): 
  *
  * 領域ごとの状態と操作は次のcomposableへ委ね、それぞれの戻り値を同じ名前のまま返す:
  * `useWbsTaskEditor`（Task編集）、`useWbsDependencies`（依存関係）、`useWbsWorkload`（担当者別workload）、
- * `useWbsWorkingCalendar`（稼働日calendar）、`useTaskEffortPlans`（日別予定）、`useTaskWorkLogs`（日別実績）、
+ * `useWbsWorkingCalendar`（稼働日calendar）、`useTaskEstimates`（Task見積もり）、
+ * `useTaskEffortPlans`（日別予定）、`useTaskWorkLogs`（日別実績）、
  * `useWbsBaselines`（baseline）、`useWbsEarnedValue`（EVM）、`useWbsReportExport`（Excel帳票）、
  * `useWbsEstimateAccuracy`（完了Taskの予定工数と実績の見積もり精度）。
  * 領域をまたぐ再取得・Dialogのcloseは、各composableのoptionsのcallbackでここから配線する。
@@ -149,6 +151,10 @@ export const useWbsPage = () => {
   const workingCalendarState = useWbsWorkingCalendar(context, {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),
   });
+  const taskEstimateState = useTaskEstimates(context, {
+    reloadPageSnapshot: () => loadPageSnapshot(),
+    handleReadApiError: (error) => handleReadApiError(error),
+  });
   const effortPlanState = useTaskEffortPlans(context, {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),
   });
@@ -171,6 +177,7 @@ export const useWbsPage = () => {
     taskEditor.discardTaskEditor();
     dependencyState.discardDependencyDialogs();
     workingCalendarState.discardWorkingDayDialogs();
+    taskEstimateState.discardEstimateDialog();
     effortPlanState.discardEffortPlanDialog();
     workLogState.discardWorkLogDialog();
     baselineState.discardBaselineDialogs();
@@ -185,6 +192,7 @@ export const useWbsPage = () => {
     workloadState.workloadErrorMessages.value = [];
     workingCalendarState.workingCalendarEditorErrorMessages.value = [];
     workingCalendarState.workingCalendarErrorMessages.value = [];
+    taskEstimateState.estimateEditorErrorMessages.value = [];
     effortPlanState.effortPlanEditorErrorMessages.value = [];
     workLogState.workLogEditorErrorMessages.value = [];
     earnedValueState.earnedValueErrorMessages.value = [];
@@ -344,6 +352,7 @@ export const useWbsPage = () => {
     ...dependencyState,
     ...workloadState,
     ...workingCalendarState,
+    ...taskEstimateState,
     ...effortPlanState,
     ...workLogState,
     ...earnedValueState,

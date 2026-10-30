@@ -60,6 +60,77 @@ export interface WbsResponse {
   tasks: WbsTask[];
 }
 
+/** Task見積もりを作成した主体。BackendのEstimateSourceコードと一致する。 */
+export type TaskEstimateSource = "HUMAN" | "AI";
+
+/** 見積もりで前提としたAI支援方法。特定providerやmodelは表さない。 */
+export type EstimateAssistanceMode = "NONE" | "GENERAL_AI" | "CODING_AGENT";
+
+/** Human Estimate入力欄で選択できるAI支援方法。 */
+export interface EstimateAssistanceModeOption {
+  /** 利用者へ表示する支援方法名。 */
+  title: string;
+  /** Backendへ送る変更不可コード。 */
+  value: EstimateAssistanceMode;
+}
+
+/** Taskに追記された変更不能な見積もりrevision。 */
+export interface TaskEstimateSnapshot {
+  /** 見積もりsnapshot ID。 */
+  taskEstimateSnapshotId: number;
+  /** 所属Project ID。 */
+  projectId: number;
+  /** Board・WBSと共通のTask ID。 */
+  taskId: number;
+  /** Task内で1から増加するrevision。 */
+  revision: number;
+  /** 人またはAIの見積もり作成主体。 */
+  sourceCode: TaskEstimateSource;
+  /** 見積もりが前提としたAI支援方法。 */
+  assistanceMode: EstimateAssistanceMode;
+  /** 3点見積もりの楽観値（分）。単一点の場合はnull。 */
+  estimateLowMinutes: number | null;
+  /** 最頻値または単一点値（分）。 */
+  estimateLikelyMinutes: number;
+  /** 3点見積もりの悲観値（分）。単一点の場合はnull。 */
+  estimateHighMinutes: number | null;
+  /** 見積もり作成時にBackendが確認したTask version。 */
+  sourceTaskVersion: number;
+  /** 見積もりを保存した認証済みアカウントID。 */
+  requestedByAccountId: number;
+  /** Backendが保存を確定したISO-8601時刻。 */
+  createdAt: string;
+}
+
+/** 1 Taskの見積もりrevisionを古い順に返すAPI Response。 */
+export interface TaskEstimateListResponse {
+  projectId: number;
+  taskId: number;
+  /** 未作成の場合は空配列。 */
+  estimates: TaskEstimateSnapshot[];
+}
+
+/** Human Estimate Dialogが保持する、Backend型へ変換する前の入力値。 */
+export interface HumanEstimateForm {
+  assistanceMode: EstimateAssistanceMode;
+  /** 単一点の場合はnull。 */
+  estimateLowMinutes: number | null;
+  /** 未入力または数値変換できない場合はnull。 */
+  estimateLikelyMinutes: number | null;
+  /** 単一点の場合はnull。 */
+  estimateHighMinutes: number | null;
+}
+
+/** Human Estimate登録APIへ送る検証済みRequest。 */
+export interface HumanEstimateCreateRequest {
+  assistanceMode: EstimateAssistanceMode;
+  estimateLowMinutes: number | null;
+  estimateLikelyMinutes: number;
+  estimateHighMinutes: number | null;
+  /** Dialogを開いたTaskの取得時点version。 */
+  taskVersion: number;
+}
+
 /** WBS Task間の日程依存種別。初期契約ではFinish-to-Startだけを使用する。 */
 export type TaskDependencyType = "FINISH_TO_START";
 

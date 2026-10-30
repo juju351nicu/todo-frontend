@@ -1,11 +1,13 @@
 import type {
   EarnedValueResponse,
   EstimateAccuracyResponse,
+  HumanEstimateCreateRequest,
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
   TaskEffortPlanCreateRequest,
   TaskEffortPlanListResponse,
   TaskEffortPlanUpdateRequest,
+  TaskEstimateListResponse,
   TaskWorkLogCreateRequest,
   TaskWorkLogListResponse,
   TaskWorkLogUpdateRequest,
@@ -84,6 +86,56 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
   const response = await HttpClient.getRequest(`${API_PATHS.PROJECTS}/${projectId}/wbs`);
   await ensureSuccess(response);
   return normalizeWbsResponse((await response.json()) as WbsResponse);
+};
+
+/** API Responseで欠落した見積もりrevision一覧を空配列へ正規化する。 */
+const normalizeTaskEstimateList = (
+  payload: TaskEstimateListResponse
+): TaskEstimateListResponse => ({
+  ...payload,
+  estimates: payload.estimates ?? [],
+});
+
+/**
+ * 指定TaskのHuman／AI Estimateを古いrevisionから順に取得する。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @returns 未作成時も空配列を持つ見積もり一覧
+ * @throws WbsApiError 未認証、TASK_READ不足、Project未参加、Task未検出またはBackendエラーの場合
+ */
+const getTaskEstimates = async (
+  projectId: number,
+  taskId: number
+): Promise<TaskEstimateListResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/estimates`
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEstimateList((await response.json()) as TaskEstimateListResponse);
+};
+
+/**
+ * AI提案を見る前のHuman EstimateをTask version条件付きで追記する。
+ * 共通HTTP clientがSession CookieとCSRF headerを設定し、正式予定工数は変更しない。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param request 支援方法、単一点または3点見積もり、取得時点Task version
+ * @returns 追加後の全見積もりrevision
+ * @throws WbsApiError 入力不正、認可不足、対象なし、archive・version・revision競合またはBackendエラーの場合
+ */
+const createHumanEstimate = async (
+  projectId: number,
+  taskId: number,
+  request: HumanEstimateCreateRequest
+): Promise<TaskEstimateListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/human-estimates`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEstimateList((await response.json()) as TaskEstimateListResponse);
 };
 
 /** API Responseで欠落したbaseline header一覧を空配列へ正規化する。 */
@@ -722,6 +774,7 @@ export default {
   createMemberWorkingDay,
   createProjectWorkingDay,
   createTaskDependency,
+  createHumanEstimate,
   createTaskEffortPlan,
   createTaskWorkLog,
   deleteTaskDependency,
@@ -731,6 +784,7 @@ export default {
   deleteProjectWorkingDay,
   downloadWbsReport,
   getTaskDependencies,
+  getTaskEstimates,
   getEarnedValueMetrics,
   getEstimateAccuracy,
   getTaskEffortPlans,

@@ -3,6 +3,7 @@ import { defineAsyncComponent, onBeforeMount, reactive } from "vue";
 
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
+import TaskEstimateDialog from "@/features/wbs/components/TaskEstimateDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
 import WorkingCalendarCard from "@/features/wbs/components/WorkingCalendarCard.vue";
@@ -199,6 +200,17 @@ const VIEW_OPTIONS = [
                 <div class="flex gap-1">
                   <UButton
                     v-if="row.taskType === 'TASK'"
+                    icon="i-mdi-chart-bell-curve"
+                    color="info"
+                    size="sm"
+                    variant="ghost"
+                    square
+                    :disabled="page.isLoadingEstimates"
+                    :aria-label="`${row.title}の見積もり履歴を開く`"
+                    @click="page.openEstimateDialog(row.taskId)"
+                  />
+                  <UButton
+                    v-if="row.taskType === 'TASK'"
                     icon="i-mdi-calendar-clock-outline"
                     color="secondary"
                     size="sm"
@@ -361,6 +373,19 @@ const VIEW_OPTIONS = [
       :error-messages="page.dependencyEditorErrorMessages"
       @close="page.closeDependencyEditor"
       @save="page.saveDependency"
+    />
+
+    <TaskEstimateDialog
+      :open="page.isEstimateDialogOpen"
+      :task="page.estimateTask"
+      :estimate-list="page.estimateList"
+      :can-create="page.canCreateHumanEstimate"
+      :is-loading="page.isLoadingEstimates"
+      :is-saving="page.isSavingEstimate"
+      :error-messages="page.estimateEditorErrorMessages"
+      :success-message="page.estimateSuccessMessage"
+      @close="page.closeEstimateDialog"
+      @save="page.saveHumanEstimate"
     />
 
     <TaskEffortPlanDialog

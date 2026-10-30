@@ -36,6 +36,7 @@ export const mocks = {
     createWbsBaseline: vi.fn(),
     createMemberWorkingDay: vi.fn(),
     createProjectWorkingDay: vi.fn(),
+    createHumanEstimate: vi.fn(),
     createTaskDependency: vi.fn(),
     createTaskEffortPlan: vi.fn(),
     createTaskWorkLog: vi.fn(),
@@ -48,6 +49,7 @@ export const mocks = {
     getTaskDependencies: vi.fn(),
     getEarnedValueMetrics: vi.fn(),
     getEstimateAccuracy: vi.fn(),
+    getTaskEstimates: vi.fn(),
     getTaskEffortPlans: vi.fn(),
     getTaskWorkLogs: vi.fn(),
     getTaskWorkload: vi.fn(),
@@ -385,6 +387,50 @@ export const updatedEffortPlanList = {
   })),
 };
 
+/** 通常Task 2へ保存済みのHuman Estimate revision一覧。 */
+export const taskEstimateList = {
+  projectId: 7,
+  taskId: 2,
+  estimates: [
+    {
+      taskEstimateSnapshotId: 61,
+      projectId: 7,
+      taskId: 2,
+      revision: 1,
+      sourceCode: "HUMAN",
+      assistanceMode: "NONE",
+      estimateLowMinutes: null,
+      estimateLikelyMinutes: 420,
+      estimateHighMinutes: null,
+      sourceTaskVersion: 4,
+      requestedByAccountId: 2,
+      createdAt: "2026-08-22T01:00:00Z",
+    },
+  ],
+};
+
+/** 3点見積もりをrevision 2として追加した後の一覧。 */
+export const updatedTaskEstimateList = {
+  ...taskEstimateList,
+  estimates: [
+    ...taskEstimateList.estimates,
+    {
+      taskEstimateSnapshotId: 62,
+      projectId: 7,
+      taskId: 2,
+      revision: 2,
+      sourceCode: "HUMAN",
+      assistanceMode: "CODING_AGENT",
+      estimateLowMinutes: 300,
+      estimateLikelyMinutes: 360,
+      estimateHighMinutes: 480,
+      sourceTaskVersion: 4,
+      requestedByAccountId: 2,
+      createdAt: "2026-08-22T02:00:00Z",
+    },
+  ],
+};
+
 export const workloadResponse = {
   projectId: 7,
   dateFrom: "2026-08-01",
@@ -514,6 +560,7 @@ export const resetWbsPageMocks = () => {
     structuredClone(memberWorkingCalendarResponse)
   );
   mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(structuredClone(workingCalendarResponse));
+  mocks.wbsApi.createHumanEstimate.mockResolvedValue(structuredClone(updatedTaskEstimateList));
   mocks.wbsApi.deleteTaskDependency.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskEffortPlan.mockResolvedValue(undefined);
   mocks.wbsApi.deleteTaskWorkLog.mockResolvedValue(undefined);
@@ -526,6 +573,7 @@ export const resetWbsPageMocks = () => {
   mocks.wbsApi.getTaskDependencies.mockResolvedValue(structuredClone(dependencyList));
   mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(structuredClone(earnedValueResponse));
   mocks.wbsApi.getEstimateAccuracy.mockResolvedValue(structuredClone(estimateAccuracyResponse));
+  mocks.wbsApi.getTaskEstimates.mockResolvedValue(structuredClone(taskEstimateList));
   mocks.wbsApi.getTaskEffortPlans.mockResolvedValue(structuredClone(effortPlanList));
   mocks.wbsApi.getTaskWorkLogs.mockResolvedValue(structuredClone(workLogList));
   mocks.wbsApi.getTaskWorkload.mockResolvedValue(structuredClone(workloadResponse));

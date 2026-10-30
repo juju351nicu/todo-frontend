@@ -56,6 +56,41 @@ describe("WBS API", () => {
     });
   });
 
+  it("Task IDを含む見積もりAPIから未登録時も空配列を取得する", async () => {
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ projectId: 7, taskId: 11 }),
+    });
+
+    await expect(WbsApi.getTaskEstimates(7, 11)).resolves.toEqual({
+      projectId: 7,
+      taskId: 11,
+      estimates: [],
+    });
+    expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11/estimates");
+  });
+
+  it("支援方法・3点見積もり・Task versionをHuman Estimate APIへ送る", async () => {
+    const request = {
+      assistanceMode: "CODING_AGENT",
+      estimateLowMinutes: 240,
+      estimateLikelyMinutes: 360,
+      estimateHighMinutes: 480,
+      taskVersion: 4,
+    };
+    const response = { projectId: 7, taskId: 11, estimates: [] };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createHumanEstimate(7, 11, request)).resolves.toEqual(response);
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/human-estimates",
+      request
+    );
+  });
+
   it("V6以前のTask fixtureで実績日が欠けてもnullへ正規化する", async () => {
     HttpClient.getRequest.mockResolvedValue({
       ok: true,

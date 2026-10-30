@@ -156,8 +156,8 @@ src/
 - `src/features/task/composables/useTaskEditor.ts`: Task作成・編集Dialog（詳細の読込、入力チェック、登録・更新、archive、閉じたときの`?taskId=`の除去、WBSの日別実績への遷移）と、開いたTaskごとの可否
 - `src/features/task/composables/useTaskBoardMove.ts`: Taskの移動（dragの楽観表示と失敗時の復元、キーボードでの上下左右移動とフォーカスの復元）
 - `src/features/task/views/TaskBoardPage.vue`: 標準列とTaskカードを表示するProject Board画面
-- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
-- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
+- `src/features/wbs/api/wbsApi.ts`: Project単位のWBS参照・Task更新・Task見積もり・Task依存関係・Task日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel API
+- `src/features/wbs/types/wbs.ts`: WBS Response、実績期間を含む更新Request、Task見積もり、Task依存関係、日別予定実績、workload、稼働日calendar、baseline、EVM、Excel帳票、階層表行、Gantt adapterの型
 - `src/features/wbs/utils/apiErrors.ts`: WBSが表示契約を持つerror code集合、409回復時に優先するHTTP status、契約済みcodeだけを表示するmessage解決（`resolveWbsErrorMessages`）
 - `src/features/wbs/utils/taskDependency.ts`: 依存関係のTask表示名・一覧行・追加Formの検証とFinish-to-Start Request変換
 - `src/features/wbs/utils/taskWorkLog.ts`: 日別実績Form、主要制約検証、登録・更新Request、工数表示への変換
@@ -168,6 +168,7 @@ src/
 - `src/features/wbs/composables/useWbsPage.ts`: WBS画面の統括。Project・WBS・依存関係・baselineのスナップショット取得、権限判定、401処理、Board遷移と、下記の領域別composableの配線
 - `src/features/wbs/composables/wbsPageContext.ts`: 領域別composableへ渡す画面共通の状態・操作（Project ID、Project、WBS、階層行、権限、画面上部message、Session失効処理）の型
 - `src/features/wbs/composables/useWbsTaskEditor.ts`: Task編集Dialogと409時のWBS再取得
+- `src/features/wbs/composables/useTaskEstimates.ts`: 通常Taskの変更不能なHuman／AI Estimate履歴と、Human Estimate追記・競合回復
 - `src/features/wbs/composables/useWbsDependencies.ts`: Task依存関係の追加・削除・競合時の画面全体再取得。操作結果はcard内のmessageへ出し、MEMBERは本人担当Taskだけを端点にできる
 - `src/features/wbs/components/WbsDependencyCard.vue`: Task依存関係の一覧・追加ボタン・削除ボタン・操作結果を表示するcard
 - `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
@@ -187,6 +188,7 @@ src/
 - `src/features/wbs/components/WbsGanttChart.vue`: 予定期間・実績期間tooltip・進捗・milestone・Finish-to-Start依存線の読取り専用Gantt
 - `src/features/wbs/components/TaskWorkLogDialog.vue`: 通常Taskの日別実績一覧・合計・登録・編集Dialog
 - `src/features/wbs/components/TaskEffortPlanDialog.vue`: 通常Taskの日別予定・配賦状況・登録・編集Dialog
+- `src/features/wbs/components/TaskEstimateDialog.vue`: 通常Taskの単一点／3点Human Estimate入力とrevision履歴Dialog
 - `src/features/wbs/components/TaskWorkloadCard.vue`: Projectの期間・担当者別予定実績差分
 - `src/features/wbs/components/WorkingCalendarCard.vue`: Project共通・個人例外を切り替える稼働日calendar一覧
 - `src/features/wbs/components/WorkingDayEditDialog.vue`: 稼働日例外の登録・version付き更新Dialog
@@ -244,6 +246,8 @@ consoleはwarning 0件、error 0件で、DB cleanup後の再inspectも0件だっ
 日別実績Formは存在する業務日、1分以上1440分以下の整数工数、画面へ提示したProject memberを送信前に検証する。新規登録と更新はBackendが返した一覧・合計Responseで差し替え、削除は204確定後だけ対象行を除外して合計を再計算する。更新・削除には一覧取得時点versionを送り、404・409では古い編集・削除対象を破棄して選択中Taskの最新一覧を再取得する。二重送信防止、401 Session破棄、403案内、接続失敗も`useWbsPage`で統一した。実ブラウザ・Docker MySQL回帰は専用fixtureを用意して別作業で実施する。
 
 Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Taskの予定担当者・予定日・分工数と、Projectの期間・担当者別workloadを扱う。Task全体予定との差は未配賦または過配賦として表示し、予定・実績変更後はworkloadを再取得する。専用fixtureで登録・更新・重複拒否・代理配賦・過配賦・409・再読込・DB inspect・cleanupまで確認済みである。
+
+2026-10-31にHuman Estimate revisionをWBS画面へ接続した。通常Taskの見積もりDialogを開いたときだけ履歴を取得し、単一点または楽観・最頻・悲観の3点見積もり、AI支援方法、取得時点Task versionをBackendへ送る。revision履歴は更新・削除せず、正式予定工数とも分離する。通常memberは本人担当Task、Project管理者はProject内の通常Taskへ追記できることを画面でも案内するが、Project参加、permission、role、Task種別・archive・version・revisionの最終判定はBackendへ委ねる。404・409ではProject、WBS、依存関係、baselineと選択Taskの見積もり履歴を再取得し、最新Task versionへ置き換える。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 

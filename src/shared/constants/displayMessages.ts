@@ -342,6 +342,16 @@ export const DISPLAY_MESSAGES = {
       forbidden: "見積もり精度を参照するpermissionがありません。",
       loadFailed: "見積もり精度を取得できませんでした。",
     },
+    taskEstimate: {
+      readForbidden: "Task見積もりを参照するpermissionがありません。",
+      readNotFound: "対象のProjectまたはTaskが見つかりません。",
+      loadFailed: "Task見積もりを取得できませんでした。",
+      updateForbidden: "このTaskへHuman Estimateを追加する権限がありません。",
+      resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
+      conflict: "Taskまたは見積もり履歴が他の操作で更新されました。最新情報を確認してください。",
+      saveFailed: "Human Estimateを保存できませんでした。",
+      reloadFailed: "最新のTaskと見積もり履歴を再取得できませんでした。再読込してください。",
+    },
     workingCalendar: {
       readForbidden: "稼働日calendarを参照するpermissionがありません。",
       loadFailed: "稼働日calendarを取得できませんでした。",
