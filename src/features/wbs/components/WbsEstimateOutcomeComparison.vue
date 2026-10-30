@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import type { TaskEstimateOutcomeComparison } from "@/features/wbs/types/wbs";
+import type {
+  EstimateAccuracyMetric,
+  EstimateAssistanceModeAccuracy,
+  TaskEstimateOutcomeComparison,
+} from "@/features/wbs/types/wbs";
 import { formatOptionalEffortMinutes } from "@/features/wbs/utils/effort";
 import {
   describeEstimateBias,
@@ -38,6 +42,45 @@ const accuracyMetrics = computed(() => [
     metric: props.comparison.finalPlan,
   },
 ]);
+
+/** 支援mode別比較表で同じ指標を並べるHuman／Final列。 */
+interface AssistanceModeMetricColumn {
+  key: string;
+  title: string;
+  resolveMetric: (comparison: EstimateAssistanceModeAccuracy) => EstimateAccuracyMetric;
+}
+
+interface AssistanceModeMetricCell {
+  key: string;
+  metric: EstimateAccuracyMetric;
+}
+
+type AssistanceModeComparisonRow = EstimateAssistanceModeAccuracy & {
+  metricCells: AssistanceModeMetricCell[];
+};
+
+const assistanceModeMetricColumns: AssistanceModeMetricColumn[] = [
+  {
+    key: "human-estimate",
+    title: "Human 精度",
+    resolveMetric: (comparison) => comparison.humanEstimate,
+  },
+  {
+    key: "final-plan",
+    title: "Final 精度",
+    resolveMetric: (comparison) => comparison.finalPlan,
+  },
+];
+
+const assistanceModeRows = computed<AssistanceModeComparisonRow[]>(() =>
+  props.comparison.assistanceModeComparisons.map((comparison) => ({
+    ...comparison,
+    metricCells: assistanceModeMetricColumns.map((metricColumn) => ({
+      key: metricColumn.key,
+      metric: metricColumn.resolveMetric(comparison),
+    })),
+  }))
+);
 </script>
 
 <template>
@@ -130,13 +173,13 @@ const accuracyMetrics = computed(() => [
         </UCard>
       </div>
 
-      <div v-if="comparison.assistanceModeComparisons.length > 0" class="mt-5">
+      <div v-if="assistanceModeRows.length > 0" class="mt-5">
         <h4 class="text-sm font-medium">支援mode別の観測精度</h4>
         <p class="mt-1 mb-2 text-xs text-muted">
           利用者が記録した実利用支援mode別の関連です。AI支援による短縮・精度向上の因果効果は表しません。
         </p>
         <div class="overflow-x-auto">
-          <table class="app-table min-w-210 [&_td]:h-13 [&_th]:h-13">
+          <table class="app-table min-w-240 [&_td]:h-13 [&_th]:h-13">
             <caption class="sr-only">
               実利用支援modeごとのHuman EstimateとFinal Planの見積もり精度
             </caption>
@@ -145,12 +188,17 @@ const accuracyMetrics = computed(() => [
                 <th scope="col">実利用支援mode</th>
                 <th scope="col">比較対象</th>
                 <th scope="col">実績終了日</th>
-                <th scope="col">Human 絶対誤差</th>
-                <th scope="col">Final 絶対誤差</th>
+                <th
+                  v-for="metricColumn in assistanceModeMetricColumns"
+                  :key="metricColumn.key"
+                  scope="col"
+                >
+                  {{ metricColumn.title }}
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="mode in comparison.assistanceModeComparisons" :key="mode.code">
+              <tr v-for="mode in assistanceModeRows" :key="mode.code">
                 <td>
                   <div class="font-medium">{{ formatEstimateAssistanceMode(mode.code) }}</div>
                   <UBadge
@@ -183,24 +231,37 @@ const accuracyMetrics = computed(() => [
                   </div>
                 </td>
                 <td>{{ formatOutcomeActualEndDateRange(mode) }}</td>
-                <td>
-                  <div>
-                    平均
-                    {{ formatOptionalEffortMinutes(mode.humanEstimate.meanAbsoluteErrorMinutes) }}
-                  </div>
-                  <div class="text-xs text-muted">
-                    中央値
-                    {{ formatOptionalEffortMinutes(mode.humanEstimate.medianAbsoluteErrorMinutes) }}
-                  </div>
-                </td>
-                <td>
-                  <div>
-                    平均 {{ formatOptionalEffortMinutes(mode.finalPlan.meanAbsoluteErrorMinutes) }}
-                  </div>
-                  <div class="text-xs text-muted">
-                    中央値
-                    {{ formatOptionalEffortMinutes(mode.finalPlan.medianAbsoluteErrorMinutes) }}
-                  </div>
+                <td v-for="metricCell in mode.metricCells" :key="metricCell.key">
+                  <template v-if="mode.pairedSampleCount > 0">
+                    <div>
+                      平均
+                      {{ formatOptionalEffortMinutes(metricCell.metric.meanAbsoluteErrorMinutes) }}
+                    </div>
+                    <div class="text-xs text-muted">
+                      中央値
+                      {{
+                        formatOptionalEffortMinutes(metricCell.metric.medianAbsoluteErrorMinutes)
+                      }}
+                    </div>
+                    <div class="text-xs text-muted">
+                      ±{{ comparison.tolerancePercent }}%以内
+                      {{
+                        formatOutcomeWithinToleranceRate(metricCell.metric, mode.pairedSampleCount)
+                      }}
+                    </div>
+                    <div class="text-xs text-muted">
+                      差の中央値
+                      {{
+                        formatOptionalSignedEffortMinutes(
+                          metricCell.metric.medianSignedVarianceMinutes
+                        )
+                      }}
+                    </div>
+                    <div class="text-xs text-muted">
+                      {{ describeEstimateBias(metricCell.metric.medianSignedVarianceMinutes) }}
+                    </div>
+                  </template>
+                  <span v-else aria-label="比較対象なし">—</span>
                 </td>
               </tr>
             </tbody>

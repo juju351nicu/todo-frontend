@@ -6,9 +6,9 @@ import { mountWithUi } from "../../../support/mountWithUi";
 
 /** 最新評価revision比較の表示fixture。 */
 const buildComparison = (overrides = {}) => ({
-  evaluatedTaskCount: 3,
+  evaluatedTaskCount: 4,
   pairedSampleCount: 2,
-  missingHumanEstimateTaskCount: 1,
+  missingHumanEstimateTaskCount: 2,
   minimumSampleCount: 10,
   tolerancePercent: 20,
   earliestActualEndDate: "2026-10-20",
@@ -48,9 +48,9 @@ const buildComparison = (overrides = {}) => ({
     },
     {
       code: "CODING_AGENT",
-      evaluatedTaskCount: 2,
+      evaluatedTaskCount: 3,
       pairedSampleCount: 2,
-      missingHumanEstimateTaskCount: 0,
+      missingHumanEstimateTaskCount: 1,
       earliestActualEndDate: "2026-10-30",
       latestActualEndDate: "2026-10-31",
       humanEstimate: {
@@ -69,10 +69,10 @@ const buildComparison = (overrides = {}) => ({
   ],
   actualAssistanceModes: [
     { code: "NONE", count: 1 },
-    { code: "CODING_AGENT", count: 2 },
+    { code: "CODING_AGENT", count: 3 },
   ],
   varianceReasons: [{ code: "TEST_SCOPE_INCREASED", count: 2 }],
-  noVarianceTaskCount: 1,
+  noVarianceTaskCount: 2,
   ...overrides,
 });
 
@@ -83,14 +83,14 @@ describe("WbsEstimateOutcomeComparison", () => {
     wrapper?.unmount();
   });
 
-  it("同じペア集合のHuman・Final指標と欠損・期間・分類分布を表示する", () => {
+  it("同じペア集合のHuman・Final指標とmode別の許容範囲・偏りを表示する", () => {
     wrapper = mountWithUi(WbsEstimateOutcomeComparison, {
       props: { comparison: buildComparison() },
     });
 
-    expect(wrapper.text()).toContain("評価済み 3件");
+    expect(wrapper.text()).toContain("評価済み 4件");
     expect(wrapper.text()).toContain("ペア比較できたTask2件");
-    expect(wrapper.text()).toContain("Human Estimate未入力1件");
+    expect(wrapper.text()).toContain("Human Estimate未入力2件");
     expect(wrapper.text()).toContain("2026-10-20 〜 2026-10-31");
     expect(wrapper.text()).toContain("Human Estimate");
     expect(wrapper.text()).toContain("Final Plan");
@@ -103,13 +103,23 @@ describe("WbsEstimateOutcomeComparison", () => {
     expect(wrapper.text()).toContain("評価 1件 / ペア 0件");
     expect(wrapper.text()).toContain("Human未入力 1件");
     expect(wrapper.text()).toContain("比較不可");
-    expect(wrapper.text()).toContain("評価 2件 / ペア 2件");
+    expect(wrapper.text()).toContain("評価 3件 / ペア 2件");
     expect(wrapper.text()).toContain("参考値");
     expect(wrapper.text()).toContain("平均 1時間15分");
     expect(wrapper.text()).toContain("平均 25分");
-    expect(wrapper.text()).toContain("Coding Agent 2件");
+    const [noAssistanceRow, codingAgentRow] = wrapper.findAll("tbody tr");
+    expect(noAssistanceRow.text()).toContain("比較不可");
+    expect(noAssistanceRow.findAll('[aria-label="比較対象なし"]')).toHaveLength(2);
+    expect(codingAgentRow.text()).toContain("Human未入力 1件");
+    expect(codingAgentRow.text()).toContain("±20%以内 1 / 2件（50%）");
+    expect(codingAgentRow.text()).toContain("差の中央値 +30分");
+    expect(codingAgentRow.text()).toContain("予定より多くかかる傾向（見積もりが少なめ）");
+    expect(codingAgentRow.text()).toContain("±20%以内 2 / 2件（100%）");
+    expect(codingAgentRow.text()).toContain("差の中央値 0分");
+    expect(codingAgentRow.text()).toContain("偏りなし");
+    expect(wrapper.text()).toContain("Coding Agent 3件");
     expect(wrapper.text()).toContain("テスト範囲の増加 2件");
-    expect(wrapper.text()).toContain("差なし 1件");
+    expect(wrapper.text()).toContain("差なし 2件");
     expect(wrapper.text()).toContain("2件のため参考値です");
   });
 
@@ -137,7 +147,7 @@ describe("WbsEstimateOutcomeComparison", () => {
   it("評価済みでもHuman Estimateがなければペア比較不能を明示する", () => {
     wrapper = mountWithUi(WbsEstimateOutcomeComparison, {
       props: {
-        comparison: buildComparison({ pairedSampleCount: 0, missingHumanEstimateTaskCount: 3 }),
+        comparison: buildComparison({ pairedSampleCount: 0, missingHumanEstimateTaskCount: 4 }),
       },
     });
 

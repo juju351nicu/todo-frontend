@@ -156,6 +156,9 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(assistanceModeRow).toContainText("参考値");
   await expect(assistanceModeRow).toContainText("平均 30分");
   await expect(assistanceModeRow).toContainText("中央値 30分");
+  await expect(assistanceModeRow).toContainText("±20%以内 0 / 1件（0%）");
+  await expect(assistanceModeRow).toContainText("差の中央値 +30分");
+  await expect(assistanceModeRow).toContainText("予定より多くかかる傾向（見積もりが少なめ）");
   await expect(outcomeComparison.getByText("Coding Agent 1件", { exact: true })).toBeVisible();
   await expect(outcomeComparison.getByText("テスト範囲の増加 1件", { exact: true })).toBeVisible();
 
