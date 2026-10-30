@@ -69,6 +69,17 @@ export type EstimateAssistanceMode = "NONE" | "GENERAL_AI" | "CODING_AGENT";
 /** 見積もりrevisionの採否とFinal Plan反映方法。BackendのEstimateDecisionCodeと一致する。 */
 export type TaskEstimateDecisionCode = "ADOPTED" | "ADJUSTED" | "REJECTED";
 
+/** Final PlanとActualの差が生じた主な理由。BackendのEstimateVarianceReasonCodeと一致する。 */
+export type EstimateVarianceReasonCode =
+  | "REQUIREMENTS_GAP"
+  | "DISCOVERY_INCREASED"
+  | "AI_REWORK"
+  | "TEST_SCOPE_INCREASED"
+  | "SIMPLER_THAN_EXPECTED"
+  | "EXTERNAL_DEPENDENCY"
+  | "INTERRUPTION"
+  | "OTHER";
+
 /** Human Estimate入力欄で選択できるAI支援方法。 */
 export interface EstimateAssistanceModeOption {
   /** 利用者へ表示する支援方法名。 */
@@ -123,6 +134,38 @@ export interface TaskEstimateDecision {
   decidedAt: string;
 }
 
+/** 完了TaskのHuman Estimate、Final Plan、Actualと誤差理由を固定した変更不能な評価revision。 */
+export interface TaskEstimateOutcome {
+  /** Task見積もり評価ID。 */
+  taskEstimateOutcomeId: number;
+  /** Task内で1から増加する評価revision。 */
+  revision: number;
+  /** 評価時点の最新Human Estimate ID。未作成の場合はnull。 */
+  humanEstimateSnapshotId: number | null;
+  /** 評価時点の最新Human Estimate revision。未作成の場合はnull。 */
+  humanEstimateRevision: number | null;
+  /** 評価時点の最新Human Estimate最頻値（分）。未作成の場合はnull。 */
+  humanEstimateMinutes: number | null;
+  /** 評価時点の正式予定工数（分）。 */
+  finalPlannedEffortMinutes: number;
+  /** 評価時点の日別実績工数合計（分）。 */
+  actualEffortMinutes: number;
+  /** 実際の作業で利用したprovider非依存のAI支援方法。 */
+  actualAssistanceMode: EstimateAssistanceMode;
+  /** Final PlanとActualの誤差理由。差がない場合はnull可。 */
+  varianceReasonCode: EstimateVarianceReasonCode | null;
+  /** 前後空白を除いた誤差理由補足。未入力の場合はnull。 */
+  varianceNote: string | null;
+  /** 評価時点のTask実績終了日。yyyy-MM-dd形式。 */
+  taskActualEndDate: string;
+  /** 評価時にBackendが検査したTask version。 */
+  sourceTaskVersion: number;
+  /** 評価を記録した認証済みアカウントID。 */
+  evaluatedByAccountId: number;
+  /** Backendが評価を確定したISO-8601時刻。 */
+  evaluatedAt: string;
+}
+
 /** 1 Taskの見積もりrevisionを古い順に返すAPI Response。 */
 export interface TaskEstimateListResponse {
   projectId: number;
@@ -137,6 +180,8 @@ export interface TaskEstimateListResponse {
   estimates: TaskEstimateSnapshot[];
   /** 確定時刻順の採否監査。未作成の場合は空配列。 */
   decisions: TaskEstimateDecision[];
+  /** revision昇順の完了Task評価。未作成の場合は空配列。 */
+  outcomes: TaskEstimateOutcome[];
 }
 
 /** Human Estimate Dialogが保持する、Backend型へ変換する前の入力値。 */
@@ -173,6 +218,26 @@ export interface TaskEstimateDecisionForm {
 export interface TaskEstimateDecisionCreateRequest {
   decisionCode: TaskEstimateDecisionCode;
   adjustedPlannedEffortMinutes: number | null;
+  /** Dialogが取得したTask version。 */
+  taskVersion: number;
+}
+
+/** 完了Task評価欄が保持する、Backend型へ変換する前の入力値。 */
+export interface TaskEstimateOutcomeForm {
+  /** 実際の作業で利用したprovider非依存のAI支援方法。 */
+  actualAssistanceMode: EstimateAssistanceMode;
+  /** Final PlanとActualの誤差理由。未選択の場合はnull。 */
+  varianceReasonCode: EstimateVarianceReasonCode | null;
+  /** 誤差理由の補足。入力欄の値を保持するため空文字を許可する。 */
+  varianceNote: string;
+}
+
+/** 完了Task評価登録APIへ送る検証・正規化済みRequest。 */
+export interface TaskEstimateOutcomeCreateRequest {
+  actualAssistanceMode: EstimateAssistanceMode;
+  varianceReasonCode: EstimateVarianceReasonCode | null;
+  /** 前後空白を除いた補足。未入力の場合はnull。 */
+  varianceNote: string | null;
   /** Dialogが取得したTask version。 */
   taskVersion: number;
 }

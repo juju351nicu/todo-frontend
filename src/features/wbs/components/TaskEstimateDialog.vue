@@ -6,14 +6,19 @@ import type {
   TaskEstimateDecision,
   TaskEstimateDecisionForm,
   TaskEstimateListResponse,
+  TaskEstimateOutcomeForm,
   WbsTask,
 } from "@/features/wbs/types/wbs";
 import {
   buildHumanEstimateForm,
   buildTaskEstimateDecisionForm,
+  buildTaskEstimateOutcomeForm,
   ESTIMATE_ASSISTANCE_MODE_OPTIONS,
   ESTIMATE_DECISION_OPTIONS,
+  ESTIMATE_VARIANCE_NOTE_MAX_LENGTH,
+  ESTIMATE_VARIANCE_REASON_OPTIONS,
   formatEstimateAssistanceMode,
+  formatEstimateVarianceReason,
   formatTaskEstimateDecision,
   formatTaskEstimateRange,
   formatTaskEstimateSource,
@@ -31,9 +36,11 @@ interface Props {
   estimateList: TaskEstimateListResponse | null;
   canCreate: boolean;
   canDecide: boolean;
+  canEvaluate: boolean;
   isLoading: boolean;
   isSaving: boolean;
   isDeciding: boolean;
+  isEvaluating: boolean;
   errorMessages: string[];
   successMessage: string;
 }
@@ -43,9 +50,12 @@ const emit = defineEmits<{
   close: [];
   save: [form: HumanEstimateForm];
   decide: [form: TaskEstimateDecisionForm];
+  evaluate: [form: TaskEstimateOutcomeForm];
 }>();
 
-const isBusy = computed(() => props.isLoading || props.isSaving || props.isDeciding);
+const isBusy = computed(
+  () => props.isLoading || props.isSaving || props.isDeciding || props.isEvaluating
+);
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task見積もり", props.task));
 const latestEstimate = computed(() => props.estimateList?.estimates.at(-1) ?? null);
 const decidedEstimateIds = computed(
@@ -64,6 +74,14 @@ const estimateDecisionOptions = computed(() =>
     value: estimate.taskEstimateSnapshotId,
   }))
 );
+const NO_VARIANCE_REASON_VALUE = "__NONE__";
+const outcomeVarianceReasonOptions = computed(() => {
+  const reasonOptions = ESTIMATE_VARIANCE_REASON_OPTIONS.map((option) => ({ ...option }));
+  if (props.estimateList?.actualEffortMinutes === props.estimateList?.finalPlannedEffortMinutes) {
+    return [{ title: "理由なし", value: NO_VARIANCE_REASON_VALUE }, ...reasonOptions];
+  }
+  return reasonOptions;
+});
 
 /** 採否監査が参照する見積もりrevisionを表示する。 */
 const formatDecisionRevision = (decision: TaskEstimateDecision): string => {
@@ -80,6 +98,12 @@ const formatDecisionPlanTransition = (decision: TaskEstimateDecision): string =>
   `${formatEffortMinutes(decision.beforePlannedEffortMinutes)} → ${formatEffortMinutes(
     decision.afterPlannedEffortMinutes
   )}`;
+
+/** 評価revisionにHuman Estimateがない既存Taskを明示する。 */
+const formatOutcomeHumanEstimate = (revision: number | null, minutes: number | null): string =>
+  revision === null || minutes === null
+    ? "未入力"
+    : `revision ${revision}・${formatEffortMinutes(minutes)}`;
 
 // 保存後の一覧Responseが変わるたびに空Formへ戻し、直前の見積もりを誤って再送しない。
 const {
@@ -116,6 +140,28 @@ const { form: decisionForm, submitForm: submitDecisionForm } = useDialogForm({
     ),
   onClose: () => undefined,
   onSave: (value) => emit("decide", value),
+});
+
+// 評価保存後は空Formへ戻し、直前の実利用支援方法や理由を次revisionへ誤って再送しない。
+const { form: outcomeForm, submitForm: submitOutcomeForm } = useDialogForm({
+  initialForm: buildTaskEstimateOutcomeForm(),
+  syncSources: [() => props.open, () => props.estimateList?.outcomes],
+  buildForm: () => (props.open ? buildTaskEstimateOutcomeForm() : undefined),
+  isBusy,
+  canSubmit: () => props.canEvaluate,
+  onClose: () => undefined,
+  onSave: (value) => emit("evaluate", value),
+});
+
+// Reka UIはnullを選択値にできないため、画面専用値をAPI契約のnullへ境界で変換する。
+const outcomeVarianceReasonValue = computed({
+  get: () => outcomeForm.value.varianceReasonCode ?? NO_VARIANCE_REASON_VALUE,
+  set: (value: string) => {
+    outcomeForm.value.varianceReasonCode =
+      value === NO_VARIANCE_REASON_VALUE
+        ? null
+        : (value as TaskEstimateOutcomeForm["varianceReasonCode"]);
+  },
 });
 </script>
 
@@ -325,6 +371,81 @@ const { form: decisionForm, submitForm: submitDecisionForm } = useDialogForm({
           すべての見積もりrevisionで採否が確定しています。
         </StatusAlert>
 
+        <UCard v-if="canEvaluate" variant="outline" class="mb-5">
+          <template #header>
+            <div>
+              <div class="text-base font-normal">完了Taskを評価</div>
+              <p class="mt-1 mb-0 text-xs text-muted">
+                現在のHuman Estimate、Final Plan、Actualと誤差理由を変更不能なrevisionへ保存します。
+              </p>
+            </div>
+          </template>
+          <form @submit.prevent="submitOutcomeForm">
+            <div class="-m-3 flex flex-wrap">
+              <div class="w-full p-3 md:w-1/2">
+                <UFormField label="実際に利用したAI支援">
+                  <USelect
+                    v-model="outcomeForm.actualAssistanceMode"
+                    :items="ESTIMATE_ASSISTANCE_MODE_OPTIONS"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isBusy"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3 md:w-1/2">
+                <UFormField
+                  label="Final PlanとActualの誤差理由"
+                  :help="
+                    estimateList?.actualEffortMinutes === estimateList?.finalPlannedEffortMinutes
+                      ? '差がない場合は「理由なし」を選択できます。'
+                      : '差があるため選択が必須です。'
+                  "
+                >
+                  <USelect
+                    v-model="outcomeVarianceReasonValue"
+                    :items="outcomeVarianceReasonOptions"
+                    label-key="title"
+                    value-key="value"
+                    :disabled="isBusy"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+              <div class="w-full p-3">
+                <UFormField
+                  label="誤差理由の補足"
+                  :help="`任意。その他では必須。${ESTIMATE_VARIANCE_NOTE_MAX_LENGTH}文字以内です。`"
+                >
+                  <UTextarea
+                    v-model="outcomeForm.varianceNote"
+                    :maxlength="ESTIMATE_VARIANCE_NOTE_MAX_LENGTH"
+                    :disabled="isBusy"
+                    :rows="3"
+                    class="w-full"
+                  />
+                </UFormField>
+              </div>
+            </div>
+          </form>
+          <template #footer>
+            <UButton
+              color="primary"
+              variant="ghost"
+              class="ms-auto"
+              :loading="isEvaluating"
+              @click="submitOutcomeForm"
+            >
+              評価を保存
+            </UButton>
+          </template>
+        </UCard>
+
+        <StatusAlert v-else-if="canCreate && estimateList" type="info" variant="soft" class="mb-5">
+          完了Taskの評価には、実績終了日、Final Plan、Actualが必要です。
+        </StatusAlert>
+
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <h2 class="text-base">見積もり履歴</h2>
           <UBadge size="sm" variant="outline">
@@ -407,6 +528,65 @@ const { form: decisionForm, submitForm: submitDecisionForm } = useDialogForm({
                   </td>
                   <td>{{ decision.decidedByAccountId }}</td>
                   <td class="whitespace-nowrap">{{ formatShortDateTime(decision.decidedAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+
+        <template v-if="estimateList?.outcomes.length">
+          <div class="mt-6 mb-3 flex flex-wrap items-center gap-2">
+            <h2 class="text-base">完了Task評価履歴</h2>
+            <UBadge size="sm" variant="outline">
+              {{ estimateList.outcomes.length }} revision
+            </UBadge>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="app-table app-table-hover min-w-310 [&_td]:h-13 [&_th]:h-13">
+              <thead>
+                <tr>
+                  <th scope="col">revision</th>
+                  <th scope="col">Human Estimate</th>
+                  <th scope="col">Final Plan / Actual</th>
+                  <th scope="col">実利用AI支援</th>
+                  <th scope="col">誤差理由</th>
+                  <th scope="col">実績終了日</th>
+                  <th scope="col">Task version</th>
+                  <th scope="col">評価者</th>
+                  <th scope="col">評価日時</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="outcome in estimateList.outcomes" :key="outcome.taskEstimateOutcomeId">
+                  <td>{{ outcome.revision }}</td>
+                  <td class="whitespace-nowrap">
+                    {{
+                      formatOutcomeHumanEstimate(
+                        outcome.humanEstimateRevision,
+                        outcome.humanEstimateMinutes
+                      )
+                    }}
+                  </td>
+                  <td class="whitespace-nowrap">
+                    {{ formatEffortMinutes(outcome.finalPlannedEffortMinutes) }} /
+                    {{ formatEffortMinutes(outcome.actualEffortMinutes) }}
+                  </td>
+                  <td class="whitespace-nowrap">
+                    {{ formatEstimateAssistanceMode(outcome.actualAssistanceMode) }}
+                  </td>
+                  <td>
+                    <template v-if="outcome.varianceReasonCode">
+                      {{ formatEstimateVarianceReason(outcome.varianceReasonCode) }}
+                      <span v-if="outcome.varianceNote" class="text-muted">
+                        ・{{ outcome.varianceNote }}
+                      </span>
+                    </template>
+                    <template v-else>差なし</template>
+                  </td>
+                  <td class="whitespace-nowrap">{{ outcome.taskActualEndDate }}</td>
+                  <td>{{ outcome.sourceTaskVersion }}</td>
+                  <td>{{ outcome.evaluatedByAccountId }}</td>
+                  <td class="whitespace-nowrap">{{ formatShortDateTime(outcome.evaluatedAt) }}</td>
                 </tr>
               </tbody>
             </table>

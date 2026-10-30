@@ -1,11 +1,14 @@
 import type {
   EstimateAssistanceMode,
   EstimateAssistanceModeOption,
+  EstimateVarianceReasonCode,
   HumanEstimateCreateRequest,
   HumanEstimateForm,
   TaskEstimateDecisionCode,
   TaskEstimateDecisionCreateRequest,
   TaskEstimateDecisionForm,
+  TaskEstimateOutcomeCreateRequest,
+  TaskEstimateOutcomeForm,
   TaskEstimateSnapshot,
   TaskEstimateSource,
 } from "@/features/wbs/types/wbs";
@@ -28,6 +31,24 @@ export const ESTIMATE_DECISION_OPTIONS: Array<{
   { title: "却下", value: "REJECTED" },
 ];
 
+/** 完了Task評価で選択できる集計可能な誤差理由。 */
+export const ESTIMATE_VARIANCE_REASON_OPTIONS: Array<{
+  title: string;
+  value: EstimateVarianceReasonCode;
+}> = [
+  { title: "要件差異", value: "REQUIREMENTS_GAP" },
+  { title: "調査・発見による増加", value: "DISCOVERY_INCREASED" },
+  { title: "AI出力の手戻り", value: "AI_REWORK" },
+  { title: "テスト範囲の増加", value: "TEST_SCOPE_INCREASED" },
+  { title: "想定より単純", value: "SIMPLER_THAN_EXPECTED" },
+  { title: "外部依存", value: "EXTERNAL_DEPENDENCY" },
+  { title: "割込み", value: "INTERRUPTION" },
+  { title: "その他", value: "OTHER" },
+];
+
+/** Backendと同じ誤差理由補足の最大文字数。 */
+export const ESTIMATE_VARIANCE_NOTE_MAX_LENGTH = 500;
+
 const ASSISTANCE_MODE_LABELS: Readonly<Record<EstimateAssistanceMode, string>> = {
   NONE: "AI支援なし",
   GENERAL_AI: "汎用AI",
@@ -45,6 +66,11 @@ const ESTIMATE_DECISION_LABELS: Readonly<Record<TaskEstimateDecisionCode, string
   REJECTED: "却下",
 };
 
+const ESTIMATE_VARIANCE_REASON_LABELS: Readonly<Record<EstimateVarianceReasonCode, string>> =
+  Object.fromEntries(
+    ESTIMATE_VARIANCE_REASON_OPTIONS.map((option) => [option.value, option.title])
+  ) as Record<EstimateVarianceReasonCode, string>;
+
 /** 新しいHuman Estimate用の空Formを作る。 */
 export const buildHumanEstimateForm = (): HumanEstimateForm => ({
   assistanceMode: "NONE",
@@ -60,6 +86,13 @@ export const buildTaskEstimateDecisionForm = (
   taskEstimateSnapshotId,
   decisionCode: "ADOPTED",
   adjustedPlannedEffortMinutes: null,
+});
+
+/** 新しい完了Task評価用の空Formを作る。 */
+export const buildTaskEstimateOutcomeForm = (): TaskEstimateOutcomeForm => ({
+  actualAssistanceMode: "NONE",
+  varianceReasonCode: null,
+  varianceNote: "",
 });
 
 /**
@@ -149,6 +182,42 @@ export const buildTaskEstimateDecisionCreateRequest = (
   taskVersion,
 });
 
+/**
+ * 完了Task評価FormをBackendと同じ主要制約で検証する。
+ * 完了状態、実績終了日、認可、Task versionはBackendを最終判定とする。
+ */
+export const validateTaskEstimateOutcomeForm = (
+  form: Readonly<TaskEstimateOutcomeForm>,
+  finalPlannedEffortMinutes: number,
+  actualEffortMinutes: number
+): string[] => {
+  const messages: string[] = [];
+  if (actualEffortMinutes !== finalPlannedEffortMinutes && form.varianceReasonCode === null) {
+    messages.push("Final PlanとActualに差があるため、誤差理由を選択してください。");
+  }
+  const normalizedNote = form.varianceNote.trim();
+  if (form.varianceNote.length > ESTIMATE_VARIANCE_NOTE_MAX_LENGTH) {
+    messages.push(
+      `誤差理由の補足は${ESTIMATE_VARIANCE_NOTE_MAX_LENGTH}文字以内で入力してください。`
+    );
+  }
+  if (form.varianceReasonCode === "OTHER" && normalizedNote.length === 0) {
+    messages.push("誤差理由が「その他」の場合は補足を入力してください。");
+  }
+  return messages;
+};
+
+/** 検証済み評価Formと取得時点Task versionから完了Task評価登録Requestを作る。 */
+export const buildTaskEstimateOutcomeCreateRequest = (
+  form: Readonly<TaskEstimateOutcomeForm>,
+  taskVersion: number
+): TaskEstimateOutcomeCreateRequest => ({
+  actualAssistanceMode: form.actualAssistanceMode,
+  varianceReasonCode: form.varianceReasonCode,
+  varianceNote: form.varianceNote.trim() || null,
+  taskVersion,
+});
+
 /** AI支援方法コードを画面表示名へ変換する。 */
 export const formatEstimateAssistanceMode = (mode: EstimateAssistanceMode): string =>
   ASSISTANCE_MODE_LABELS[mode];
@@ -160,6 +229,10 @@ export const formatTaskEstimateSource = (source: TaskEstimateSource): string =>
 /** 見積もり採否codeを画面表示名へ変換する。 */
 export const formatTaskEstimateDecision = (decision: TaskEstimateDecisionCode): string =>
   ESTIMATE_DECISION_LABELS[decision];
+
+/** 誤差理由codeを画面表示名へ変換する。 */
+export const formatEstimateVarianceReason = (reason: EstimateVarianceReasonCode): string =>
+  ESTIMATE_VARIANCE_REASON_LABELS[reason];
 
 /** 単一点または3点の見積もりを分・時間の表示へ変換する。 */
 export const formatTaskEstimateRange = (estimate: Readonly<TaskEstimateSnapshot>): string =>

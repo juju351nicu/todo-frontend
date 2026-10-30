@@ -346,10 +346,10 @@ export const DISPLAY_MESSAGES = {
       readForbidden: "Task見積もりを参照するpermissionがありません。",
       readNotFound: "対象のProjectまたはTaskが見つかりません。",
       loadFailed: "Task見積もりを取得できませんでした。",
-      updateForbidden: "このTaskへHuman Estimateを追加する権限がありません。",
+      updateForbidden: "このTaskの見積もりを更新する権限がありません。",
       resourceNotFound: "対象のProjectまたはTaskが見つかりません。",
       conflict: "Taskまたは見積もり履歴が他の操作で更新されました。最新情報を確認してください。",
-      saveFailed: "Human Estimateを保存できませんでした。",
+      saveFailed: "Task見積もりの変更を保存できませんでした。",
       reloadFailed: "最新のTaskと見積もり履歴を再取得できませんでした。再読込してください。",
     },
     workingCalendar: {

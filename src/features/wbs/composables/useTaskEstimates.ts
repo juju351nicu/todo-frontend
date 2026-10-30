@@ -9,6 +9,7 @@ import type {
   HumanEstimateForm,
   TaskEstimateDecisionForm,
   TaskEstimateListResponse,
+  TaskEstimateOutcomeForm,
   WbsTask,
 } from "@/features/wbs/types/wbs";
 import {
@@ -19,8 +20,10 @@ import {
 import {
   buildHumanEstimateCreateRequest,
   buildTaskEstimateDecisionCreateRequest,
+  buildTaskEstimateOutcomeCreateRequest,
   validateHumanEstimateForm,
   validateTaskEstimateDecisionForm,
+  validateTaskEstimateOutcomeForm,
 } from "@/features/wbs/utils/taskEstimate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
@@ -33,10 +36,11 @@ export interface UseTaskEstimatesOptions {
 }
 
 /**
- * WBS画面で通常TaskのHuman／AI Estimate履歴とHuman Estimate追加Dialogを管理する。
+ * WBS画面で通常Taskの見積もり履歴、採否、完了評価を同じDialogで管理する。
  *
  * - Dialogを開いたときだけ履歴を取得し、初期WBS読込へTask件数分のRequestを追加しない。
  * - Human Estimateは単一点または3点で追記し、正式予定工数と既存revisionは変更しない。
+ * - 完了評価はHuman Estimate、Final Plan、Actual、実利用支援方法、誤差理由を変更不能なrevisionへ追記する。
  * - TASK_UPDATEと既存Task担当者境界を画面でも案内するが、最終認可とTask versionはBackendを正本とする。
  * - 404／409ではProject・WBSを再取得し、最新Task versionと見積もり履歴へ置き換える。
  * - 401では`context.handleUnauthorized`へ委ね、統括composableがDialogとSessionを破棄する。
@@ -55,6 +59,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const isLoadingEstimates = ref(false);
   const isSavingEstimate = ref(false);
   const isDecidingEstimate = ref(false);
+  const isEvaluatingEstimate = ref(false);
   /** 競合再取得後もWBSに存在するactive Taskか。archive後の履歴参照ではfalse。 */
   const isSelectedTaskAvailableForCreate = ref(false);
 
@@ -104,9 +109,23 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   /** Human Estimate追加と同じTask更新境界で、選択中revisionの採否を確定できるか。 */
   const canDecideEstimate = computed(() => canCreateHumanEstimate.value);
 
+  /** 完了条件に必要な値がそろったTaskへ評価revisionを追加できるか。最終完了判定はBackendへ委ねる。 */
+  const canEvaluateEstimate = computed(
+    () =>
+      canCreateHumanEstimate.value &&
+      estimateTask.value?.actualEndDate !== null &&
+      (estimateList.value?.finalPlannedEffortMinutes ?? 0) > 0 &&
+      (estimateList.value?.actualEffortMinutes ?? 0) > 0
+  );
+
   /** 通常Taskを選択し、変更不能な見積もり履歴を取得してDialogを開く。 */
   const openEstimateDialog = async (taskId: number): Promise<void> => {
-    if (isLoadingEstimates.value || isSavingEstimate.value || isDecidingEstimate.value) {
+    if (
+      isLoadingEstimates.value ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
       return;
     }
     context.errorMessages.value = [];
@@ -163,7 +182,12 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
 
   /** 読込・保存中でなければDialogと選択Task・履歴を破棄する。 */
   const closeEstimateDialog = (): void => {
-    if (!isLoadingEstimates.value && !isSavingEstimate.value && !isDecidingEstimate.value) {
+    if (
+      !isLoadingEstimates.value &&
+      !isSavingEstimate.value &&
+      !isDecidingEstimate.value &&
+      !isEvaluatingEstimate.value
+    ) {
       discardEstimateDialog();
     }
   };
@@ -186,7 +210,13 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const saveHumanEstimate = async (form: HumanEstimateForm): Promise<void> => {
     const task = estimateTask.value;
     const projectId = context.projectId.value;
-    if (task === null || projectId === null || isSavingEstimate.value || isDecidingEstimate.value) {
+    if (
+      task === null ||
+      projectId === null ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
       return;
     }
     if (!canCreateHumanEstimate.value) {
@@ -226,7 +256,13 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const saveTaskEstimateDecision = async (form: TaskEstimateDecisionForm): Promise<void> => {
     const task = estimateTask.value;
     const projectId = context.projectId.value;
-    if (task === null || projectId === null || isSavingEstimate.value || isDecidingEstimate.value) {
+    if (
+      task === null ||
+      projectId === null ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
       return;
     }
     if (!canDecideEstimate.value) {
@@ -262,6 +298,60 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       await handleEstimateMutationError(error);
     } finally {
       isDecidingEstimate.value = false;
+    }
+  };
+
+  /**
+   * 完了Task評価Formを検証し、Dialogの最新Task version付きで新しい評価revisionを保存する。
+   *
+   * @param form 実利用支援方法、誤差理由、任意補足
+   */
+  const saveTaskEstimateOutcome = async (form: TaskEstimateOutcomeForm): Promise<void> => {
+    const task = estimateTask.value;
+    const list = estimateList.value;
+    const projectId = context.projectId.value;
+    if (
+      task === null ||
+      list === null ||
+      projectId === null ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
+      return;
+    }
+    if (!canEvaluateEstimate.value) {
+      estimateEditorErrorMessages.value = [
+        "評価には完了Taskの実績終了日、Final Plan、Actual、更新権限が必要です。",
+      ];
+      return;
+    }
+    const validationMessages = validateTaskEstimateOutcomeForm(
+      form,
+      list.finalPlannedEffortMinutes,
+      list.actualEffortMinutes
+    );
+    if (validationMessages.length > 0) {
+      estimateEditorErrorMessages.value = validationMessages;
+      return;
+    }
+
+    isEvaluatingEstimate.value = true;
+    estimateEditorErrorMessages.value = [];
+    estimateSuccessMessage.value = "";
+    try {
+      applyEstimateList(
+        await WbsApi.createTaskEstimateOutcome(
+          projectId,
+          task.taskId,
+          buildTaskEstimateOutcomeCreateRequest(form, task.version)
+        )
+      );
+      estimateSuccessMessage.value = "完了Taskの見積もり評価を保存しました。";
+    } catch (error: unknown) {
+      await handleEstimateMutationError(error);
+    } finally {
+      isEvaluatingEstimate.value = false;
     }
   };
 
@@ -330,6 +420,7 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   return {
     canCreateHumanEstimate,
     canDecideEstimate,
+    canEvaluateEstimate,
     closeEstimateDialog,
     discardEstimateDialog,
     estimateEditorErrorMessages,
@@ -339,9 +430,11 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     isEstimateDialogOpen,
     isLoadingEstimates,
     isDecidingEstimate,
+    isEvaluatingEstimate,
     isSavingEstimate,
     openEstimateDialog,
     saveHumanEstimate,
     saveTaskEstimateDecision,
+    saveTaskEstimateOutcome,
   };
 };

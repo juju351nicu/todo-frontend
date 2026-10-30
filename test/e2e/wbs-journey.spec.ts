@@ -90,6 +90,49 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(estimateDialog.locator("table").nth(1).getByRole("row")).toHaveCount(2);
   await estimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
 
+  // 完了TaskではHuman Estimateと実利用した支援方法・誤差理由を評価revisionへ固定する。
+  await page.getByRole("button", { name: `${COMPLETED_TASK_TITLE}の見積もり履歴を開く` }).click();
+  const completedEstimateDialog = page.getByRole("dialog", {
+    name: `Task見積もり: 2 ${COMPLETED_TASK_TITLE}`,
+  });
+  await expect(completedEstimateDialog.getByText("完了Taskを評価", { exact: true })).toBeVisible();
+  await completedEstimateDialog
+    .getByRole("combobox", { name: "想定するAI支援", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Coding Agent", exact: true }).click();
+  await completedEstimateDialog.getByLabel("最頻値・単一点（分）").fill("120");
+  await completedEstimateDialog
+    .getByRole("button", { name: "見積もりを追加", exact: true })
+    .click();
+  await expect(completedEstimateDialog.getByText("Human Estimateを保存しました。")).toBeVisible();
+
+  await completedEstimateDialog
+    .getByRole("combobox", { name: "実際に利用したAI支援", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Coding Agent", exact: true }).click();
+  await completedEstimateDialog
+    .getByRole("combobox", { name: "Final PlanとActualの誤差理由", exact: true })
+    .click();
+  await page.getByRole("option", { name: "テスト範囲の増加", exact: true }).click();
+  await completedEstimateDialog.getByLabel("誤差理由の補足").fill("テスト範囲を追加");
+  await completedEstimateDialog.getByRole("button", { name: "評価を保存", exact: true }).click();
+  await expect(
+    completedEstimateDialog.getByText("完了Taskの見積もり評価を保存しました。")
+  ).toBeVisible();
+  const outcomeHistoryTable = completedEstimateDialog.locator("table").nth(1);
+  await expect(outcomeHistoryTable.getByRole("row")).toHaveCount(2);
+  await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("revision 1・2時間");
+  await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("2時間 / 2時間30分");
+  await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("Coding Agent");
+  await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("テスト範囲の増加");
+  await expect(outcomeHistoryTable.getByRole("row").nth(1)).toContainText("テスト範囲を追加");
+  await completedEstimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
+
+  await page.reload();
+  await page.getByRole("button", { name: `${COMPLETED_TASK_TITLE}の見積もり履歴を開く` }).click();
+  await expect(completedEstimateDialog.locator("table").nth(1).getByRole("row")).toHaveCount(2);
+  await completedEstimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
+
   // 未完了Taskへ日別予定（90分）を登録すると、Dialogを閉じなくてもworkloadが再集計される。
   await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の日別予定工数を開く` }).click();
   // Dialog名にはWBSコードが前置される（例: "Task日別予定工数: 1 Browser WBS 設計"）。
@@ -128,5 +171,6 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
     expect(inspection).toContain("human_estimate_revision_count=2");
     expect(inspection).toContain("estimate_decision_count=1");
     expect(inspection).toContain("estimate_decision_task_result_count=1");
+    expect(inspection).toContain("estimate_outcome_count=1");
   }
 });

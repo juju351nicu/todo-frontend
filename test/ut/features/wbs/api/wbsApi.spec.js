@@ -76,6 +76,7 @@ describe("WBS API", () => {
       actualEffortMinutes: 0,
       estimates: [],
       decisions: [],
+      outcomes: [],
     });
     expect(HttpClient.getRequest).toHaveBeenCalledWith("/api/v1/projects/7/wbs/tasks/11/estimates");
   });
@@ -96,6 +97,7 @@ describe("WBS API", () => {
       actualEffortMinutes: 0,
       estimates: [],
       decisions: [],
+      outcomes: [],
     };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
@@ -123,6 +125,7 @@ describe("WBS API", () => {
       actualEffortMinutes: 0,
       estimates: [],
       decisions: [],
+      outcomes: [],
     };
     HttpClient.postRequest.mockResolvedValue({
       ok: true,
@@ -132,6 +135,35 @@ describe("WBS API", () => {
     await expect(WbsApi.createTaskEstimateDecision(7, 11, 61, request)).resolves.toEqual(response);
     expect(HttpClient.postRequest).toHaveBeenCalledWith(
       "/api/v1/projects/7/wbs/tasks/11/estimates/61/decisions",
+      request
+    );
+  });
+
+  it("実利用支援方法・誤差理由・Task versionを完了Task評価APIへ送る", async () => {
+    const request = {
+      actualAssistanceMode: "CODING_AGENT",
+      varianceReasonCode: "TEST_SCOPE_INCREASED",
+      varianceNote: "追加テストを実施",
+      taskVersion: 4,
+    };
+    const response = {
+      projectId: 7,
+      taskId: 11,
+      taskVersion: 4,
+      finalPlannedEffortMinutes: 480,
+      actualEffortMinutes: 540,
+      estimates: [],
+      decisions: [],
+      outcomes: [],
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createTaskEstimateOutcome(7, 11, request)).resolves.toEqual(response);
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/estimate-outcomes",
       request
     );
   });

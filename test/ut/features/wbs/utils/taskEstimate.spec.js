@@ -5,12 +5,16 @@ import {
   buildHumanEstimateForm,
   buildTaskEstimateDecisionCreateRequest,
   buildTaskEstimateDecisionForm,
+  buildTaskEstimateOutcomeCreateRequest,
+  buildTaskEstimateOutcomeForm,
   formatEstimateAssistanceMode,
+  formatEstimateVarianceReason,
   formatTaskEstimateDecision,
   formatTaskEstimateRange,
   formatTaskEstimateSource,
   validateHumanEstimateForm,
   validateTaskEstimateDecisionForm,
+  validateTaskEstimateOutcomeForm,
 } from "@/features/wbs/utils/taskEstimate";
 
 describe("Human Estimate入力", () => {
@@ -88,6 +92,65 @@ describe("Human Estimate入力", () => {
       estimateLowMinutes: 240,
       estimateLikelyMinutes: 360,
       estimateHighMinutes: 480,
+      taskVersion: 4,
+    });
+  });
+});
+
+describe("完了Task見積もり評価入力", () => {
+  it("空FormをAI支援なし・誤差理由なしで初期化する", () => {
+    expect(buildTaskEstimateOutcomeForm()).toEqual({
+      actualAssistanceMode: "NONE",
+      varianceReasonCode: null,
+      varianceNote: "",
+    });
+  });
+
+  it("Final PlanとActualに差がある場合は誤差理由を必須とする", () => {
+    expect(
+      validateTaskEstimateOutcomeForm(
+        {
+          actualAssistanceMode: "CODING_AGENT",
+          varianceReasonCode: null,
+          varianceNote: "",
+        },
+        480,
+        540
+      )
+    ).toEqual(["Final PlanとActualに差があるため、誤差理由を選択してください。"]);
+  });
+
+  it("差がない場合は理由を省略できOTHERでは補足を必須とする", () => {
+    expect(
+      validateTaskEstimateOutcomeForm(
+        { actualAssistanceMode: "NONE", varianceReasonCode: null, varianceNote: "" },
+        480,
+        480
+      )
+    ).toEqual([]);
+    expect(
+      validateTaskEstimateOutcomeForm(
+        { actualAssistanceMode: "NONE", varianceReasonCode: "OTHER", varianceNote: "　 " },
+        480,
+        540
+      )
+    ).toEqual(["誤差理由が「その他」の場合は補足を入力してください。"]);
+  });
+
+  it("補足を正規化し取得時点Task version付きRequestを作る", () => {
+    expect(
+      buildTaskEstimateOutcomeCreateRequest(
+        {
+          actualAssistanceMode: "CODING_AGENT",
+          varianceReasonCode: "TEST_SCOPE_INCREASED",
+          varianceNote: "  追加テストを実施  ",
+        },
+        4
+      )
+    ).toEqual({
+      actualAssistanceMode: "CODING_AGENT",
+      varianceReasonCode: "TEST_SCOPE_INCREASED",
+      varianceNote: "追加テストを実施",
       taskVersion: 4,
     });
   });
@@ -212,6 +275,7 @@ describe("Task見積もり表示", () => {
     expect(formatTaskEstimateSource("AI")).toBe("AI Estimate");
     expect(formatEstimateAssistanceMode("CODING_AGENT")).toBe("Coding Agent");
     expect(formatTaskEstimateDecision("ADJUSTED")).toBe("調整して採用");
+    expect(formatEstimateVarianceReason("AI_REWORK")).toBe("AI出力の手戻り");
   });
 
   it("単一点と3点見積もりを分・時間表記へ変換する", () => {

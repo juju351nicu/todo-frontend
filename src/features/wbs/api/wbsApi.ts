@@ -9,6 +9,7 @@ import type {
   TaskEffortPlanUpdateRequest,
   TaskEstimateListResponse,
   TaskEstimateDecisionCreateRequest,
+  TaskEstimateOutcomeCreateRequest,
   TaskWorkLogCreateRequest,
   TaskWorkLogListResponse,
   TaskWorkLogUpdateRequest,
@@ -89,13 +90,14 @@ const getWbs = async (projectId: number): Promise<WbsResponse> => {
   return normalizeWbsResponse((await response.json()) as WbsResponse);
 };
 
-/** API Responseで欠落した見積もりrevision・採否監査一覧を空配列へ正規化する。 */
+/** API Responseで欠落した見積もりrevision・採否監査・完了評価一覧を空配列へ正規化する。 */
 const normalizeTaskEstimateList = (
   payload: TaskEstimateListResponse
 ): TaskEstimateListResponse => ({
   ...payload,
   estimates: payload.estimates ?? [],
   decisions: payload.decisions ?? [],
+  outcomes: payload.outcomes ?? [],
 });
 
 /**
@@ -159,6 +161,29 @@ const createTaskEstimateDecision = async (
 ): Promise<TaskEstimateListResponse> => {
   const response = await HttpClient.postRequest(
     `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/estimates/${taskEstimateSnapshotId}/decisions`,
+    request
+  );
+  await ensureSuccess(response);
+  return normalizeTaskEstimateList((await response.json()) as TaskEstimateListResponse);
+};
+
+/**
+ * 完了Taskの見積もり、正式予定、実績、誤差理由をTask version条件付き評価revisionへ保存する。
+ * 共通HTTP clientがSession CookieとCSRF headerを設定し、外部AIへの通信は行わない。
+ *
+ * @param projectId 評価対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param request 実利用支援方法、誤差理由、補足、取得時点Task version
+ * @returns 評価追加後の見積もり・採否監査・完了評価一覧
+ * @throws WbsApiError 入力不正、認可不足、対象なし、完了条件・version・revision競合またはBackendエラーの場合
+ */
+const createTaskEstimateOutcome = async (
+  projectId: number,
+  taskId: number,
+  request: TaskEstimateOutcomeCreateRequest
+): Promise<TaskEstimateListResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/estimate-outcomes`,
     request
   );
   await ensureSuccess(response);
@@ -810,6 +835,7 @@ export default {
   deleteMemberWorkingDay,
   deleteProjectWorkingDay,
   createTaskEstimateDecision,
+  createTaskEstimateOutcome,
   downloadWbsReport,
   getTaskDependencies,
   getTaskEstimates,

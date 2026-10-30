@@ -7,6 +7,7 @@ import { useTaskEstimates } from "@/features/wbs/composables/useTaskEstimates";
 import {
   buildWbsPageContext,
   decidedTaskEstimateList,
+  evaluatedTaskEstimateList,
   mocks,
   project,
   resetWbsPageMocks,
@@ -37,6 +38,19 @@ describe("useTaskEstimates", () => {
     const state = useTaskEstimates(context, options);
     await state.openEstimateDialog(2);
     return { context, options, state };
+  };
+
+  const openEvaluableEstimates = async () => {
+    const context = buildWbsPageContext();
+    context.wbs.value.tasks = context.wbs.value.tasks.map((task) =>
+      task.taskId === 2 ? { ...task, actualEndDate: "2026-08-24" } : task
+    );
+    const state = useTaskEstimates(context, {
+      reloadPageSnapshot: vi.fn(async () => {}),
+      handleReadApiError: vi.fn(async () => {}),
+    });
+    await state.openEstimateDialog(2);
+    return { context, state };
   };
 
   it("通常Taskを選ぶと見積もり履歴を遅延取得する", async () => {
@@ -73,6 +87,57 @@ describe("useTaskEstimates", () => {
     expect(state.estimateSuccessMessage.value).toBe(
       "見積もりをFinal Planへ反映し、採否履歴へ保存しました。"
     );
+  });
+
+  it("完了Taskを実利用支援方法・誤差理由・最新Task version付き評価revisionへ保存する", async () => {
+    const { state } = await openEvaluableEstimates();
+
+    expect(state.canEvaluateEstimate.value).toBe(true);
+    await state.saveTaskEstimateOutcome({
+      actualAssistanceMode: "CODING_AGENT",
+      varianceReasonCode: "TEST_SCOPE_INCREASED",
+      varianceNote: "  追加テストを実施  ",
+    });
+
+    expect(mocks.wbsApi.createTaskEstimateOutcome).toHaveBeenCalledWith(7, 2, {
+      actualAssistanceMode: "CODING_AGENT",
+      varianceReasonCode: "TEST_SCOPE_INCREASED",
+      varianceNote: "追加テストを実施",
+      taskVersion: 4,
+    });
+    expect(state.estimateList.value).toEqual(evaluatedTaskEstimateList);
+    expect(state.estimateSuccessMessage.value).toBe("完了Taskの見積もり評価を保存しました。");
+  });
+
+  it("Final PlanとActualに差があるのに理由がなければ評価APIを呼ばない", async () => {
+    const { state } = await openEvaluableEstimates();
+
+    await state.saveTaskEstimateOutcome({
+      actualAssistanceMode: "NONE",
+      varianceReasonCode: null,
+      varianceNote: "",
+    });
+
+    expect(mocks.wbsApi.createTaskEstimateOutcome).not.toHaveBeenCalled();
+    expect(state.estimateEditorErrorMessages.value).toEqual([
+      "Final PlanとActualに差があるため、誤差理由を選択してください。",
+    ]);
+  });
+
+  it("実績終了日がないTaskでは評価APIを呼ばず完了条件を案内する", async () => {
+    const { state } = await openEstimates();
+
+    expect(state.canEvaluateEstimate.value).toBe(false);
+    await state.saveTaskEstimateOutcome({
+      actualAssistanceMode: "NONE",
+      varianceReasonCode: "REQUIREMENTS_GAP",
+      varianceNote: "",
+    });
+
+    expect(mocks.wbsApi.createTaskEstimateOutcome).not.toHaveBeenCalled();
+    expect(state.estimateEditorErrorMessages.value).toEqual([
+      "評価には完了Taskの実績終了日、Final Plan、Actual、更新権限が必要です。",
+    ]);
   });
 
   it("不正な調整採用では確定APIを呼ばず理由を表示する", async () => {
