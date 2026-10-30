@@ -65,7 +65,7 @@ describe("useTaskListDetailPage", () => {
       expect(page.taskListForm.taskId).toBe(42);
     });
     expect(page.taskListForm.doneFlag).toBe(1);
-    // 担当者名が返らない（会員に姓・名がない）場合はユーザーIDで示す。
+    // 担当者名が返らない（アカウントに姓・名がない）場合はユーザーIDで示す。
     expect(page.fullName.value).toBe("ユーザーID: 5");
     expect(mocks.taskListStore.findTaskDetail).toHaveBeenCalledWith(42);
   });

@@ -2,7 +2,7 @@
 
 ## 方針
 
-Backendの機能別パッケージと対応させ、Frontendも`auth`、`member`、`project`、`task`、`wbs`、
+Backendの機能別パッケージと対応させ、Frontendも`auth`、`account`、`project`、`task`、`wbs`、
 `attendance`、`inquiry`の機能単位へ段階的に整理する。全画面を同時に移動せず、1機能ごとに型検査、
 テスト、ビルドを成功させてから次へ進む。
 
@@ -25,7 +25,7 @@ src/
 │   │   ├── stores/
 │   │   ├── types/
 │   │   └── views/
-│   ├── member/
+│   ├── account/
 │   ├── project/
 │   ├── task/
 │   ├── wbs/
@@ -104,17 +104,17 @@ src/
 - `src/features/auth/stores/user.ts`: 画面遷移をまたいで共有する認証利用者とロール・権限
 - `src/features/auth/composables/useLoginPage.ts`: ログイン画面の状態、Session復元、入力送信、OAuth2エラー表示
 - `src/features/auth/views/LoginPage.vue`: composableを利用して表示を組み立てるログイン画面
-- `src/features/member/api/memberApi.ts`: 会員一覧・詳細・登録更新・削除・退会API
-- `src/features/member/stores/member.ts`: 会員情報とAPI実行中状態
-- `src/features/member/types/member.ts`: 会員APIのRequest / Response型
-- `src/features/member/composables/useMemberListPage.ts`: 会員一覧、選択ID、ページング、削除、詳細画面遷移
-- `src/features/member/views/MemberListPage.vue`: composableを利用して表示を組み立てる会員一覧画面
-- `src/features/member/composables/useMemberDetailPage.ts`: 会員詳細取得、登録更新フォーム、確認モーダル
-- `src/features/member/composables/useMemberCancelPage.ts`: 退会パスワード入力、退会処理、エラー表示
-- `src/features/member/components/MemberUpsertConfirm.vue`: 会員登録更新の確認部品
-- `src/features/member/utils/memberForm.ts`: 会員詳細Responseからフォーム、フォームから登録更新Requestへの変換
-- `src/features/member/views/MemberDetailPage.vue`: 会員登録・更新画面
-- `src/features/member/views/MemberCancelPage.vue`: 会員退会画面
+- `src/features/account/api/accountApi.ts`: アカウントAPI（`/api/v1/accounts`）の一覧・詳細・登録・更新・削除・退会
+- `src/features/account/stores/account.ts`: アカウント一覧とAPI実行中状態
+- `src/features/account/types/account.ts`: アカウントAPIのRequest / Response型
+- `src/features/account/composables/useAccountListPage.ts`: アカウント一覧、選択ID、ページング、削除、設定画面への遷移
+- `src/features/account/views/AccountListPage.vue`: composableを利用して表示を組み立てるアカウント一覧画面（`/accounts`）
+- `src/features/account/composables/useAccountDetailPage.ts`: アカウント詳細取得、登録・更新フォーム、確認モーダル
+- `src/features/account/composables/useAccountCancelPage.ts`: 退会パスワード入力、退会処理、エラー表示
+- `src/features/account/components/AccountUpsertConfirm.vue`: アカウント登録・更新の確認部品
+- `src/features/account/utils/accountForm.ts`: アカウント詳細Responseからフォーム、フォームから登録・更新Requestへの変換（ロールは送らない）
+- `src/features/account/views/AccountDetailPage.vue`: アカウント登録・アカウント設定画面（`/accounts/detail/:id?`）
+- `src/features/account/views/AccountCancelPage.vue`: 退会画面（`/accounts/cancel/:id`）
 - `src/features/task/api/myTaskApi.ts`: My Tasks（本人担当のProject Task）の一覧・完了API
 - `src/features/task/api/taskSearchApi.ts`: Project横断Task検索、候補、本人Saved View CRUD
 - `src/features/task/types/myTask.ts`: My Tasks APIのResponse型

@@ -50,6 +50,6 @@ export interface TaskListUpsertRequest {
 
 /** Task詳細APIのsnake_caseレスポンス。登録・更新リクエストの項目に、表示専用の担当者名を足したもの。 */
 export interface TaskListDetailResponse extends TaskListUpsertRequest {
-  /** 担当者の「姓 名」。会員情報に姓・名がない場合はnull（画面はユーザーIDで示す）。 */
+  /** 担当者の「姓 名」。アカウントのプロフィールに姓・名がない場合はnull（画面はユーザーIDで示す）。 */
   owner_name: string | null;
 }

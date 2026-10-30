@@ -5,18 +5,19 @@ import { routes } from "@/app/router/routes";
 const findRoute = (name) => routes.find((route) => route.name === name);
 
 describe("Vue routes", () => {
-  it("会員とTaskのIDをパス区切り付きで受け取る", () => {
-    expect(findRoute("MemberDetail").path).toBe("/member/detail/:id?");
-    expect(findRoute("MemberCancel").path).toBe("/member/cancel/:id");
+  it("アカウントとTaskのIDをパス区切り付きで受け取る", () => {
+    expect(findRoute("AccountList").path).toBe("/accounts");
+    expect(findRoute("AccountDetail").path).toBe("/accounts/detail/:id?");
+    expect(findRoute("AccountCancel").path).toBe("/accounts/cancel/:id");
     expect(findRoute("TaskListDetail").path).toBe("/tasks/list/:id");
   });
 
-  it("未ログインで開ける会員登録画面は置かず、会員の登録はログイン後の会員詳細（ID なし）で行う", () => {
-    // Backendの会員APIはログインが必要で、未ログインの登録画面は保存が必ず401になっていた
-    // （確認依頼「旧会員APIの認可」3、2026-10-28決定）。
-    expect(findRoute("MemberRegister")).toBeUndefined();
-    expect(routes.some((route) => route.path === "/member/register")).toBe(false);
-    expect(findRoute("MemberDetail").meta.requiresAuth).toBe(true);
+  it("未ログインで開けるアカウント登録画面は置かず、登録はログイン後のアカウント設定画面（ID なし）で行う", () => {
+    // BackendのアカウントAPIはログインと登録のpermissionが必要で、未ログインの登録画面は保存が必ず401になるため。
+    expect(routes.some((route) => route.path === "/accounts/register")).toBe(false);
+    expect(findRoute("AccountDetail").meta.requiresAuth).toBe(true);
+    expect(findRoute("AccountList").meta.requiresAuth).toBe(true);
+    expect(findRoute("AccountCancel").meta.requiresAuth).toBe(true);
   });
 
   it("Basic Dashboardを全認証利用者向けルートとして公開する", () => {

@@ -89,7 +89,7 @@ export const useTaskListDetailPage = (taskId: Readonly<Ref<number | undefined>>)
     }
     return normalizedTaskId.value === 0 || taskListForm.userId === userStore.accountId;
   });
-  /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のない会員ではnull。 */
+  /** Backendが返した担当者の「姓 名」。新規登録中と、姓・名のないアカウントではnull。 */
   const ownerName = ref<string | null>(null);
   /** 「対象ユーザー」欄の表示。担当者名を優先し、名前がなければユーザーIDで示す。 */
   const fullName = computed(() => {

@@ -81,12 +81,20 @@ export const useAppNavigation = (): AppNavigation => {
       links.push({ icon: "i-mdi-clock-outline", label: "勤怠", to: "/attendance" });
     }
     // 未認証でも共通レイアウトを表示する画面（問い合わせ）があるため、利用者IDがない場合は本人向けの導線を出さない。
-    // 「アカウント」は自分の会員情報（詳細画面）を開く。会員の一覧は、ACCOUNT_READを持つ管理者だけが「会員一覧」から開く
-    // （同じ一覧画面へのリンクが2つ並んでいたため。確認依頼「会員一覧の見え方の変更」3、2026-10-28決定）。
+    // 「アカウント設定」は自分のアカウント情報（設定画面）を開く。アカウントの一覧は、ACCOUNT_READを持つ管理者だけが「アカウント一覧」から開く
+    // （同じ一覧画面へのリンクを2つ並べないため）。
     if (userStore.accountId !== null) {
       links.push(
-        { icon: "i-mdi-account", label: "アカウント", to: `/member/detail/${userStore.accountId}` },
-        { icon: "i-mdi-account-cancel", label: "退会", to: `/member/cancel/${userStore.accountId}` }
+        {
+          icon: "i-mdi-account",
+          label: "アカウント設定",
+          to: `/accounts/detail/${userStore.accountId}`,
+        },
+        {
+          icon: "i-mdi-account-cancel",
+          label: "退会",
+          to: `/accounts/cancel/${userStore.accountId}`,
+        }
       );
     }
     if (userStore.hasAnyPermission(TASK_LIST_WRITE_PERMISSION_CODES)) {
@@ -113,12 +121,12 @@ export const useAppNavigation = (): AppNavigation => {
         to: "/administration/notifications",
       });
     }
-    // 会員の登録・一覧はBackend（MemberAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
+    // アカウントの登録・一覧はBackend（AccountAccessLogic）と同じpermissionで出し分ける。ロール名では判定しない。
     if (userStore.hasPermission("ACCOUNT_UPDATE")) {
-      links.push({ icon: "i-mdi-account-plus", label: "会員新規登録", to: "/member/detail" });
+      links.push({ icon: "i-mdi-account-plus", label: "アカウント登録", to: "/accounts/detail" });
     }
     if (userStore.hasPermission("ACCOUNT_READ")) {
-      links.push({ icon: "i-mdi-account-multiple", label: "会員一覧", to: "/member/memberList" });
+      links.push({ icon: "i-mdi-account-multiple", label: "アカウント一覧", to: "/accounts" });
     }
     return links;
   });

@@ -34,15 +34,15 @@ describe("useAppNavigation", () => {
     mocks.router.push.mockResolvedValue(undefined);
   });
 
-  it("permissionがない利用者にはDashboard・アカウント・退会だけを表示し、アカウントは自分の会員詳細を開く", () => {
+  it("permissionがない利用者にはDashboard・アカウント設定・退会だけを表示し、アカウント設定は自分のアカウントを開く", () => {
     signIn();
     const navigation = useAppNavigation();
 
-    expect(labelsOf(navigation)).toEqual(["Dashboard", "アカウント", "退会"]);
+    expect(labelsOf(navigation)).toEqual(["Dashboard", "アカウント設定", "退会"]);
     expect(navigation.navigationLinks.value.map((link) => link.to)).toEqual([
       "/dashboard",
-      "/member/detail/7",
-      "/member/cancel/7",
+      "/accounts/detail/7",
+      "/accounts/cancel/7",
     ]);
   });
 
@@ -74,23 +74,23 @@ describe("useAppNavigation", () => {
       "Project Template",
       "勤怠月次確認",
       "勤怠",
-      "アカウント",
+      "アカウント設定",
       "退会",
       "Task新規登録",
       "アカウント・ロール管理",
       "権限変更監査ログ",
       "お知らせ配信",
-      "会員新規登録",
-      "会員一覧",
+      "アカウント登録",
+      "アカウント一覧",
     ]);
   });
 
-  it("ACCOUNT_READだけの利用者（READ_ONLY_ADMIN）には会員一覧を表示し会員新規登録を表示しない", () => {
+  it("ACCOUNT_READだけの利用者（READ_ONLY_ADMIN）にはアカウント一覧を表示しアカウント登録を表示しない", () => {
     signIn({ roleCodes: ["READ_ONLY_ADMIN"], permissionCodes: ["ACCOUNT_READ"] });
     const labels = labelsOf(useAppNavigation());
 
-    expect(labels).toContain("会員一覧");
-    expect(labels).not.toContain("会員新規登録");
+    expect(labels).toContain("アカウント一覧");
+    expect(labels).not.toContain("アカウント登録");
   });
 
   it("未認証では利用者IDを含むアカウント・退会pathを作らない", () => {

@@ -79,7 +79,7 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## TypeScript
 
-アプリケーションソースのTypeScript移行は完了しています。認証・会員・Task一覧・問い合わせAPIのRequest / Response型、共通HTTPクライアント、Pinia Store、起動処理、Router、定数、共通utility、すべてのVue Single File Componentを型検査します。
+アプリケーションソースのTypeScript移行は完了しています。認証・アカウント・Task一覧・問い合わせAPIのRequest / Response型、共通HTTPクライアント、Pinia Store、起動処理、Router、定数、共通utility、すべてのVue Single File Componentを型検査します。
 
 - `tsconfig.json`の`allowJs`は無効です。
 - `npm run typecheck`で`src`配下の`.ts`とすべての`.vue`を型検査します。
@@ -87,9 +87,9 @@ BackendとFrontendはどちらも`localhost`で起動してください。`local
 
 ## フロントエンド構成
 
-Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、会員機能は`src/features/member`、基本・高度Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Task一覧・詳細・カレンダー（担当者ごとのTaskの画面）は`src/features/task-list`、Project Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、全画面共通Task Timer・本人履歴・工数監査は`src/features/time-tracking`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
+Swagger / OpenAPIでBackendとのAPI契約を確認しながら、機能単位の構成へ移行しました。共通HTTP処理は`src/shared/api`、認証機能は`src/features/auth`、アカウント（一覧・登録・設定・退会）は`src/features/account`、基本・高度Dashboardは`src/features/dashboard`、Project設定・メンバー管理は`src/features/project`、Task一覧・詳細・カレンダー（担当者ごとのTaskの画面）は`src/features/task-list`、Project Boardは`src/features/task`、WBS階層表・編集・Task依存関係・実績期間・日別予定実績・workload・稼働日calendar・baseline・EVM・週次／月次Excel・参照専用Ganttは`src/features/wbs`、全画面共通Task Timer・本人履歴・工数監査は`src/features/time-tracking`、本人の日・月勤怠と打刻は`src/features/attendance`、ベル通知と管理者お知らせ配信は`src/features/notification`、問い合わせ機能は`src/features/inquiry`に配置しています。
 
-Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要な会員・Task一覧・FullCalendarのコードを別チャンクに分割します。
+Router、Session認証ガード、共通ヘッダー・メニューは`src/app`、汎用アラート・処理中表示は`src/shared/components`、API・画面定数は`src/shared/constants`、副作用のない共通変換は`src/shared/utils`に配置しています。各画面はルート単位で遅延読み込みし、初期表示に不要なアカウント・Task一覧・FullCalendarのコードを別チャンクに分割します。
 
 画面の状態と操作は最初から細かく分けず、`useLoginPage`のように1画面につき1つのcomposableへまとめます。複数の独立した責務が明確になった場合だけ追加分割します。詳しくは[Frontend構成ガイド](docs/frontend-architecture.md)を参照してください。JSDocと補足コメントの基準は[コーディング規約](docs/coding-guidelines.md)へ記載しています。
 
