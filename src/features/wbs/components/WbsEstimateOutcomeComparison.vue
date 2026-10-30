@@ -174,20 +174,21 @@ const assistanceModeRows = computed<AssistanceModeComparisonRow[]>(() =>
       </div>
 
       <div v-if="assistanceModeRows.length > 0" class="mt-5">
-        <h4 class="text-sm font-medium">支援mode別の観測精度</h4>
+        <h4 class="text-sm font-medium">支援mode別の観測Actual・精度</h4>
         <p class="mt-1 mb-2 text-xs text-muted">
-          利用者が記録した実利用支援mode別の関連です。AI支援による短縮・精度向上の因果効果は表しません。
+          ActualはHuman未入力を含む全評価Task、精度はHumanとFinalを比較できる同じTask集合の観測値です。AI支援による短縮・精度向上の因果効果は表しません。
         </p>
         <div class="overflow-x-auto">
-          <table class="app-table min-w-240 [&_td]:h-13 [&_th]:h-13">
+          <table class="app-table min-w-280 [&_td]:h-13 [&_th]:h-13">
             <caption class="sr-only">
-              実利用支援modeごとのHuman EstimateとFinal Planの見積もり精度
+              実利用支援modeごとの観測ActualとHuman Estimate・Final Planの見積もり精度
             </caption>
             <thead>
               <tr>
                 <th scope="col">実利用支援mode</th>
                 <th scope="col">比較対象</th>
                 <th scope="col">実績終了日</th>
+                <th scope="col">観測Actual</th>
                 <th
                   v-for="metricColumn in assistanceModeMetricColumns"
                   :key="metricColumn.key"
@@ -231,6 +232,12 @@ const assistanceModeRows = computed<AssistanceModeComparisonRow[]>(() =>
                   </div>
                 </td>
                 <td>{{ formatOutcomeActualEndDateRange(mode) }}</td>
+                <td>
+                  <div>平均 {{ formatOptionalEffortMinutes(mode.meanActualEffortMinutes) }}</div>
+                  <div class="text-xs text-muted">
+                    中央値 {{ formatOptionalEffortMinutes(mode.medianActualEffortMinutes) }}
+                  </div>
+                </td>
                 <td v-for="metricCell in mode.metricCells" :key="metricCell.key">
                   <template v-if="mode.pairedSampleCount > 0">
                     <div>

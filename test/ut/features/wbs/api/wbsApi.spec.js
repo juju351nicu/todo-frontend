@@ -680,6 +680,12 @@ describe("WBS API", () => {
     expect(
       response.outcomeComparison.assistanceModeComparisons[0].finalPlan.meanAbsoluteErrorMinutes
     ).toBeNull();
+    expect(
+      response.outcomeComparison.assistanceModeComparisons[0].meanActualEffortMinutes
+    ).toBeNull();
+    expect(
+      response.outcomeComparison.assistanceModeComparisons[0].medianActualEffortMinutes
+    ).toBeNull();
   });
 
   it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {

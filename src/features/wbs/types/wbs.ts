@@ -563,6 +563,10 @@ export interface EstimateAssistanceModeAccuracy {
   pairedSampleCount: number;
   /** Human Estimateがなくペア比較から除外したTask件数。 */
   missingHumanEstimateTaskCount: number;
+  /** このmodeの全評価TaskにおけるActualの平均（分）。旧Backend Responseではnull。 */
+  meanActualEffortMinutes: number | null;
+  /** このmodeの全評価TaskにおけるActualの中央値（分）。旧Backend Responseではnull。 */
+  medianActualEffortMinutes: number | null;
   /** このmodeで最も早いTask実績終了日。 */
   earliestActualEndDate: string;
   /** このmodeで最も遅いTask実績終了日。 */

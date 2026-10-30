@@ -704,6 +704,8 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
       assistanceModeComparisons: (outcomeComparison.assistanceModeComparisons ?? []).map(
         (comparison) => ({
           ...comparison,
+          meanActualEffortMinutes: comparison.meanActualEffortMinutes ?? null,
+          medianActualEffortMinutes: comparison.medianActualEffortMinutes ?? null,
           humanEstimate: normalizeEstimateAccuracyMetric(comparison.humanEstimate),
           finalPlan: normalizeEstimateAccuracyMetric(comparison.finalPlan),
         })

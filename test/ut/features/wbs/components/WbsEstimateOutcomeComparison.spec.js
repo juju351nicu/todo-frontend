@@ -31,6 +31,8 @@ const buildComparison = (overrides = {}) => ({
       evaluatedTaskCount: 1,
       pairedSampleCount: 0,
       missingHumanEstimateTaskCount: 1,
+      meanActualEffortMinutes: 180,
+      medianActualEffortMinutes: 180,
       earliestActualEndDate: "2026-10-20",
       latestActualEndDate: "2026-10-20",
       humanEstimate: {
@@ -51,6 +53,8 @@ const buildComparison = (overrides = {}) => ({
       evaluatedTaskCount: 3,
       pairedSampleCount: 2,
       missingHumanEstimateTaskCount: 1,
+      meanActualEffortMinutes: 150,
+      medianActualEffortMinutes: 140,
       earliestActualEndDate: "2026-10-30",
       latestActualEndDate: "2026-10-31",
       humanEstimate: {
@@ -83,7 +87,7 @@ describe("WbsEstimateOutcomeComparison", () => {
     wrapper?.unmount();
   });
 
-  it("同じペア集合のHuman・Final指標とmode別の許容範囲・偏りを表示する", () => {
+  it("mode別の全評価Actualと同じペア集合のHuman・Final指標を表示する", () => {
     wrapper = mountWithUi(WbsEstimateOutcomeComparison, {
       props: { comparison: buildComparison() },
     });
@@ -98,7 +102,7 @@ describe("WbsEstimateOutcomeComparison", () => {
     expect(wrapper.text()).toContain("絶対誤差の平均25分");
     expect(wrapper.text()).toContain("1 / 2件（50%）");
     expect(wrapper.text()).toContain("2 / 2件（100%）");
-    expect(wrapper.text()).toContain("支援mode別の観測精度");
+    expect(wrapper.text()).toContain("支援mode別の観測Actual・精度");
     expect(wrapper.text()).toContain("因果効果は表しません");
     expect(wrapper.text()).toContain("評価 1件 / ペア 0件");
     expect(wrapper.text()).toContain("Human未入力 1件");
@@ -109,8 +113,12 @@ describe("WbsEstimateOutcomeComparison", () => {
     expect(wrapper.text()).toContain("平均 25分");
     const [noAssistanceRow, codingAgentRow] = wrapper.findAll("tbody tr");
     expect(noAssistanceRow.text()).toContain("比較不可");
+    expect(noAssistanceRow.text()).toContain("平均 3時間");
+    expect(noAssistanceRow.text()).toContain("中央値 3時間");
     expect(noAssistanceRow.findAll('[aria-label="比較対象なし"]')).toHaveLength(2);
     expect(codingAgentRow.text()).toContain("Human未入力 1件");
+    expect(codingAgentRow.text()).toContain("平均 2時間30分");
+    expect(codingAgentRow.text()).toContain("中央値 2時間20分");
     expect(codingAgentRow.text()).toContain("±20%以内 1 / 2件（50%）");
     expect(codingAgentRow.text()).toContain("差の中央値 +30分");
     expect(codingAgentRow.text()).toContain("予定より多くかかる傾向（見積もりが少なめ）");

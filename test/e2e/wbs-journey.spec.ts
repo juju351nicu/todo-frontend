@@ -154,6 +154,8 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   });
   await expect(assistanceModeRow).toContainText("評価 1件 / ペア 1件");
   await expect(assistanceModeRow).toContainText("参考値");
+  await expect(assistanceModeRow).toContainText("平均 2時間30分");
+  await expect(assistanceModeRow).toContainText("中央値 2時間30分");
   await expect(assistanceModeRow).toContainText("平均 30分");
   await expect(assistanceModeRow).toContainText("中央値 30分");
   await expect(assistanceModeRow).toContainText("±20%以内 0 / 1件（0%）");
