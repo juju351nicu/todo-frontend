@@ -255,6 +255,11 @@ Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Task�
 採否確定、Dialog closeを相互に抑止し、二重送信を防ぐ。404・409では既存の競合回復を再利用し、確定済みrevisionと最新versionへ
 置き換える。UIと型はprovider名・model名を持たず、将来のAI実行provider変更から採否契約を分離する。
 
+実装後はPrettier、ESLint、TypeScript／Vue／E2E型検査、production build、全142 file／1431 Vitestが成功した。
+WBS本体へのFinal Plan同期を故意に外すとcomposable testが期待420分に対して480分のまま残る差で失敗し、復元後に成功した。
+V32適用済みMySQLとstrict Security構成Backendを使うChromium WBS journeyは認証準備を含む14／14件が成功し、画面操作後の
+revision 2の`ADOPTED`、Final Plan 360分、Task version 1をDBで照合した。
+
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 
 稼働日calendar V7は同じ`useWbsPage`へ統合し、Project共通と個人例外を同じcardで対象切替する。初期値は現在月のProject共通calendarとし、通常memberにはProject共通と本人、OWNER・MANAGER・SYSTEM_ADMINには全Project memberを選択肢として提示する。Project共通は管理者だけ、個人例外は本人または管理者だけに編集操作を表示するが、最終認可はBackendへ委ねる。期間は境界を含む366日以内、休日は0分、稼働日は1〜1440分を送信前に検証する。登録・更新Responseは変更した1日だけなので、成功後と404・409競合後は表示期間全体を再取得し、古い例外ID・versionを残さない。
