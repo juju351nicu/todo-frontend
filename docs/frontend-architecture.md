@@ -179,8 +179,8 @@ src/
 - `src/features/wbs/composables/useWbsEarnedValue.ts`／`useWbsReportExport.ts`: EVMの取得／週次・月次Excel帳票のdownload
 - `src/features/wbs/composables/useWbsEstimateAccuracy.ts`: 完了済み通常Taskの予定工数と実績工数、最新完了評価revisionのHuman／Finalを比べた見積もり精度の取得（Backend `GET /wbs/estimate-accuracy`）
 - `src/features/wbs/composables/useEstimateAccuracyChart.ts`、`src/features/wbs/utils/estimateAccuracy.ts`: 見積もり精度の散布図の座標・目盛り・tooltip対象、評価revision比較の割合・sample境界・期間の表示文言（APIは呼ばない）
-- `src/features/wbs/components/WbsEstimateAccuracyCard.vue`: 誤差の中央値・見積もりどおりの割合・偏りの向き、散布図（予定どおりの対角線と±許容割合の帯）、誤差の大きい順の一覧
-- `src/features/wbs/components/WbsEstimateOutcomeComparison.vue`: Taskごとの最新評価revisionによるHuman Estimate／Final Planの同一Task比較、Human欠損、実績期間、実利用支援mode・誤差理由の分布
+- `src/features/wbs/components/WbsEstimateAccuracyCard.vue`: 絶対誤差の平均・中央値、見積もりどおりの割合・偏りの向き、散布図（予定どおりの対角線と±許容割合の帯）、誤差の大きい順の一覧
+- `src/features/wbs/components/WbsEstimateOutcomeComparison.vue`: Taskごとの最新評価revisionによるHuman Estimate／Final Planの同一Task比較、絶対誤差の平均・中央値、Human欠損、実績期間、実利用支援mode・誤差理由の分布
 - `src/features/wbs/components/WbsEarnedValueCard.vue`: 基準日指定、Project EVM summary、警告、Task明細の表示
 - `src/features/wbs/components/WbsReportExportCard.vue`: EVMと共有する基準日、週次／月次Excel download、処理中・error表示
 - `src/features/wbs/utils/earnedValue.ts`: Backend確定済みEVM値の入力日検証と表示整形
@@ -284,6 +284,12 @@ Backend確定値のまま表示する。最低sample件数未満は参考値と�
 最低sample件数ちょうどを参考値へ含めるmutationはutility testが意図どおり失敗し、復元後に成功した。Chromium WBS journeyは
 認証準備を含む14／14件が成功し、評価保存直後と再読込後にHuman／Finalの絶対誤差30分、許容範囲内0／1件、支援mode、
 誤差理由の表示とglobal teardownを確認した。
+
+Stage 12Dの平均・中央値併記に合わせ、既存Final Plan × Actualと最新評価revisionのHuman／Final比較へ絶対誤差の算術平均を
+追加した。Backendが1分未満を四捨五入した値を表示し、Frontendでは再計算しない。旧Backend Responseに平均がない場合は
+API境界でnullへ正規化し、未計算を0分として表示しない。実装後は全143 file／1448 Vitest、Prettier、ESLint、全型検査、
+production buildが成功した。平均欄へ中央値を誤って表示するmutationはcomponent testが値差で失敗し、復元後に成功した。
+Chromium WBS journeyも14／14件成功し、評価保存直後と再読込後にHuman／Final双方の平均絶対誤差30分を確認した。
 
 Task実績期間V6では、既存Task編集Formへnullableな実績開始日・終了日を追加した。両方未入力は未着手、開始日だけは作業中、開始日と開始日以降の終了日は完了期間として扱う。終了日だけ、存在しない日付、逆転期間はAPI送信前に拒否し、Backendの同じ検証とDB CHECK制約を最終判定とする。階層表は予定期間と実績期間を別列で表示し、Ganttはbarを予定期間のまま維持してHTML escape済みtooltipへ予定・実績を表示する。実績日による進捗率・Board列・完了flagの自動更新は行わない。
 
@@ -605,7 +611,7 @@ Boardの「WBSを開く」導線からWBSを開き、見積もり精度cardに�
 登録後にworkloadが再集計されること、baselineの作成とactive baseline基準のEVM集計を確認する。日別予定保存後の
 workload再取得を外した変異buildではworkloadの確認で失敗することを確かめた。追加後のChromium全journeyは成功した。
 完了Task評価を保存するjourneyでは、最新評価revisionのHuman／Final比較が保存直後に更新され、再読込後も同じ値であること、
-支援mode・誤差理由の分布が表示されることも同じ専用fixtureで確認する。
+平均・中央値、支援mode・誤差理由の分布が表示されることも同じ専用fixtureで確認する。
 
 ## APIエラー表示契約
 
