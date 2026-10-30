@@ -606,6 +606,12 @@ describe("WBS API", () => {
           medianAbsoluteErrorMinutes: null,
           medianSignedVarianceMinutes: null,
         },
+        humanEstimateDecisions: {
+          estimateRevisionCount: 0,
+          decidedRevisionCount: 0,
+          pendingDecisionRevisionCount: 0,
+          decisionCounts: [],
+        },
         assistanceModeComparisons: [],
         actualAssistanceModes: [],
         varianceReasons: [],
@@ -686,6 +692,12 @@ describe("WBS API", () => {
     expect(
       response.outcomeComparison.assistanceModeComparisons[0].medianActualEffortMinutes
     ).toBeNull();
+    expect(response.outcomeComparison.humanEstimateDecisions).toEqual({
+      estimateRevisionCount: 0,
+      decidedRevisionCount: 0,
+      pendingDecisionRevisionCount: 0,
+      decisionCounts: [],
+    });
   });
 
   it("見積もり精度APIの非2xxはstatus付きWbsApiErrorにする", async () => {

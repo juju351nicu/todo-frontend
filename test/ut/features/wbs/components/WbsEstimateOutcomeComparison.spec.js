@@ -25,6 +25,16 @@ const buildComparison = (overrides = {}) => ({
     medianAbsoluteErrorMinutes: 30,
     medianSignedVarianceMinutes: 0,
   },
+  humanEstimateDecisions: {
+    estimateRevisionCount: 4,
+    decidedRevisionCount: 3,
+    pendingDecisionRevisionCount: 1,
+    decisionCounts: [
+      { code: "ADOPTED", count: 1 },
+      { code: "ADJUSTED", count: 1 },
+      { code: "REJECTED", count: 1 },
+    ],
+  },
   assistanceModeComparisons: [
     {
       code: "NONE",
@@ -98,6 +108,13 @@ describe("WbsEstimateOutcomeComparison", () => {
     expect(wrapper.text()).toContain("2026-10-20 〜 2026-10-31");
     expect(wrapper.text()).toContain("Human Estimate");
     expect(wrapper.text()).toContain("Final Plan");
+    expect(wrapper.text()).toContain("Human Estimateの採否");
+    expect(wrapper.text()).toContain("保存済みrevision4件");
+    expect(wrapper.text()).toContain("採否確定3件");
+    expect(wrapper.text()).toContain("未採否1件");
+    expect(wrapper.text()).toContain("そのまま採用 1件");
+    expect(wrapper.text()).toContain("調整して採用 1件");
+    expect(wrapper.text()).toContain("却下 1件");
     expect(wrapper.text()).toContain("絶対誤差の平均1時間15分");
     expect(wrapper.text()).toContain("絶対誤差の平均25分");
     expect(wrapper.text()).toContain("1 / 2件（50%）");
@@ -149,6 +166,7 @@ describe("WbsEstimateOutcomeComparison", () => {
     });
 
     expect(wrapper.text()).toContain("完了Taskの評価はまだありません");
+    expect(wrapper.text()).toContain("Human Estimateの採否");
     expect(wrapper.text()).not.toContain("実際に利用したAI支援");
   });
 

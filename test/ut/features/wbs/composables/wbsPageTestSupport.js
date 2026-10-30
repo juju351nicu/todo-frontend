@@ -251,6 +251,15 @@ export const estimateAccuracyResponse = {
       medianAbsoluteErrorMinutes: 30,
       medianSignedVarianceMinutes: 0,
     },
+    humanEstimateDecisions: {
+      estimateRevisionCount: 3,
+      decidedRevisionCount: 2,
+      pendingDecisionRevisionCount: 1,
+      decisionCounts: [
+        { code: "ADOPTED", count: 1 },
+        { code: "REJECTED", count: 1 },
+      ],
+    },
     assistanceModeComparisons: [
       {
         code: "NONE",

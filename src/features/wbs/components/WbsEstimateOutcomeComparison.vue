@@ -17,6 +17,7 @@ import {
 } from "@/features/wbs/utils/estimateAccuracy";
 import {
   formatEstimateAssistanceMode,
+  formatTaskEstimateDecision,
   formatEstimateVarianceReason,
 } from "@/features/wbs/utils/taskEstimate";
 import StatusAlert from "@/shared/components/StatusAlert.vue";
@@ -95,6 +96,52 @@ const assistanceModeRows = computed<AssistanceModeComparisonRow[]>(() =>
       Taskごとの最新評価revisionを使い、Human EstimateとFinal
       Planを同じActualに対して比べます。観測値であり、AI支援による短縮効果は表しません。
     </p>
+
+    <div
+      v-if="comparison.humanEstimateDecisions.estimateRevisionCount > 0"
+      class="mt-4 rounded-md border border-default p-4"
+    >
+      <h4 class="text-sm font-medium">Human Estimateの採否</h4>
+      <p class="mt-1 mb-3 text-xs text-muted">
+        完了評価とは別に、Project内のHuman Estimateをrevision単位で集計します。AI
+        Estimateの採用率ではありません。
+      </p>
+      <dl class="grid gap-3 sm:grid-cols-3">
+        <div>
+          <dt class="text-xs text-muted">保存済みrevision</dt>
+          <dd class="font-medium">
+            {{ comparison.humanEstimateDecisions.estimateRevisionCount }}件
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">採否確定</dt>
+          <dd class="font-medium">
+            {{ comparison.humanEstimateDecisions.decidedRevisionCount }}件
+          </dd>
+        </div>
+        <div>
+          <dt class="text-xs text-muted">未採否</dt>
+          <dd class="font-medium">
+            {{ comparison.humanEstimateDecisions.pendingDecisionRevisionCount }}件
+          </dd>
+        </div>
+      </dl>
+      <div
+        v-if="comparison.humanEstimateDecisions.decisionCounts.length > 0"
+        class="mt-3 flex flex-wrap gap-2"
+        aria-label="Human Estimateの採否区分"
+      >
+        <UBadge
+          v-for="decision in comparison.humanEstimateDecisions.decisionCounts"
+          :key="decision.code"
+          size="sm"
+          color="neutral"
+          variant="outline"
+        >
+          {{ formatTaskEstimateDecision(decision.code) }} {{ decision.count }}件
+        </UBadge>
+      </div>
+    </div>
 
     <StatusAlert v-if="comparison.evaluatedTaskCount === 0" type="info" variant="soft" class="mt-4">
       完了Taskの評価はまだありません。見積もり履歴から完了Taskを評価すると比較できます。

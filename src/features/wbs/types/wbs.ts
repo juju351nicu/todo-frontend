@@ -550,6 +550,26 @@ export interface EstimateOutcomeCategoryCount<
   count: number;
 }
 
+/** Human Estimate revisionを採否code別に数えた項目。 */
+export interface EstimateDecisionCount {
+  /** Backend enumと一致する変更不可の採否code。 */
+  code: TaskEstimateDecisionCode;
+  /** この採否codeで確定したrevision件数。 */
+  count: number;
+}
+
+/** 完了評価の有無にかかわらないHuman Estimate revisionの採否進捗。 */
+export interface EstimateDecisionSummary {
+  /** Project内に保存されたHuman Estimate revision総数。 */
+  estimateRevisionCount: number;
+  /** 採否が確定しているHuman Estimate revision件数。 */
+  decidedRevisionCount: number;
+  /** 採否がまだ確定していないHuman Estimate revision件数。 */
+  pendingDecisionRevisionCount: number;
+  /** 採否code別件数。Backend enum定義順で、0件のcodeは含まない。 */
+  decisionCounts: EstimateDecisionCount[];
+}
+
 /**
  * 実利用支援modeが同じ最新完了評価revisionにおけるHuman Estimate・Final Planの対Actual比較。
  * mode別の観測値であり、支援modeによる工数短縮や精度向上の因果効果は表さない。
@@ -578,8 +598,8 @@ export interface EstimateAssistanceModeAccuracy {
 }
 
 /**
- * Taskごとの最新完了評価revisionによるHuman Estimate・Final Planの対Actual比較。
- * HumanとFinalはHuman Estimateがある同じTask集合で比較し、欠損Taskは別件数で保持する。
+ * Human Estimate revisionの採否進捗と、Taskごとの最新完了評価revisionによる対Actual比較。
+ * 採否は完了評価と独立して数え、HumanとFinalはHuman Estimateがある同じTask集合で比較する。
  */
 export interface TaskEstimateOutcomeComparison {
   /** 最新評価revisionがあるTask件数。 */
@@ -600,6 +620,8 @@ export interface TaskEstimateOutcomeComparison {
   humanEstimate: EstimateAccuracyMetric;
   /** Humanと同じTask集合におけるFinal Plan対Actualの精度。 */
   finalPlan: EstimateAccuracyMetric;
+  /** 完了評価の有無にかかわらないHuman Estimate revisionの採否進捗。 */
+  humanEstimateDecisions: EstimateDecisionSummary;
   /** 実利用支援mode別のHuman／Final精度。0件のmodeは含めない。 */
   assistanceModeComparisons: EstimateAssistanceModeAccuracy[];
   /** 最新評価revisionの実利用支援mode別件数。 */

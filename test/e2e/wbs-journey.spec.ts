@@ -131,6 +131,16 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   const outcomeComparison = page.getByRole("region", { name: "評価revision比較" });
   await expect(outcomeComparison.getByText("評価済み 1件", { exact: true })).toBeVisible();
   await expect(
+    outcomeComparison.getByText("保存済みrevision", { exact: true }).locator("..")
+  ).toContainText("3件");
+  await expect(
+    outcomeComparison.getByText("採否確定", { exact: true }).locator("..")
+  ).toContainText("1件");
+  await expect(outcomeComparison.getByText("未採否", { exact: true }).locator("..")).toContainText(
+    "2件"
+  );
+  await expect(outcomeComparison.getByText("そのまま採用 1件", { exact: true })).toBeVisible();
+  await expect(
     outcomeComparison.getByText("ペア比較できたTask", { exact: true }).locator("..")
   ).toContainText("1件");
   await expect(

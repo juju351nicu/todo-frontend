@@ -2,6 +2,7 @@ import type {
   EarnedValueResponse,
   EstimateAccuracyMetric,
   EstimateAccuracyResponse,
+  EstimateDecisionSummary,
   HumanEstimateCreateRequest,
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
@@ -656,6 +657,21 @@ const normalizeEstimateAccuracyMetric = (
 });
 
 /**
+ * 採否集計を返さない旧Backend Responseを0件へ補い、未採否revisionを表示層で推測しない。
+ *
+ * @param summary Backendが確定したHuman Estimate採否集計。旧Responseではundefined
+ * @returns 総数・採否済み・未採否・区分別件数を省略しない採否集計
+ */
+const normalizeEstimateDecisionSummary = (
+  summary: EstimateDecisionSummary | undefined
+): EstimateDecisionSummary => ({
+  estimateRevisionCount: summary?.estimateRevisionCount ?? 0,
+  decidedRevisionCount: summary?.decidedRevisionCount ?? 0,
+  pendingDecisionRevisionCount: summary?.pendingDecisionRevisionCount ?? 0,
+  decisionCounts: summary?.decisionCounts ?? [],
+});
+
+/**
  * Project内の完了済み通常Taskについて、予定工数と実績工数の見積もり精度を取得する。
  *
  * @param projectId 集計対象Project ID
@@ -688,6 +704,7 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
       medianAbsoluteErrorMinutes: null,
       medianSignedVarianceMinutes: null,
     },
+    humanEstimateDecisions: normalizeEstimateDecisionSummary(undefined),
     assistanceModeComparisons: [],
     actualAssistanceModes: [],
     varianceReasons: [],
@@ -701,6 +718,9 @@ const getEstimateAccuracy = async (projectId: number): Promise<EstimateAccuracyR
       ...outcomeComparison,
       humanEstimate: normalizeEstimateAccuracyMetric(outcomeComparison.humanEstimate),
       finalPlan: normalizeEstimateAccuracyMetric(outcomeComparison.finalPlan),
+      humanEstimateDecisions: normalizeEstimateDecisionSummary(
+        outcomeComparison.humanEstimateDecisions
+      ),
       assistanceModeComparisons: (outcomeComparison.assistanceModeComparisons ?? []).map(
         (comparison) => ({
           ...comparison,
