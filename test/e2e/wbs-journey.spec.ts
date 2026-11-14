@@ -1,4 +1,4 @@
-import { type Page } from "@playwright/test";
+import { type Locator, type Page } from "@playwright/test";
 
 import { expect, test } from "./fixtures/test";
 import { runBrowserRegressionFixture } from "./support/databaseFixture";
@@ -9,6 +9,7 @@ const PLANNING_TASK_TITLE = "Browser WBS 設計";
 const COMPLETED_TASK_TITLE = "Browser WBS 実装済み";
 const ACCOUNT_DISPLAY_NAME = "WBS 確認者";
 const BASELINE_NAME = "E2E計画";
+const AI_ESTIMATION_MAX_REFRESH_ATTEMPTS = 20;
 
 /** Project一覧から専用Projectを選び、Boardの「WBSを開く」導線で採番IDに依存せずWBSを開く。 */
 const openDedicatedWbs = async (page: Page): Promise<void> => {
@@ -22,6 +23,22 @@ const openDedicatedWbs = async (page: Page): Promise<void> => {
   await page.getByRole("link", { name: "WBSを開く" }).click();
   await expect(page).toHaveURL(/\/projects\/\d+\/wbs$/);
   await expect(page.getByRole("heading", { name: PROJECT_NAME })).toBeVisible();
+};
+
+/** 利用者操作による状態再取得を繰り返し、schedulerが保存した提案をDialogへ同期する。 */
+const refreshAiEstimateUntilProposalAppears = async (
+  page: Page,
+  estimateDialog: Locator,
+  proposalHeading: Locator
+): Promise<void> => {
+  for (let attempt = 0; attempt < AI_ESTIMATION_MAX_REFRESH_ATTEMPTS; attempt += 1) {
+    await estimateDialog.getByRole("button", { name: "状態を再取得", exact: true }).click();
+    if (await proposalHeading.isVisible()) {
+      return;
+    }
+    await page.waitForTimeout(200);
+  }
+  await expect(proposalHeading).toBeVisible();
 };
 
 test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度・baseline・EVMを確認する", async ({
@@ -182,6 +199,58 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
   await expect(completedEstimateDialog.locator("table").nth(1).getByRole("row")).toHaveCount(2);
   await completedEstimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
 
+  // 専用fake gatewayで送信確認、明示同意、非同期worker、提案表示までを確認する。
+  // 実providerへは通信せず、提案を採用しないためFinal Planも変更しない。
+  await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の見積もり履歴を開く` }).click();
+  await estimateDialog.getByRole("button", { name: "送信内容を確認", exact: true }).click();
+  await expect(
+    estimateDialog.getByText("fake（fake-effort-v1）へ送信します。", { exact: false })
+  ).toBeVisible();
+  await expect(estimateDialog.getByText("provider側では最大30日", { exact: false })).toBeVisible();
+  await expect(
+    estimateDialog.getByText("Work Managementでは入力を90日", { exact: false })
+  ).toBeVisible();
+  await expect(estimateDialog.getByText(PLANNING_TASK_TITLE, { exact: true })).toBeVisible();
+  await expect(
+    estimateDialog.getByText("現在のFinal Plan").locator("..").getByText("6時間")
+  ).toBeVisible();
+  await estimateDialog
+    .getByRole("checkbox", {
+      name: "送信先、上記の送信内容、保持期間を確認し、外部AIへの送信に同意します。",
+    })
+    .check();
+  await estimateDialog.getByRole("button", { name: "AI見積もりを生成", exact: true }).click();
+  await expect(
+    estimateDialog.getByText("AI見積もりRequestを受け付けました。", { exact: false })
+  ).toBeVisible();
+  await expect(
+    estimateDialog.getByRole("heading", { name: /AI見積もりRequest #\d+/ })
+  ).toBeVisible();
+
+  const aiProposalHeading = estimateDialog.getByRole("heading", {
+    name: "AI提案 revision 3",
+    exact: true,
+  });
+  await refreshAiEstimateUntilProposalAppears(page, estimateDialog, aiProposalHeading);
+  const aiProposalCard = aiProposalHeading.locator("..").locator("..");
+  await expect(estimateDialog.getByText("成功", { exact: true })).toBeVisible();
+  await expect(
+    aiProposalCard.getByText("4時間48分 / 6時間 / 7時間48分", { exact: true })
+  ).toBeVisible();
+  await expect(aiProposalCard.getByText("確信度：中", { exact: true })).toBeVisible();
+  await expect(
+    aiProposalCard.getByText("固定規則で入力境界と保存処理を検証", { exact: true })
+  ).toBeVisible();
+  await expect(
+    aiProposalCard.getByText("実providerの品質と遅延は未評価", { exact: true })
+  ).toBeVisible();
+  await expect(
+    estimateDialog.getByText("Final Plan（正式予定）").locator("..").getByText("6時間")
+  ).toBeVisible();
+  await expect(estimateHistoryTable.getByRole("row")).toHaveCount(4);
+  await expect(estimateHistoryTable.getByRole("row").nth(3)).toContainText("AI Estimate");
+  await estimateDialog.getByRole("button", { name: "閉じる", exact: true }).click();
+
   // 未完了Taskへ日別予定（90分）を登録すると、Dialogを閉じなくてもworkloadが再集計される。
   await page.getByRole("button", { name: `${PLANNING_TASK_TITLE}の日別予定工数を開く` }).click();
   // Dialog名にはWBSコードが前置される（例: "Task日別予定工数: 1 Browser WBS 設計"）。
@@ -221,5 +290,11 @@ test("WBSで日別予定を登録してworkloadへ反映し、見積もり精度
     expect(inspection).toContain("estimate_decision_count=1");
     expect(inspection).toContain("estimate_decision_task_result_count=1");
     expect(inspection).toContain("estimate_outcome_count=1");
+    expect(inspection).toContain("ai_estimation_request_count=1");
+    expect(inspection).toContain("ai_estimation_input_boundary_count=1");
+    expect(inspection).toContain("ai_estimation_attempt_count=1");
+    expect(inspection).toContain("ai_estimation_proposal_count=1");
+    expect(inspection).toContain("ai_estimation_quota_count=1");
+    expect(inspection).toContain("ai_estimation_cost_period_count=2,reserved=0,actual=176");
   }
 });

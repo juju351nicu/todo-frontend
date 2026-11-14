@@ -24,6 +24,7 @@ Stage 10D-2の主要journeyは次を確認する。
 - Boardでのタイトル・詳細更新と再読込後の保持
 - 同じTask IDを指定したWBS日別実績Dialogへの遷移
 - WBSでのHuman Estimate追記、採否・Final Plan反映、完了Task評価と再読込後の監査履歴
+- WBSでのfake AI送信確認、明示同意、非同期scheduler、3点提案表示、正式計画不変、quota・原価・入力保持のDB照合
 - 更新後タイトル、詳細、WBS code、状態、versionのMySQL inspect
 - BoardでのTask作成とkeyboardによる未着手から進行中への列移動
 - 移動後の再読込と、2 tabから同じversionを更新した場合の409競合回復
@@ -74,12 +75,25 @@ docker compose up -d mysql
 ```
 
 同じrepositoryでBackendを起動する。繰り返しTask schedulerはsmoke対象外の非同期更新を避けるため停止する。
+AI見積もりは固定IDの`wbs-browser`だけを許可し、外部通信しないfake gatewayで非同期導線を確認する。
 
 ```bash
 SPRING_PROFILES_ACTIVE=local,docker \
 WORK_MANAGEMENT_TASK_RECURRENCE_SCHEDULER_ENABLED=false \
+AI_ESTIMATION_GATEWAY=fake \
+AI_ESTIMATION_PROVIDER_CODE=fake \
+AI_ESTIMATION_MODEL_IDENTIFIER=fake-effort-v1 \
+AI_ESTIMATION_SCHEDULER_ENABLED=true \
+AI_ESTIMATION_SCHEDULER_FIXED_DELAY=PT0.2S \
+AI_ESTIMATION_SCHEDULER_INITIAL_DELAY=PT0.2S \
+WORK_MANAGEMENT_AI_ESTIMATION_DOGFOODING_ACCOUNT_IDS=900000001 \
+WORK_MANAGEMENT_AI_ESTIMATION_QUOTA_PERIOD_START=2020-01-01T00:00:00Z \
+WORK_MANAGEMENT_AI_ESTIMATION_QUOTA_PERIOD_END=2037-01-01T00:00:00Z \
 ./mvnw spring-boot:run
 ```
+
+固定account IDとquota期間は`wbs-journey`のローカル／CI専用fixtureに限る。OpenAI API keyは設定せず、実provider回帰では
+使用しない。通常起動ではAI scheduler、gateway、dogfooding allowlistを引き続き既定無効のままにする。
 
 別terminalでFrontendのsmokeを実行する。production buildとVite previewはPlaywrightが自動起動する。
 
