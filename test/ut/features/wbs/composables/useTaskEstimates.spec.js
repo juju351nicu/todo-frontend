@@ -6,11 +6,15 @@ import { useTaskEstimates } from "@/features/wbs/composables/useTaskEstimates";
 
 import {
   buildWbsPageContext,
+  aiEstimationConfirmation,
+  aiTaskEstimateList,
   decidedTaskEstimateList,
   evaluatedTaskEstimateList,
   mocks,
   project,
   resetWbsPageMocks,
+  pendingAiEstimationRequest,
+  succeededAiEstimationRequest,
   taskEstimateList,
   updatedTaskEstimateList,
   updatedWbs,
@@ -64,6 +68,91 @@ describe("useTaskEstimates", () => {
     expect(state.estimateList.value).toEqual(taskEstimateList);
     expect(state.canCreateHumanEstimate.value).toBe(true);
     expect(state.canDecideEstimate.value).toBe(true);
+  });
+
+  it("外部送信前に選択した支援modeの送信内容・保持期間・quotaを取得する", async () => {
+    const { state } = await openEstimates();
+
+    await state.loadAiEstimationConfirmation("CODING_AGENT");
+
+    expect(mocks.wbsApi.getAiEstimationConfirmation).toHaveBeenCalledWith(7, 2, "CODING_AGENT");
+    expect(mocks.wbsApi.createAiEstimationRequest).not.toHaveBeenCalled();
+    expect(state.aiEstimationConfirmation.value).toEqual(aiEstimationConfirmation);
+  });
+
+  it("明示同意なしではAI見積もりRequestを送らない", async () => {
+    const { state } = await openEstimates();
+    await state.loadAiEstimationConfirmation("CODING_AGENT");
+
+    await state.requestAiEstimate(false);
+
+    expect(mocks.wbsApi.createAiEstimationRequest).not.toHaveBeenCalled();
+    expect(state.estimateEditorErrorMessages.value).toEqual([
+      "送信先、送信内容、保持期間を確認してから同意してください。",
+    ]);
+  });
+
+  it("確認時Task version・支援mode・入力hash・明示同意で非同期生成を受け付ける", async () => {
+    const { state } = await openEstimates();
+    await state.loadAiEstimationConfirmation("CODING_AGENT");
+
+    await state.requestAiEstimate(true);
+
+    expect(mocks.wbsApi.createAiEstimationRequest).toHaveBeenCalledWith(7, 2, {
+      taskVersion: 4,
+      assistanceMode: "CODING_AGENT",
+      confirmedInputSha256: "a".repeat(64),
+      confirmed: true,
+    });
+    expect(state.aiEstimationRequest.value).toEqual(pendingAiEstimationRequest);
+    expect(state.estimateSuccessMessage.value).toContain("状態を再取得");
+  });
+
+  it("明示再取得で成功提案を表示しAI revisionを既存の採否候補へ同期する", async () => {
+    mocks.wbsApi.getAiEstimationRequest.mockResolvedValue(
+      structuredClone(succeededAiEstimationRequest)
+    );
+    mocks.wbsApi.getTaskEstimates
+      .mockResolvedValueOnce(structuredClone(taskEstimateList))
+      .mockResolvedValueOnce(structuredClone(aiTaskEstimateList));
+    const { state } = await openEstimates();
+    await state.loadAiEstimationConfirmation("CODING_AGENT");
+    await state.requestAiEstimate(true);
+
+    await state.refreshAiEstimate();
+
+    expect(mocks.wbsApi.getAiEstimationRequest).toHaveBeenCalledWith(7, 2, 91);
+    expect(mocks.wbsApi.getTaskEstimates).toHaveBeenCalledTimes(2);
+    expect(state.aiEstimationRequest.value).toEqual(succeededAiEstimationRequest);
+    expect(state.estimateList.value).toEqual(aiTaskEstimateList);
+    expect(state.estimateList.value.estimates.at(-1)).toMatchObject({
+      sourceCode: "AI",
+      taskEstimateSnapshotId: 63,
+    });
+    expect(state.estimateSuccessMessage.value).toContain("採否欄");
+  });
+
+  it("確認後に入力が変わった409では古い確認を破棄し最新Taskと履歴を再取得する", async () => {
+    mocks.wbsApi.createAiEstimationRequest.mockRejectedValue(
+      new WbsApiError(409, {
+        fieldErrors: [
+          {
+            errorCode: "AI_ESTIMATION_CONFIRMATION_STALE",
+            field: "confirmedInputSha256",
+            message: "送信内容を再確認してください。",
+          },
+        ],
+      })
+    );
+    const { options, state } = await openEstimates();
+    await state.loadAiEstimationConfirmation("CODING_AGENT");
+
+    await state.requestAiEstimate(true);
+
+    expect(state.aiEstimationConfirmation.value).toBeNull();
+    expect(options.reloadPageSnapshot).toHaveBeenCalledOnce();
+    expect(mocks.wbsApi.getTaskEstimates).toHaveBeenCalledTimes(2);
+    expect(state.estimateEditorErrorMessages.value).toEqual(["送信内容を再確認してください。"]);
   });
 
   it("取得時点Task versionで採否を確定しFinal PlanとWBS Taskを同じResponseへ更新する", async () => {

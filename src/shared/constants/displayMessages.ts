@@ -351,6 +351,11 @@ export const DISPLAY_MESSAGES = {
       conflict: "Taskまたは見積もり履歴が他の操作で更新されました。最新情報を確認してください。",
       saveFailed: "Task見積もりの変更を保存できませんでした。",
       reloadFailed: "最新のTaskと見積もり履歴を再取得できませんでした。再読込してください。",
+      aiConfirmationForbidden: "このTaskでAI見積もりを生成する権限または機能資格がありません。",
+      aiConfirmationFailed: "AI見積もりの送信内容を確認できませんでした。",
+      aiRequestFailed: "AI見積もりの生成を受け付けられませんでした。",
+      aiRequestNotFound: "対象のAI見積もりRequestが見つかりません。",
+      aiStatusFailed: "AI見積もりの状態を取得できませんでした。",
     },
     workingCalendar: {
       readForbidden: "稼働日calendarを参照するpermissionがありません。",

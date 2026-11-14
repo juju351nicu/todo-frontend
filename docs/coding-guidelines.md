@@ -11,6 +11,28 @@
 - 複数機能で共用するものだけを`shared`へ置き、`shared`から個別featureへ依存させない。
 - 旧タスク管理製品から移植したコード・文言に含まれていた名称を、Frontendのソース・テスト・リポジトリ内資料へ再混入させない。比較調査で必要な場合はリポジトリ外の資料フォルダで管理する。
 
+### `interface`と`type`の使い分け
+
+「データの形・契約」は`interface`、「型のロジック・合成」は`type`を基本にする。両方で表現できること自体を理由に混在させず、用途から選ぶ。
+
+- Backend APIのRequest／Response／DTO、Vue ComponentのProps、Storeやcomposableが公開するオブジェクト契約、classが`implements`する契約は`interface`を使う。
+- union、intersection、tuple、primitive alias、関数signature、mapped／conditional type、既存型から合成した画面用データは`type`を使う。
+- API契約へ画面項目を足して使い回さない。APIの`interface`と、`API型 & { ... }`等で作る画面用`type`を分離する。
+- declaration mergingは、外部libraryのmodule augmentation等、宣言の追加が目的だと分かる場合だけ使う。同名`interface`の偶発的な分割定義には使わない。
+- `@typescript-eslint/consistent-type-definitions`は一方へ全体統一するruleなので有効化しない。レビューでは「objectだから」ではなく、その型が契約か合成かを確認する。
+- 既存コードをこの規約だけのために一括置換しない。機能変更で触れた型と新規型から適用し、無関係な差分と回帰riskを増やさない。
+
+```ts
+interface TaskResponse {
+  taskId: number;
+  title: string;
+}
+
+type TaskStatus = "PENDING" | "DONE";
+type TaskRow = TaskResponse & { status: TaskStatus; selected: boolean };
+type TaskSelectedHandler = (taskId: number) => void;
+```
+
 ## 名前
 
 コードだけを読んだ人が、何の値かを推測せずに分かる名前にする。名前で伝わることはコメントに書かない。

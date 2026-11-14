@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { WbsApiError } from "@/features/wbs/api/wbsApi";
-import { resolveWbsStandardErrorMessages } from "@/features/wbs/utils/apiErrors";
+import {
+  resolveWbsErrorMessages,
+  resolveWbsStandardErrorMessages,
+} from "@/features/wbs/utils/apiErrors";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
 
 const messages = {
@@ -72,5 +75,27 @@ describe("標準的なWBS APIエラーのmessage変換", () => {
     expect(
       resolveWbsStandardErrorMessages(new WbsApiError(500, unknownCodeResponse), messages)
     ).toEqual({ type: "messages", messages: ["失敗しました。"] });
+  });
+
+  it("AI見積もりの安定codeだけをBackend順の案内として表示する", () => {
+    const response = {
+      fieldErrors: [
+        {
+          errorCode: "AI_ESTIMATION_CONFIRMATION_STALE",
+          field: "confirmedInputSha256",
+          message: "送信内容を再確認してください。",
+        },
+        {
+          errorCode: "QUOTA_EXCEEDED",
+          field: "aiEstimation",
+          message: "生成回数を使い切りました。",
+        },
+      ],
+    };
+
+    expect(resolveWbsErrorMessages(new WbsApiError(409, response), "受付できません。")).toEqual([
+      "送信内容を再確認してください。",
+      "生成回数を使い切りました。",
+    ]);
   });
 });

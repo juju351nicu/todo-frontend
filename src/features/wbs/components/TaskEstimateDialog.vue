@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 
 import type {
+  AiEstimationConfirmationResponse,
+  AiEstimationRequestResponse,
+  AiEstimationRequestStatus,
+  EstimateAssistanceMode,
   HumanEstimateForm,
   TaskEstimateDecision,
   TaskEstimateDecisionForm,
@@ -18,6 +22,9 @@ import {
   ESTIMATE_VARIANCE_NOTE_MAX_LENGTH,
   ESTIMATE_VARIANCE_REASON_OPTIONS,
   formatEstimateAssistanceMode,
+  formatAiEstimateConfidence,
+  formatAiEstimationFailure,
+  formatAiEstimationStatus,
   formatEstimateVarianceReason,
   formatTaskEstimateDecision,
   formatTaskEstimateRange,
@@ -34,13 +41,19 @@ interface Props {
   open: boolean;
   task: WbsTask | null;
   estimateList: TaskEstimateListResponse | null;
+  aiConfirmation: AiEstimationConfirmationResponse | null;
+  aiRequest: AiEstimationRequestResponse | null;
   canCreate: boolean;
+  canGenerateAi: boolean;
   canDecide: boolean;
   canEvaluate: boolean;
   isLoading: boolean;
   isSaving: boolean;
   isDeciding: boolean;
   isEvaluating: boolean;
+  isLoadingAiConfirmation: boolean;
+  isRequestingAi: boolean;
+  isRefreshingAi: boolean;
   errorMessages: string[];
   successMessage: string;
 }
@@ -51,10 +64,20 @@ const emit = defineEmits<{
   save: [form: HumanEstimateForm];
   decide: [form: TaskEstimateDecisionForm];
   evaluate: [form: TaskEstimateOutcomeForm];
+  confirmAi: [assistanceMode: EstimateAssistanceMode];
+  requestAi: [confirmed: boolean];
+  refreshAi: [];
 }>();
 
 const isBusy = computed(
-  () => props.isLoading || props.isSaving || props.isDeciding || props.isEvaluating
+  () =>
+    props.isLoading ||
+    props.isSaving ||
+    props.isDeciding ||
+    props.isEvaluating ||
+    props.isLoadingAiConfirmation ||
+    props.isRequestingAi ||
+    props.isRefreshingAi
 );
 const dialogTitle = computed(() => formatWbsTaskDialogTitle("Task見積もり", props.task));
 const latestEstimate = computed(() => props.estimateList?.estimates.at(-1) ?? null);
@@ -82,6 +105,45 @@ const outcomeVarianceReasonOptions = computed(() => {
   }
   return reasonOptions;
 });
+const aiAssistanceMode = ref<EstimateAssistanceMode>("CODING_AGENT");
+const aiSendingConfirmed = ref(false);
+
+watch(
+  () => [props.open, props.task?.taskId, props.aiConfirmation?.inputSha256] as const,
+  () => {
+    aiSendingConfirmed.value = false;
+  }
+);
+
+/** AI Request状態をNuxt UIのsemantic colorへ変換する。 */
+const aiStatusColor = (status: AiEstimationRequestStatus) => {
+  switch (status) {
+    case "SUCCEEDED":
+      return "success";
+    case "FAILED":
+      return "error";
+    case "CANCELED":
+      return "neutral";
+    case "RETRY_WAIT":
+      return "warning";
+    default:
+      return "info";
+  }
+};
+
+/** 送信内容確認APIを選択中のprovider非依存支援modeで呼ぶ。 */
+const submitAiConfirmation = (): void => {
+  if (!isBusy.value && props.canGenerateAi) {
+    emit("confirmAi", aiAssistanceMode.value);
+  }
+};
+
+/** 画面の明示同意状態を生成受付処理へ渡す。 */
+const submitAiRequest = (): void => {
+  if (!isBusy.value && props.canGenerateAi) {
+    emit("requestAi", aiSendingConfirmed.value);
+  }
+};
 
 /** 採否監査が参照する見積もりrevisionを表示する。 */
 const formatDecisionRevision = (decision: TaskEstimateDecision): string => {
@@ -294,6 +356,223 @@ const outcomeVarianceReasonValue = computed({
           このTaskの見積もり履歴は参照できますが、Human
           Estimateを追加する権限または状態ではありません。
         </StatusAlert>
+
+        <UCard v-if="canGenerateAi" variant="outline" class="mb-5">
+          <template #header>
+            <div>
+              <div class="text-base font-normal">AI Estimateを生成</div>
+              <p class="mt-1 mb-0 text-xs text-muted">
+                外部AIへ送る値を先に確認します。生成結果は提案として履歴へ追加され、Final
+                Planは採否を確定するまで変わりません。
+              </p>
+            </div>
+          </template>
+
+          <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-3 md:flex-row md:items-end">
+              <UFormField label="見積もりで仮定するAI支援" class="flex-1">
+                <USelect
+                  v-model="aiAssistanceMode"
+                  :items="ESTIMATE_ASSISTANCE_MODE_OPTIONS"
+                  label-key="title"
+                  value-key="value"
+                  :disabled="isBusy"
+                  class="w-full"
+                />
+              </UFormField>
+              <UButton
+                variant="outline"
+                icon="i-mdi-shield-search-outline"
+                :loading="isLoadingAiConfirmation"
+                :disabled="isBusy"
+                @click="submitAiConfirmation"
+              >
+                送信内容を確認
+              </UButton>
+            </div>
+
+            <template v-if="aiConfirmation">
+              <StatusAlert type="warning" variant="soft">
+                次の内容を{{ aiConfirmation.providerCode }}（{{
+                  aiConfirmation.modelIdentifier
+                }}）へ送信します。 provider側では最大{{
+                  aiConfirmation.providerMaximumRetentionDays
+                }}日、Work Managementでは入力を{{
+                  aiConfirmation.workManagementInputRetentionDays
+                }}日保持します。
+              </StatusAlert>
+
+              <dl class="grid gap-3 rounded-sm border border-default p-4 md:grid-cols-3">
+                <div>
+                  <dt class="text-xs text-muted">残り生成回数</dt>
+                  <dd class="mt-1 font-medium">
+                    {{ aiConfirmation.quotaRemaining }} / {{ aiConfirmation.quotaLimit }}回
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">quota期間終了</dt>
+                  <dd class="mt-1">{{ formatShortDateTime(aiConfirmation.quotaPeriodEnd) }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">確認対象Task version</dt>
+                  <dd class="mt-1">{{ aiConfirmation.taskVersion }}</dd>
+                </div>
+              </dl>
+
+              <div class="rounded-sm border border-default p-4">
+                <h3 class="text-sm font-medium">外部AIへ送るTask情報</h3>
+                <dl class="mt-3 grid gap-x-5 gap-y-3 md:grid-cols-2">
+                  <div>
+                    <dt class="text-xs text-muted">Task名</dt>
+                    <dd class="mt-1 break-words">{{ aiConfirmation.input.taskTitle }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">種別 / 優先度</dt>
+                    <dd class="mt-1">
+                      {{ aiConfirmation.input.taskType }} / {{ aiConfirmation.input.priority }}
+                    </dd>
+                  </div>
+                  <div class="md:col-span-2">
+                    <dt class="text-xs text-muted">説明</dt>
+                    <dd class="mt-1 whitespace-pre-wrap break-words">
+                      {{ aiConfirmation.input.taskDescription || "未入力" }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">予定期間</dt>
+                    <dd class="mt-1">
+                      {{ aiConfirmation.input.plannedStartDate || "未入力" }} 〜
+                      {{ aiConfirmation.input.dueDate || "未入力" }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">現在のFinal Plan</dt>
+                    <dd class="mt-1">
+                      {{ formatEffortMinutes(aiConfirmation.input.finalPlannedEffortMinutes) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">親Task</dt>
+                    <dd class="mt-1">{{ aiConfirmation.input.parentTaskTitle || "なし" }}</dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">直接の子Task</dt>
+                    <dd class="mt-1">
+                      {{ aiConfirmation.input.childTaskTitles.join("、") || "なし" }}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div class="mt-4">
+                  <div class="text-xs text-muted">接続する依存Task</div>
+                  <ul
+                    v-if="aiConfirmation.input.dependencies.length"
+                    class="mt-2 space-y-1 text-sm"
+                  >
+                    <li
+                      v-for="dependency in aiConfirmation.input.dependencies"
+                      :key="`${dependency.direction}-${dependency.taskTitle}`"
+                    >
+                      {{ dependency.direction === "PREDECESSOR" ? "先行" : "後続" }}：{{
+                        dependency.taskTitle
+                      }}（{{ dependency.statusName }}・{{
+                        formatEffortMinutes(dependency.plannedEffortMinutes)
+                      }}）
+                    </li>
+                  </ul>
+                  <div v-else class="mt-1 text-sm">なし</div>
+                </div>
+              </div>
+
+              <UCheckbox
+                :model-value="aiSendingConfirmed"
+                :disabled="isBusy"
+                label="送信先、上記の送信内容、保持期間を確認し、外部AIへの送信に同意します。"
+                @update:model-value="aiSendingConfirmed = $event === true"
+              />
+              <div class="flex justify-end">
+                <UButton
+                  color="primary"
+                  icon="i-mdi-auto-fix"
+                  :loading="isRequestingAi"
+                  :disabled="isBusy || !aiSendingConfirmed || aiConfirmation.quotaRemaining <= 0"
+                  @click="submitAiRequest"
+                >
+                  AI見積もりを生成
+                </UButton>
+              </div>
+            </template>
+
+            <template v-if="aiRequest">
+              <div class="rounded-sm border border-default p-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-medium">
+                      AI見積もりRequest #{{ aiRequest.requestId }}
+                    </h3>
+                    <UBadge :color="aiStatusColor(aiRequest.statusCode)" size="sm">
+                      {{ formatAiEstimationStatus(aiRequest.statusCode) }}
+                    </UBadge>
+                  </div>
+                  <UButton
+                    variant="outline"
+                    size="sm"
+                    icon="i-mdi-refresh"
+                    :loading="isRefreshingAi"
+                    :disabled="isBusy"
+                    @click="emit('refreshAi')"
+                  >
+                    状態を再取得
+                  </UButton>
+                </div>
+                <div class="mt-3 grid gap-3 text-sm md:grid-cols-3">
+                  <div>更新：{{ formatShortDateTime(aiRequest.updatedAt) }}</div>
+                  <div>再試行：{{ aiRequest.retryCount }}回</div>
+                  <div>残り生成回数：{{ aiRequest.quotaRemaining }}回</div>
+                </div>
+                <StatusAlert v-if="aiRequest.failureCode" type="error" class="mt-3">
+                  {{ formatAiEstimationFailure(aiRequest.failureCode) }}
+                  <span class="ms-1 text-xs">（{{ aiRequest.failureCode }}）</span>
+                </StatusAlert>
+
+                <div v-if="aiRequest.proposal" class="mt-4 rounded-sm bg-muted p-4">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h4 class="font-medium">AI提案 revision {{ aiRequest.proposal.revision }}</h4>
+                    <UBadge variant="outline" size="sm">
+                      確信度：{{ formatAiEstimateConfidence(aiRequest.proposal.confidence) }}
+                    </UBadge>
+                  </div>
+                  <div class="mt-2 text-lg font-medium">
+                    {{ formatEffortMinutes(aiRequest.proposal.estimateLowMinutes) }} /
+                    {{ formatEffortMinutes(aiRequest.proposal.estimateLikelyMinutes) }} /
+                    {{ formatEffortMinutes(aiRequest.proposal.estimateHighMinutes) }}
+                  </div>
+                  <div class="mt-1 text-xs text-muted">楽観 / 最頻 / 悲観</div>
+                  <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <div>
+                      <h5 class="text-sm font-medium">根拠</h5>
+                      <ul class="mt-2 list-disc space-y-1 ps-5 text-sm">
+                        <li v-for="item in aiRequest.proposal.rationale" :key="item">{{ item }}</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h5 class="text-sm font-medium">不確定要素</h5>
+                      <ul
+                        v-if="aiRequest.proposal.uncertainties.length"
+                        class="mt-2 list-disc space-y-1 ps-5 text-sm"
+                      >
+                        <li v-for="item in aiRequest.proposal.uncertainties" :key="item">
+                          {{ item }}
+                        </li>
+                      </ul>
+                      <div v-else class="mt-2 text-sm">なし</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </UCard>
 
         <UCard v-if="canDecide && undecidedEstimates.length" variant="outline" class="mb-5">
           <template #header>

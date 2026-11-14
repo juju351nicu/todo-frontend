@@ -1,8 +1,12 @@
 import type {
+  AiEstimationConfirmationResponse,
+  AiEstimationRequestCreateRequest,
+  AiEstimationRequestResponse,
   EarnedValueResponse,
   EstimateAccuracyMetric,
   EstimateAccuracyResponse,
   EstimateDecisionSummary,
+  EstimateAssistanceMode,
   HumanEstimateCreateRequest,
   TaskDependencyCreateRequest,
   TaskDependencyListResponse,
@@ -142,6 +146,74 @@ const createHumanEstimate = async (
   );
   await ensureSuccess(response);
   return normalizeTaskEstimateList((await response.json()) as TaskEstimateListResponse);
+};
+
+/**
+ * 外部AIへ送る固定allowlist値、送信先、保持期間、quotaを生成前に取得する。
+ * この参照だけでは外部providerへ送信しない。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param assistanceMode AI見積もりで仮定するprovider非依存の支援mode
+ * @returns 明示確認後の生成Requestへ添付する入力hashを含む送信内容
+ * @throws WbsApiError 入力不正、認可・機能資格不足、対象なし、archive状態またはBackendエラーの場合
+ */
+const getAiEstimationConfirmation = async (
+  projectId: number,
+  taskId: number,
+  assistanceMode: EstimateAssistanceMode
+): Promise<AiEstimationConfirmationResponse> => {
+  const query = new URLSearchParams({ assistanceMode });
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/ai-estimation-confirmation?${query}`
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as AiEstimationConfirmationResponse;
+};
+
+/**
+ * 確認済み入力hashを添えて非同期AI見積もりRequestを受け付ける。
+ * 共通HTTP clientがSession CookieとCSRF headerを設定する。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param request 確認時Task version、支援mode、入力hash、明示確認
+ * @returns 202受付直後のRequest状態
+ * @throws WbsApiError 入力不正、認可・資格不足、対象なし、確認内容・quota・同時実行競合またはBackendエラーの場合
+ */
+const createAiEstimationRequest = async (
+  projectId: number,
+  taskId: number,
+  request: AiEstimationRequestCreateRequest
+): Promise<AiEstimationRequestResponse> => {
+  const response = await HttpClient.postRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/ai-estimation-requests`,
+    request
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as AiEstimationRequestResponse;
+};
+
+/**
+ * 非同期AI見積もりRequestの現在状態と、成功時の構造化提案を取得する。
+ * 定期pollingは行わず、利用者の明示操作から呼ぶ。
+ *
+ * @param projectId 見積もり対象Taskが所属するProject ID
+ * @param taskId Board・WBSと共通のTask ID
+ * @param requestId 受付時にBackendが発行した論理Request ID
+ * @returns 安全な失敗code、quota残数、成功時のAI提案
+ * @throws WbsApiError 認可不足、対象なしまたはBackendエラーの場合
+ */
+const getAiEstimationRequest = async (
+  projectId: number,
+  taskId: number,
+  requestId: number
+): Promise<AiEstimationRequestResponse> => {
+  const response = await HttpClient.getRequest(
+    `${API_PATHS.PROJECTS}/${projectId}/wbs/tasks/${taskId}/ai-estimation-requests/${requestId}`
+  );
+  await ensureSuccess(response);
+  return (await response.json()) as AiEstimationRequestResponse;
 };
 
 /**
@@ -905,6 +977,7 @@ export default {
   createProjectWorkingDay,
   createTaskDependency,
   createHumanEstimate,
+  createAiEstimationRequest,
   createTaskEffortPlan,
   createTaskWorkLog,
   deleteTaskDependency,
@@ -916,6 +989,8 @@ export default {
   createTaskEstimateOutcome,
   downloadWbsReport,
   getTaskDependencies,
+  getAiEstimationConfirmation,
+  getAiEstimationRequest,
   getTaskEstimates,
   getEarnedValueMetrics,
   getEstimateAccuracy,

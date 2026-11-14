@@ -66,6 +66,120 @@ export type TaskEstimateSource = "HUMAN" | "AI";
 /** 見積もりで前提としたAI支援方法。特定providerやmodelは表さない。 */
 export type EstimateAssistanceMode = "NONE" | "GENERAL_AI" | "CODING_AGENT";
 
+/** 非同期AI見積もりRequestの公開状態。BackendのAiEstimationRequestStatusと一致する。 */
+export type AiEstimationRequestStatus =
+  "PENDING" | "PROCESSING" | "RETRY_WAIT" | "SUCCEEDED" | "FAILED" | "CANCELED";
+
+/** AI提案の確信度。BackendのAiEstimateConfidenceと一致する。 */
+export type AiEstimateConfidence = "LOW" | "MEDIUM" | "HIGH";
+
+/** 外部AIへ送る依存Taskが、見積もり対象から見て先行か後続かを表す。 */
+export type AiEstimationDependencyDirection = "PREDECESSOR" | "SUCCESSOR";
+
+/** AI見積もりRequestまたは受付拒否で共有する秘密非公開の安定失敗code。 */
+export type AiEstimationFailureCode =
+  | "INPUT_INVALID"
+  | "INPUT_TOKEN_LIMIT_EXCEEDED"
+  | "FEATURE_NOT_ENTITLED"
+  | "QUOTA_EXCEEDED"
+  | "RATE_LIMIT_EXCEEDED"
+  | "COST_LIMIT_REACHED"
+  | "PROVIDER_CONFIGURATION_INVALID"
+  | "PROVIDER_TIMEOUT"
+  | "PROVIDER_RATE_LIMITED"
+  | "PROVIDER_TEMPORARY_FAILURE"
+  | "PROVIDER_AUTHENTICATION_FAILED"
+  | "PROVIDER_REQUEST_REJECTED"
+  | "PROVIDER_REFUSAL"
+  | "OUTPUT_INCOMPLETE"
+  | "OUTPUT_SCHEMA_INVALID"
+  | "PROVIDER_RESPONSE_INVALID"
+  | "RETRY_EXHAUSTED"
+  | "INTERNAL_ERROR";
+
+/** 外部AIへ送信する依存Taskの確認用契約。内部IDは含めない。 */
+export interface AiEstimationDependencyConfirmation {
+  direction: AiEstimationDependencyDirection;
+  taskTitle: string;
+  statusName: string;
+  /** 依存Taskの正式予定工数（分）。 */
+  plannedEffortMinutes: number;
+}
+
+/** 外部AIへ送信する固定allowlist入力の確認用契約。 */
+export interface AiEstimationInputConfirmation {
+  taskTitle: string;
+  taskDescription: string | null;
+  taskType: WbsTaskType;
+  priority: WbsTaskPriority;
+  plannedStartDate: string | null;
+  dueDate: string | null;
+  finalPlannedEffortMinutes: number;
+  assistanceMode: EstimateAssistanceMode;
+  parentTaskTitle: string | null;
+  childTaskTitles: string[];
+  dependencies: AiEstimationDependencyConfirmation[];
+}
+
+/** AI見積もり生成前に送信範囲、保持期間、quotaを確認するAPI Response。 */
+export interface AiEstimationConfirmationResponse {
+  projectId: number;
+  taskId: number;
+  taskVersion: number;
+  assistanceMode: EstimateAssistanceMode;
+  providerCode: string;
+  modelIdentifier: string;
+  providerMaximumRetentionDays: number;
+  workManagementInputRetentionDays: number;
+  quotaLimit: number;
+  quotaRemaining: number;
+  /** quota期間の終了時刻（exclusive）。 */
+  quotaPeriodEnd: string;
+  /** 正規化した確認対象入力のSHA-256 lowercase hex。 */
+  inputSha256: string;
+  input: AiEstimationInputConfirmation;
+}
+
+/** 送信確認済み入力から非同期AI見積もりを受け付けるAPI Request。 */
+export interface AiEstimationRequestCreateRequest {
+  taskVersion: number;
+  assistanceMode: EstimateAssistanceMode;
+  confirmedInputSha256: string;
+  confirmed: true;
+}
+
+/** 成功したAI見積もりRequestが保存した変更不能な構造化提案。 */
+export interface AiEstimationProposalResponse {
+  taskEstimateSnapshotId: number;
+  revision: number;
+  estimateLowMinutes: number;
+  estimateLikelyMinutes: number;
+  estimateHighMinutes: number;
+  confidence: AiEstimateConfidence;
+  rationale: string[];
+  uncertainties: string[];
+}
+
+/** 非同期AI見積もりRequestの安全な公開状態を返すAPI Response。 */
+export interface AiEstimationRequestResponse {
+  requestId: number;
+  projectId: number;
+  taskId: number;
+  assistanceMode: EstimateAssistanceMode;
+  sourceTaskVersion: number;
+  providerCode: string;
+  modelIdentifier: string;
+  statusCode: AiEstimationRequestStatus;
+  providerDispatched: boolean;
+  retryCount: number;
+  failureCode: AiEstimationFailureCode | null;
+  quotaRemaining: number;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+  proposal: AiEstimationProposalResponse | null;
+}
+
 /** 見積もりrevisionの採否とFinal Plan反映方法。BackendのEstimateDecisionCodeと一致する。 */
 export type TaskEstimateDecisionCode = "ADOPTED" | "ADJUSTED" | "REJECTED";
 
@@ -80,13 +194,13 @@ export type EstimateVarianceReasonCode =
   | "INTERRUPTION"
   | "OTHER";
 
-/** Human Estimate入力欄で選択できるAI支援方法。 */
-export interface EstimateAssistanceModeOption {
+/** Human Estimate入力欄で選択できる画面用のAI支援方法。 */
+export type EstimateAssistanceModeOption = {
   /** 利用者へ表示する支援方法名。 */
   title: string;
   /** Backendへ送る変更不可コード。 */
   value: EstimateAssistanceMode;
-}
+};
 
 /** Taskに追記された変更不能な見積もりrevision。 */
 export interface TaskEstimateSnapshot {
@@ -184,8 +298,8 @@ export interface TaskEstimateListResponse {
   outcomes: TaskEstimateOutcome[];
 }
 
-/** Human Estimate Dialogが保持する、Backend型へ変換する前の入力値。 */
-export interface HumanEstimateForm {
+/** Human Estimate Dialogが保持する、Backend型へ変換する前の画面用入力値。 */
+export type HumanEstimateForm = {
   assistanceMode: EstimateAssistanceMode;
   /** 単一点の場合はnull。 */
   estimateLowMinutes: number | null;
@@ -193,7 +307,7 @@ export interface HumanEstimateForm {
   estimateLikelyMinutes: number | null;
   /** 単一点の場合はnull。 */
   estimateHighMinutes: number | null;
-}
+};
 
 /** Human Estimate登録APIへ送る検証済みRequest。 */
 export interface HumanEstimateCreateRequest {
@@ -205,14 +319,14 @@ export interface HumanEstimateCreateRequest {
   taskVersion: number;
 }
 
-/** 見積もり採否欄が保持する、Backend型へ変換する前の入力値。 */
-export interface TaskEstimateDecisionForm {
+/** 見積もり採否欄が保持する、Backend型へ変換する前の画面用入力値。 */
+export type TaskEstimateDecisionForm = {
   /** 採否対象の見積もりsnapshot ID。未選択ではnull。 */
   taskEstimateSnapshotId: number | null;
   decisionCode: TaskEstimateDecisionCode;
   /** ADJUSTEDだけで使用する分単位のFinal Plan。 */
   adjustedPlannedEffortMinutes: number | null;
-}
+};
 
 /** 見積もり採否確定APIへ送る検証済みRequest。 */
 export interface TaskEstimateDecisionCreateRequest {
@@ -222,15 +336,15 @@ export interface TaskEstimateDecisionCreateRequest {
   taskVersion: number;
 }
 
-/** 完了Task評価欄が保持する、Backend型へ変換する前の入力値。 */
-export interface TaskEstimateOutcomeForm {
+/** 完了Task評価欄が保持する、Backend型へ変換する前の画面用入力値。 */
+export type TaskEstimateOutcomeForm = {
   /** 実際の作業で利用したprovider非依存のAI支援方法。 */
   actualAssistanceMode: EstimateAssistanceMode;
   /** Final PlanとActualの誤差理由。未選択の場合はnull。 */
   varianceReasonCode: EstimateVarianceReasonCode | null;
   /** 誤差理由の補足。入力欄の値を保持するため空文字を許可する。 */
   varianceNote: string;
-}
+};
 
 /** 完了Task評価登録APIへ送る検証・正規化済みRequest。 */
 export interface TaskEstimateOutcomeCreateRequest {

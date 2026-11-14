@@ -1,4 +1,7 @@
 import type {
+  AiEstimateConfidence,
+  AiEstimationFailureCode,
+  AiEstimationRequestStatus,
   EstimateAssistanceMode,
   EstimateAssistanceModeOption,
   EstimateVarianceReasonCode,
@@ -70,6 +73,42 @@ const ESTIMATE_VARIANCE_REASON_LABELS: Readonly<Record<EstimateVarianceReasonCod
   Object.fromEntries(
     ESTIMATE_VARIANCE_REASON_OPTIONS.map((option) => [option.value, option.title])
   ) as Record<EstimateVarianceReasonCode, string>;
+
+const AI_ESTIMATION_STATUS_LABELS: Readonly<Record<AiEstimationRequestStatus, string>> = {
+  PENDING: "実行待ち",
+  PROCESSING: "実行中",
+  RETRY_WAIT: "再試行待ち",
+  SUCCEEDED: "成功",
+  FAILED: "失敗",
+  CANCELED: "取消",
+};
+
+const AI_ESTIMATE_CONFIDENCE_LABELS: Readonly<Record<AiEstimateConfidence, string>> = {
+  LOW: "低",
+  MEDIUM: "中",
+  HIGH: "高",
+};
+
+const AI_ESTIMATION_FAILURE_LABELS: Readonly<Record<AiEstimationFailureCode, string>> = {
+  INPUT_INVALID: "送信入力が不正です。送信内容を再確認してください。",
+  INPUT_TOKEN_LIMIT_EXCEEDED: "送信入力がtoken上限を超えました。",
+  FEATURE_NOT_ENTITLED: "AI見積もり機能の利用対象ではありません。",
+  QUOTA_EXCEEDED: "契約期間の生成回数を使い切りました。",
+  RATE_LIMIT_EXCEEDED: "短時間の生成回数上限に達しました。時間をおいてください。",
+  COST_LIMIT_REACHED: "安全のため原価上限で生成を停止しました。",
+  PROVIDER_CONFIGURATION_INVALID: "AI providerを現在利用できません。",
+  PROVIDER_TIMEOUT: "AI providerが時間内に応答しませんでした。",
+  PROVIDER_RATE_LIMITED: "AI providerが一時的に混雑しています。",
+  PROVIDER_TEMPORARY_FAILURE: "AI providerで一時的な障害が発生しました。",
+  PROVIDER_AUTHENTICATION_FAILED: "AI providerの認証に失敗しました。",
+  PROVIDER_REQUEST_REJECTED: "AI providerが送信内容を受け付けませんでした。",
+  PROVIDER_REFUSAL: "AI providerが回答を生成できませんでした。",
+  OUTPUT_INCOMPLETE: "AI providerの出力が完了しませんでした。",
+  OUTPUT_SCHEMA_INVALID: "AI providerの出力を安全な提案として検証できませんでした。",
+  PROVIDER_RESPONSE_INVALID: "AI providerの応答を検証できませんでした。",
+  RETRY_EXHAUSTED: "一時障害の自動再試行上限に達しました。",
+  INTERNAL_ERROR: "AI見積もりの保存処理に失敗しました。",
+};
 
 /** 新しいHuman Estimate用の空Formを作る。 */
 export const buildHumanEstimateForm = (): HumanEstimateForm => ({
@@ -233,6 +272,18 @@ export const formatTaskEstimateDecision = (decision: TaskEstimateDecisionCode): 
 /** 誤差理由codeを画面表示名へ変換する。 */
 export const formatEstimateVarianceReason = (reason: EstimateVarianceReasonCode): string =>
   ESTIMATE_VARIANCE_REASON_LABELS[reason];
+
+/** 非同期AI見積もりRequestの状態codeを画面表示名へ変換する。 */
+export const formatAiEstimationStatus = (status: AiEstimationRequestStatus): string =>
+  AI_ESTIMATION_STATUS_LABELS[status];
+
+/** AI提案の確信度codeを画面表示名へ変換する。 */
+export const formatAiEstimateConfidence = (confidence: AiEstimateConfidence): string =>
+  AI_ESTIMATE_CONFIDENCE_LABELS[confidence];
+
+/** 秘密非公開の安定失敗codeを利用者向けの固定案内へ変換する。 */
+export const formatAiEstimationFailure = (failureCode: AiEstimationFailureCode): string =>
+  AI_ESTIMATION_FAILURE_LABELS[failureCode];
 
 /** 単一点または3点の見積もりを分・時間の表示へ変換する。 */
 export const formatTaskEstimateRange = (estimate: Readonly<TaskEstimateSnapshot>): string =>

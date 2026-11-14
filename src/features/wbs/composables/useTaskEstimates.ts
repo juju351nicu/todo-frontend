@@ -6,6 +6,9 @@ import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import type { WbsPageContext } from "@/features/wbs/composables/wbsPageContext";
 import type {
+  AiEstimationConfirmationResponse,
+  AiEstimationRequestResponse,
+  EstimateAssistanceMode,
   HumanEstimateForm,
   TaskEstimateDecisionForm,
   TaskEstimateListResponse,
@@ -26,6 +29,7 @@ import {
   validateTaskEstimateOutcomeForm,
 } from "@/features/wbs/utils/taskEstimate";
 import { DISPLAY_MESSAGES } from "@/shared/constants/displayMessages";
+import { hasApiFieldError } from "@/shared/utils/apiError";
 
 /** `useTaskEstimates`が競合回復を画面全体へ委ねる操作。 */
 export interface UseTaskEstimatesOptions {
@@ -62,6 +66,11 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   const isSavingEstimate = ref(false);
   const isDecidingEstimate = ref(false);
   const isEvaluatingEstimate = ref(false);
+  const aiEstimationConfirmation = ref<AiEstimationConfirmationResponse | null>(null);
+  const aiEstimationRequest = ref<AiEstimationRequestResponse | null>(null);
+  const isLoadingAiConfirmation = ref(false);
+  const isRequestingAiEstimate = ref(false);
+  const isRefreshingAiEstimate = ref(false);
   /** 競合再取得後もWBSに存在するactive Taskか。archive後の履歴参照ではfalse。 */
   const isSelectedTaskAvailableForCreate = ref(false);
 
@@ -108,6 +117,9 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
         estimateTask.value.assigneeAccountId === userStore.accountId)
   );
 
+  /** Human Estimate追加と同じTask更新境界で、外部AIへの送信確認・生成を開始できるか。 */
+  const canGenerateAiEstimate = computed(() => canCreateHumanEstimate.value);
+
   /** Human Estimate追加と同じTask更新境界で、選択中revisionの採否を確定できるか。 */
   const canDecideEstimate = computed(() => canCreateHumanEstimate.value);
 
@@ -126,7 +138,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       isLoadingEstimates.value ||
       isSavingEstimate.value ||
       isDecidingEstimate.value ||
-      isEvaluatingEstimate.value
+      isEvaluatingEstimate.value ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value
     ) {
       return;
     }
@@ -146,6 +161,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     estimateList.value = null;
     estimateEditorErrorMessages.value = [];
     estimateSuccessMessage.value = "";
+    aiEstimationConfirmation.value = null;
+    if (aiEstimationRequest.value?.taskId !== taskId) {
+      aiEstimationRequest.value = null;
+    }
     isSelectedTaskAvailableForCreate.value = true;
     isEstimateDialogOpen.value = true;
     await loadSelectedTaskEstimates();
@@ -188,7 +207,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       !isLoadingEstimates.value &&
       !isSavingEstimate.value &&
       !isDecidingEstimate.value &&
-      !isEvaluatingEstimate.value
+      !isEvaluatingEstimate.value &&
+      !isLoadingAiConfirmation.value &&
+      !isRequestingAiEstimate.value &&
+      !isRefreshingAiEstimate.value
     ) {
       discardEstimateDialog();
     }
@@ -202,6 +224,214 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     estimateEditorErrorMessages.value = [];
     estimateSuccessMessage.value = "";
     isSelectedTaskAvailableForCreate.value = false;
+    aiEstimationConfirmation.value = null;
+    aiEstimationRequest.value = null;
+  };
+
+  /**
+   * 外部送信は行わず、選択した支援modeのallowlist入力、送信先、保持期間、quotaを取得する。
+   * 新しい確認を始めた時点で、以前のRequest表示は破棄する。
+   */
+  const loadAiEstimationConfirmation = async (
+    assistanceMode: EstimateAssistanceMode
+  ): Promise<void> => {
+    const task = estimateTask.value;
+    const projectId = context.projectId.value;
+    if (
+      task === null ||
+      projectId === null ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
+      return;
+    }
+    if (!canGenerateAiEstimate.value) {
+      estimateEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.wbs.taskEstimate.aiConfirmationForbidden,
+      ];
+      return;
+    }
+
+    isLoadingAiConfirmation.value = true;
+    estimateEditorErrorMessages.value = [];
+    estimateSuccessMessage.value = "";
+    aiEstimationConfirmation.value = null;
+    aiEstimationRequest.value = null;
+    try {
+      aiEstimationConfirmation.value = await WbsApi.getAiEstimationConfirmation(
+        projectId,
+        task.taskId,
+        assistanceMode
+      );
+    } catch (error: unknown) {
+      await handleAiEstimationReadError(error, "confirmation");
+    } finally {
+      isLoadingAiConfirmation.value = false;
+    }
+  };
+
+  /** 明示確認済みの入力hashとTask versionを使い、非同期AI見積もりRequestを1回だけ送る。 */
+  const requestAiEstimate = async (confirmed: boolean): Promise<void> => {
+    const task = estimateTask.value;
+    const confirmation = aiEstimationConfirmation.value;
+    const projectId = context.projectId.value;
+    if (
+      task === null ||
+      confirmation === null ||
+      projectId === null ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
+      return;
+    }
+    if (!canGenerateAiEstimate.value) {
+      estimateEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.wbs.taskEstimate.aiConfirmationForbidden,
+      ];
+      return;
+    }
+    if (!confirmed) {
+      estimateEditorErrorMessages.value = [
+        "送信先、送信内容、保持期間を確認してから同意してください。",
+      ];
+      return;
+    }
+
+    isRequestingAiEstimate.value = true;
+    estimateEditorErrorMessages.value = [];
+    estimateSuccessMessage.value = "";
+    try {
+      aiEstimationRequest.value = await WbsApi.createAiEstimationRequest(projectId, task.taskId, {
+        taskVersion: confirmation.taskVersion,
+        assistanceMode: confirmation.assistanceMode,
+        confirmedInputSha256: confirmation.inputSha256,
+        confirmed: true,
+      });
+      estimateSuccessMessage.value =
+        "AI見積もりRequestを受け付けました。時間をおいて状態を再取得してください。";
+      await synchronizeSucceededAiProposal();
+    } catch (error: unknown) {
+      await handleAiEstimationMutationError(error);
+    } finally {
+      isRequestingAiEstimate.value = false;
+    }
+  };
+
+  /** 利用者の明示操作で現在状態を再取得し、成功時はAI Estimate履歴も同期する。 */
+  const refreshAiEstimate = async (): Promise<void> => {
+    const task = estimateTask.value;
+    const request = aiEstimationRequest.value;
+    const projectId = context.projectId.value;
+    if (
+      task === null ||
+      request === null ||
+      projectId === null ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value ||
+      isSavingEstimate.value ||
+      isDecidingEstimate.value ||
+      isEvaluatingEstimate.value
+    ) {
+      return;
+    }
+
+    isRefreshingAiEstimate.value = true;
+    estimateEditorErrorMessages.value = [];
+    estimateSuccessMessage.value = "";
+    try {
+      aiEstimationRequest.value = await WbsApi.getAiEstimationRequest(
+        projectId,
+        task.taskId,
+        request.requestId
+      );
+      await synchronizeSucceededAiProposal();
+    } catch (error: unknown) {
+      await handleAiEstimationReadError(error, "status");
+    } finally {
+      isRefreshingAiEstimate.value = false;
+    }
+  };
+
+  /** 成功したAI提案を既存の変更不能な見積もり履歴へ反映し、採否UIの候補にする。 */
+  const synchronizeSucceededAiProposal = async (): Promise<void> => {
+    const task = estimateTask.value;
+    const request = aiEstimationRequest.value;
+    const projectId = context.projectId.value;
+    if (
+      task === null ||
+      request?.statusCode !== "SUCCEEDED" ||
+      request.proposal === null ||
+      projectId === null
+    ) {
+      return;
+    }
+    applyEstimateList(await WbsApi.getTaskEstimates(projectId, task.taskId));
+    estimateSuccessMessage.value =
+      "AI提案を取得しました。内容を確認し、下の採否欄でFinal Planへの反映を判断してください。";
+  };
+
+  /** AI送信確認・状態参照の失敗をDialog案内またはSession失効処理へ変換する。 */
+  const handleAiEstimationReadError = async (
+    error: unknown,
+    operation: "confirmation" | "status"
+  ): Promise<void> => {
+    const result = resolveWbsStandardErrorMessages(error, {
+      forbidden: DISPLAY_MESSAGES.wbs.taskEstimate.aiConfirmationForbidden,
+      notFound:
+        operation === "status"
+          ? DISPLAY_MESSAGES.wbs.taskEstimate.aiRequestNotFound
+          : DISPLAY_MESSAGES.wbs.taskEstimate.resourceNotFound,
+      conflict: DISPLAY_MESSAGES.wbs.taskEstimate.conflict,
+      failed:
+        operation === "status"
+          ? DISPLAY_MESSAGES.wbs.taskEstimate.aiStatusFailed
+          : DISPLAY_MESSAGES.wbs.taskEstimate.aiConfirmationFailed,
+    });
+    if (result.type === "unauthorized") {
+      await context.handleUnauthorized();
+      return;
+    }
+    estimateEditorErrorMessages.value = result.messages;
+  };
+
+  /** AI生成受付の競合を、再確認が必要な変更とquota等の受付拒否に分けて扱う。 */
+  const handleAiEstimationMutationError = async (error: unknown): Promise<void> => {
+    if (!(error instanceof WbsApiError)) {
+      estimateEditorErrorMessages.value = [DISPLAY_MESSAGES.common.connectionFailed];
+      return;
+    }
+    if (error.status === 401) {
+      await context.handleUnauthorized();
+      return;
+    }
+    if (error.status === 403) {
+      estimateEditorErrorMessages.value = [
+        DISPLAY_MESSAGES.wbs.taskEstimate.aiConfirmationForbidden,
+      ];
+      return;
+    }
+    estimateEditorErrorMessages.value = resolveWbsErrorMessages(
+      error,
+      error.status === 404
+        ? DISPLAY_MESSAGES.wbs.taskEstimate.resourceNotFound
+        : DISPLAY_MESSAGES.wbs.taskEstimate.aiRequestFailed
+    );
+    if (
+      error.status === 409 &&
+      hasApiFieldError(error.errorResponse, "AI_ESTIMATION_CONFIRMATION_STALE")
+    ) {
+      aiEstimationConfirmation.value = null;
+      await reloadTaskAndEstimatesAfterConflict();
+    }
   };
 
   /**
@@ -217,7 +447,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       projectId === null ||
       isSavingEstimate.value ||
       isDecidingEstimate.value ||
-      isEvaluatingEstimate.value
+      isEvaluatingEstimate.value ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value
     ) {
       return;
     }
@@ -263,7 +496,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       projectId === null ||
       isSavingEstimate.value ||
       isDecidingEstimate.value ||
-      isEvaluatingEstimate.value
+      isEvaluatingEstimate.value ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value
     ) {
       return;
     }
@@ -318,7 +554,10 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
       projectId === null ||
       isSavingEstimate.value ||
       isDecidingEstimate.value ||
-      isEvaluatingEstimate.value
+      isEvaluatingEstimate.value ||
+      isLoadingAiConfirmation.value ||
+      isRequestingAiEstimate.value ||
+      isRefreshingAiEstimate.value
     ) {
       return;
     }
@@ -421,9 +660,12 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
   };
 
   return {
+    aiEstimationConfirmation,
+    aiEstimationRequest,
     canCreateHumanEstimate,
     canDecideEstimate,
     canEvaluateEstimate,
+    canGenerateAiEstimate,
     closeEstimateDialog,
     discardEstimateDialog,
     estimateEditorErrorMessages,
@@ -434,8 +676,14 @@ export const useTaskEstimates = (context: WbsPageContext, options: UseTaskEstima
     isLoadingEstimates,
     isDecidingEstimate,
     isEvaluatingEstimate,
+    isLoadingAiConfirmation,
+    isRefreshingAiEstimate,
+    isRequestingAiEstimate,
     isSavingEstimate,
     openEstimateDialog,
+    loadAiEstimationConfirmation,
+    refreshAiEstimate,
+    requestAiEstimate,
     saveHumanEstimate,
     saveTaskEstimateDecision,
     saveTaskEstimateOutcome,

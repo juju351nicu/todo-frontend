@@ -111,6 +111,80 @@ describe("WBS API", () => {
     );
   });
 
+  it("支援modeをqueryへ入れ外部送信前の確認内容を取得する", async () => {
+    const confirmation = {
+      projectId: 7,
+      taskId: 11,
+      taskVersion: 4,
+      assistanceMode: "CODING_AGENT",
+      providerCode: "openai",
+      modelIdentifier: "gpt-6-luna",
+      providerMaximumRetentionDays: 30,
+      workManagementInputRetentionDays: 90,
+      quotaLimit: 30,
+      quotaRemaining: 29,
+      quotaPeriodEnd: "2026-12-01T00:00:00Z",
+      inputSha256: "a".repeat(64),
+      input: { taskTitle: "実装", childTaskTitles: [], dependencies: [] },
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(confirmation),
+    });
+
+    await expect(WbsApi.getAiEstimationConfirmation(7, 11, "CODING_AGENT")).resolves.toEqual(
+      confirmation
+    );
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/ai-estimation-confirmation?assistanceMode=CODING_AGENT"
+    );
+  });
+
+  it("明示確認・入力hash・Task versionをAI見積もり受付APIへ送る", async () => {
+    const request = {
+      taskVersion: 4,
+      assistanceMode: "CODING_AGENT",
+      confirmedInputSha256: "a".repeat(64),
+      confirmed: true,
+    };
+    const response = {
+      requestId: 91,
+      projectId: 7,
+      taskId: 11,
+      statusCode: "PENDING",
+      proposal: null,
+    };
+    HttpClient.postRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.createAiEstimationRequest(7, 11, request)).resolves.toEqual(response);
+    expect(HttpClient.postRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/ai-estimation-requests",
+      request
+    );
+  });
+
+  it("利用者の明示操作でAI見積もりRequestの現在状態を取得する", async () => {
+    const response = {
+      requestId: 91,
+      projectId: 7,
+      taskId: 11,
+      statusCode: "SUCCEEDED",
+      proposal: { taskEstimateSnapshotId: 71 },
+    };
+    HttpClient.getRequest.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(response),
+    });
+
+    await expect(WbsApi.getAiEstimationRequest(7, 11, 91)).resolves.toEqual(response);
+    expect(HttpClient.getRequest).toHaveBeenCalledWith(
+      "/api/v1/projects/7/wbs/tasks/11/ai-estimation-requests/91"
+    );
+  });
+
   it("見積もりsnapshot IDとTask versionを採否確定APIへ送る", async () => {
     const request = {
       decisionCode: "ADJUSTED",

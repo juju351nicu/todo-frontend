@@ -48,6 +48,7 @@ src/
 - `src/app/theme/main.css`: Tailwind・Nuxt UIの読込、独自palette（brand・plum）とヘッダー色、白文字とのコントラストを保つsemantic colorの濃さ、elevation影、breakpoint、`page-surface`／`page-container`／`app-table`等の共通utility。
 - `src/shared/components`: `StatusAlert`、`AppAlert`、`AppSnackbar`、`AppDataTable`、`SearchField`、`FieldCounter`。
 - `src/shared/composables`: 複数機能で使う画面操作の共通処理（`useDialogForm`、`useSyncedDraft`、`AppDataTable`の並べ替え・ページ・選択状態を持つ`useDataTable`）。
+- Nuxt UIのcomponent APIを変更・追加するときは、公式MCP `https://ui.nuxt.com/mcp`を開発時のdocumentation serverとして利用できる。Codexでは`codex mcp add nuxt-ui --url https://ui.nuxt.com/mcp`で登録する。これはsource取得や製品実行に必要なdependencyではなく、Work Managementの業務dataへ接続するMCPでもない。
 
 ## 各ディレクトリの責務
 
@@ -254,7 +255,17 @@ Task日別予定V5は日別実績と同じ`useWbsPage`へ統合し、通常Task�
 調整して採用、却下のいずれかを取得時点Task version付きで送る。成功ResponseのFinal Planとversionを選択TaskとWBS本体へ
 同時に反映し、変更前後のFinal Plan、操作前後のversion、確定者、確定日時を監査表へ表示する。保存中はHuman Estimate追加、
 採否確定、Dialog closeを相互に抑止し、二重送信を防ぐ。404・409では既存の競合回復を再利用し、確定済みrevisionと最新versionへ
-置き換える。UIと型はprovider名・model名を持たず、将来のAI実行provider変更から採否契約を分離する。
+置き換える。採否UIと採否型はprovider名・model名を持たず、将来のAI実行provider変更から採否契約を分離する。
+
+2026-11-14に、同じ見積もりDialogへ外部AIの送信確認、非同期生成受付、状態再取得、構造化提案表示を接続した。
+送信確認GETは外部通信を行わず、provider／model、固定allowlistの実際の値、provider側とWork Management側の保持期間、
+quota残数を表示する。利用者が送信内容と保持期間へ明示同意した場合だけ、確認時Task version、支援mode、入力SHA-256を
+生成受付POSTへ送る。確認後にTask・親子・依存関係が変わった409では古い確認を破棄し、最新WBSと見積もり履歴へ戻す。
+
+状態取得はSpring Sessionの無操作期限を定期Requestで延長しないようpollingせず、利用者の「状態を再取得」操作だけで行う。
+成功時は3点値、confidence、根拠、不確定要素を表示し、Backendが保存したAI Estimate revisionを既存履歴へ再取得する。
+AI提案は既存の未採否revisionとして扱い、Final Planへ直接反映せず、Human Estimateと同じversion付き採否APIを再利用する。
+安定失敗codeは固定案内へ変換し、provider raw payload、API key、内部request key、claim token、原価台帳は型にも画面にも持たない。
 
 実装後はPrettier、ESLint、TypeScript／Vue／E2E型検査、production build、全142 file／1431 Vitestが成功した。
 WBS本体へのFinal Plan同期を故意に外すとcomposable testが期待420分に対して480分のまま残る差で失敗し、復元後に成功した。

@@ -37,6 +37,7 @@ export const mocks = {
     createMemberWorkingDay: vi.fn(),
     createProjectWorkingDay: vi.fn(),
     createHumanEstimate: vi.fn(),
+    createAiEstimationRequest: vi.fn(),
     createTaskEstimateDecision: vi.fn(),
     createTaskEstimateOutcome: vi.fn(),
     createTaskDependency: vi.fn(),
@@ -49,6 +50,8 @@ export const mocks = {
     deleteProjectWorkingDay: vi.fn(),
     downloadWbsReport: vi.fn(),
     getTaskDependencies: vi.fn(),
+    getAiEstimationConfirmation: vi.fn(),
+    getAiEstimationRequest: vi.fn(),
     getEarnedValueMetrics: vi.fn(),
     getEstimateAccuracy: vi.fn(),
     getTaskEstimates: vi.fn(),
@@ -520,6 +523,96 @@ export const updatedTaskEstimateList = {
   ],
 };
 
+/** 通常Task 2の外部AI送信前確認内容。 */
+export const aiEstimationConfirmation = {
+  projectId: 7,
+  taskId: 2,
+  taskVersion: 4,
+  assistanceMode: "CODING_AGENT",
+  providerCode: "openai",
+  modelIdentifier: "gpt-6-luna",
+  providerMaximumRetentionDays: 30,
+  workManagementInputRetentionDays: 90,
+  quotaLimit: 30,
+  quotaRemaining: 29,
+  quotaPeriodEnd: "2026-12-01T00:00:00Z",
+  inputSha256: "a".repeat(64),
+  input: {
+    taskTitle: "実装",
+    taskDescription: "開発Phase",
+    taskType: "TASK",
+    priority: 2,
+    plannedStartDate: "2026-08-22",
+    dueDate: "2026-08-24",
+    finalPlannedEffortMinutes: 480,
+    assistanceMode: "CODING_AGENT",
+    parentTaskTitle: "Phase 1",
+    childTaskTitles: [],
+    dependencies: [],
+  },
+};
+
+/** 受付直後の非同期AI見積もりRequest。 */
+export const pendingAiEstimationRequest = {
+  requestId: 91,
+  projectId: 7,
+  taskId: 2,
+  assistanceMode: "CODING_AGENT",
+  sourceTaskVersion: 4,
+  providerCode: "openai",
+  modelIdentifier: "gpt-6-luna",
+  statusCode: "PENDING",
+  providerDispatched: false,
+  retryCount: 0,
+  failureCode: null,
+  quotaRemaining: 29,
+  createdAt: "2026-11-14T01:00:00Z",
+  updatedAt: "2026-11-14T01:00:00Z",
+  completedAt: null,
+  proposal: null,
+};
+
+/** worker成功後に構造化提案を持つAI見積もりRequest。 */
+export const succeededAiEstimationRequest = {
+  ...pendingAiEstimationRequest,
+  statusCode: "SUCCEEDED",
+  providerDispatched: true,
+  updatedAt: "2026-11-14T01:01:00Z",
+  completedAt: "2026-11-14T01:01:00Z",
+  proposal: {
+    taskEstimateSnapshotId: 63,
+    revision: 2,
+    estimateLowMinutes: 240,
+    estimateLikelyMinutes: 360,
+    estimateHighMinutes: 480,
+    confidence: "MEDIUM",
+    rationale: ["親Taskと現在の予定を参照"],
+    uncertainties: ["受入条件の詳細"],
+  },
+};
+
+/** AI提案をrevision 2として同期した後の見積もり一覧。 */
+export const aiTaskEstimateList = {
+  ...taskEstimateList,
+  estimates: [
+    ...taskEstimateList.estimates,
+    {
+      taskEstimateSnapshotId: 63,
+      projectId: 7,
+      taskId: 2,
+      revision: 2,
+      sourceCode: "AI",
+      assistanceMode: "CODING_AGENT",
+      estimateLowMinutes: 240,
+      estimateLikelyMinutes: 360,
+      estimateHighMinutes: 480,
+      sourceTaskVersion: 4,
+      requestedByAccountId: 2,
+      createdAt: "2026-11-14T01:01:00Z",
+    },
+  ],
+};
+
 /** revision 1をそのまま採用し、Final PlanとTask versionを更新した後の一覧。 */
 export const decidedTaskEstimateList = {
   ...taskEstimateList,
@@ -693,6 +786,9 @@ export const resetWbsPageMocks = () => {
   );
   mocks.wbsApi.createProjectWorkingDay.mockResolvedValue(structuredClone(workingCalendarResponse));
   mocks.wbsApi.createHumanEstimate.mockResolvedValue(structuredClone(updatedTaskEstimateList));
+  mocks.wbsApi.createAiEstimationRequest.mockResolvedValue(
+    structuredClone(pendingAiEstimationRequest)
+  );
   mocks.wbsApi.createTaskEstimateDecision.mockResolvedValue(
     structuredClone(decidedTaskEstimateList)
   );
@@ -709,6 +805,12 @@ export const resetWbsPageMocks = () => {
     fileName: "work-management-wbs-weekly-project-7-2026-09-05.xlsx",
   });
   mocks.wbsApi.getTaskDependencies.mockResolvedValue(structuredClone(dependencyList));
+  mocks.wbsApi.getAiEstimationConfirmation.mockResolvedValue(
+    structuredClone(aiEstimationConfirmation)
+  );
+  mocks.wbsApi.getAiEstimationRequest.mockResolvedValue(
+    structuredClone(pendingAiEstimationRequest)
+  );
   mocks.wbsApi.getEarnedValueMetrics.mockResolvedValue(structuredClone(earnedValueResponse));
   mocks.wbsApi.getEstimateAccuracy.mockResolvedValue(structuredClone(estimateAccuracyResponse));
   mocks.wbsApi.getTaskEstimates.mockResolvedValue(structuredClone(taskEstimateList));

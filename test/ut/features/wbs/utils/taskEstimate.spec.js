@@ -7,6 +7,9 @@ import {
   buildTaskEstimateDecisionForm,
   buildTaskEstimateOutcomeCreateRequest,
   buildTaskEstimateOutcomeForm,
+  formatAiEstimateConfidence,
+  formatAiEstimationFailure,
+  formatAiEstimationStatus,
   formatEstimateAssistanceMode,
   formatEstimateVarianceReason,
   formatTaskEstimateDecision,
@@ -276,6 +279,9 @@ describe("Task見積もり表示", () => {
     expect(formatEstimateAssistanceMode("CODING_AGENT")).toBe("Coding Agent");
     expect(formatTaskEstimateDecision("ADJUSTED")).toBe("調整して採用");
     expect(formatEstimateVarianceReason("AI_REWORK")).toBe("AI出力の手戻り");
+    expect(formatAiEstimationStatus("RETRY_WAIT")).toBe("再試行待ち");
+    expect(formatAiEstimateConfidence("MEDIUM")).toBe("中");
+    expect(formatAiEstimationFailure("OUTPUT_SCHEMA_INVALID")).toContain("検証できません");
   });
 
   it("単一点と3点見積もりを分・時間表記へ変換する", () => {
