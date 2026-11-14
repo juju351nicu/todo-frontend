@@ -2,7 +2,8 @@
 export type NotificationEventType = "ADMIN_ANNOUNCEMENT" | "TASK_ASSIGNED" | "ATTENDANCE_REJECTED";
 
 /** 現在の業務状態から毎回導出し、元の状態を解消すると消える警告種別。 */
-export type NotificationAlertType = "TASK_OVERDUE" | "PUNCH_MISSING" | "APPROVAL_PENDING";
+export type NotificationAlertType =
+  "TASK_DUE_SOON" | "TASK_OVERDUE" | "PUNCH_MISSING" | "APPROVAL_PENDING";
 
 /** ベル一覧へ表示する保存済みイベント型通知。 */
 export interface NotificationEvent {

@@ -46,6 +46,7 @@ export const getNotificationEventIcon = (type: NotificationEventType): string =>
 /** 導出警告種別に対応するMDIアイコンのIconify名（`UIcon`の`name`）を返す。 */
 export const getNotificationAlertIcon = (type: NotificationAlertType): string => {
   const icons: Record<NotificationAlertType, string> = {
+    TASK_DUE_SOON: "i-mdi-calendar-clock-outline",
     TASK_OVERDUE: "i-mdi-calendar-alert",
     PUNCH_MISSING: "i-mdi-clock-alert-outline",
     APPROVAL_PENDING: "i-mdi-file-clock-outline",

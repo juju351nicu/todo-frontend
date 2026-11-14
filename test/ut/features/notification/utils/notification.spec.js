@@ -26,6 +26,7 @@ describe("notification表示utility", () => {
     expect(getNotificationEventIcon("ADMIN_ANNOUNCEMENT")).toBe("i-mdi-bullhorn-outline");
     expect(getNotificationEventIcon("TASK_ASSIGNED")).toBe("i-mdi-account-arrow-left-outline");
     expect(getNotificationEventIcon("ATTENDANCE_REJECTED")).toBe("i-mdi-file-undo-outline");
+    expect(getNotificationAlertIcon("TASK_DUE_SOON")).toBe("i-mdi-calendar-clock-outline");
     expect(getNotificationAlertIcon("TASK_OVERDUE")).toBe("i-mdi-calendar-alert");
     expect(getNotificationAlertIcon("PUNCH_MISSING")).toBe("i-mdi-clock-alert-outline");
     expect(getNotificationAlertIcon("APPROVAL_PENDING")).toBe("i-mdi-file-clock-outline");
