@@ -30,9 +30,10 @@ const getSession = async (): Promise<SessionUserResponse | null> => {
  *
  * @param payload ログイン情報
  * @throws AuthApiError 入力不正、認証失敗、CSRF拒否またはBackendエラーの場合
- * @throws Error ログイン成功後にCSRF Cookieを取得できない場合
+ * @throws Error ログイン成功後にCSRF tokenを取得できない場合
  */
 const login = async (payload: LoginRequest): Promise<void> => {
+  HttpClient.clearCsrfToken();
   const response = await HttpClient.postRequest(API_PATHS.AUTH_LOGIN, payload);
   await ensureApiSuccess(
     response,
@@ -46,7 +47,7 @@ const login = async (payload: LoginRequest): Promise<void> => {
  * 成功時は古いCSRF tokenを破棄し、未認証Session用の新しいtokenへ更新する。
  *
  * @returns HttpSessionを無効化したBackend Response
- * @throws ログアウトまたはログアウト後のCSRF Cookie取得に失敗した場合
+ * @throws ログアウトまたはログアウト後のCSRF token取得に失敗した場合
  */
 const logout = async (): Promise<Response> => {
   const response = await HttpClient.postRequest(API_PATHS.LOGOUT, null);

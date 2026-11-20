@@ -71,7 +71,7 @@ BackendのSpring Security + Spring Session JDBCを使用します。JWTは使用
 
 - 全APIリクエストで`credentials: "include"`を指定する。
 - `GET /api/v1/session`でログイン中の利用者、ロール、権限をPiniaへ復元する。
-- `POST`、`PUT`、`DELETE`では`XSRF-TOKEN` Cookieを`X-XSRF-TOKEN`ヘッダーへ設定する。
+- `POST`、`PUT`、`DELETE`では`GET /api/v1/csrf`のmasked Response tokenを`X-XSRF-TOKEN`ヘッダーへ設定する。tokenはメモリーだけに保持し、CookieやWeb Storageから読み取らない。
 - ログイン・ログアウト直後は`GET /api/v1/csrf`でCSRFトークンを更新する。
 - localStorageとsessionStorageへJWTやSession IDを保存しない。
 

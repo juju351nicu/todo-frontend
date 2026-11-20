@@ -8,25 +8,26 @@ const BACKEND_URL = process.env.E2E_BACKEND_URL ?? "http://localhost:8030";
 const PROVIDER_UNAVAILABLE_MESSAGE =
   "現在、課金サービスを利用できません。時間を置いて再度お試しください。";
 
-/** Browser内のCSRF Cookieを使ってBackendへJSON更新Requestを送り、statusだけを返す。 */
+/** 同じSessionのmasked CSRF Responseを使ってJSON更新Requestを送り、statusだけを返す。 */
 const postWithCsrf = async (page: Page, path: string, body: unknown): Promise<number> =>
   page.evaluate(
     async ({ backendUrl, requestPath, requestBody }) => {
-      const csrfCookie = document.cookie
-        .split(";")
-        .map((value) => value.trim())
-        .find((value) => value.startsWith("XSRF-TOKEN="));
-      if (!csrfCookie) {
-        throw new Error("CSRF Cookieがありません。");
+      const csrfResponse = await fetch(`${backendUrl}/api/v1/csrf`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (!csrfResponse.ok) throw new Error("CSRF tokenを取得できませんでした。");
+      const csrf = (await csrfResponse.json()) as { headerName: string; token: string };
+      if (csrf.headerName !== "X-XSRF-TOKEN" || typeof csrf.token !== "string" || !csrf.token) {
+        throw new Error("CSRF Responseが不正です。");
       }
-      const csrfToken = decodeURIComponent(csrfCookie.substring("XSRF-TOKEN=".length));
       const response = await fetch(`${backendUrl}${requestPath}`, {
         method: "POST",
         credentials: "include",
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
-          "X-XSRF-TOKEN": csrfToken,
+          "X-XSRF-TOKEN": csrf.token,
         },
         body: requestBody === null ? undefined : JSON.stringify(requestBody),
       });

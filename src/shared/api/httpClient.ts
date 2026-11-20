@@ -9,71 +9,97 @@ const METHOD = {
 
 type HttpMethod = (typeof METHOD)[keyof typeof METHOD];
 
-const CSRF_COOKIE_NAME = "XSRF-TOKEN";
 const CSRF_HEADER_NAME = "X-XSRF-TOKEN";
 const JSON_MEDIA_TYPE = "application/json";
 const MUTATING_METHODS: ReadonlySet<HttpMethod> = new Set([METHOD.POST, METHOD.PUT, METHOD.DELETE]);
 
+/** CSRF APIの固定契約。tokenはSessionに結び付いたmasked値であり永続化しない。 */
+interface CsrfTokenResponse {
+  /** 送信先の固定Header名。 */
+  headerName: string;
+  /** form用の固定parameter名。 */
+  parameterName: string;
+  /** Headerへ送るランダム化されたtoken。 */
+  token: string;
+}
+
 let csrfToken: string | null = null;
+let csrfRefreshPromise: Promise<string> | null = null;
+let csrfTokenGeneration = 0;
 
 /** Backend APIの相対pathを環境別の接続先URLへ解決する。 */
 const buildApiUrl = (uri: string): string => API_BASE_URL + uri;
 
-/**
- * ブラウザーCookieから指定名の値をURL decodeして取得する。
- * SSRやVitest等でdocumentが存在しない環境ではnullを返す。
- *
- * @param name 取得するCookie名
- * @returns Cookie値。未設定またはdocumentが存在しない場合はnull
- */
-const readCookie = (name: string): string | null => {
-  if (typeof document === "undefined") {
-    return null;
-  }
-  const prefix = `${name}=`;
-  const cookie = document.cookie
-    .split(";")
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(prefix));
-  return cookie ? decodeURIComponent(cookie.substring(prefix.length)) : null;
-};
+/** 外部JSONの固定Header・parameterと空でないtokenを検査する。 */
+const isCsrfTokenResponse = (value: unknown): value is CsrfTokenResponse =>
+  typeof value === "object" &&
+  value !== null &&
+  "headerName" in value &&
+  value.headerName === CSRF_HEADER_NAME &&
+  "parameterName" in value &&
+  value.parameterName === "_csrf" &&
+  "token" in value &&
+  typeof value.token === "string" &&
+  value.token.trim().length > 0;
 
-/**
- * Backendから新しいCSRF Cookieを取得する。
- * ログイン・ログアウトで古いトークンが破棄された後にも呼び出す。
- */
-const refreshCsrfToken = async (): Promise<string> => {
-  const response = await fetch(buildApiUrl(API_PATHS.CSRF), {
-    method: METHOD.GET,
-    headers: { Accept: "application/json" },
-    credentials: "include",
-  });
-  if (!response.ok) {
-    throw new Error(`CSRFトークンの取得に失敗しました。status=${response.status}`);
-  }
-  csrfToken = readCookie(CSRF_COOKIE_NAME);
-  if (!csrfToken) {
-    throw new Error("CSRF Cookieを取得できませんでした。");
-  }
-  return csrfToken;
-};
-
-/**
- * 更新Requestに使用できるCSRFトークンをCookieまたはBackendから取得する。
- * メモリー上の値を優先し、未取得時だけCookie、CSRF APIの順で解決する。
- *
- * @returns X-XSRF-TOKEN headerへ設定するトークン
- * @throws CSRF APIが失敗するか、Cookieを取得できない場合
- */
-const ensureCsrfToken = async (): Promise<string> => {
-  csrfToken = csrfToken ?? readCookie(CSRF_COOKIE_NAME);
-  return csrfToken ?? refreshCsrfToken();
-};
-
-/** ログイン・ログアウトで無効になったメモリー上のCSRFトークンを破棄する。 */
+/** 認証境界でtokenを破棄し、進行中の古い取得結果も再利用させない。 */
 const clearCsrfToken = (): void => {
   csrfToken = null;
+  csrfRefreshPromise = null;
+  csrfTokenGeneration += 1;
 };
+
+/** 認証状態が変わった後に古いtokenを保存したり更新Requestへ使用したりしない。 */
+const validateCsrfTokenGeneration = (generation: number): void => {
+  if (generation !== csrfTokenGeneration) {
+    throw new Error("認証状態が変わったためCSRFトークンを再取得してください。");
+  }
+};
+
+/**
+ * 同じSessionからmasked tokenを取得し、認証状態が変わっていない場合だけメモリーへ保存する。
+ * @param generation 取得を開始した認証状態の世代
+ * @returns 更新Headerへ送信できるmasked token
+ * @throws 通信・Response契約不正、または取得中に認証状態が変わった場合
+ */
+const loadCsrfToken = async (generation: number): Promise<string> => {
+  try {
+    const response = await fetch(buildApiUrl(API_PATHS.CSRF), {
+      method: METHOD.GET,
+      headers: { Accept: JSON_MEDIA_TYPE },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error(`CSRFトークンの取得に失敗しました。status=${response.status}`);
+    }
+    const body: unknown = await response.json();
+    if (!isCsrfTokenResponse(body)) {
+      throw new Error("CSRF Responseの形式が正しくありません。");
+    }
+    validateCsrfTokenGeneration(generation);
+    csrfToken = body.token;
+    return csrfToken;
+  } finally {
+    if (generation === csrfTokenGeneration) {
+      csrfRefreshPromise = null;
+    }
+  }
+};
+
+/**
+ * 現在のSession用tokenを再取得する。失敗時も古いtokenへ戻さず、Cookieは読み取らない。
+ * @returns メモリーに保存したmasked token
+ * @throws CSRF APIの失敗・契約不正、または取得中の認証状態変更
+ */
+const refreshCsrfToken = (): Promise<string> => {
+  clearCsrfToken();
+  csrfRefreshPromise = loadCsrfToken(csrfTokenGeneration);
+  return csrfRefreshPromise;
+};
+
+/** 初回の並行更新は同じ取得を待ち、token取得に成功するまで業務Requestを送信しない。 */
+const ensureCsrfToken = (): Promise<string> =>
+  csrfToken !== null ? Promise.resolve(csrfToken) : (csrfRefreshPromise ?? refreshCsrfToken());
 
 /**
  * JSESSIONIDを含む共通Requestを送信し、更新系ではCSRF headerを付与する。
@@ -96,7 +122,12 @@ const request = async <TRequest = unknown>(
     "Content-Type": JSON_MEDIA_TYPE,
   });
   if (MUTATING_METHODS.has(method)) {
-    headers.set(CSRF_HEADER_NAME, await ensureCsrfToken());
+    const tokenPromise = ensureCsrfToken();
+    const generation = csrfTokenGeneration;
+    const token = await tokenPromise;
+    // cache済みtokenでもawaitで制御が戻るため、送信直前に認証境界を再検査する。
+    validateCsrfTokenGeneration(generation);
+    headers.set(CSRF_HEADER_NAME, token);
   }
 
   const options: RequestInit = {

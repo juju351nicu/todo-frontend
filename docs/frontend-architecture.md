@@ -63,6 +63,22 @@ src/
 
 依存方向は原則として`view -> composable -> store/api -> shared/api`とする。`shared`から個別の`features`へ依存させない。
 
+## SessionとCSRFの通信契約
+
+全Requestは`credentials: "include"`でHttpOnlyの`JSESSIONID`を送る。更新前に共通HTTP clientが
+`GET /api/v1/csrf`の`headerName`・`parameterName`・`token`を検証し、masked Response tokenを
+`X-XSRF-TOKEN`へ設定する。期待値はBackendのSpring Session JDBCに保存される。
+`XSRF-TOKEN` Cookieは参照せず、tokenはメモリーだけに保持する。Web Storage・URL・logへ保存しない。
+
+初回の並行更新は1つのtoken取得を共有する。認証状態の破棄または明示再取得で世代を進め、
+古い非同期取得の完了でcacheを復元したり、待機していた業務更新を送信したりしない。
+取得失敗・不正Responseでは更新を送らず、次の操作で再取得する。
+ログイン開始前にcacheを破棄し、ログイン・ログアウト成功後にもtokenを再取得する。
+Session失効時は認証表示情報と進行中のtoken取得をともに破棄する。
+
+Cookie値をHeaderへ返すclientは同時移行が必要である。Backendの決定は
+[`ADR 0008`](../../todo-backend/docs/adr/0008-session-bound-masked-csrf-token.md)を参照する。
+
 ## 現在の移行状況
 
 最初の作業単位として、次を移行した。

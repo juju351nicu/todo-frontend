@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import HttpClient from "@/shared/api/httpClient";
 import AuthApi from "@/features/auth/api/authApi";
 import { useUserStore } from "@/features/auth/stores/user";
 
@@ -10,6 +11,10 @@ vi.mock("@/features/auth/api/authApi", () => ({
     login: vi.fn(),
     logout: vi.fn(),
   },
+}));
+
+vi.mock("@/shared/api/httpClient", () => ({
+  default: { clearCsrfToken: vi.fn() },
 }));
 
 const sessionUser = {
@@ -63,6 +68,14 @@ describe("User store", () => {
 
     expect(store.isAuthenticated).toBe(false);
     expect(store.sessionChecked).toBe(true);
+  });
+
+  it("Session失効時は進行中の取得を含むCSRF cacheも破棄する", () => {
+    const store = useUserStore();
+    store.setSessionUser(sessionUser);
+    store.clearSession();
+    expect(HttpClient.clearCsrfToken).toHaveBeenCalledOnce();
+    expect(store.isAuthenticated).toBe(false);
   });
 
   it("ログアウト後はFrontendの認証情報とCSRFを破棄する", async () => {

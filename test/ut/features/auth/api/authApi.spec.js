@@ -52,6 +52,10 @@ describe("Auth API", () => {
     await expect(AuthApi.login(payload)).resolves.toBeUndefined();
 
     expect(HttpClient.postRequest).toHaveBeenCalledWith(API_PATHS.AUTH_LOGIN, payload);
+    expect(HttpClient.clearCsrfToken).toHaveBeenCalledOnce();
+    expect(HttpClient.clearCsrfToken.mock.invocationCallOrder[0]).toBeLessThan(
+      HttpClient.postRequest.mock.invocationCallOrder[0]
+    );
     expect(HttpClient.refreshCsrfToken).toHaveBeenCalledOnce();
   });
 

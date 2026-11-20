@@ -1,3 +1,4 @@
+import HttpClient from "@/shared/api/httpClient";
 import { defineStore } from "pinia";
 
 import type {
@@ -67,8 +68,9 @@ export const useUserStore = defineStore("user", {
       this.authenticated = true;
       this.sessionChecked = true;
     },
-    /** Frontendが保持する認証表示情報を破棄する。HttpSessionの破棄はlogout APIが担当する。 */
+    /** 認証表示情報とCSRF cacheを破棄する。HttpSessionの破棄はlogout APIが担当する。 */
     clearSession(): void {
+      HttpClient.clearCsrfToken();
       this.accountId = null;
       this.username = null;
       this.displayName = null;
