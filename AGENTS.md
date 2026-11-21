@@ -2,6 +2,13 @@
 
 Codex等のAIコーディングツールは、変更前にこのファイル、`docs/coding-guidelines.md`、`docs/frontend-architecture.md`を最後まで読むこと。設計の大きな決定の理由は`docs/adr/`に、Backendの設計書の目次は`todo-backend/docs/README.md`にある。
 
+## ブランチ運用
+
+- 作業前に`git ls-remote --symref origin HEAD`で既存のデフォルトブランチを確認し、そのブランチで作業・commit・pushする。このリポジトリの現在のデフォルトは`master`。名前を`main`と決めつけて変更しない。
+- 利用者が別ブランチを明示しない限り、作業用ブランチ・worktree・PRを新規作成しない。デフォルトへのforce push・削除は行わない。
+- 不要ブランチは取り込み状態・file差分・関連PRを確認し、理由と完全SHAを記録してGit bundleへ退避してから整理する。remote削除は確認SHAへのlease付きで行い、デフォルトHEADと残したブランチの不変を照合する。
+- 進行中PRや、用途を確認できていない未反映変更があるブランチは保持する。Dependabotの進行中更新PRを移行作業へ無検証でまとめてmergeしたり、不要と決めつけて削除したりしない。
+
 ## 実装原則
 
 - TypeScriptを使用し、機能は`src/features/<feature>`、全体構成は`src/app`、複数機能の共通処理は`src/shared`へ配置する。
