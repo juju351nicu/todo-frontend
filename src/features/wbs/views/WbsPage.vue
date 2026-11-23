@@ -4,6 +4,7 @@ import { defineAsyncComponent, onBeforeMount, reactive } from "vue";
 import { ROUTE_NAMES } from "@/app/router/routeNames";
 import TaskEffortPlanDialog from "@/features/wbs/components/TaskEffortPlanDialog.vue";
 import TaskEstimateDialog from "@/features/wbs/components/TaskEstimateDialog.vue";
+import TaskExecutionComparisonDialog from "@/features/wbs/components/TaskExecutionComparisonDialog.vue";
 import TaskWorkLogDialog from "@/features/wbs/components/TaskWorkLogDialog.vue";
 import TaskWorkloadCard from "@/features/wbs/components/TaskWorkloadCard.vue";
 import WorkingCalendarCard from "@/features/wbs/components/WorkingCalendarCard.vue";
@@ -232,6 +233,16 @@ const VIEW_OPTIONS = [
                     @click="page.openWorkLogDialog(row.taskId)"
                   />
                   <UButton
+                    v-if="row.taskType === 'TASK'"
+                    icon="i-mdi-tune-vertical"
+                    color="info"
+                    size="sm"
+                    variant="ghost"
+                    square
+                    :aria-label="`${row.title}の本人設定別実績を開く`"
+                    @click="page.openExecutionComparison(row.taskId)"
+                  />
+                  <UButton
                     v-if="page.canEditTask(row)"
                     icon="i-mdi-pencil-outline"
                     size="sm"
@@ -422,6 +433,24 @@ const VIEW_OPTIONS = [
       @edit="page.editEffortPlan"
       @cancel-edit="page.cancelEffortPlanEdit"
       @request-delete="page.requestEffortPlanDelete"
+    />
+
+    <TaskExecutionComparisonDialog
+      :open="page.isExecutionComparisonOpen"
+      :task="page.executionTask"
+      :comparison="page.executionComparison"
+      :date-from="page.executionDateFrom"
+      :date-to="page.executionDateTo"
+      :can-record="page.canRecordExecutionSetting"
+      :is-loading="page.isLoadingExecutionComparison"
+      :is-saving="page.isSavingExecutionSetting"
+      :error-messages="page.executionErrorMessages"
+      :success-message="page.executionSuccessMessage"
+      @close="page.closeExecutionComparison"
+      @load="page.loadExecutionComparison"
+      @save="page.saveExecutionSetting"
+      @update:date-from="page.executionDateFrom = $event"
+      @update:date-to="page.executionDateTo = $event"
     />
 
     <TaskWorkLogDialog

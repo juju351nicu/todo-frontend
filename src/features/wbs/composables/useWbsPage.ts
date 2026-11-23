@@ -12,6 +12,7 @@ import { isActiveProject } from "@/features/project/utils/projectStatus";
 import WbsApi, { WbsApiError } from "@/features/wbs/api/wbsApi";
 import { useTaskEffortPlans } from "@/features/wbs/composables/useTaskEffortPlans";
 import { useTaskEstimates } from "@/features/wbs/composables/useTaskEstimates";
+import { useTaskExecutionComparison } from "@/features/wbs/composables/useTaskExecutionComparison";
 import { useTaskWorkLogs } from "@/features/wbs/composables/useTaskWorkLogs";
 import { useWbsBaselines } from "@/features/wbs/composables/useWbsBaselines";
 import { useWbsDependencies } from "@/features/wbs/composables/useWbsDependencies";
@@ -61,6 +62,7 @@ const parsePositiveId = (value: string | null | (string | null)[] | undefined): 
  * `useWbsTaskEditor`（Task編集）、`useWbsDependencies`（依存関係）、`useWbsWorkload`（担当者別workload）、
  * `useWbsWorkingCalendar`（稼働日calendar）、`useTaskEstimates`（Task見積もり）、
  * `useTaskEffortPlans`（日別予定）、`useTaskWorkLogs`（日別実績）、
+ * `useTaskExecutionComparison`（本人の設定別・日次実績比較）、
  * `useWbsBaselines`（baseline）、`useWbsEarnedValue`（EVM）、`useWbsReportExport`（Excel帳票）、
  * `useWbsEstimateAccuracy`（完了Taskの予定工数と実績の見積もり精度）。
  * 領域をまたぐ再取得・Dialogのcloseは、各composableのoptionsのcallbackでここから配線する。
@@ -163,6 +165,7 @@ export const useWbsPage = () => {
     reloadWorkload: () => workloadState.reloadTaskWorkload(),
     onDialogClosed: () => void removeWorkLogPanelQuery(),
   });
+  const executionComparisonState = useTaskExecutionComparison(context);
   const earnedValueState = useWbsEarnedValue(context);
   const reportExportState = useWbsReportExport(context, earnedValueState.earnedValueStatusDate);
   const baselineState = useWbsBaselines(context, {
@@ -181,6 +184,7 @@ export const useWbsPage = () => {
     taskEstimateState.discardEstimateDialog();
     effortPlanState.discardEffortPlanDialog();
     workLogState.discardWorkLogDialog();
+    executionComparisonState.discardExecutionComparison();
     baselineState.discardBaselineDialogs();
   };
 
@@ -356,6 +360,7 @@ export const useWbsPage = () => {
     ...taskEstimateState,
     ...effortPlanState,
     ...workLogState,
+    ...executionComparisonState,
     ...earnedValueState,
     ...reportExportState,
     ...baselineState,

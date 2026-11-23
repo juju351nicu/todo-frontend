@@ -191,6 +191,9 @@ Cookie値をHeaderへ返すclientは同時移行が必要である。Backendの�
 - `src/features/wbs/composables/useWbsWorkload.ts`: 担当者別workloadの取得
 - `src/features/wbs/composables/useWbsWorkingCalendar.ts`: 稼働日calendarの表示対象・編集可否・例外の登録・更新・削除
 - `src/features/wbs/composables/useWorkingDayEditForm.ts`: 稼働日例外DialogのForm作り直し、種別切替時の分数補正、対象の表示文言
+- `src/features/wbs/composables/useTaskExecutionComparison.ts`: 通常Task・本人・期間の設定別実績比較と停止Timer設定の追記。設定は申告値で、未知のmodel等を補完せず、手入力・後編集差とschemaを分ける。401は共通処理、保存後と409は正本再取得、古い応答は破棄する
+- `src/features/wbs/components/TaskExecutionComparisonDialog.vue`: WBS行の「本人の設定別実績」から期間合計・日次設定内訳・現行実績との差・元進捗履歴と申告formを表示する。formの同期・close・submitは`useDialogForm`、APIは専用composableへ委ねる
+- `src/features/wbs/api/taskExecutionApi.ts`／`types/taskExecution.ts`／`utils/taskExecution.ts`: Backendの本人比較・追記契約と公開入力の上限・null変換。設計正本はBackend `docs/task-execution-comparison-design.md`
 - `src/features/wbs/composables/useTaskEffortPlans.ts`／`useTaskWorkLogs.ts`: 通常Taskの日別予定／日別実績Dialog
 - `src/features/wbs/composables/useWbsBaselines.ts`: baselineの一覧・比較・作成・有効化
 - `src/features/wbs/composables/useWbsEarnedValue.ts`／`useWbsReportExport.ts`: EVMの取得／週次・月次Excel帳票のdownload
