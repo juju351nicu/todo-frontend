@@ -7,6 +7,10 @@ export const DISPLAY_MESSAGES = {
     connectionFailed: "Backendへ接続できませんでした。",
     requestFailed: "処理を完了できませんでした。しばらくしてから再度お試しください。",
   },
+  agentWork: {
+    readUnavailable: "AI作業の参照権限または対象を確認してください。",
+    loadFailed: "AI作業の記録を取得できませんでした。再読み込みしてください。",
+  },
   auth: {
     credentialsRejected: "ログインIDまたはパスワードが正しくありません。",
     invalidInput: "ログイン情報を確認してください。",

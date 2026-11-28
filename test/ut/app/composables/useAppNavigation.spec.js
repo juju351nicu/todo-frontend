@@ -73,6 +73,7 @@ describe("useAppNavigation", () => {
       "Task一覧",
       "My Tasks",
       "Task検索",
+      "AI作業",
       "Project Board",
       "Project Template",
       "勤怠月次確認",

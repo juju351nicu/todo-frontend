@@ -19,6 +19,7 @@ export const ROUTE_NAMES = {
   projectList: "ProjectList",
   projectTemplates: "ProjectTemplates",
   myTasks: "MyTasks",
+  agentWork: "AgentWork",
   taskSearch: "TaskSearch",
   taskBoard: "TaskBoard",
   wbs: "Wbs",

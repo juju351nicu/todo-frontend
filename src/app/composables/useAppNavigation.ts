@@ -57,7 +57,8 @@ export const useAppNavigation = (): AppNavigation => {
     if (userStore.hasPermission("TASK_READ")) {
       links.push(
         { icon: "i-mdi-format-list-checks", label: "My Tasks", to: "/my-tasks" },
-        { icon: "i-mdi-magnify", label: "Task検索", to: "/tasks/search" }
+        { icon: "i-mdi-magnify", label: "Task検索", to: "/tasks/search" },
+        { icon: "i-mdi-robot-outline", label: "AI作業", to: "/agent-work" }
       );
     }
     if (userStore.hasPermission("PROJECT_READ")) {

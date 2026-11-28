@@ -14,6 +14,12 @@ import {
  */
 export const routes: RouteRecordRaw[] = [
   {
+    path: "/agent-work",
+    name: ROUTE_NAMES.agentWork,
+    component: () => import("@/features/agent-work/views/AgentWorkPage.vue"),
+    meta: { requiresAuth: true, requiredAnyPermissions: ["TASK_READ"] },
+  },
+  {
     path: "/",
     name: ROUTE_NAMES.login,
     component: () => import("@/features/auth/views/LoginPage.vue"),

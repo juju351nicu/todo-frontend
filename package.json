@@ -8,7 +8,7 @@
     "build": "vite build",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:e2e:chromium": "playwright test --project=chromium-public-smoke --project=chromium-authenticated-smoke --project=chromium-my-tasks-journey --project=chromium-board-journey --project=chromium-project-template-journey --project=chromium-task-recurrence-journey --project=chromium-authorization-journey --project=chromium-attendance-month-journey --project=chromium-wbs-journey --project=chromium-billing-journey",
+    "test:e2e:chromium": "playwright test --project=chromium-public-smoke --project=chromium-authenticated-smoke --project=chromium-my-tasks-journey --project=chromium-board-journey --project=chromium-project-template-journey --project=chromium-task-recurrence-journey --project=chromium-authorization-journey --project=chromium-attendance-month-journey --project=chromium-wbs-journey --project=chromium-billing-journey --project=chromium-agent-work",
     "test:e2e:journeys": "playwright test --project=chromium-my-tasks-journey --project=chromium-board-journey --project=chromium-project-template-journey --project=chromium-task-recurrence-journey --project=chromium-authorization-journey --project=chromium-attendance-month-journey --project=chromium-wbs-journey --project=chromium-billing-journey",
     "test:e2e:billing": "VITE_API_BASE_URL=http://localhost:8031 E2E_BACKEND_URL=http://localhost:8031 playwright test --project=chromium-billing-journey",
     "test:e2e:smoke": "playwright test --project=chromium-public-smoke --project=chromium-authenticated-smoke",
@@ -24,7 +24,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e:agent-work": "E2E_SKIP_DATABASE_FIXTURE=true playwright test --project=chromium-agent-work"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.15",

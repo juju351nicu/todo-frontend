@@ -51,6 +51,16 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "chromium-agent-work",
+      testMatch: /agent-work\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: { cookies: [], origins: [] },
+        trace: "off",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
       name: "auth-setup",
       testMatch: /auth\.setup\.ts/,
       use: {

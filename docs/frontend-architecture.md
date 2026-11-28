@@ -803,3 +803,11 @@ npm run test:e2e:chromium
 ```
 
 APIのRequest / Responseを変更する場合は、Backendの`/v3/api-docs`またはSwagger UIと照合する。Session ID、OAuth2情報、パスワード等をFrontendのログやWeb Storageへ保存しない。
+
+## AI作業一覧
+
+`features/agent-work`と`/agent-work`を追加した。TASK_READを持つ本人だけにメニューを表示し、最終認可と公開範囲はBackendへ委ねる。状態filter・ページ、最終応答・応答待ち、成果ページを`useAgentWorkPage`ひとつで管理する。所有tokenを画面やWeb Storageへ持ち込まず、開始・終了は作業を所有するCodexがMCPで行う。
+
+明示再読込と画面復帰時だけ更新し、定期pollingしない。表示の経過秒と応答待ちはBackendのsnapshotを使い、人の工数へ加算しない。別作業への切替、Dialog close、account変更、401・403・404、画面破棄では先行応答を失効させる。通信失敗は同じ検索の直前表示を保持する。成果本文と参照先はtextとして描画し、自動実行・外部取得・HTML描画しない。
+
+AI作業のbrowser契約は`npm run test:e2e:agent-work`で実行する。合成SessionとAPI応答を使う6ケースで、案件・応答待ち・成果text・状態filter・空一覧・mobile幅・401・権限なしを確認する。既存の`E2E_SKIP_DATABASE_FIXTURE=true`を指定するため実DBへfixtureを追加せず、認証情報を保存しない。実ServiceとSQL・再送・並行処理はBackendのHTTP／MySQL／実STDIOを正本とする。

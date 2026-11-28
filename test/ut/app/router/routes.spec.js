@@ -5,6 +5,12 @@ import { routes } from "@/app/router/routes";
 const findRoute = (name) => routes.find((route) => route.name === name);
 
 describe("Vue routes", () => {
+  it("AI作業一覧をTASK_READで保護する", () => {
+    const route = findRoute("AgentWork");
+    expect(route.path).toBe("/agent-work");
+    expect(route.meta.requiresAuth).toBe(true);
+    expect(route.meta.requiredAnyPermissions).toEqual(["TASK_READ"]);
+  });
   it("アカウントとTaskのIDをパス区切り付きで受け取る", () => {
     expect(findRoute("AccountList").path).toBe("/accounts");
     expect(findRoute("AccountDetail").path).toBe("/accounts/detail/:id?");
